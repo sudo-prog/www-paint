@@ -2,11 +2,14 @@
  * Layers Panel — manages the layer list UI with add/remove/reorder/
  * visibility/opacity/blend-mode controls.
  *
+ * Nothing Design System patterns:
+ * - Layer rows with 1px dividers (--border), no zebra striping
+ * - Space Mono labels, ALL CAPS
+ * - Active row: --surface-raised background + left border
+ * - Pill buttons for actions
+ *
  * Each layer in the engine is represented as:
  *   { id, name, visible, opacity, blendMode, strokes, locked }
- *
- * This module renders a vertical list of layer rows, each with controls,
- * and dispatches events when the user modifies a layer.
  *
  * @module layers
  */
@@ -25,6 +28,9 @@ const BLEND_MODES = [
 
 /**
  * LayersManager — manages the layer panel DOM and user interactions.
+ *
+ * Nothing Design: divider-separated list rows, Space Mono labels,
+ * surface-raised highlight for active layer.
  *
  * @param {HTMLElement} root - Container element
  */
@@ -58,8 +64,8 @@ export class LayersManager {
     // Safe: uses fixed icon/label strings, no user input
     header.innerHTML = `
       <h3 class="layers-title">Layers</h3>
-      <button type="button" class="btn btn--icon btn--sm" data-action="add-layer" title="Add Layer">
-        <span class="btn-icon">＋</span>
+      <button type="button" class="btn btn--icon btn--sm" data-action="add-layer" aria-label="Add layer">
+        <span class="btn-icon" aria-hidden="true">+</span>
       </button>
     `;
 
@@ -95,13 +101,14 @@ export class LayersManager {
     if (this.layers.length === 0) {
       const placeholder = document.createElement('div');
       placeholder.className = 'layers-placeholder';
-      placeholder.textContent = 'No layers';
+      placeholder.textContent = 'no layers';
       list.appendChild(placeholder);
     }
   }
 
   /**
    * Render a single layer row.
+   * Nothing Design: full-width divider, Space Mono labels, pill buttons.
    * @param {object} layer
    * @returns {HTMLElement}
    */
@@ -109,20 +116,20 @@ export class LayersManager {
     const row = document.createElement('div');
     row.className = 'layer-row';
     row.dataset.layerId = String(layer.id);
+    row.setAttribute('role', 'group');
+    row.setAttribute('aria-label', `Layer ${layer.name || layer.id}`);
 
-    // Lock overlay
-    const lockedOverlay = layer.locked
-      ? '<div class="layer-locked-overlay">🔒</div>'
+    // Lock indicator
+    const lockedHtml = layer.locked
+      ? '<span class="layer-locked-overlay" aria-label="locked" title="Locked">🔒</span>'
       : '';
 
-    // Safe: all content is from fixed arrays (BLEND_MODES, static labels)
+    // Safe: all content is from fixed arrays (BLEND_MODES, static labels), layer names escaped
     row.innerHTML = `
-      <div class="layer-row__drag-handle" title="Drag to reorder">
-        <span class="drag-handle-icon">⋮</span>
-      </div>
+      <div class="layer-row__drag-handle" title="Drag to reorder" aria-hidden="true">⋮</div>
       <div class="layer-row__visibility">
         <button type="button" class="btn btn--icon btn--sm ${layer.visible ? 'btn--active' : ''}"
-                data-action="toggle-visibility" title="${layer.visible ? 'Hide' : 'Show'}">
+                data-action="toggle-visibility" aria-label="${layer.visible ? 'Hide' : 'Show'}">
           <span class="btn-icon">${layer.visible ? '👁' : '⊘'}</span>
         </button>
       </div>
@@ -131,24 +138,21 @@ export class LayersManager {
         ${lockedOverlay}
       </div>
       <div class="layer-row__opacity">
-        <label class="layer-opacity-label" title="Opacity">%</label>
         <input type="range" class="layer-opacity-input" min="0" max="100" step="1"
-               value="${Math.round((layer.opacity ?? 1) * 100)}" />
+               value="${Math.round((layer.opacity ?? 1) * 100)}" aria-label="Opacity" />
       </div>
       <div class="layer-row__blend">
-        <select class="layer-blend-select" title="Blend Mode">
+        <select class="layer-blend-select" aria-label="Blend mode">
           ${BLEND_MODES.map(m =>
             `<option value="${m.value}" ${layer.blendMode === m.value ? 'selected' : ''}>${m.label}</option>`
           ).join('')}
         </select>
       </div>
       <div class="layer-row__actions">
-        <button type="button" class="btn btn--icon btn--sm" data-action="duplicate-layer"
-                title="Duplicate Layer">
+        <button type="button" class="btn btn--icon btn--sm" data-action="duplicate-layer" aria-label="Duplicate layer">
           <span class="btn-icon">⍰</span>
         </button>
-        <button type="button" class="btn btn--icon btn--sm" data-action="delete-layer"
-                title="Delete Layer">
+        <button type="button" class="btn btn--icon btn--sm btn--destructive" data-action="delete-layer" aria-label="Delete layer">
           <span class="btn-icon">🗑</span>
         </button>
       </div>

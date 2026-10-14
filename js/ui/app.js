@@ -2,6 +2,8 @@
  * App Controller — the main orchestrator that wires together the engine,
  * canvas manager, controls panel, layers panel, and export dialog.
  *
+ * Nothing Design System: inline styles removed, tokens used via CSS.
+ *
  * This module is the single entry point initialized from index.html's
  * top-level module script. It owns application state, coordinates async
  * generation runs, updates the status bar, and dispatches UI events.
@@ -17,6 +19,8 @@ import { ExportManager } from './export.js';
 
 /**
  * WWW_PAINT Application Controller.
+ *
+ * Nothing Design: background uses --black token, borders use --border.
  *
  * @param {object} opts
  * @param {HTMLCanvasElement} opts.canvas
@@ -70,24 +74,24 @@ export class App {
    */
   _init() {
     // Create canvas manager
+    // Nothing Design: OLED black background
     this.canvasMgr = new CanvasManager(this.canvasEl, {
-      background: '#0f0f14',
+      background: getComputedStyle(document.documentElement)
+        .getPropertyValue('--black').trim() || '#000000',
       dpr: window.devicePixelRatio || 1,
     });
 
-    // Create engine (without worker initially; enable if supported)
+    // Create engine
     this.engine = new PaintingEngine({
       canvas: this.canvasEl,
       width: this.canvasEl.width,
       height: this.canvasEl.height,
-      useWorker: false, // Workers need careful import setup; can enable later
-      background: '#0f0f14',
+      useWorker: false,
+      background: getComputedStyle(document.documentElement)
+        .getPropertyValue('--black').trim() || '#000000',
     });
 
-    // Wire canvas manager's renderer to engine's renderer is redundant —
-    // they share the same canvas context already.
-    // But the engine creates its own Renderer from the canvas; let's use
-    // the canvas manager's renderer instead for consistency.
+    // Wire canvas manager's renderer to engine's renderer
     this.engine.renderer = this.canvasMgr.renderer;
 
     // Create controls
@@ -472,6 +476,7 @@ export class App {
 
   /**
    * Update the status bar with current information.
+   * Nothing Design: Space Mono data/readout pairs.
    * @private
    */
   _updateStatus() {
@@ -485,15 +490,15 @@ export class App {
     // Safe: status bar uses fixed labels and number.toLocaleString() (no raw user input)
     this.statusBar.innerHTML = `
       <span class="status-item">
-        <span class="status-label">Style:</span>
+        <span class="status-label">Style</span>
         <span class="status-value">${style}</span>
       </span>
       <span class="status-item">
-        <span class="status-label">Strokes:</span>
+        <span class="status-label">Strokes</span>
         <span class="status-value">${totalStrokes.toLocaleString()}</span>
       </span>
       <span class="status-item">
-        <span class="status-label">Layers:</span>
+        <span class="status-label">Layers</span>
         <span class="status-value">${visibleLayers}/${layerCount}</span>
       </span>
       <span class="status-item status-item--spacer">
@@ -505,7 +510,7 @@ export class App {
   /**
    * Set the status bar message.
    * @param {string} message
-   * @param {boolean} [loading=false] - Show loading spinner
+   * @param {boolean} [loading=false] - Show loading indicator
    * @param {number} [duration=0] - Auto-clear after ms (0 = no auto-clear)
    * @param {boolean} [append=false] - Append to existing message
    * @private
@@ -540,6 +545,7 @@ export class App {
 
   /**
    * Show an error message (temporarily).
+   * Nothing Design: inline status text with accent color.
    * @param {string} message
    * @param {boolean} [isError=true]
    * @private

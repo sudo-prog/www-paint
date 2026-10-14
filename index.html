@@ -4,22 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WWW_PAINT — Stroke-Based Image to Art</title>
+  <!-- Nothing Design System: Space Grotesk (body) + Space Mono (data/labels) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
   <div class="app-shell">
 
     <!-- Header -->
-    <header class="app-header">
+    <header class="app-header" role="banner">
       <div class="app-header__title">
-        <span class="logo">WWW_PAINT</span>
+        <span class="logo" aria-label="WWW_PAINT">WWW_PAINT</span>
         <span class="subtitle">Stroke-based image-to-art engine</span>
       </div>
       <div class="header-actions">
-        <button type="button" class="btn btn--secondary btn--sm" id="btn-load-image" title="Load Image">
+        <button type="button" class="btn btn--secondary btn--sm" id="btn-load-image" aria-label="Load image">
           <span class="btn-icon">📂</span> Load
         </button>
-        <button type="button" class="btn btn--primary btn--sm" id="btn-export" title="Export">
+        <button type="button" class="btn btn--primary btn--sm" id="btn-export" aria-label="Export">
           <span class="btn-icon">🖼</span> Export
         </button>
       </div>
@@ -29,29 +33,29 @@
     <div class="app-body">
 
       <!-- Left Sidebar: Controls -->
-      <aside class="controls-sidebar" id="controls-root">
+      <aside class="controls-sidebar" id="controls-root" role="complementary" aria-label="Controls">
         <!-- ControlsManager renders into this element -->
       </aside>
 
       <!-- Canvas Area -->
-      <main class="canvas-area" id="canvas-area">
-        <canvas id="paint-canvas" width="1024" height="768"></canvas>
-        <div class="canvas-placeholder" id="canvas-placeholder">
-          <div class="canvas-placeholder__icon">🎨</div>
+      <main class="canvas-area" id="canvas-area" role="main">
+        <canvas id="paint-canvas" width="1024" height="768" class="paint-canvas" aria-label="Painting canvas"></canvas>
+        <div class="canvas-placeholder" id="canvas-placeholder" role="status" aria-live="polite">
+          <div class="canvas-placeholder__icon" aria-hidden="true">🎨</div>
           <div class="canvas-placeholder__text">Drag & drop an image to get started</div>
           <div class="canvas-placeholder__hint">Or click the Load button above</div>
-          <input type="file" class="file-input-picker" accept="image/*" style="display: none;" />
+          <input type="file" class="file-input-picker" accept="image/*" style="display: none;" aria-label="Select image file" />
         </div>
       </main>
 
       <!-- Right Sidebar: Layers -->
-      <aside class="layers-sidebar" id="layers-root">
+      <aside class="layers-sidebar" id="layers-root" role="complementary" aria-label="Layers">
         <!-- LayersManager renders into this element -->
       </aside>
     </div>
 
     <!-- Status Bar -->
-    <footer class="status-bar" id="status-bar">
+    <footer class="status-bar" id="status-bar" role="status" aria-live="polite">
       <span class="status-item">
         <span class="status-label">Status:</span>
         <span class="status-value">Ready</span>
@@ -60,12 +64,12 @@
   </div>
 
   <!-- Export Dialog (hidden by default, shown via JavaScript) -->
-  <div class="export-dialog" id="export-root" aria-hidden="true">
+  <div class="export-dialog" id="export-root" aria-hidden="true" aria-labelledby="export-title">
     <!-- ExportManager renders into this element -->
   </div>
 
   <!-- Hidden file input for image loading -->
-  <input type="file" id="image-file-input" accept="image/*" style="display: none;" />
+  <input type="file" id="image-file-input" accept="image/*" style="display: none;" aria-label="Select image file" />
 
   <!-- Main Application Script (ES6 Module) -->
   <script type="module">

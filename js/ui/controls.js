@@ -2,8 +2,15 @@
  * Controls Panel — binds all UI controls (style picker, sliders, selectors)
  * to the PaintingEngine settings.
  *
+ * Nothing Design System patterns:
+ * - Style picker: segmented control
+ * - Path order / color mode: segmented control
+ * - Sliders: styled as discrete segments
+ * - Labels: Space Mono ALL CAPS
+ * - Buttons: pill (999px) or technical
+ *
  * The controls panel provides:
- * - Style picker with 6 visual buttons
+ * - Style picker (segmented)
  * - Sliders: stroke size (min/max), density/count, detail, strength,
  *   opacity, randomness
  * - Path order selector
@@ -30,21 +37,24 @@ const STYLE_PRESETS = {
 /** Path order options. */
 const PATH_ORDER_OPTIONS = [
   { value: 'free',        label: 'Free' },
-  { value: 'top-bottom',  label: 'Top → Bottom' },
+  { value: 'top-bottom',  label: 'Top ↓' },
   { value: 'spiral',      label: 'Spiral' },
   { value: 'one-line',    label: 'One Line' },
-  { value: 'edges-first', label: 'Edges First' },
+  { value: 'edges-first', label: 'Edges' },
 ];
 
 /** Color mode options. */
 const COLOR_MODE_OPTIONS = [
   { value: 'exact',        label: 'Exact' },
   { value: 'quantized',    label: 'Quantized' },
-  { value: 'palette',      label: 'Palette-Limited' },
+  { value: 'palette',      label: 'Palette' },
 ];
 
 /**
  * ControlsManager — manages the control panel UI.
+ *
+ * Nothing Design: segmented controls for pickers, discrete-segmented sliders,
+ * Space Mono ALL CAPS labels.
  *
  * @param {HTMLElement} root - The controls container element
  * @param {object} [opts]
@@ -84,10 +94,10 @@ export class ControlsManager {
 
     // Container for each section
     const sections = [
-      { id: 'style-section',  title: 'Style',      render: () => this._renderStylePicker() },
-      { id: 'brush-section',  title: 'Brush',      render: () => this._renderBrushControls() },
-      { id: 'path-section',   title: 'Path Order', render: () => this._renderPathOrder() },
-      { id: 'color-section',  title: 'Color Mode', render: () => this._renderColorMode() },
+      { id: 'style-section',   title: 'STYLE',    render: () => this._renderStylePicker() },
+      { id: 'brush-section',   title: 'BRUSH',    render: () => this._renderBrushControls() },
+      { id: 'path-section',    title: 'PATH ORDER', render: () => this._renderPathOrder() },
+      { id: 'color-section',   title: 'COLOR',    render: () => this._renderColorMode() },
     ];
 
     for (const s of sections) {
@@ -116,7 +126,7 @@ export class ControlsManager {
     const generateBtn = document.createElement('button');
     generateBtn.className = 'btn btn--primary btn--generate';
     generateBtn.type = 'button';
-    generateBtn.textContent = 'Generate Painting';
+    generateBtn.textContent = 'GENERATE PAINTING';
     generateBtn.dataset.action = 'generate';
     genSection.appendChild(generateBtn);
 
@@ -124,31 +134,38 @@ export class ControlsManager {
   }
 
   /**
-   * Render the style picker with visual buttons.
+   * Render the style picker as a segmented control.
    * @returns {HTMLElement}
    */
   _renderStylePicker() {
     const wrapper = document.createElement('div');
-    wrapper.className = 'style-picker';
+    wrapper.className = 'style-segmented';
+
+    const segmented = document.createElement('div');
+    segmented.className = 'segmented-control';
+    segmented.setAttribute('role', 'radiogroup');
+    segmented.setAttribute('aria-label', 'Style');
 
     const styleList = getAllStyles();
-
     for (const { name, label, category, instance } of styleList) {
       const btn = document.createElement('button');
-      btn.className = 'style-btn';
+      btn.className = 'segmented-control__button style-segmented__button';
       btn.type = 'button';
       btn.dataset.style = name;
       btn.id = `style-${name}`;
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-label', label);
+
       // Safe: icon is from a fixed lookup table, label/category are style metadata strings
       btn.innerHTML = `
-        <span class="style-btn__icon">${this._getStyleIcon(name)}</span>
-        <span class="style-btn__label">${label}</span>
-        <span class="style-btn__category">${category}</span>
+        <span class="style-icon" aria-hidden="true">${this._getStyleIcon(name)}</span>
       `;
+
       this._inputs[`style-${name}`] = btn;
-      wrapper.appendChild(btn);
+      segmented.appendChild(btn);
     }
 
+    wrapper.appendChild(segmented);
     return wrapper;
   }
 
@@ -269,13 +286,14 @@ export class ControlsManager {
 
   /**
    * Render a single slider control with a value display.
+   * Nothing Design: discrete-segmented slider, Space Mono labels.
    * @param {object} spec
    * @returns {HTMLElement}
    */
   _renderSlider(spec) {
     const id = `ctrl-${spec.key}`;
     const container = document.createElement('div');
-    container.className = 'control-slider';
+    container.className = 'control-slider slider-container';
     container.dataset.key = spec.key;
 
     const label = document.createElement('label');
@@ -332,53 +350,66 @@ export class ControlsManager {
   }
 
   /**
-   * Render the path order selector.
+   * Render the path order selector as a segmented control.
    * @returns {HTMLElement}
    */
   _renderPathOrder() {
-    return this._renderSelect('pathOrder', 'path-order-select', PATH_ORDER_OPTIONS);
+    return this._renderSegmentedControl(
+      'pathOrder',
+      'path-order-segmented',
+      PATH_ORDER_OPTIONS
+    );
   }
 
   /**
-   * Render the color mode selector.
+   * Render the color mode selector as a segmented control.
    * @returns {HTMLElement}
    */
   _renderColorMode() {
-    return this._renderSelect('colorMode', 'color-mode-select', COLOR_MODE_OPTIONS);
+    return this._renderSegmentedControl(
+      'colorMode',
+      'color-mode-segmented',
+      COLOR_MODE_OPTIONS
+    );
   }
 
   /**
-   * Render a select dropdown.
+   * Render a segmented control from options.
    * @param {string} key
    * @param {string} cls
    * @param {Array<{value, label}>} options
    * @returns {HTMLElement}
    */
-  _renderSelect(key, cls, options) {
+  _renderSegmentedControl(key, cls, options) {
     const wrapper = document.createElement('div');
     wrapper.className = 'control-select';
 
-    const select = document.createElement('select');
-    select.id = `ctrl-${key}`;
-    select.className = cls;
-    select.dataset.key = key;
+    const segmented = document.createElement('div');
+    segmented.className = `segmented-control ${cls}`;
+    segmented.setAttribute('role', 'radiogroup');
+    segmented.setAttribute('aria-label', key);
 
     for (const opt of options) {
-      const option = document.createElement('option');
-      option.value = opt.value;
-      option.textContent = opt.label;
+      const btn = document.createElement('button');
+      btn.className = 'segmented-control__button';
+      btn.type = 'button';
+      btn.textContent = opt.label;
+      btn.dataset.value = opt.value;
+      btn.dataset.key = key;
+      btn.setAttribute('role', 'radio');
+
       if (opt.value === this.settings[key]) {
-        option.selected = true;
+        btn.classList.add('segmented-control__button--active');
+        btn.setAttribute('aria-checked', 'true');
+      } else {
+        btn.setAttribute('aria-checked', 'false');
       }
-      select.appendChild(option);
+
+      segmented.appendChild(btn);
     }
 
-    select.addEventListener('change', (e) => {
-      this._dispatchChange(key, e.target.value, { type: 'select' });
-    });
-
-    this._inputs[key] = { input: select, spec: { type: 'select', key } };
-    wrapper.appendChild(select);
+    this._inputs[key] = { segmented, key };
+    wrapper.appendChild(segmented);
     return wrapper;
   }
 
@@ -417,13 +448,39 @@ export class ControlsManager {
    * Bind event listeners.
    */
   _bindEvents() {
-    // Style selection
+    // Style selection (segmented control)
     this.root.addEventListener('click', (e) => {
-      const btn = e.target.closest('.style-btn');
-      if (!btn) return;
-      const styleName = btn.dataset.style;
-      if (styleName) {
-        this._selectStyle(styleName);
+      const btn = e.target.closest('.style-segmented__button');
+      if (btn) {
+        const styleName = btn.dataset.style;
+        if (styleName) {
+          this._selectStyle(styleName);
+        }
+      }
+
+      // Segmented control buttons
+      const segBtn = e.target.closest('.segmented-control__button');
+      if (segBtn && !segBtn.classList.contains('style-segmented__button')) {
+        const container = segBtn.parentElement;
+        const key = segBtn.dataset.key;
+        const value = segBtn.dataset.value;
+        if (key && value) {
+          // Update active state
+          container.querySelectorAll('.segmented-control__button').forEach(b => {
+            b.classList.remove('segmented-control__button--active');
+            b.setAttribute('aria-checked', 'false');
+          });
+          segBtn.classList.add('segmented-control__button--active');
+          segBtn.setAttribute('aria-checked', 'true');
+
+          // Update settings
+          this.settings[key] = value;
+
+          const event = new CustomEvent('settings-change', {
+            detail: { key, value, settings: { ...this.settings } },
+          });
+          this.root.dispatchEvent(event);
+        }
       }
     });
 
@@ -444,16 +501,13 @@ export class ControlsManager {
    * @param {string} name
    */
   _selectStyle(name) {
-    // Deselect all
-    for (const btn of Object.values(this._inputs).filter(i => i.input?.classList)) {
-      // style buttons
-    }
-    const allBtns = this.root.querySelectorAll('.style-btn');
-    allBtns.forEach(b => b.classList.remove('selected'));
+    // Deselect all style buttons
+    const allBtns = this.root.querySelectorAll('.style-segmented__button');
+    allBtns.forEach(b => b.classList.remove('segmented-control__button--active'));
 
     // Select the chosen one
     const target = this.root.querySelector(`[data-style="${name}"]`);
-    if (target) target.classList.add('selected');
+    if (target) target.classList.add('segmented-control__button--active');
 
     this.settings.style = name;
     const event = new CustomEvent('settings-change', {
@@ -471,7 +525,7 @@ export class ControlsManager {
   _syncToUI() {
     // Style
     const styleBtn = this.root.querySelector(`[data-style="${this.settings.style}"]`);
-    if (styleBtn) styleBtn.classList.add('selected');
+    if (styleBtn) styleBtn.classList.add('segmented-control__button--active');
 
     // Sliders
     if (this._inputs['strokeSizeMin']) {
@@ -511,12 +565,16 @@ export class ControlsManager {
       this._inputs['scatter'].valueSpan.textContent = this._formatSliderValue(this._inputs['scatter'].spec, this.settings.scatter || 0);
     }
 
-    // Selects
-    if (this._inputs['pathOrder']) {
-      this._inputs['pathOrder'].input.value = this.settings.pathOrder || DEFAULT_SETTINGS.pathOrder;
-    }
-    if (this._inputs['colorMode']) {
-      this._inputs['colorMode'].input.value = this.settings.colorMode || DEFAULT_SETTINGS.colorMode;
+    // Segmented selectors
+    for (const key of ['pathOrder', 'colorMode']) {
+      if (this._inputs[key]) {
+        const container = this._inputs[key].segmented;
+        const value = this.settings[key] || DEFAULT_SETTINGS[key];
+        container.querySelectorAll('.segmented-control__button').forEach(b => {
+          b.classList.toggle('segmented-control__button--active', b.dataset.value === value);
+          b.setAttribute('aria-checked', b.dataset.value === value ? 'true' : 'false');
+        });
+      }
     }
   }
 

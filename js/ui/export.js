@@ -2,11 +2,20 @@
  * Export Dialog — manages the export popup with PNG, JPG, HTML,
  * Save Project (JSON), and Load Project options.
  *
+ * Nothing Design System modal pattern:
+ * - Backdrop: rgba(0,0,0,0.8)
+ * - Dialog: --surface + 1px solid --border-visible + 16px radius
+ * - Space Mono ALL CAPS labels
+ * - Pill buttons
+ *
  * @module export
  */
 
 /**
  * ExportManager — manages the export dialog UI.
+ *
+ * Nothing Design: modal dialog with --surface background, border separation,
+ * Space Mono labels, pill buttons.
  *
  * @param {HTMLElement} root - Container element (typically a dialog or popover)
  */
@@ -45,49 +54,52 @@ export class ExportManager {
 
     const overlay = document.createElement('div');
     overlay.className = 'export-dialog__overlay';
+    overlay.setAttribute('role', 'presentation');
 
     const dialog = document.createElement('div');
     dialog.className = 'export-dialog__content';
+    dialog.setAttribute('aria-labelledby', 'export-title');
+    dialog.setAttribute('aria-modal', 'true');
 
     // Header
     const header = document.createElement('div');
     header.className = 'export-dialog__header';
+    // Safe: uses static label strings, no user input
     header.innerHTML = `
-      <h2 class="export-dialog__title">Export</h2>
-      <button type="button" class="btn btn--icon btn--sm" data-action="close">
-        <span class="btn-icon">✕</span>
+      <h2 class="export-dialog__title" id="export-title">Export</h2>
+      <button type="button" class="btn btn--icon btn--sm" data-action="close" aria-label="Close">
+        <span class="btn-icon" aria-hidden="true">✕</span>
       </button>
     `;
 
     // Body
     const body = document.createElement('div');
     body.className = 'export-dialog__body';
-    // Safe: template uses fixed option values from COLOR_MODE_OPTIONS and static labels
     body.innerHTML = `
       <div class="export-form">
         <div class="export-form__row">
-          <label class="form-label">Width</label>
-          <input type="number" class="form-input" data-export="width" min="100" placeholder="Auto" />
+          <label class="form-label" for="export-width">Width</label>
+          <input type="number" id="export-width" class="form-input" data-export="width" min="100" placeholder="Auto" />
         </div>
         <div class="export-form__row">
-          <label class="form-label">Height</label>
-          <input type="number" class="form-input" data-export="height" min="100" placeholder="Auto" />
+          <label class="form-label" for="export-height">Height</label>
+          <input type="number" id="export-height" class="form-input" data-export="height" min="100" placeholder="Auto" />
         </div>
         <div class="export-form__row">
-          <label class="form-label">Format</label>
-          <select class="form-select" data-export="format">
+          <label class="form-label" for="export-format">Format</label>
+          <select id="export-format" class="form-select" data-export="format">
             <option value="png">PNG</option>
             <option value="jpg">JPG</option>
           </select>
         </div>
         <div class="export-form__row">
-          <label class="form-label">Quality</label>
-          <input type="range" class="form-range" data-export="quality" min="0.1" max="1" step="0.05" value="0.92" />
+          <label class="form-label" for="export-quality">Quality</label>
+          <input type="range" id="export-quality" class="form-range" data-export="quality" min="0.1" max="1" step="0.05" value="0.92" />
           <span class="form-value" data-for="quality">92%</span>
         </div>
         <div class="export-form__row">
-          <label class="form-label">Background</label>
-          <input type="color" class="form-color" data-export="background" value="#ffffff" />
+          <label class="form-label" for="export-background">Background</label>
+          <input type="color" id="export-background" class="form-color" data-export="background" value="#ffffff" />
         </div>
       </div>
 
@@ -112,7 +124,7 @@ export class ExportManager {
           Load Project
         </button>
         <input type="file" class="file-input" data-action="load-project-file"
-               accept=".json,application/json" style="display: none;" />
+               accept=".json,application/json" style="display: none;" aria-label="Load project file" />
       </div>
     `;
 
@@ -190,7 +202,7 @@ export class ExportManager {
     const actions = {
       'export-image': () => this._emit('export-image', { ...this.options }),
       'export-html':   () => this._emit('export-html',   { ...this.options }),
-      'save-project':   () => this._emit('save-project',   { ...this.options }),
+      'save-project':   () => this._emit('save-project',  { ...this.options }),
       'load-project':   () => this._emit('load-project',  { ...this.options }),
     };
 
@@ -267,10 +279,15 @@ export class ExportManager {
     if (opts.background) this.root.querySelector('[data-export="background"]').value = opts.background;
 
     this._collectOptions();
+    this._updateQualityDisplay();
 
     // Show dialog immediately (aria-hidden false = accessible)
     this.root.setAttribute('aria-hidden', 'false');
     this.root.classList.add('export-dialog--open');
+
+    // Focus the dialog
+    const firstInput = this.root.querySelector('[data-export="width"]');
+    if (firstInput) firstInput.focus();
   }
 
   /**

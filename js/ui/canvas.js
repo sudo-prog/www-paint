@@ -2,6 +2,9 @@
  * Canvas Manager — manages the main painting canvas, OffscreenCanvas
  * rendering loop, and progressive reveal animation.
  *
+ * Nothing Design System: canvas container uses --black background,
+ * drop zone border uses --border-visible (dashed when active).
+ *
  * Responsibilities:
  * - Wraps a canvas element and its 2D context
  * - Provides a render loop (requestAnimationFrame) for progressive animation
@@ -16,10 +19,13 @@ import { Renderer, createRenderer } from '../../engine/renderer.js';
 /**
  * CanvasManager — owns the visible canvas and orchestrates rendering.
  *
+ * Nothing Design: background from CSS --black token, no shadows,
+ * flat surfaces with border separation.
+ *
  * @param {HTMLCanvasElement} canvas
  * @param {object} [opts]
  * @param {number} [opts.dpr=1] - Device pixel ratio
- * @param {string} [opts.background='#0f0f14']
+ * @param {string} [opts.background=#000000]
  */
 export class CanvasManager {
   /**
@@ -36,7 +42,9 @@ export class CanvasManager {
     /** @type {number} */
     this.dpr = opts.dpr || window.devicePixelRatio || 1;
     /** @type {string} */
-    this.background = opts.background || '#0f0f14';
+    // Nothing Design: resolve background from CSS token at runtime
+    this.background = opts.background ||
+      (getComputedStyle(document.documentElement).getPropertyValue('--black').trim() || '#000000');
 
     /** @type {Renderer} */
     this.renderer = createRenderer(canvas, {
@@ -96,6 +104,7 @@ export class CanvasManager {
 
   /**
    * Set the background color and clear the canvas.
+   * Nothing Design: background is --black (OLED) by default.
    * @param {string} color - CSS color string
    */
   setBackground(color) {
@@ -261,6 +270,9 @@ export class CanvasManager {
 
   /**
    * Handle canvas drag-and-drop events.
+   *
+   * Nothing Design: drop zone uses border separation (1px dashed --border-visible),
+   * brightens on drag-over. No shadows, flat surfaces.
    *
    * @param {HTMLElement} dropZone - Element to attach drop handlers to
    * @param {function(File)} onFile - Called with each dropped file
