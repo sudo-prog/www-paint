@@ -4,11 +4,11 @@
  * Implements two complementary watercolor effects, faithful to Code Painter:
  *
  *   A. Wet washes (for filled shapes E/B/T/R): Tyler Hobbs' layered wash.
- *      A fractal-edged outline (from hobbsGrow) is stacked in 8 transparent
+ *      A fractal-edged outline (from hobbsGrow) is stacked in 12 transparent
  *      layers, each edge darkening where they pile up. Granulation is
  *      simulated by lifting pigment in soft circles (destination-out), and
- *      a wet bead of pigment sits at the edge. Overlapping washes darken
- *      via multiply composite.
+ *      a wet bead of pigment sits at the rim (darker where paint pools).
+ *      Overlapping washes darken via multiply composite.
  *
  *      hobbsGrow: every edge gets a midpoint pushed sideways by a gaussian
  *      amount, recursively — fraying the outline into a natural fractal edge.
@@ -34,18 +34,20 @@ const WET_TILE = { cv: null, x: null };
 export class WatercolorStyle {
   name = 'watercolor';
   category = 'paint';
-  description = 'Transparent glazes that wander, fractal-edged outlines from stacked washes, granulation, and a wet bead of pigment at the tip.';
+  description = 'Transparent glazes that wander, fractal-edged outlines from stacked washes, granulation, and a wet bead of pigment at the tip and rim.';
 
   defaults = {
     strokeSize: { min: 3, max: 20 },
-    layers: 8,         // number of stacked transparent washes (area)
-    sigma: 0.115,      // hobbsGrow displacement amount
-    glazeAlpha: 0.14,  // alpha per glaze layer
-    tideDarken: 0.32,  // tide line darken factor
-    granulation: 0.22, // granulation opacity
-    beadSize: 0.55,    // wet bead radius factor
-    strokeLayers: 4,   // glaze passes for stroke rendering
-    dryRun: false      // skip WebGL-style tile compositing for simplicity
+    layers: 12,          // number of stacked transparent washes (area) — was 8
+    sigma: 0.135,        // hobbsGrow displacement amount — increased from 0.115
+    glazeAlpha: 0.12,    // alpha per glaze layer — more transparent
+    tideDarken: 0.32,    // tide line darken factor
+    granulation: 0.18,   // granulation opacity — toned down for subtlety
+    granulationCount: 120, // number of granulation speckles per wash
+    beadSize: 0.55,      // wet bead radius factor (tip)
+    rimBeadDarken: 0.45, // wet bead darkening at rim (edge pooling)
+    strokeLayers: 4,     // glaze passes for stroke rendering
+    dryRun: false,       // skip WebGL-style tile compositing for simplicity
   };
 
   generate(analyzer, params) {
@@ -142,7 +144,7 @@ export class WatercolorStyle {
     ctx.fillStyle = shade(c0, -0.35);
     ctx.beginPath();
     const len = P.length;
-    const dots = Math.min(220, Math.round(w * len * 0.25));
+    const dots = Math.min(this.defaults.granulationCount, Math.round(w * len * 0.25));
     const d = Math.max(0.45, w * 0.025);
     for (let i = 0; i < dots; i++) {
       const p = P[Math.floor(R() * len)];
@@ -175,6 +177,9 @@ export class WatercolorStyle {
    * Watercolor wash (for filled shapes): stacked transparent layers with
    * fractal (hobbsGrow) edges, granulation, and multiply glaze.
    * Faithful to Code Painter's `wet` style.
+   *
+   * Key upgrade: 12 layers (was 8) with more transparent alpha, plus a
+   * wet bead at the rim where paint pools.
    */
   _renderWash(ctx, shape, R) {
     const [c0, c1, o] = colsOf(shape);
@@ -183,7 +188,7 @@ export class WatercolorStyle {
     const sig = this.defaults.sigma;
     const layers = this.defaults.layers;
 
-    // Build fractal-edged layer outlines once (cached conceptually)
+    // Build fractal-edged layer outlines
     const geo = this._buildWashGeometry(shape, a, R, sig, layers);
     const { paths, x0, y0, x1, y1 } = geo;
     const size = Math.max(x1 - x0, y1 - y0, 2);
@@ -198,7 +203,7 @@ export class WatercolorStyle {
 
     const G = gradOf(t, shape, [[0, c0], [1, c1]]);
     for (let i = 0; i < paths.length; i++) {
-      t.globalAlpha = o * 0.14;
+      t.globalAlpha = o * this.defaults.glazeAlpha;
       t.fillStyle = G;
       t.fill(paths[i]);
       t.globalAlpha = o * 0.11;
@@ -207,9 +212,9 @@ export class WatercolorStyle {
       t.stroke(paths[i]); // edges pile up darker
     }
 
-    // Granulation: lift pigment in soft circles
+    // Granulation: lift pigment in soft circles (subtle noise in the paint)
     t.globalCompositeOperation = 'destination-out';
-    const cnt = Math.min(90, 30 + Math.round(size * 0.2));
+    const cnt = Math.min(this.defaults.granulationCount, 30 + Math.round(size * 0.2));
     const cx = (x0 + x1) / 2;
     const cy = (y0 + y1) / 2;
     for (let i = 0; i < cnt; i++) {
@@ -221,12 +226,12 @@ export class WatercolorStyle {
       t.fill();
     }
 
-    // Dark grains
+    // Dark granulation grains
     t.globalCompositeOperation = 'source-atop';
     t.fillStyle = shade(c0, -0.45);
     t.globalAlpha = o * 0.25;
     t.beginPath();
-    const g = Math.min(110, Math.round(size * 0.5));
+    const g = Math.min(this.defaults.granulationCount * 2, Math.round(size * 0.5));
     for (let i = 0; i < g; i++) {
       const gx = x0 + R() * (x1 - x0);
       const gy = y0 + R() * (y1 - y0);
@@ -235,6 +240,17 @@ export class WatercolorStyle {
       t.arc(gx, gy, r, 0, 7);
     }
     t.fill();
+
+    // Wet bead at the rim: darker where paint pools at the edge
+    t.globalCompositeOperation = 'source-atop';
+    const rimGrad = t.createRadialGradient(cx, cy, size * 0.45, cx, cy, size * 0.55);
+    rimGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    rimGrad.addColorStop(0.7, rgbaOf(shade2(mid, -0.3), this.defaults.rimBeadDarken * o));
+    rimGrad.addColorStop(1, rgbaOf(shade2(c0, -0.4), this.defaults.rimBeadDarken * o));
+    t.fillStyle = rimGrad;
+    t.globalAlpha = o * this.defaults.rimBeadDarken * 0.4;
+    const lastPath = paths[paths.length - 1];
+    t.fill(lastPath);
     t.globalCompositeOperation = 'source-over';
     t.globalAlpha = 1;
 
@@ -251,7 +267,10 @@ export class WatercolorStyle {
     tile.ctx = null;
   }
 
-  /** Build the fractal-edged layer paths via hobbsGrow */
+  /**
+   * Build the fractal-edged layer paths via hobbsGrow.
+   * More iterations = more frayed, natural edges.
+   */
   _buildWashGeometry(shape, a, R, sig, layers) {
     const P = shapePoly(shape);
     const n = P.length / 2;
@@ -260,13 +279,15 @@ export class WatercolorStyle {
     for (let i = 0; i < n; i += stepI) {
       base.push([P[i * 2], P[i * 2 + 1], 0.6 + R() * 0.8]);
     }
-    base = hobbsGrow(hobbsGrow(base, R, sig), R, sig * 0.8);
+    // Apply hobbsGrow with multiple iterations for more edge detail
+    base = hobbsGrow(hobbsGrow(hobbsGrow(base, R, sig), R, sig * 0.85), R, sig * 0.7);
 
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     const paths = [];
     for (let i = 0; i < layers; i++) {
       let p = base;
-      for (let k = 0; k < 2; k++) p = hobbsGrow(p, R, sig * 0.62 * Math.pow(0.85, k));
+      // Each layer gets additional growth iterations for increasing fray
+      for (let k = 0; k < 3; k++) p = hobbsGrow(p, R, sig * 0.62 * Math.pow(0.82, k));
       const pa = new Path2D();
       p.forEach((v, j) => {
         pa[j ? 'lineTo' : 'moveTo'](v[0], v[1]);
@@ -343,7 +364,6 @@ export class WatercolorStyle {
     path.closePath();
     return path;
   }
-
 }
 
 export default WatercolorStyle;

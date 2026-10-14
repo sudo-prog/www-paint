@@ -1,28 +1,29 @@
 /**
- * pencil.js — Pencil/Graphite style.
+ * pencil.js — Pencil / Graphite style.
  *
  * Algorithm: stamped brush (p5.brush-inspired, rewritten for canvas).
  * A path is walked in small steps; at each step a circular "stamp" (tip) is
- * stamped onto the canvas. Three effects combine to produce the look:
+ * stamped onto the canvas. Four effects combine to produce the look:
  *
  *   1. Pressure profile: light → firm → light along the stroke. The stamp
  *      radius follows a logistic curve:  pmin + (pmax - pmin) / (1 + |t-peak|^(2c))
- *      so the line swells in the middle and tapers at each end.
+ *      so the line swells in the middle and tapers at each ends.
  *
  *   2. Grain: a fraction of stamps are skipped entirely, breaking the line
- *      up like pencil/graphite on paper. The skip probability increases as
- *      the stamp is smaller (lighter pressure).
+ *      up like pencil/graphite on paper. The skip probability *increases* as
+ *      the stamp radius gets smaller (lighter pressure = more grain), since
+ *      a light touch deposits less graphite and skips more.
  *
  *   3. Scatter: stamps drift sideways off the centreline by a gaussian,
- *      and the step itself is advanced/retreated slightly, giving the
- *      hand-drawn jitter.
+ *      and the step position itself is jittered, giving the hand-drawn feel.
  *
- * Two passes are laid down: a firmer main pass, then a lighter pass offset
- * to one side at ~50% alpha — mimicking the double-tracked look of a real
- * pencil dragged across paper grain.
+ *   4. Two-pass rendering: a firmer main pass, then a lighter pass offset
+ *      to one side at ~50% alpha — mimicking the double-tracked look of a
+ *      real pencil dragged across paper grain.
  *
- * For filled shapes (E/B/T/R) the pencil uses close parallel hatching strokes
- * at a slightly random angle, the classic coloured-pencil shading technique.
+ * For filled shapes (E/B/T/R) the pencil uses close parallel hatching
+ * strokes at a slightly random angle — the classic coloured-pencil shading
+ * technique.
  *
  * Reference: RE_BREAKDOWN.md §4.2 B (stamped brush), §8.1 (pressure profile)
  */
@@ -39,16 +40,19 @@ export class PencilStyle {
 
   defaults = {
     strokeSize: { min: 0.8, max: 4.5 },
-    spacing: 0.3,       // stamp spacing as a fraction of brush width
-    scatter: 0.55,      // sideways drift of stamps (0 = clean line)
-    sharp: 0.4,         // stamp-shape sharpness (affects scatter)
-    grain: 0.3,         // fraction of stamps skipped (0 = solid, 0.5 = very broken)
+    spacing: 0.3,        // stamp spacing as a fraction of brush width
+    scatter: 0.55,       // sideways drift of stamps (0 = clean line)
+    sharp: 0.4,          // stamp-shape sharpness (affects scatter)
+    grain: 0.3,          // fraction of stamps skipped (0 = solid, 0.5 = very broken)
     pressure: { min: 0.55, max: 1.1, peak: 0.4 },  // pressure profile
-    peakJitter: 0.2,    // random shift of the pressure peak
-    hwJitter: 0.3,      // random shift of the pressure half-width
+    peakJitter: 0.2,     // random shift of the pressure peak
+    hwJitter: 0.3,       // random shift of the pressure half-width
     secondPassAlpha: 0.5,
+    secondPassScatter: 0.9,
     minStep: 0.5,
-    maxSteps: 200
+    maxSteps: 200,
+    hatchGap: 1.7,       // gap between hatching strokes (times stroke width)
+    hatchJitter: 0.15,   // random jitter in hatching position
   };
 
   /**
@@ -93,7 +97,7 @@ export class PencilStyle {
     const strokes = [];
     const size = Math.max(region.w, region.h);
     const w = lerp(this.defaults.strokeSize.min * 0.6, this.defaults.strokeSize.max * 0.8, Math.random());
-    const gap = w * 1.7;
+    const gap = w * this.defaults.hatchGap;
     const half = size * 0.75;
     const ang = -0.95 + (Math.random() - 0.5) * 0.3;
     const cs = Math.cos(ang);
@@ -101,7 +105,7 @@ export class PencilStyle {
     const rot = (px, py) => [region.cx + px * cs - py * sn, region.cy + px * sn + py * cs];
 
     for (let y = -half; y <= half; y += gap * (0.85 + Math.random() * 0.3)) {
-      const j = (Math.random() - 0.5) * gap * 0.4;
+      const j = (Math.random() - 0.5) * gap * this.defaults.hatchJitter;
       const p0 = rot(-half + Math.random() * size * 0.15, y + j);
       const mid = rot(0, y);
       const p1 = rot(half - Math.random() * size * 0.15, y - j);
@@ -148,26 +152,29 @@ export class PencilStyle {
     const set1 = this._stampBuild(P, pen1, R);
 
     // Pass 2: lighter, offset to one side, more scatter — the double-track
+    // Use seeded R for side decision so it's deterministic per-shape
     const side = w * 0.5 * (R() < 0.5 ? 1 : -1);
     const P2 = offsetPts(P, side);
     const pen2 = {
-      w: w * 0.7, spacing: 0.3, scatter: 0.9, sharp: 0.4, grain: 0.5,
-      pmin: 0.55, pmax: 1.1, peak: 0.4, hw: 0.5, alpha: a[a.length - 1] * 0.5,
+      w: w * 0.7, spacing: 0.3, scatter: this.defaults.secondPassScatter, sharp: 0.4, grain: 0.5,
+      pmin: 0.55, pmax: 1.1, peak: 0.4, hw: 0.5, alpha: a[a.length - 1] * this.defaults.secondPassAlpha,
       salt: 2, upto: progress, maxSteps: 200
     };
     const set2 = this._stampBuild(P2, pen2, R);
 
-    const fillStr = this._colorStr(fill);
+    const fillStr = typeof fill === 'string' ? fill : '#000000';
 
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';
     ctx.fillStyle = fillStr;
 
+    // Pass 1: firm stamps (main stroke)
     ctx.globalAlpha = Math.min(1, set1.base);
     ctx.fill(set1.A);
     ctx.globalAlpha = Math.min(1, set1.base * 0.5);
     ctx.fill(set1.B);
 
+    // Pass 2: lighter offset stamps (double-track effect)
     ctx.globalAlpha = Math.min(1, set2.base);
     ctx.fill(set2.A);
     ctx.globalAlpha = Math.min(1, set2.base * 0.5);
@@ -179,11 +186,12 @@ export class PencilStyle {
   /**
    * Core stamped-brush builder.
    * Walks `lines` (array of polylines), stamps tips with pressure + grain +
-   * scatter. Returns { A, B, base } where A is the main stamped path, B the
+   * scatter. Returns { A, B, st, base } where A is the main stamped path, B the
    * secondary (scatter) path, and base is the base alpha.
    * Mirrors Code Painter's stampBuild.
    */
   _stampBuild(lines, o, R) {
+    // Derive a per-brush seed from the pen parameters for deterministic jitter
     const seed0 = o.args ? o.args.slice(0, 6).map(v => (v || 0) + o.salt * 0.5) : [o.salt || 1, 0, 0, 0, 0, 0];
     const rnd = rngFor(seed0);
     const A = new Path2D();
@@ -219,7 +227,7 @@ export class PencilStyle {
         // Pressure: logistic swell (light-firm-light)
         const pr = o.pmin + (o.pmax - o.pmin) / (1 + Math.pow(Math.abs((t - peak) / hw), 2 * c));
 
-        // Grain: skip stamps — more likely when pressure is light
+        // Grain: skip stamps — more likely when pressure is light (smaller stamp)
         if (R() < o.grain * (0.62 - 0.4 * Math.min(1, pr))) continue;
 
         // Scatter: sideways drift + step jitter
@@ -256,7 +264,7 @@ export class PencilStyle {
     const sn = Math.sin(ang);
     const rot = (px, py) => [b.cx + px * cs - py * sn, b.cy + px * sn + py * cs];
     const fill = a[6];
-    const fillStr = this._colorStr(fill);
+    const fillStr = typeof fill === 'string' ? fill : '#000000';
 
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';
@@ -287,14 +295,6 @@ export class PencilStyle {
       }
     }
     ctx.restore();
-  }
-
-  // Convert a color (hex string or [r,g,b]) to a '#rrggbb' string
-  _colorStr(c) {
-    if (Array.isArray(c)) {
-      return '#' + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
-    }
-    return c;
   }
 }
 
