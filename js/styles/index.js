@@ -20,16 +20,32 @@ import WatercolorStyle from './watercolor.js';
 import OilStyle from './oil.js';
 import GraffitiStyle from './graffiti.js';
 import GraphicStyle from './graphic.js';
+import CharcoalStyle from './charcoal.js';
+import MarkerStyle from './marker.js';
+import CalligraphyStyle from './calligraphy.js';
+import CrossHatchStyle from './cross-hatch.js';
+import MosaicStyle from './mosaic.js';
+import ScribbleStyle from './scribble.js';
+import HalftoneStyle from './halftone.js';
+import StringStyle from './string.js';
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
 const registry = {
-  pencil:  { class: PencilStyle,  category: 'draw',    label: 'Pencil / Graphite' },
-  ink:     { class: InkStyle,     category: 'paint',   label: 'Ink Brush' },
-  watercolor: { class: WatercolorStyle, category: 'paint', label: 'Watercolor' },
-  oil:     { class: OilStyle,     category: 'paint',   label: 'Oil / Acrylic' },
-  graffiti: { class: GraffitiStyle, category: 'paint', label: 'Graffiti / Spray' },
-  graphic: { class: GraphicStyle, category: 'graphic', label: 'Flat Graphic' }
+  pencil:       { class: PencilStyle,      category: 'draw',    label: 'Pencil / Graphite' },
+  ink:          { class: InkStyle,         category: 'paint',   label: 'Ink Brush' },
+  watercolor:   { class: WatercolorStyle,  category: 'paint',   label: 'Watercolor' },
+  oil:          { class: OilStyle,         category: 'paint',   label: 'Oil / Acrylic' },
+  graffiti:     { class: GraffitiStyle,    category: 'paint',   label: 'Graffiti / Spray' },
+  graphic:      { class: GraphicStyle,     category: 'graphic', label: 'Flat Graphic' },
+  charcoal:     { class: CharcoalStyle,    category: 'draw',    label: 'Charcoal' },
+  marker:       { class: MarkerStyle,      category: 'draw',    label: 'Alcohol Marker' },
+  calligraphy:  { class: CalligraphyStyle, category: 'draw',    label: 'Calligraphy' },
+  'cross-hatch': { class: CrossHatchStyle, category: 'draw',    label: 'Cross-hatch' },
+  mosaic:       { class: MosaicStyle,      category: 'graphic', label: 'Mosaic' },
+  scribble:     { class: ScribbleStyle,    category: 'graphic', label: 'Scribble' },
+  halftone:     { class: HalftoneStyle,    category: 'graphic', label: 'Halftone' },
+  string:       { class: StringStyle,      category: 'craft',   label: 'String Art' }
 };
 
 // Ordered list for UI / iteration
@@ -91,6 +107,10 @@ export function registerStyle(name, styleClass, category, label) {
 }
 
 // Re-export all style classes for direct import
-export { PencilStyle, InkStyle, WatercolorStyle, OilStyle, GraffitiStyle, GraphicStyle };
+export {
+  PencilStyle, InkStyle, WatercolorStyle, OilStyle, GraffitiStyle, GraphicStyle,
+  CharcoalStyle, MarkerStyle, CalligraphyStyle, CrossHatchStyle,
+  MosaicStyle, ScribbleStyle, HalftoneStyle, StringStyle
+};
 
 export default { getStyle, getAllStyles, getStylesByCategory, getStyleInfo, registerStyle };
