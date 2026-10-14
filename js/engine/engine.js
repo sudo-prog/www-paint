@@ -18,7 +18,7 @@ import {
   orderShapes,
   DEFAULT_SETTINGS,
 } from './generator.js';
-import { selectBest, selectGreedyResidual } from './scorer.js';
+import { selectBest, selectGreedyResidual, selectWithResidual, ResidualMap } from './scorer.js';
 import { Renderer, createRenderer } from './renderer.js';
 import {
   exportImage,
@@ -78,7 +78,7 @@ export class PaintingEngine {
     const styles = getAllStyles();
     this._styleList = styles.map(s => s.name);
     for (const { name, instance } of styles) {
-      // The renderer expects a module with a `draw(ctx, shape, progress)` method.
+      // The renderer expects a module with a ` draw(ctx, shape, progress)` method.
       // Style classes have `render(ctx, shape, progress)` — adapt it.
       this.renderer.registerStyle(name, {
         draw: (ctx, shape, progress) => instance.render(ctx, shape, progress),
@@ -267,17 +267,25 @@ export class PaintingEngine {
   /**
    * Generate stroke candidates and select the best ones.
    *
+   * When `opts.useResidual` is true (or `settings.useResidual === true`),
+   * the engine uses a {@link ResidualMap} to track painting progress and
+   * scores candidates against the residual error.  This produces better
+   * coverage but is slower.
+   *
    * @param {object} opts
    * @param {string} [opts.style]
    * @param {number} [opts.count]
    * @param {number} [opts.layer]
-   * @param {boolean} [opts.useGreedy]
+   * @param {boolean} [opts.useGreedy] - Use greedy residual selection.
+   * @param {boolean} [opts.useResidual] - Use true residual map selection.
+   * @param {boolean} [opts.useWorker] - Override worker usage for this call.
    * @returns {Promise<Array<object>>} Selected shape objects.
    */
   async generate(opts = {}) {
     const style = opts.style || this.settings.style || 'pencil';
     const count = opts.count || this.settings.strokeCount || 1000;
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
+    const useResidual = opts.useResidual || this.settings.useResidual || false;
 
     // Update settings
     if (opts.style) this.settings.style = style;
@@ -291,18 +299,25 @@ export class PaintingEngine {
     const seed = this._seed;
 
     let selected;
-    if (this.useWorker && this._worker) {
-      selected = await this._generateInWorker(resolved, seed, count, layerIdx);
+    if (opts.useWorker === true && this._worker) {
+      selected = await this._generateInWorker(resolved, seed, count, layerIdx, opts);
     } else {
       // Main-thread path
       const candidates = generateCandidates(this._analysis, resolved, seed);
-      selected = opts.useGreedy
-        ? selectGreedyResidual(candidates, this._analysis, count)
-        : selectBest(candidates, this._analysis, count);
+      if (useResidual) {
+        selected = selectWithResidual(candidates, this._analysis, count, {
+          residualWeight: 0.6,
+          minResidual: 0.02,
+        });
+      } else if (opts.useGreedy) {
+        selected = selectGreedyResidual(candidates, this._analysis, count);
+      } else {
+        selected = selectBest(candidates, this._analysis, count);
+      }
     }
 
-    // Apply ordering
-    selected = orderShapes(selected, resolved);
+    // Apply ordering (pass analysis for edges-first mode)
+    selected = orderShapes(selected, resolved, this._analysis);
 
     // Assign to layer
     const layer = this.getLayer(layerIdx);
@@ -316,7 +331,7 @@ export class PaintingEngine {
     return selected;
   }
 
-  _generateInWorker(settings, seed, count, layerIdx) {
+  _generateInWorker(settings, seed, count, layerIdx, opts) {
     return new Promise((resolve, reject) => {
       const id = ++this._pendingWorkerId;
       const batch = [];
@@ -329,9 +344,9 @@ export class PaintingEngine {
           batch.push(...msg.batch);
         } else if (msg.type === 'complete') {
           this._worker.removeEventListener('message', handler);
-          // Post-process: order shapes
+          // Post-process: order shapes (pass analysis for path ordering)
           const resolved = resolveSettings(settings);
-          const ordered = orderShapes(batch, resolved);
+          const ordered = orderShapes(batch, resolved, this._analysis);
           const layer = this.getLayer(layerIdx);
           if (layer) {
             layer.strokes = ordered.map(s => ({ ...s, layer: layerIdx }));
@@ -351,7 +366,7 @@ export class PaintingEngine {
         w: this.width,
         h: this.height,
         imageData: this._imageData,
-        settings: { ...settings, strokeCount: count, seed },
+        settings: { ...settings, strokeCount: count, seed, useResidual: opts.useResidual },
         seed,
       });
     });

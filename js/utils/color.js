@@ -100,7 +100,7 @@ export function brightness([r, g, b]) {
 
 /**
  * Compute the chroma distance between two RGB colors.
- * A simple Euclidean metric; good enough for scoring.
+ * A simple Euclidean metric; good enough for quick comparisons.
  *
  * @param {[number, number, number]} a
  * @param {[number, number, number]} b
@@ -112,6 +112,132 @@ export function colorDistance(a, b) {
   const db = a[2] - b[2];
   return Math.sqrt(dr * dr + dg * dg + db * db);
 }
+
+/**
+ * Weighted Euclidean distance in RGB space that accounts for human
+ * perception (red is more sensitive, blue less so).
+ *
+ * @param {[number, number, number]} a
+ * @param {[number, number, number]} b
+ * @returns {number} Distance in 0..~441.
+ */
+export function colorDistanceWeighted(a, b) {
+  const rmean = (a[0] + b[0]) / 2;
+  const dr = a[0] - b[0];
+  const dg = a[1] - b[1];
+  const db = a[2] - b[2];
+  const rweight = 2 + rmean / 256;
+  const gweight = 4;
+  const bweight = 2 + (512 - rmean) / 256;
+  return Math.sqrt(rweight * dr * dr + gweight * dg * dg + bweight * db * db);
+}
+
+// ─── CIELAB ───────────────────────────────────────────────────────────────
+
+/**
+ * Convert an sRGB channel [0, 255] to linear RGB [0, 1].
+ * @param {number} c
+ * @returns {number}
+ */
+function srgbToLinear(c) {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+}
+
+/**
+ * Convert linear RGB [0, 1] channel to sRGB [0, 255].
+ * @param {number} v
+ * @returns {number}
+ */
+function linearToSrgb(v) {
+  const s = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  return Math.round(s * 255);
+}
+
+/**
+ * Convert RGB [r, g, b] (0..255) to CIELAB [L, a, b].
+ *
+ * L: 0..100, a: -128..127, b: -128..127
+ * Uses D65 white point and standard sRGB→linear→Lab conversion.
+ *
+ * @param {[number, number, number]} rgb
+ * @returns {[number, number, number]} Lab values.
+ */
+export function rgbToLab([r, g, b]) {
+  // sRGB to linear RGB
+  const R = srgbToLinear(r);
+  const G = srgbToLinear(g);
+  const B = srgbToLinear(b);
+
+  // Linear RGB to XYZ (D65)
+  const X = R * 0.4124564 + G * 0.3575761 + B * 0.1804375;
+  const Y = R * 0.2126729 + G * 0.7151522 + B * 0.0721750;
+  const Z = R * 0.0193339 + G * 0.1191920 + B * 0.9503041;
+
+  // Normalise to D65 white point
+  const Xn = X / 0.95047;
+  const Yn = Y / 1.00000;
+  const Zn = Z / 1.08883;
+
+  // XYZ to Lab
+  const fx = Math.cbrt(Xn) || 0;
+  const fy = Math.cbrt(Yn) || 0;
+  const fz = Math.cbrt(Zn) || 0;
+
+  const L = Y > 0.008856 ? 116 * fy - 16 : 903.3 * Y;
+  const a = 500 * (fx - fy);
+  const b_lab = 200 * (fy - fz);
+
+  return [L, a, b_lab];
+}
+
+/**
+ * Convert CIELAB [L, a, b] back to RGB [r, g, b] (0..255).
+ *
+ * @param {[number, number, number]} lab
+ * @returns {[number, number, number]}
+ */
+export function labToRgb([L, a, b]) {
+  // Lab to XYZ
+  const fy = (L + 16) / 116;
+  const fx = a / 500 + fy;
+  const fz = fy - b / 200;
+
+  const xr = Math.pow(fx, 3);
+  const zr = Math.pow(fz, 3);
+  const yr = L > 903.3 ? L / 903.3 : Math.pow((L + 16) / 116, 3) * 1.2;
+
+  const X = xr * 0.95047;
+  const Y = yr * 1.00000;
+  const Z = zr * 1.08883;
+
+  // XYZ to linear RGB
+  const R = X * 3.2404542 + Y * -1.5371385 + Z * -0.4985026;
+  const G = X * -0.9692660 + Y * 1.8760108 + Z * 0.0414196;
+  const B = X * 0.0556434 + Y * -0.2040258 + Z * 1.0572252;
+
+  // Linear to sRGB
+  return [linearToSrgb(R), linearToSrgb(G), linearToSrgb(B)];
+}
+
+/**
+ * Compute the CIE76 colour difference ΔE between two RGB colours.
+ * Lower values = more perceptually similar.
+ *
+ * @param {[number, number, number]} rgbA
+ * @param {[number, number, number]} rgbB
+ * @returns {number} ΔE (0..~100 for colours within sRGB gamut).
+ */
+export function colorDistanceLab(rgbA, rgbB) {
+  const labA = Array.isArray(rgbA[0]) ? rgbA : rgbToLab(rgbA);
+  const labB = Array.isArray(rgbB[0]) ? rgbB : rgbToLab(rgbB);
+  const dL = labA[0] - labB[0];
+  const da = labA[1] - labB[1];
+  const db = labA[2] - labB[2];
+  return Math.sqrt(dL * dL + da * da + db * db);
+}
+
+// ─── Quantisation ───────────────────────────────────────────────────────────
 
 /**
  * Quantize a single RGB channel to the given number of levels.
@@ -288,3 +414,24 @@ export function hslToRgb(h, s, l) {
     Math.round(hue2rgb(p, q, t - 1 / 3) * 255),
   ];
 }
+
+export default {
+  hexToRgb,
+  rgbToHex,
+  rgbToCss,
+  hexToCss,
+  mixColors,
+  luminance,
+  brightness,
+  colorDistance,
+  colorDistanceWeighted,
+  rgbToLab,
+  labToRgb,
+  colorDistanceLab,
+  quantizeColor,
+  quantizePixels,
+  nearestColor,
+  applyGamma,
+  rgbToHsl,
+  hslToRgb,
+};

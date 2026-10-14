@@ -4,15 +4,15 @@
  * The Generator produces candidate shapes based on style parameters and the
  * current image analysis.  It does NOT score — that's the Scorer's job.
  * It produces a flat list of candidate shapes, which are then passed to
- * `selectBest` or `selectGreedyResidual`.
+ * `selectBest` or `selectWithResidual`.
  *
  * @module generator
  */
 
 import { rng } from '../utils/rng.js';
 import { clamp } from '../utils/math.js';
-import { quantizeColor } from '../utils/color.js';
-import { createShape, centroid } from './shapes.js';
+import { quantizeColor, colorDistanceWeighted } from '../utils/color.js';
+import { createShape, centroid, bounds, pointAt } from './shapes.js';
 import { sampleRegion, sampleLuminance, sampleEdge } from './analyzer.js';
 
 /**
@@ -34,6 +34,10 @@ export const DEFAULT_SETTINGS = {
   paletteSize: 8,
   pathOrder: 'free',    // free | top-bottom | spiral | one-line | edges-first
   shapeBias: { E: 0.1, B: 0.15, T: 0.05, R: 0.3, S: 0.4 },
+  // Smart sizing: when true, stroke size adapts to local detail
+  adaptiveSize: true,
+  // Angle bias: when true, stroke orientation follows local gradient direction
+  alignToGradient: true,
 };
 
 /**
@@ -56,6 +60,50 @@ export function resolveSettings(userSettings = {}) {
 }
 
 /**
+ * Choose a stroke size based on settings and local detail.
+ *
+ * - When `settings.strokeSize.random` is true, each stroke picks its own
+ *   random size within [min, max].
+ * - When false, all strokes use the max size (fixed value).
+ * - With `adaptiveSize`, the base size is further modulated by local
+ *   detail: high-detail areas get smaller strokes, smooth areas get larger.
+ *
+ * @param {object} s - Resolved settings.
+ * @param {object} random - RNG instance.
+ * @param {number} x - Stroke center X.
+ * @param {number} y - Stroke center Y.
+ * @param {object} analysis - AnalysisResult (for adaptive sizing).
+ * @returns {number} Chosen size.
+ */
+function chooseSize(s, random, x, y, analysis) {
+  const minSize = s.strokeSize.min;
+  const maxSize = s.strokeSize.max;
+
+  let size;
+  if (s.strokeSize.random) {
+    // Each stroke picks its own random size within [min, max]
+    size = random.range(minSize, maxSize);
+  } else {
+    // All strokes use the fixed max size
+    size = maxSize;
+  }
+
+  // Adaptive sizing: modulate by local detail
+  if (s.adaptiveSize && analysis && analysis.edges) {
+    const edgeMag = sampleEdge(analysis.edges, analysis.width, analysis.height, x, y);
+    // In high-detail (high-edge) areas, use smaller strokes
+    // edgeMag is 0..1, map to size reduction
+    const detailFactor = 1 - edgeMag * 0.5; // up to 50% smaller in detailed areas
+    size = size * detailFactor;
+  }
+
+  // Apply global randomness jitter
+  size = size * random.range(1 - s.randomness, 1 + s.randomness);
+
+  return Math.max(minSize * 0.5, size);
+}
+
+/**
  * Generate candidate shapes from an analysis result.
  *
  * @param {object} analysis - AnalysisResult from analyzeImage.
@@ -65,7 +113,7 @@ export function resolveSettings(userSettings = {}) {
  * @returns {Array<object>} Candidate shape objects.
  */
 export function generateCandidates(analysis, settings, seed, maxCandidates = 5000) {
-  const { width, height, pixels, luminance: lumMap, edges, palette } = analysis;
+  const { width, height, pixels, luminance: lumMap, edges, edgeX, edgeY, palette } = analysis;
   const s = resolveSettings(settings);
   const random = rng(seed);
   const candidates = [];
@@ -73,12 +121,6 @@ export function generateCandidates(analysis, settings, seed, maxCandidates = 500
   const count = clamp(s.strokeCount, 1, 100000);
   const targetCount = Math.min(maxCandidates, Math.ceil(count / (1 - s.detailLevel + 0.01)));
 
-  // Pre-compute importance map for non-uniform sampling
-  const importance = s.pathOrder === 'edges-first'
-    ? null  // computed per-candidate below for edge-first
-    : null;
-
-  // Determine grid sampling density from spacing
   const minSize = s.strokeSize.min;
   const maxSize = s.strokeSize.max;
 
@@ -115,11 +157,18 @@ export function generateCandidates(analysis, settings, seed, maxCandidates = 500
     x = clamp(x, 0, width - 1);
     y = clamp(y, 0, height - 1);
 
-    // --- Size ---
-    const size = s.strokeSize.random
-      ? random.range(minSize, maxSize)
-      : random.range(minSize, maxSize);
-    const adjustedSize = size * random.range(1 - s.randomness, 1 + s.randomness);
+    // --- Size (with adaptive + randomness fix) ---
+    const adjustedSize = chooseSize(s, random, x, y, analysis);
+
+    // --- Angle: bias toward local gradient direction ---
+    let strokeAngle = 0;
+    if (s.alignToGradient && edgeX && edgeY) {
+      const gx = sampleEdge(edgeX, width, height, x, y);
+      const gy = sampleEdge(edgeY, width, height, x, y);
+      if (gx !== 0 || gy !== 0) {
+        strokeAngle = Math.atan2(gy, gx);
+      }
+    }
 
     // --- Color ---
     const regionAvg = sampleRegion(pixels, width, height,
@@ -151,7 +200,7 @@ export function generateCandidates(analysis, settings, seed, maxCandidates = 500
     const type = weightedPick(s.shapeBias, random);
 
     // --- Generate params based on type ---
-    const params = generateParams(type, x, y, adjustedSize, random, s);
+    const params = generateParams(type, x, y, adjustedSize, strokeAngle, random, s);
 
     // --- Alpha ---
     const alpha = clamp(random.range(0.5, 1.0) * (0.7 + 0.3 * s.styleStrength), 0, 1);
@@ -247,15 +296,16 @@ function sampleSpiral(width, height, frac) {
  * @param {number} x
  * @param {number} y
  * @param {number} size
+ * @param {number} angle - Preferred angle (from gradient direction) for alignment.
  * @param {object} random - RNG instance
  * @param {object} settings - Resolved settings
  * @returns {Array<number>} 8-element params array.
  */
-function generateParams(type, x, y, size, random, settings) {
+function generateParams(type, x, y, size, angle, random, settings) {
   const w = size;
   const h = size * random.range(0.6, 1.4);
-  const rot = random.range(0, Math.PI * 2);
-  const gradAngle = random.range(0, Math.PI * 2);
+  const rot = angle + random.range(-Math.PI / 4, Math.PI / 4);  // biased toward gradient
+  const gradAngle = angle + random.range(0, Math.PI);
 
   switch (type) {
     case 'E': // Ellipse: [x, y, rx, ry, rot, gradAngle, 0, 0]
@@ -280,9 +330,10 @@ function generateParams(type, x, y, size, random, settings) {
 
     case 'S': { // Stroke: [x0,y0, x1,y1, x2,y2, w, gradAngle]
       const len = w * random.range(1, 3);
-      const angle = random.range(0, Math.PI * 2);
-      const dx = Math.cos(angle) * len;
-      const dy = Math.sin(angle) * len;
+      // Bias stroke direction toward gradient angle
+      const strokeDir = angle + random.range(-Math.PI / 6, Math.PI / 6);
+      const dx = Math.cos(strokeDir) * len;
+      const dy = Math.sin(strokeDir) * len;
       const cx = x + random.range(-w, w);
       const cy = y + random.range(-w, w);
       // Control point for quadratic bezier
@@ -323,22 +374,32 @@ export function estimateShapeCount(width, height, style, opts = {}) {
 
 /**
  * Apply progressive ordering to a list of shapes based on settings.pathOrder.
+ *
+ * - **free**: Random order (shuffled).
+ * - **top-bottom**: Sort by Y, then X (top rows first).
+ * - **one-line**: Connect strokes into a continuous path using nearest-neighbor.
+ * - **spiral**: Sort by angular position from center (spiral from center outward).
+ * - **edges-first**: Sort by descending edge magnitude (edge regions first).
+ *
  * @param {Array<object>} shapes
- * @param {object} settings
+ * @param {object} settings - Resolved settings.
+ * @param {object} [analysis] - AnalysisResult (needed for edges-first).
  * @returns {Array<object>}
  */
-export function orderShapes(shapes, settings) {
+export function orderShapes(shapes, settings, analysis = null) {
   const s = resolveSettings(settings);
   const out = shapes.map(sh => ({ ...sh }));
 
   switch (s.pathOrder) {
     case 'free':
-      // Randomize
+      // Randomize using a deterministic shuffle
+      const random = rng(0xDEADBEEF);
       for (let i = out.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(random.next() * (i + 1));
         [out[i], out[j]] = [out[j], out[i]];
       }
       break;
+
     case 'top-bottom':
       out.sort((a, b) => {
         const ca = centroid(a);
@@ -346,26 +407,77 @@ export function orderShapes(shapes, settings) {
         return ca[1] - cb[1] || ca[0] - cb[0];
       });
       break;
+
     case 'spiral':
-      out.sort((a, b) => {
-        const ca = centroid(a);
-        const cb = centroid(b);
-        const ra = Math.atan2(ca[1], ca[0]);
-        const rb = Math.atan2(cb[1], cb[0]);
-        return ra - rb;
-      });
+      // Sort by angle from center, then by radius
+      {
+        const cx = analysis ? analysis.width / 2 : 0;
+        const cy = analysis ? analysis.height / 2 : 0;
+        out.sort((a, b) => {
+          const ca = centroid(a);
+          const cb = centroid(b);
+          const ra = Math.atan2(ca[1] - cy, ca[0] - cx);
+          const rb = Math.atan2(cb[1] - cy, cb[0] - cx);
+          // Also factor in radius for spiral ordering
+          const distA = Math.hypot(ca[0] - cx, ca[1] - cy);
+          const distB = Math.hypot(cb[0] - cx, cb[1] - cy);
+          // Combine angle (coarse) with radius (fine) for a spiral
+          const spiralA = ra + distA * 0.1;
+          const spiralB = rb + distB * 0.1;
+          return spiralA - spiralB;
+        });
+      }
       break;
+
     case 'one-line':
-      // Sort left-to-right, then top-to-bottom (continuous stroke feel)
-      out.sort((a, b) => {
-        const ca = centroid(a);
-        const cb = centroid(b);
-        return ca[1] - cb[1] || ca[0] - cb[0];
-      });
+      // Connect strokes into a continuous path using nearest-neighbor
+      {
+        const ordered = [];
+        const unvisited = new Set(out.keys());
+        let current = out[0];
+        ordered.push(current);
+        unvisited.delete(0);
+
+        // Find nearest neighbor iteratively (greedy nearest-neighbor)
+        while (unvisited.size > 0) {
+          const [cx, cy] = centroid(current);
+          let bestIdx = -1;
+          let bestDist = Infinity;
+          for (const key of unvisited) {
+            const [nx, ny] = centroid(out[key]);
+            const d = (nx - cx) * (nx - cx) + (ny - cy) * (ny - cy);
+            if (d < bestDist) {
+              bestDist = d;
+              bestIdx = key;
+            }
+          }
+          if (bestIdx === -1) break;
+          current = out[bestIdx];
+          ordered.push(current);
+          unvisited.delete(bestIdx);
+        }
+        out.length = 0;
+        out.push(...ordered);
+      }
       break;
+
     case 'edges-first':
-      // Sort by descending score (if available) so high-edge shapes paint first
-      out.sort((a, b) => (b.score || 0) - (a.score || 0));
+      // Sort by descending score (if available) or by edge magnitude at centroid
+      if (analysis && analysis.edges) {
+        out.sort((a, b) => {
+          const sa = a.score !== undefined ? a.score : 0;
+          const sb = b.score !== undefined ? b.score : 0;
+          if (sb !== sa) return sb - sa;
+          // Fallback: use edge magnitude at centroid
+          const [ax, ay] = centroid(a);
+          const [bx, by] = centroid(b);
+          const ea = sampleEdge(analysis.edges, analysis.width, analysis.height, ax, ay);
+          const eb = sampleEdge(analysis.edges, analysis.width, analysis.height, bx, by);
+          return eb - ea;
+        });
+      } else {
+        out.sort((a, b) => (b.score || 0) - (a.score || 0));
+      }
       break;
   }
 

@@ -27,7 +27,7 @@
 
 import { analyzeImage } from './analyzer.js';
 import { generateCandidates } from './generator.js';
-import { selectBest, selectGreedyResidual, computeImportanceMap } from './scorer.js';
+import { selectBest, selectGreedyResidual, selectWithResidual } from './scorer.js';
 
 let active = false;
 let cancelled = false;
@@ -113,7 +113,12 @@ async function startProcessing(msg) {
     });
 
     let selected;
-    if (settings.useGreedy) {
+    if (settings.useResidual) {
+      selected = selectWithResidual(candidates, analysis, settings.strokeCount, {
+        residualWeight: 0.6,
+        minResidual: 0.02,
+      });
+    } else if (settings.useGreedy) {
       selected = selectGreedyResidual(candidates, analysis, settings.strokeCount, {});
     } else {
       selected = selectBest(candidates, analysis, settings.strokeCount, {});
