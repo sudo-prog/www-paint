@@ -21,8 +21,8 @@
  * @module controls
  */
 
-import { getAllStyles, getStyleInfo } from '../../styles/index.js';
-import { DEFAULT_SETTINGS } from '../../engine/generator.js';
+import { getAllStyles, getStyleInfo } from '../styles/index.js';
+import { DEFAULT_SETTINGS } from '../engine/generator.js';
 
 /** Style metadata for the built-in styles. */
 const STYLE_PRESETS = {

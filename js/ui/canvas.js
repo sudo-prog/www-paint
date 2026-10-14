@@ -14,7 +14,7 @@
  * @module canvas
  */
 
-import { Renderer, createRenderer } from '../../engine/renderer.js';
+import { createRenderer } from '../engine/renderer.js';
 
 /**
  * CanvasManager — owns the visible canvas and orchestrates rendering.
