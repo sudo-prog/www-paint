@@ -167,26 +167,26 @@
       const toggleLayers = document.getElementById('toggle-layers');
 
       function closeMobilePanels() {
-        if (controlsPanel) controlsPanel.style.left = '-320px';
-        if (layersPanel) layersPanel.style.right = '-320px';
+        if (controlsPanel) controlsPanel.classList.add('panel--mobile-closed');
+        if (layersPanel) layersPanel.classList.add('panel--mobile-closed');
         if (toggleControls) toggleControls.classList.remove('mobile-toggle--active');
         if (toggleLayers) toggleLayers.classList.remove('mobile-toggle--active');
       }
 
       toggleControls?.addEventListener('click', () => {
-        const isOpen = controlsPanel && controlsPanel.style.left === '0px';
+        const isClosed = controlsPanel && controlsPanel.classList.contains('panel--mobile-closed');
         closeMobilePanels();
-        if (!isOpen && controlsPanel) {
-          controlsPanel.style.left = '0px';
+        if (isClosed && controlsPanel) {
+          controlsPanel.classList.remove('panel--mobile-closed');
           toggleControls.classList.add('mobile-toggle--active');
         }
       });
 
       toggleLayers?.addEventListener('click', () => {
-        const isOpen = layersPanel && layersPanel.style.right === '0px';
+        const isClosed = layersPanel && layersPanel.classList.contains('panel--mobile-closed');
         closeMobilePanels();
-        if (!isOpen && layersPanel) {
-          layersPanel.style.right = '0px';
+        if (isClosed && layersPanel) {
+          layersPanel.classList.remove('panel--mobile-closed');
           toggleLayers.classList.add('mobile-toggle--active');
         }
       });

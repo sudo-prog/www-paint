@@ -822,17 +822,17 @@ body {
   }
 
   .panel--controls {
-    left: -320px;
+    left: 0;
     right: auto;
   }
-  .panel--controls.panel--mobile-open { left: 0; }
+  .panel--controls.panel--mobile-closed { left: -320px; }
 
   .panel--layers {
     left: auto;
-    right: -320px;
+    right: 0;
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
   }
-  .panel--layers.panel--mobile-open { right: 0; }
+  .panel--layers.panel--mobile-closed { right: -320px; }
 
   .panel--controls.panel--hidden { display: flex; left: -320px; }
   .panel--layers.panel--active { display: flex; }
