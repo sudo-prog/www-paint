@@ -1,0 +1,5 @@
+_nothing_design/
+_nothing_cn/
+.turbo/
+node_modules/
+.DS_Store

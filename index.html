@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WWW_PAINT — Stroke-Based Image to Art</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="app-header__title">
+        <span class="logo">WWW_PAINT</span>
+        <span class="subtitle">Stroke-based image-to-art engine</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn--secondary btn--sm" id="btn-load-image" title="Load Image">
+          <span class="btn-icon">📂</span> Load
+        </button>
+        <button type="button" class="btn btn--primary btn--sm" id="btn-export" title="Export">
+          <span class="btn-icon">🖼</span> Export
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Body -->
+    <div class="app-body">
+
+      <!-- Left Sidebar: Controls -->
+      <aside class="controls-sidebar" id="controls-root">
+        <!-- ControlsManager renders into this element -->
+      </aside>
+
+      <!-- Canvas Area -->
+      <main class="canvas-area" id="canvas-area">
+        <canvas id="paint-canvas" width="1024" height="768"></canvas>
+        <div class="canvas-placeholder" id="canvas-placeholder">
+          <div class="canvas-placeholder__icon">🎨</div>
+          <div class="canvas-placeholder__text">Drag & drop an image to get started</div>
+          <div class="canvas-placeholder__hint">Or click the Load button above</div>
+          <input type="file" class="file-input-picker" accept="image/*" style="display: none;" />
+        </div>
+      </main>
+
+      <!-- Right Sidebar: Layers -->
+      <aside class="layers-sidebar" id="layers-root">
+        <!-- LayersManager renders into this element -->
+      </aside>
+    </div>
+
+    <!-- Status Bar -->
+    <footer class="status-bar" id="status-bar">
+      <span class="status-item">
+        <span class="status-label">Status:</span>
+        <span class="status-value">Ready</span>
+      </span>
+    </footer>
+  </div>
+
+  <!-- Export Dialog (hidden by default, shown via JavaScript) -->
+  <div class="export-dialog" id="export-root" aria-hidden="true">
+    <!-- ExportManager renders into this element -->
+  </div>
+
+  <!-- Hidden file input for image loading -->
+  <input type="file" id="image-file-input" accept="image/*" style="display: none;" />
+
+  <!-- Main Application Script (ES6 Module) -->
+  <script type="module">
+    import { initApp } from './js/ui/app.js';
+
+    // Initialize the application
+    const app = initApp();
+
+    if (app) {
+      // Expose for debugging in dev console
+      window._wwwPaint = app;
+
+      // Handle "Load Image" button click
+      const loadBtn = document.getElementById('btn-load-image');
+      const fileInput = document.getElementById('image-file-input');
+      const placeholder = document.getElementById('canvas-placeholder');
+
+      loadBtn?.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      fileInput?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        e.target.value = '';
+
+        try {
+          await app.engine.loadImageFile(file);
+          app.canvasMgr.setSize(app.engine.width, app.engine.height);
+          app.canvasMgr.setBackground(app.engine.background);
+          if (placeholder) placeholder.style.display = 'none';
+          app.engine.render();
+          app._updateStatus();
+        } catch (err) {
+          console.error('Failed to load image:', err);
+          app._showError('Failed to load: ' + err.message);
+        }
+      });
+
+      // Handle Export button
+      const exportBtn = document.getElementById('btn-export');
+      exportBtn?.addEventListener('click', () => {
+        if (app.exportMgr) {
+          app.exportMgr.show({
+            width: app.engine.width,
+            height: app.engine.height,
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
