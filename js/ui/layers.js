@@ -2,44 +2,31 @@
  * Layers Panel — manages the layer list UI with add/remove/reorder/
  * visibility/opacity/blend-mode controls.
  *
- * Nothing Design System patterns:
- * - Layer rows with 1px dividers (--border), no zebra striping
- * - Space Mono labels, ALL CAPS
- * - Active row: --surface-raised background + left border
- * - Pill buttons for actions
- *
- * Each layer in the engine is represented as:
- *   { id, name, visible, opacity, blendMode, strokes, locked }
+ * Warm Dark Creative Tool: uses CSS tokens from :root, DM Sans / DM Mono typography.
  *
  * @module layers
  */
 
 /** Blend mode options for the dropdown. */
 const BLEND_MODES = [
-  { value: 'normal',   label: 'Normal' },
-  { value: 'multiply', label: 'Multiply' },
-  { value: 'screen',   label: 'Screen' },
-  { value: 'overlay',  label: 'Overlay' },
-  { value: 'darken',   label: 'Darken' },
-  { value: 'lighten',  label: 'Lighten' },
-  { value: 'hard-light', label: 'Hard Light' },
-  { value: 'difference', label: 'Difference' },
+  { value: "normal",     label: "Normal" },
+  { value: "multiply",   label: "Multiply" },
+  { value: "screen",     label: "Screen" },
+  { value: "overlay",    label: "Overlay" },
+  { value: "darken",     label: "Darken" },
+  { value: "lighten",    label: "Lighten" },
+  { value: "hard-light", label: "Hard Light" },
+  { value: "difference", label: "Difference" },
 ];
 
 /**
  * LayersManager — manages the layer panel DOM and user interactions.
  *
- * Nothing Design: divider-separated list rows, Space Mono labels,
- * surface-raised highlight for active layer.
- *
- * @param {HTMLElement} root - Container element
+ * @param {HTMLElement} root — container element
  */
 export class LayersManager {
-  /**
-   * @param {HTMLElement} root
-   */
   constructor(root) {
-    if (!root) throw new Error('LayersManager requires a root element');
+    if (!root) throw new Error("LayersManager requires a root element");
 
     /** @type {HTMLElement} */
     this.root = root;
@@ -50,110 +37,104 @@ export class LayersManager {
     this._bindEvents();
   }
 
-  // ─── Rendering ───────────────────────────────────────────────
+  /* ─── Rendering ─────────────────────────────────────────────── */
 
   /**
    * Build the layers panel structure.
    */
   _render() {
-    this.root.classList.add('layers-panel');
-    this.root.innerHTML = '';
+    this.root.classList.add("layers-panel");
+    this.root.innerHTML = "";
 
-    const header = document.createElement('div');
-    header.className = 'layers-header';
-    // Safe: uses fixed icon/label strings, no user input
+    // Header
+    const header = document.createElement("div");
+    header.className = "layers-header";
     header.innerHTML = `
       <h3 class="layers-title">Layers</h3>
       <button type="button" class="btn btn--icon btn--sm" data-action="add-layer" aria-label="Add layer">
-        <span class="btn-icon" aria-hidden="true">+</span>
+        <span aria-hidden="true">+</span>
       </button>
     `;
 
-    const body = document.createElement('div');
-    body.className = 'layers-body';
-    body.id = 'layers-list';
-
-    const footer = document.createElement('div');
-    footer.className = 'layers-footer';
+    // Body
+    const body = document.createElement("div");
+    body.className = "layers-body";
+    body.id = "layers-list";
 
     this.root.appendChild(header);
     this.root.appendChild(body);
-    this.root.appendChild(footer);
   }
 
   /**
    * Re-render the layer list from this.layers.
    */
   _renderLayers() {
-    const list = this.root.querySelector('#layers-list');
+    const list = this.root.querySelector("#layers-list");
     if (!list) return;
 
-    list.innerHTML = '';
+    list.innerHTML = "";
 
-    // Render layers in reverse order (top = index 0 visually)
+    // Render layers in reverse order (top layer first visually)
     const displayOrder = [...this.layers].reverse();
+
+    if (displayOrder.length === 0) {
+      const placeholder = document.createElement("div");
+      placeholder.className = "layers-placeholder";
+      placeholder.textContent = "No layers";
+      list.appendChild(placeholder);
+      return;
+    }
 
     for (const layer of displayOrder) {
       list.appendChild(this._renderLayerRow(layer));
-    }
-
-    // If no layers, show placeholder
-    if (this.layers.length === 0) {
-      const placeholder = document.createElement('div');
-      placeholder.className = 'layers-placeholder';
-      placeholder.textContent = 'no layers';
-      list.appendChild(placeholder);
     }
   }
 
   /**
    * Render a single layer row.
-   * Nothing Design: full-width divider, Space Mono labels, pill buttons.
    * @param {object} layer
    * @returns {HTMLElement}
    */
   _renderLayerRow(layer) {
-    const row = document.createElement('div');
-    row.className = 'layer-row';
-    row.dataset.layerId = String(layer.id);
-    row.setAttribute('role', 'group');
-    row.setAttribute('aria-label', `Layer ${layer.name || layer.id}`);
+    const row = document.createElement("div");
+    row.className = "layer-row";
+    row.dataset.layerId = layer.id;
 
-    // Lock indicator
-    const lockedHtml = layer.locked
-      ? '<span class="layer-locked-overlay" aria-label="locked" title="Locked">🔒</span>'
-      : '';
+    if (layer.visible === false) {
+      row.style.opacity = "0.5";
+    }
 
-    // Safe: all content is from fixed arrays (BLEND_MODES, static labels), layer names escaped
+    // Active state
+    const isActive = this.layers.findIndex((l) => l.id === layer.id) === this.layers.length - 1;
+    if (isActive) row.classList.add("layer-row--active");
+
     row.innerHTML = `
-      <div class="layer-row__drag-handle" title="Drag to reorder" aria-hidden="true">⋮</div>
-      <div class="layer-row__visibility">
-        <button type="button" class="btn btn--icon btn--sm ${layer.visible ? 'btn--active' : ''}"
-                data-action="toggle-visibility" aria-label="${layer.visible ? 'Hide' : 'Show'}">
-          <span class="btn-icon">${layer.visible ? '👁' : '⊘'}</span>
+      <div class="layer-row__drag" aria-hidden="true">≡</div>
+      <div class="layer-row__controls">
+        <button type="button" class="layer-visibility-btn" data-action="toggle-visibility"
+                title="${layer.visible === false ? "Show" : "Hide"}">
+          ${layer.visible === false ? "○" : "◉"}
         </button>
-      </div>
-      <div class="layer-row__name">
-        <span class="layer-name">${this._escapeHtml(layer.name || `Layer ${layer.id}`)}</span>
-        ${lockedHtml}
-      </div>
-      <div class="layer-row__opacity">
-        <input type="range" class="layer-opacity-input" min="0" max="100" step="1"
-               value="${Math.round((layer.opacity ?? 1) * 100)}" aria-label="Opacity" />
-      </div>
-      <div class="layer-row__blend">
-        <select class="layer-blend-select" aria-label="Blend mode">
-          ${BLEND_MODES.map(m =>
-            `<option value="${m.value}" ${layer.blendMode === m.value ? 'selected' : ''}>${m.label}</option>`
-          ).join('')}
+        <select class="layer-blend-select" data-action="blend-change">
+          ${BLEND_MODES.map((m) =>
+            `<option value="${m.value}" ${m.value === layer.blendMode ? "selected" : ""}>${m.label}</option>`
+          ).join("")}
         </select>
       </div>
+      <div class="layer-row__name" title="${layer.name || "Layer"}">${layer.name || "Layer"}</div>
+      <div class="layer-opacity-row">
+        <label class="layer-opacity-label">Op:</label>
+        <input type="range" class="layer-opacity-input" min="0" max="1" step="0.05"
+               value="${layer.opacity !== undefined ? layer.opacity : 1}"
+               data-action="opacity-change"/>
+        <span class="layer-opacity-value">${Math.round((layer.opacity || 1) * 100)}%</span>
+      </div>
       <div class="layer-row__actions">
-        <button type="button" class="btn btn--icon btn--sm" data-action="duplicate-layer" aria-label="Duplicate layer">
-          <span class="btn-icon">⍰</span>
+        <button type="button" class="layer-action-btn" data-action="duplicate-layer" title="Duplicate">
+          <span aria-hidden="true">⋯</span>
         </button>
-        <button type="button" class="btn btn--icon btn--sm btn--destructive" data-action="delete-layer" aria-label="Delete layer">
-          <span class="btn-icon">🗑</span>
+        <button type="button" class="layer-action-btn layer-action-btn--danger" data-action="delete-layer" title="Delete">
+          <span aria-hidden="true">✕</span>
         </button>
       </div>
     `;
@@ -161,69 +142,65 @@ export class LayersManager {
     return row;
   }
 
-  /**
-   * Escape HTML to prevent XSS when setting layer names.
-   * @param {string} str
-   * @returns {string}
-   */
-  _escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  // ─── Event Binding ───────────────────────────────────────────
+  /* ─── Events ────────────────────────────────────────────────── */
 
   /**
    * Bind event listeners.
    */
   _bindEvents() {
-    // Layer list clicks (event delegation)
-    this.root.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action]');
+    // Delegate clicks within the layer list
+    const list = this.root.querySelector("#layers-list");
+    if (!list) return;
+
+    list.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-action]");
       if (!btn) return;
+
       const action = btn.dataset.action;
-      const row = btn.closest('.layer-row');
+      const row = btn.closest(".layer-row");
       const layerId = row ? parseInt(row.dataset.layerId, 10) : null;
 
       switch (action) {
-        case 'toggle-visibility':
-          this._emit('layer-toggle-visibility', { layerId });
+        case "toggle-visibility":
+          this._emit("layer-toggle-visibility", { layerId });
           break;
-        case 'duplicate-layer':
-          if (layerId !== null) this._emit('layer-duplicate', { layerId });
+        case "duplicate-layer":
+          this._emit("layer-duplicate", { layerId });
           break;
-        case 'delete-layer':
-          if (layerId !== null) this._emit('layer-delete', { layerId });
+        case "delete-layer":
+          this._emit("layer-delete", { layerId });
           break;
+      }
+    });
+
+    // Blend mode change
+    list.addEventListener("change", (e) => {
+      if (e.target.classList.contains("layer-blend-select") || e.target.dataset.action === "blend-change") {
+        const row = e.target.closest(".layer-row");
+        const layerId = parseInt(row.dataset.layerId, 10);
+        this._emit("layer-blend-change", { layerId, blendMode: e.target.value });
+      }
+    });
+
+    // Opacity change
+    list.addEventListener("input", (e) => {
+      if (e.target.classList.contains("layer-opacity-input")) {
+        const row = e.target.closest(".layer-row");
+        const layerId = parseInt(row.dataset.layerId, 10);
+        const opacity = parseFloat(e.target.value);
+        const valueSpan = row.querySelector(".layer-opacity-value");
+        if (valueSpan) valueSpan.textContent = `${Math.round(opacity * 100)}%`;
+        this._emit("layer-opacity-change", { layerId, opacity });
       }
     });
 
     // Add layer button
     const addBtn = this.root.querySelector('[data-action="add-layer"]');
-    if (addBtn) addBtn.addEventListener('click', () => this._emit('layer-add'));
-
-    // Opacity changes
-    this.root.addEventListener('input', (e) => {
-      if (e.target.classList.contains('layer-opacity-input')) {
-        const row = e.target.closest('.layer-row');
-        const layerId = parseInt(row.dataset.layerId, 10);
-        const opacity = parseInt(e.target.value, 10) / 100;
-        this._emit('layer-opacity-change', { layerId, opacity });
-      }
-    });
-
-    // Blend mode changes
-    this.root.addEventListener('change', (e) => {
-      if (e.target.classList.contains('layer-blend-select')) {
-        const row = e.target.closest('.layer-row');
-        const layerId = parseInt(row.dataset.layerId, 10);
-        this._emit('layer-blend-change', { layerId, blendMode: e.target.value });
-      }
-    });
+    if (addBtn) {
+      addBtn.addEventListener("click", () => {
+        this._emit("layer-add");
+      });
+    }
   }
 
   /**
@@ -236,60 +213,25 @@ export class LayersManager {
     this.root.dispatchEvent(new CustomEvent(type, { detail }));
   }
 
-  // ─── Public API ─────────────────────────────────────────────
+  /* ─── Public API ────────────────────────────────────────────── */
 
   /**
-   * Update the layer list and re-render.
+   * Set the layers data and re-render.
    * @param {Array<object>} layers
    */
   setLayers(layers) {
-    this.layers = [...layers];
+    this.layers = layers || [];
     this._renderLayers();
   }
 
   /**
-   * Get the current layers data (re-read from DOM for live values).
-   * @returns {Array<object>}
+   * Update the active layer highlight.
+   * @param {number} layerId
    */
-  getLayers() {
-    const result = [];
-    const rows = this.root.querySelectorAll('.layer-row');
-    for (const row of rows) {
-      const layerId = parseInt(row.dataset.layerId, 10);
-      const original = this.layers.find(l => l.id === layerId) || {};
-      const opacityInput = row.querySelector('.layer-opacity-input');
-      const blendSelect = row.querySelector('.layer-blend-select');
-      const visibilityBtn = row.querySelector('[data-action="toggle-visibility"]');
-
-      result.push({
-        id: layerId,
-        name: original.name || `Layer ${layerId}`,
-        visible: visibilityBtn?.classList.contains('btn--active') ?? original.visible,
-        opacity: opacityInput ? parseInt(opacityInput.value, 10) / 100 : (original.opacity ?? 1),
-        blendMode: blendSelect ? blendSelect.value : (original.blendMode || 'normal'),
-        strokes: original.strokes || [],
-        locked: original.locked || false,
-      });
-    }
-    return result.reverse();
-  }
-
-  /**
-   * Get a layer by ID.
-   * @param {number} id
-   * @returns {object|undefined}
-   */
-  getLayer(id) {
-    return this.layers.find(l => l.id === id);
-  }
-
-  /**
-   * Highlight a layer as active/current.
-   * @param {number|null} id
-   */
-  setActiveLayer(id) {
-    this.root.querySelectorAll('.layer-row').forEach(row => {
-      row.classList.toggle('layer-row--active', row.dataset.layerId === String(id));
+  setActiveLayer(layerId) {
+    this.root.querySelectorAll(".layer-row").forEach((row) => {
+      const id = parseInt(row.dataset.layerId, 10);
+      row.classList.toggle("layer-row--active", id === layerId);
     });
   }
 
@@ -297,8 +239,7 @@ export class LayersManager {
    * Destroy the layers manager.
    */
   destroy() {
-    this.root.innerHTML = '';
-    this.layers = [];
+    this.root.innerHTML = "";
   }
 }
 

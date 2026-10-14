@@ -1,123 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WWW_PAINT — Stroke-Based Image to Art</title>
-  <!-- Nothing Design System: Space Grotesk (body) + Space Mono (data/labels) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/style.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WWW_PAINT — Brush. Generate. Create.</title>
+
+  <!-- Fonts: DM Sans (body/UI) + DM Mono (data/labels) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="./css/style.css"/>
 </head>
 <body>
-  <div class="app-shell">
-
-    <!-- Header -->
-    <header class="app-header" role="banner">
-      <div class="app-header__title">
-        <span class="logo" aria-label="WWW_PAINT">WWW_PAINT</span>
-        <span class="subtitle">Stroke-based image-to-art engine</span>
+  <div class="app">
+    <!-- ── Top Bar ── -->
+    <header class="top-bar" role="banner">
+      <div class="top-bar__left">
+        <div class="logo" aria-label="WWW_PAINT">
+          <span class="logo__dot"></span>
+          <span class="logo__text">WWW</span>
+          <span class="logo__slash">_</span>
+          <span class="logo__text">PAINT</span>
+        </div>
       </div>
-      <div class="header-actions">
-        <button type="button" class="btn btn--secondary btn--sm" id="btn-load-image" aria-label="Load image">
-          <span class="btn-icon">📂</span> Load
+
+      <nav class="top-bar__center" aria-label="Main navigation">
+        <button type="button" class="nav-btn nav-btn--active" data-nav="controls">
+          <span class="nav-btn__icon">⚙</span>Brush
+        </button>
+        <button type="button" class="nav-btn" data-nav="layers">
+          <span class="nav-btn__icon">┅</span>Layers
+        </button>
+      </nav>
+
+      <div class="top-bar__right">
+        <button type="button" class="btn btn--ghost btn--sm" id="btn-load-image" aria-label="Open image">
+          <span class="btn__icon">▲</span>Open
         </button>
         <button type="button" class="btn btn--primary btn--sm" id="btn-export" aria-label="Export">
-          <span class="btn-icon">🖼</span> Export
+          Export
         </button>
       </div>
     </header>
 
-    <!-- Main Body -->
-    <div class="app-body">
-
-      <!-- Left Sidebar: Controls -->
-      <aside class="controls-sidebar" id="controls-root" role="complementary" aria-label="Controls">
-        <!-- ControlsManager renders into this element -->
+    <!-- ── Main Content ── -->
+    <main class="main">
+      <!-- Controls Panel -->
+      <aside class="panel panel--controls" id="controls-root" role="complementary" aria-label="Brush controls">
+        <!-- Built by controls.js -->
       </aside>
 
       <!-- Canvas Area -->
-      <main class="canvas-area" id="canvas-area" role="main">
-        <canvas id="paint-canvas" width="1024" height="768" class="paint-canvas" aria-label="Painting canvas"></canvas>
-        <div class="canvas-placeholder" id="canvas-placeholder" role="status" aria-live="polite">
-          <div class="canvas-placeholder__icon" aria-hidden="true">🎨</div>
-          <div class="canvas-placeholder__text">Drag & drop an image to get started</div>
-          <div class="canvas-placeholder__hint">Or click the Load button above</div>
-          <input type="file" class="file-input-picker" accept="image/*" style="display: none;" aria-label="Select image file" />
+      <section class="canvas-wrapper" id="canvas-area" role="main">
+        <div class="canvas-frame">
+          <canvas id="paint-canvas" width="1024" height="768" class="paint-canvas" aria-label="Painting canvas"></canvas>
+          <div class="canvas-placeholder" id="canvas-placeholder" role="status" aria-live="polite">
+            <div class="canvas-placeholder__icon">◉</div>
+            <div class="canvas-placeholder__title">Drop an image to begin</div>
+            <div class="canvas-placeholder__hint">Or click Open above</div>
+            <input type="file" class="file-input-picker" accept="image/*" style="display: none;" aria-label="Select image file"/>
+          </div>
         </div>
-      </main>
+      </section>
 
-      <!-- Right Sidebar: Layers -->
-      <aside class="layers-sidebar" id="layers-root" role="complementary" aria-label="Layers">
-        <!-- LayersManager renders into this element -->
+      <!-- Layers Panel -->
+      <aside class="panel panel--layers" id="layers-root" role="complementary" aria-label="Layers">
+        <!-- Built by layers.js -->
       </aside>
-    </div>
+    </main>
 
-    <!-- Status Bar -->
-    <footer class="status-bar" id="status-bar" role="status" aria-live="polite">
-      <span class="status-item">
-        <span class="status-label">Status:</span>
-        <span class="status-value">Ready</span>
-      </span>
+    <!-- Status Footer -->
+    <footer class="status-footer" id="status-bar" role="status" aria-live="polite">
+      <span class="status__msg" id="status-message">Ready</span>
     </footer>
   </div>
 
-  <!-- Export Dialog (hidden by default, shown via JavaScript) -->
-  <div class="export-dialog" id="export-root" aria-hidden="true" aria-labelledby="export-title">
-    <!-- ExportManager renders into this element -->
+  <!-- Export Dialog -->
+  <div class="modal" id="export-root" aria-hidden="true" aria-labelledby="export-title" role="dialog" aria-modal="true">
+    <!-- Built by export.js -->
   </div>
 
-  <!-- Hidden file input for image loading -->
-  <input type="file" id="image-file-input" accept="image/*" style="display: none;" aria-label="Select image file" />
+  <input type="file" id="image-file-input" accept="image/*" style="display: none;" aria-label="Select image file"/>
 
-  <!-- Main Application Script (ES6 Module) -->
   <script type="module">
     import { initApp } from './js/ui/app.js';
 
-    // Initialize the application
     const app = initApp();
 
     if (app) {
-      // Expose for debugging in dev console
       window._wwwPaint = app;
 
-      // Handle "Load Image" button click
+      // Load image button
       const loadBtn = document.getElementById('btn-load-image');
       const fileInput = document.getElementById('image-file-input');
-      const placeholder = document.getElementById('canvas-placeholder');
 
-      loadBtn?.addEventListener('click', () => {
-        fileInput.click();
-      });
+      loadBtn?.addEventListener('click', () => fileInput?.click());
 
       fileInput?.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         e.target.value = '';
-
         try {
           await app.engine.loadImageFile(file);
-          app.canvasMgr.setSize(app.engine.width, app.engine.height);
-          app.canvasMgr.setBackground(app.engine.background);
+          app.canvasMgr.renderer.setSize(app.engine.width, app.engine.height);
+          const placeholder = document.getElementById('canvas-placeholder');
           if (placeholder) placeholder.style.display = 'none';
           app.engine.render();
           app._updateStatus();
         } catch (err) {
-          console.error('Failed to load image:', err);
+          console.error(err);
           app._showError('Failed to load: ' + err.message);
         }
       });
 
-      // Handle Export button
-      const exportBtn = document.getElementById('btn-export');
-      exportBtn?.addEventListener('click', () => {
-        if (app.exportMgr) {
-          app.exportMgr.show({
-            width: app.engine.width,
-            height: app.engine.height,
+      // Export button
+      document.getElementById('btn-export')?.addEventListener('click', () => {
+        app.exportMgr?.show({
+          width: app.engine.width,
+          height: app.engine.height,
+          background: app.engine.background,
+        });
+      });
+
+      // Navigation between panels
+      document.querySelectorAll('[data-nav]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.nav;
+          document.querySelectorAll('.panel').forEach(p => {
+            p.classList.toggle('panel--active', p.classList.contains('panel--' + target));
           });
-        }
+          document.querySelectorAll('.nav-btn').forEach(nav => {
+            nav.classList.toggle('nav-btn--active', nav === btn);
+          });
+        });
       });
     }
   </script>
