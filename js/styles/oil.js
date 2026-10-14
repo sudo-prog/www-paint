@@ -22,10 +22,30 @@ import {
   shapeAxis, inPoly, colsOf, rgbToHex
 } from './base.js';
 
+/**
+ * Resolve colors from a shape, handling both formats:
+ *  - Engine format: shape.color0/color1 are RGB arrays, shape.alpha is number
+ *  - Style format: colors embedded in shape.params
+ * Returns [c0, c1, o] as hex strings and alpha.
+ * @param {object} shape
+ * @returns {[string, string, number]}
+ */
+function resolveColors(shape) {
+  // If shape has color0/color1 properties (engine format), use those
+  if (Array.isArray(shape.color0) || Array.isArray(shape.color1)) {
+    const c0 = Array.isArray(shape.color0) ? rgbToHex(shape.color0) : (typeof shape.color0 === 'string' ? shape.color0 : '#000000');
+    const c1 = Array.isArray(shape.color1) ? rgbToHex(shape.color1) : (typeof shape.color1 === 'string' ? shape.color1 : '#000000');
+    const o = typeof shape.alpha === 'number' ? shape.alpha : 1;
+    return [c0, c1, o];
+  }
+  // Otherwise use colsOf which reads from params (style format)
+  return colsOf(shape);
+}
+
 export class OilStyle {
   name = 'oil';
   category = 'paint';
-  description = 'A loaded bristle brush in thick, glossy oil paint — both colours side by side, ridges from every bristle, the end running dry. Acrylic mode gives flatter, streaky paint.';
+  description = 'A loaded bristles brush in thick, glossy oil paint — both colours side by side, ridges from every bristle, the end running dry. Acrylic mode gives flatter, streaky paint.';
 
   defaults = {
     strokeSize: { min: 5, max: 25 },
@@ -36,10 +56,15 @@ export class OilStyle {
     ridgeAmplitude: 0.35, // per-bristle colour variation
     wetDrag: 0.6,        // how much wet paint is dragged behind (oil vs acrylic)
     glossy: true,        // oil = glossy (highlights), acrylic = satin (matte)
-    // Internal: brush type — 'oil' for glossy/thick, 'acrylic' for flat/streaky
     bristle: 'oil'
   };
 
+  /**
+   * Propose candidate strokes for this style.
+   * @param {object} analyzer - Image analyzer with edges[], regions[]
+   * @param {object} params - User/style parameters
+   * @returns {Array} shape candidates
+   */
   generate(analyzer, params) {
     const cfg = { ...this.defaults, ...params };
     const strokes = [];
@@ -68,6 +93,9 @@ export class OilStyle {
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],
+      color0: c,
+      color1: c,
+      alpha: 1,
       seed: edge.seed || [edge.x0, edge.y0, edge.x1, edge.y1, w, 0]
     };
   }
@@ -76,10 +104,6 @@ export class OilStyle {
     const c = Array.isArray(color) ? color : [color, color, color];
     const strokes = [];
     const an = Math.random() * Math.PI;
-    const dx = Math.cos(an);
-    const dy = Math.sin(an);
-    const nx = -dy;
-    const ny = dx;
     const size = Math.max(region.w, region.h);
     const sw = Math.max(3, Math.min(size / 2.2, size / 3));
     const n = Math.max(1, Math.ceil(size / (sw * 0.8)));
@@ -91,6 +115,9 @@ export class OilStyle {
       strokes.push({
         type: 'S',
         params: [region.cx, region.cy, region.cx, region.cy, region.cx, region.cy, sw, an, colorA, colorB, 1],
+        color0: c,
+        color1: c,
+        alpha: 1,
         seed: [region.cx + k, region.cy + k, sw, an, k, 1],
         fillStroke: true
       });
@@ -106,9 +133,8 @@ export class OilStyle {
    * @param {number} progress - 0..1
    */
   render(ctx, shape, progress = 1) {
-    const a = shape.params;
-    const R = rngFor(shape.seed || a.slice(0, 9));
-    const [c0, c1, o] = colsOf(shape);
+    const R = rngFor(shape.seed || shape.params.slice(0, 6));
+    const [c0, c1, o] = resolveColors(shape);
 
     if (shape.type === 'S') {
       this._renderStroke(ctx, shape, R, c0, c1, o, progress);
@@ -121,8 +147,18 @@ export class OilStyle {
    * Bristle brush stroke: multiple bristles side by side, each carrying
    * its own colour and ridge, running dry towards the end.
    *
-   * Faithful to Code Painter's bristleSet + bristleFill logic, adapted for
-   * the 2D canvas (the original uses WebGL relief for the full 3D effect).
+   * Features:
+   *  - Per-bristle color variation via blend + tone offset
+   *  - Pressure tapering: stroke gets thinner at the end (dryFactor)
+   *  - Wet paint dragging: oil drags a translucent trail behind the brush
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} shape - {type, params, seed}
+   * @param {function} R - Seeded RNG
+   * @param {string} c0 - Start color (hex)
+   * @param {string} c1 - End color (hex)
+   * @param {number} o - Opacity
+   * @param {number} progress - 0..1
    */
   _renderStroke(ctx, shape, R, c0, c1, o, progress) {
     const a = shape.params;
@@ -136,42 +172,37 @@ export class OilStyle {
 
     for (let i = 0; i < bristles.length; i++) {
       const br = bristles[i];
-      // Each bristle occupies a slice of the brush width
       const lo = br.lo;
       const hi = br.hi;
       const brW = w * (hi - lo);
 
-      // Colour: blend c0→c1 across the brush, with per-bristle variation
+      // Per-bristle colour: blend c0->c1 across the brush + tone variation
       const mixT = br.mixAt;
       const brC0 = shade2(mixHex(c0, c1, mixT), br.tone);
       const brC1 = shade2(mixHex(c0, c1, clamp01(mixT + 0.12)), br.tone);
 
-      // Run dry at the end: paint thins out after `dryEnd` fraction
-      const tipW = brW * (0.4 + 0.6 * Math.pow(R(), 0.5)); // oil: filbert (even width)
-      // Acrylic: chisel nib (thin when moving along, wide across)
-      const acr = this.defaults.bristle === 'acrylic';
-      const nib = 0.7 + (R() - 0.5) * 0.35;
-
-      // Build the bristle ribbon
+      // Build the bristle ribbon along the path
       const L = [];
       const Rt = [];
       const N = P.length;
+
       for (let j = 0; j < N; j++) {
         const s = j / Math.max(1, N - 1);
         const [nx, ny] = normalAt(P, j);
-        // Width: full near start, tapers to dryEnd fraction at end
+
+        // Pressure tapering: paint thins out at the end
         const dryFactor = s > this.defaults.dryEnd
           ? Math.pow(1 - (s - this.defaults.dryEnd) / (1 - this.defaults.dryEnd), this.defaults.dryTaper)
           : 1;
 
-        let hw = (w * (lo + hi) / 2 - w * br.lo) + brW / 2; // offset along brush
-        const perp = w * brW / 2 * (acr ? Math.abs(Math.sin(Math.atan2(P[Math.min(N-1, j+1)][1] - P[Math.max(0, j-1)][1], P[Math.min(N-1, j+1)][0] - P[Math.max(0, j-1)][0]) - nib)) : 1);
+        // Per-bristle width with unevenness + dry taper
+        const hw = brW * (0.5 + (R() - 0.5) * this.defaults.bristleVar) * Math.max(0.3, dryFactor);
 
-        L.push([P[j][0] + nx * perp * dryFactor, P[j][1] + ny * perp * dryFactor]);
-        Rt.push([P[j][0] - nx * perp * dryFactor, P[j][1] - ny * perp * dryFactor]);
+        L.push([P[j][0] + nx * hw, P[j][1] + ny * hw]);
+        Rt.push([P[j][0] - nx * hw, P[j][1] - ny * hw]);
       }
 
-      // Fill the bristle ribbon with a gradient
+      // Fill the bristle ribbon with a gradient along the stroke direction
       ctx.globalAlpha = o * (0.8 + R() * 0.2);
       const G = ctx.createLinearGradient(P[0][0], P[0][1], P[N - 1][0], P[N - 1][1]);
       G.addColorStop(0, brC0);
@@ -198,7 +229,7 @@ export class OilStyle {
       }
     }
 
-    // Drag effect: wet paint pulled behind (oil)
+    // Wet paint dragging: stroke picks up color from previous strokes
     if (this.defaults.wetDrag > 0 && progress >= 1) {
       this._wetDrag(ctx, P, w, c0, c1, o, R);
     }
@@ -206,21 +237,36 @@ export class OilStyle {
     ctx.restore();
   }
 
-  /** Wet paint dragging behind the brush (oil effect) */
+  /**
+   * Wet paint dragging behind the brush (oil effect).
+   * Pulls a translucent trail of mixed color behind the main stroke,
+   * simulating wet paint being dragged on the canvas.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {Array} P - Sampled points along the stroke
+   * @param {number} w - Brush width
+   * @param {string} c0 - Start color (hex)
+   * @param {string} c1 - End color (hex)
+   * @param {number} o - Opacity
+   * @param {function} R - Seeded RNG
+   */
   _wetDrag(ctx, P, w, c0, c1, o, R) {
-    const dragW = w * 0.3;
     const offP = offsetPts(P, -w * 0.65);
-    ctx.globalAlpha = o * 0.15;
+    ctx.globalAlpha = o * 0.15 * this.defaults.wetDrag;
     ctx.fillStyle = mixHex(c0, c1, 0.5);
     ctx.beginPath();
     offP.forEach((p, i) => ctx[i ? 'lineTo' : 'moveTo'](p[0], p[1]));
-    ctx.closePath();
-    ctx.fill('evenodd');
+    ctx.closePath(); ctx.fill('evenodd');
   }
 
   /**
    * Fill an area (E/B/T/R) with bristle strokes side by side,
    * each ending at the shape's edge — like a painter filling in.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} shape
+   * @param {function} R - Seeded RNG
+   * @param {string} c0 - Start color
+   * @param {string} c1 - End color
+   * @param {number} o - Opacity
    */
   _renderArea(ctx, shape, R, c0, c1, o) {
     const a = shape.params;
@@ -232,7 +278,6 @@ export class OilStyle {
     const nx = -dy;
     const ny = dx;
 
-    // Project polygon into brush-local coordinates
     let lo = 1e9, hi = -1e9, lo2 = 1e9, hi2 = -1e9;
     for (let i = 0; i < P.length; i += 2) {
       const u = P[i] * nx + P[i + 1] * ny;
@@ -264,22 +309,22 @@ export class OilStyle {
       }
       if (!f || Math.hypot(l[0] - f[0], l[1] - f[1]) < sw * 0.5) continue;
 
-      const flip = (k + (R() < 0.3 ? 1 : 0)) % 2;
-      const A = flip ? l : f;
-      const B = flip ? f : l;
+      const A = f;
+      const B = l;
       const t = k / Math.max(1, n - 1);
       const ca = mixHex(c0, c1, t);
       const cb = mixHex(c0, c1, Math.min(1, t + 0.25));
 
-      // Render as a bristle stroke
       const strokeShape = {
         type: 'S',
         params: [A[0], A[1], (A[0] + B[0]) / 2, (A[1] + B[1]) / 2, B[0], B[1], sw, an, ca, cb, o],
+        color0: hexRgb(ca),
+        color1: hexRgb(cb),
+        alpha: o,
         seed: [a[0] + k * 7.1, a[1] + k * 3.3, a[2], a[3], k, 1]
       };
       const R2 = rngFor(strokeShape.seed);
-      const [c2, c3, o2] = colsOf(strokeShape);
-      this._renderStroke(ctx, strokeShape, R2, c2, c3, o2, 1);
+      this._renderStroke(ctx, strokeShape, R2, ca, cb, o, 1);
     }
 
     ctx.restore();
@@ -288,6 +333,9 @@ export class OilStyle {
   /**
    * Create a set of bristles with uneven widths and per-bristle properties.
    * Mirrors Code Painter's bristleSet.
+   * @param {number} r - Brush radius (half-width)
+   * @param {function} R - Seeded RNG
+   * @returns {Array<object>} Bristle descriptors
    */
   _makeBristles(r, R) {
     const n = Math.max(4, Math.min(16, Math.round(r / 3.2)));
@@ -309,7 +357,6 @@ export class OilStyle {
     }
     return b;
   }
-
 }
 
 export default OilStyle;

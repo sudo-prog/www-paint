@@ -5,14 +5,14 @@
  * with a dry-hair tail that breaks into separate streaks at the end.
  * For filled shapes, ink pools denser at the rim with a soft feathered edge.
  *
- * Stroke rendering (from Code Painter's `ink` style):
- *   - The loaded part is a single filled ribbon whose width follows
- *     w * (0.22 + 0.9 * sin(PI * progress)^0.55)  — fat in the middle,
- *     tapering at both ends.
- *   - Where the brush touches down: a darkened dot.
- *   - The tail (last ~34% of the path) breaks into ~7 parallel dry-hairs
- *     that fade out, each stopping at a random point — the brush running
- *     dry.
+ * Stroke rendering:
+ *  - The loaded part is a single filled ribbon whose width follows
+ *    w * (0.22 + 0.9 * sin(PI * progress)^0.55) — fat in the middle,
+ *    tapering at both ends.
+ *  - Where the brush touches down: a darkened dot.
+ *  - The tail (last ~34% of the path) breaks into ~7 parallel dry-hairs
+ *    that fade out, each stopping at a random point — the brush running
+ *    dry.
  *
  * Pool rendering (for E/B/T/R shapes): a radial gradient denser at the rim,
  * with a ragged feathered edge (hobbsGrow-style displacement).
@@ -24,13 +24,31 @@ import {
   rngFor, gaussR, lerp, clamp01,
   hexRgb, shade, shade2, mixHex, rgbaOf,
   quadPts, normalAt, boxOf, shapePoly, outlinePath, raggedPath,
-  gradOf, colsOf
+  gradOf, colsOf, rgbToHex
 } from './base.js';
+
+/**
+ * Resolve colors from a shape, handling both formats:
+ *  - Engine format: shape.color0/color1 are RGB arrays, shape.alpha is number
+ *  - Style format: colors embedded in shape.params
+ * Returns [c0, c1, o] as hex strings and alpha.
+ * @param {object} shape
+ * @returns {[string, string, number]}
+ */
+function resolveColors(shape) {
+  if (Array.isArray(shape.color0) || Array.isArray(shape.color1)) {
+    const c0 = Array.isArray(shape.color0) ? rgbToHex(shape.color0) : (typeof shape.color0 === 'string' ? shape.color0 : '#000000');
+    const c1 = Array.isArray(shape.color1) ? rgbToHex(shape.color1) : (typeof shape.color1 === 'string' ? shape.color1 : '#000000');
+    const o = typeof shape.alpha === 'number' ? shape.alpha : 1;
+    return [c0, c1, o];
+  }
+  return colsOf(shape);
+}
 
 export class InkStyle {
   name = 'ink';
   category = 'paint';
-  description = 'A loaded ink brush: strokes swell and taper, tails breaking into dry streaks. Filled areas pool denser at the rim with a soft feathered edge.';
+  description = 'A loaded ink brush: strokes swell and taper, tails breaking into dry streaks. Filled areas pool denser at the rim with a ragged feathered edge.';
 
   defaults = {
     strokeSize: { min: 2, max: 12 },
@@ -41,6 +59,12 @@ export class InkStyle {
     poolFeather: 0.035  // edge fray amount for pools
   };
 
+  /**
+   * Propose candidate strokes for this style.
+   * @param {object} analyzer - Image analyzer with edges[], regions[]
+   * @param {object} params - User/style parameters
+   * @returns {Array} shape candidates
+   */
   generate(analyzer, params) {
     const cfg = { ...this.defaults, ...params };
     const strokes = [];
@@ -48,7 +72,6 @@ export class InkStyle {
     if (analyzer && analyzer.edges && analyzer.edges.length > 0) {
       for (const edge of analyzer.edges) {
         const color = analyzer.sampleColor(edge.cx, edge.cy);
-        // Ink tends darker — sample the darker side
         strokes.push(this._makeStroke(edge, color));
       }
     }
@@ -70,6 +93,9 @@ export class InkStyle {
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],
+      color0: c,
+      color1: c,
+      alpha: 1,
       seed: edge.seed || [edge.x0, edge.y0, edge.x1, edge.y1, w, 0]
     };
   }
@@ -80,6 +106,9 @@ export class InkStyle {
     return {
       type: 'E',
       params: [region.cx, region.cy, w, w, 0, c, c, 1],
+      color0: c,
+      color1: c,
+      alpha: 1,
       seed: [region.cx, region.cy, w, 0, 0, 0]
     };
   }
@@ -91,15 +120,14 @@ export class InkStyle {
    * @param {number} progress - 0..1 animation progress
    */
   render(ctx, shape, progress = 1) {
-    const a = shape.params;
-    const R = rngFor(shape.seed || a.slice(0, 9));
-    const [c0, c1, o] = colsOf(shape);
+    const R = rngFor(shape.seed || shape.params.slice(0, 6));
+    const [c0, c1, o] = resolveColors(shape);
 
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';
 
     if (shape.type === 'S') {
-      this._renderStroke(ctx, a, R, c0, c1, o, progress);
+      this._renderStroke(ctx, shape, R, c0, c1, o, progress);
     } else {
       this._renderPool(ctx, shape, R, c0, c1, o);
     }
@@ -109,23 +137,37 @@ export class InkStyle {
 
   /**
    * Render a single ink-brush stroke: loaded ribbon + dry-hair tail.
-   * Faithful to Code Painter's ink() style renderer.
+   *
+   * The loaded part swells in the middle and tapers at the start.
+   * The dry-hair tail breaks into separate streaks that fade out.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} shape
+   * @param {function} R - Seeded RNG
+   * @param {string} c0 - Color (hex)
+   * @param {string} c1 - Color (hex)
+   * @param {number} o - Opacity
+   * @param {number} progress - 0..1
    */
-  _renderStroke(ctx, a, R, c0, c1, o, progress) {
+  _renderStroke(ctx, shape, R, c0, c1, o, progress) {
+    const a = shape.params;
     const w = a[6];
-    // Sample the quadratic at `progress` along the path
     const P = quadPts(a, progress, 1, 28);
     const n = P.length;
     if (n < 3) return;
 
-    const cut = Math.round((n - 1) * 0.66);
-    // Width function: swells in the middle, tapers at ends
-    const wid = i => w * (0.22 + 0.9 * Math.pow(Math.sin(Math.PI * Math.min(1, (i / (n - 1)) * progress * 0.92 + 0.06)), 0.55));
+    const cut = Math.round((n - 1) * this.defaults.tailStart);
 
-    // The loaded part: one filled ribbon (left edge → right edge)
+    // Width function: swells in the middle, tapers at ends
+    // sin(PI * t)^0.55 gives a smooth swell — fat in the middle, thin at ends
+    const wid = (i) => w * (0.22 + 0.9 * Math.pow(
+      Math.sin(Math.PI * Math.min(1, (i / (n - 1)) * progress * 0.92 + 0.06)), 0.55
+    ));
+
+    // The loaded part: one filled ribbon (left edge -> right edge)
     const L = [];   // left side of the ribbon
     const Rt = [];  // right side (reversed for fill)
     const loadN = Math.min(cut, n - 1);
+
     for (let i = 0; i <= loadN; i++) {
       const [nx, ny] = normalAt(P, i);
       const h = wid(i) / 2;
@@ -141,19 +183,23 @@ export class InkStyle {
     ctx.closePath();
     ctx.fill();
 
-    // Ink blob where the brush touched down
+    // Ink blob where the brush touched down (darker dot at the start)
     ctx.globalAlpha = o;
     ctx.fillStyle = shade(c0, -0.18);
     ctx.beginPath();
     ctx.arc(P[0][0], P[0][1], wid(0) * 0.6, 0, 7);
     ctx.fill();
 
-    // The tail: separate hairs running dry, some stopping early
-    if (n - 1 > cut && progress > 0.6) {
+    // The tail: separate dry-hairs running dry, some stopping early
+    // These are bristle tails that break off when the brush runs dry
+    if (n - 1 > cut && progress > this.defaults.tailStart) {
       const hairs = this.defaults.hairCount;
+      const tailProgress = (progress - this.defaults.tailStart) / (1 - this.defaults.tailStart);
+
       for (let h = 0; h < hairs; h++) {
+        // Each hair gets a slightly different offset across the brush width
         const off = ((h + 0.5) / hairs - 0.5) * wid(cut) * 0.95;
-        const tailProgress = (progress - 0.6) / 0.4;
+        // Each hair stops at a random point (dry-brush effect)
         const stop = cut + Math.round((n - 1 - cut) * tailProgress * (0.45 + R() * 0.55));
         const hairWidth = Math.max(0.6, wid(cut) / hairs * (0.9 + R() * 0.8));
 
@@ -161,6 +207,7 @@ export class InkStyle {
         ctx.strokeStyle = c0;
         ctx.lineWidth = hairWidth;
         ctx.beginPath();
+
         for (let i = cut - 1; i <= stop; i++) {
           const [nx, ny] = normalAt(P, i);
           const k = off * wid(i) / Math.max(0.1, wid(cut));
@@ -177,14 +224,21 @@ export class InkStyle {
   /**
    * Render an ink pool (for E/B/T/R shapes):
    * a radial gradient denser at the rim, with a ragged feathered edge.
+   * Uses raggedPath from base.js for the frayed, natural-looking edge.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} shape
+   * @param {function} R - Seeded RNG
+   * @param {string} c0 - Start color (hex)
+   * @param {string} c1 - End color (hex)
+   * @param {number} o - Opacity
    */
   _renderPool(ctx, shape, R, c0, c1, o) {
-    const a = shape.params;
     const path = raggedPath(shape, R, this.defaults.poolFeather);
     const P = shapePoly(shape);
     const b = boxOf(P);
     const r = Math.max(1, Math.max(b.w, b.h) / 2);
 
+    // Radial gradient: dense at the rim (pooled ink), lighter at center
     const G = ctx.createRadialGradient(b.cx, b.cy, 0, b.cx, b.cy, r);
     G.addColorStop(0, rgbaOf(c0, 0.62 * o));
     G.addColorStop(0.75, rgbaOf(mixHex(c0, c1, 0.3), 0.72 * o));
@@ -192,13 +246,12 @@ export class InkStyle {
     ctx.fillStyle = G;
     ctx.fill(path);
 
-    // Darker rim line
+    // Darker rim line — the pooled ink edge
     ctx.globalAlpha = o * 0.35;
     ctx.strokeStyle = shade(c0, -0.3);
     ctx.lineWidth = Math.max(0.6, r * 0.04);
     ctx.stroke(path);
   }
-
 }
 
 export default InkStyle;
