@@ -35,6 +35,8 @@
       </nav>
 
       <div class="top-bar__right">
+        <button type="button" class="mobile-toggle" id="toggle-controls" aria-label="Toggle controls">⚙</button>
+        <button type="button" class="mobile-toggle" id="toggle-layers" aria-label="Toggle layers">┅</button>
         <button type="button" class="btn btn--ghost btn--sm" id="btn-load-image" aria-label="Open image">
           <span class="btn__icon">▲</span>Open
         </button>
@@ -134,6 +136,26 @@
             nav.classList.toggle('nav-btn--active', nav === btn);
           });
         });
+      });
+
+      // Mobile toggle buttons
+      const controlsPanel = document.querySelector('.panel--controls');
+      const layersPanel = document.querySelector('.panel--layers');
+      const toggleControls = document.getElementById('toggle-controls');
+      const toggleLayers = document.getElementById('toggle-layers');
+
+      toggleControls?.addEventListener('click', () => {
+        controlsPanel?.classList.toggle('panel--mobile-open');
+        layersPanel?.classList.remove('panel--mobile-open');
+        toggleControls.classList.toggle('mobile-toggle--active');
+        toggleLayers?.classList.remove('mobile-toggle--active');
+      });
+
+      toggleLayers?.addEventListener('click', () => {
+        layersPanel?.classList.toggle('panel--mobile-open');
+        controlsPanel?.classList.remove('panel--mobile-open');
+        toggleLayers.classList.toggle('mobile-toggle--active');
+        toggleControls?.classList.remove('mobile-toggle--active');
       });
     }
   </script>
