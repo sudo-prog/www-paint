@@ -138,24 +138,35 @@
         });
       });
 
-      // Mobile toggle buttons
+      // Mobile toggle buttons — use inline styles to avoid CSS specificity issues
       const controlsPanel = document.querySelector('.panel--controls');
       const layersPanel = document.querySelector('.panel--layers');
       const toggleControls = document.getElementById('toggle-controls');
       const toggleLayers = document.getElementById('toggle-layers');
 
+      function closeMobilePanels() {
+        if (controlsPanel) controlsPanel.style.left = '-320px';
+        if (layersPanel) layersPanel.style.right = '-320px';
+        if (toggleControls) toggleControls.classList.remove('mobile-toggle--active');
+        if (toggleLayers) toggleLayers.classList.remove('mobile-toggle--active');
+      }
+
       toggleControls?.addEventListener('click', () => {
-        controlsPanel?.classList.toggle('panel--mobile-open');
-        layersPanel?.classList.remove('panel--mobile-open');
-        toggleControls.classList.toggle('mobile-toggle--active');
-        toggleLayers?.classList.remove('mobile-toggle--active');
+        const isOpen = controlsPanel && controlsPanel.style.left === '0px';
+        closeMobilePanels();
+        if (!isOpen && controlsPanel) {
+          controlsPanel.style.left = '0px';
+          toggleControls.classList.add('mobile-toggle--active');
+        }
       });
 
       toggleLayers?.addEventListener('click', () => {
-        layersPanel?.classList.toggle('panel--mobile-open');
-        controlsPanel?.classList.remove('panel--mobile-open');
-        toggleLayers.classList.toggle('mobile-toggle--active');
-        toggleControls?.classList.remove('mobile-toggle--active');
+        const isOpen = layersPanel && layersPanel.style.right === '0px';
+        closeMobilePanels();
+        if (!isOpen && layersPanel) {
+          layersPanel.style.right = '0px';
+          toggleLayers.classList.add('mobile-toggle--active');
+        }
       });
     }
   </script>
