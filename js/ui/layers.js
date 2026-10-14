@@ -135,7 +135,7 @@ export class LayersManager {
       </div>
       <div class="layer-row__name">
         <span class="layer-name">${this._escapeHtml(layer.name || `Layer ${layer.id}`)}</span>
-        ${lockedOverlay}
+        ${lockedHtml}
       </div>
       <div class="layer-row__opacity">
         <input type="range" class="layer-opacity-input" min="0" max="100" step="1"
