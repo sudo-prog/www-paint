@@ -22,10 +22,10 @@ import { sampleRegion, sampleLuminance, sampleEdge } from './analyzer.js';
  */
 export const DEFAULT_SETTINGS = {
   style: 'pencil',
-  strokeSize: { min: 3, max: 14, random: true },
+  strokeSize: { min: 6, max: 28, random: true },
   spacing: 0.5,
   scatter: 0.3,
-  strokeCount: 1000,
+  strokeCount: 5000,
   detailLevel: 0.7,
   randomness: 0.3,
   styleStrength: 0.8,   // 0..1 — strength of the chosen style's effect
@@ -33,11 +33,13 @@ export const DEFAULT_SETTINGS = {
   colorMode: 'exact',   // exact | quantized | palette
   paletteSize: 8,
   pathOrder: 'free',    // free | top-bottom | spiral | one-line | edges-first
-  shapeBias: { E: 0.04, B: 0.04, T: 0.02, R: 0.10, S: 0.80 },
+  shapeBias: { E: 0.12, B: 0.12, T: 0.03, R: 0.13, S: 0.60 },
   // Smart sizing: when true, stroke size adapts to local detail
   adaptiveSize: true,
   // Angle bias: when true, stroke orientation follows local gradient direction
   alignToGradient: true,
+  // Use residual-based selection for full-coverage painting
+  useResidual: true,
 };
 
 /**

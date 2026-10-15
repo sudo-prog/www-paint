@@ -304,7 +304,7 @@ export class PaintingEngine {
     } else {
       // Main-thread path
       const candidates = generateCandidates(this._analysis, resolved, seed);
-      if (useResidual) {
+      if (useResidual || this.settings.useResidual) {
         selected = selectWithResidual(candidates, this._analysis, count, {
           residualWeight: 0.6,
           minResidual: 0.02,

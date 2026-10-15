@@ -160,7 +160,7 @@ export class ControlsManager {
     const controls = [
       { key: "strokeSizeMin", label: "Stroke Min",    type: "range", min: 0.5, max: 50, step: 0.5, value: this.settings.strokeSize?.min || DEFAULT_SETTINGS.strokeSize.min },
       { key: "strokeSizeMax", label: "Stroke Max",    type: "range", min: 0.5, max: 100, step: 0.5, value: this.settings.strokeSize?.max || DEFAULT_SETTINGS.strokeSize.max },
-      { key: "strokeCount",   label: "Density",        type: "range", min: 100, max: 5000, step: 50, value: this.settings.strokeCount || DEFAULT_SETTINGS.strokeCount },
+      { key: "strokeCount",   label: "Density",        type: "range", min: 500, max: 20000, step: 100, value: this.settings.strokeCount || DEFAULT_SETTINGS.strokeCount },
       { key: "detailLevel",   label: "Detail",         type: "range", min: 0, max: 1, step: 0.05, value: this.settings.detailLevel || DEFAULT_SETTINGS.detailLevel, display: "percent" },
       { key: "styleStrength", label: "Strength",       type: "range", min: 0, max: 1, step: 0.05, value: this.settings.styleStrength || 0.8, display: "percent" },
       { key: "opacity",       label: "Opacity",         type: "range", min: 0, max: 1, step: 0.05, value: this.settings.opacity !== undefined ? this.settings.opacity : 0.85, display: "percent" },

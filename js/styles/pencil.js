@@ -39,7 +39,7 @@ export class PencilStyle {
   description = 'Coloured-pencil lines on paper: stamped, grainy, with a light-firm-light pressure profile. Areas shaded with close parallel strokes.';
 
   defaults = {
-    strokeSize: { min: 0.8, max: 4.5 },
+    strokeSize: { min: 4, max: 24 },
     spacing: 0.3,        // stamp spacing as a fraction of brush width
     scatter: 0.55,       // sideways drift of stamps (0 = clean line)
     sharp: 0.4,          // stamp-shape sharpness (affects scatter)
@@ -139,7 +139,7 @@ export class PencilStyle {
 
   _renderStroke(ctx, shape, R, progress) {
     const a = shape.params;
-    const w = Math.max(0.9, Math.min(4.5, a[6]));
+    const w = Math.max(1.5, Math.min(30, a[6]));
     const P = quadPts(a, progress, 1, 20);
     const fill = a[8];
 

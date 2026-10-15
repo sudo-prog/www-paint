@@ -51,7 +51,7 @@ export class InkStyle {
   description = 'A loaded ink brush: strokes swell and taper, tails breaking into dry streaks. Filled areas pool denser at the rim with a ragged feathered edge.';
 
   defaults = {
-    strokeSize: { min: 2, max: 12 },
+    strokeSize: { min: 4, max: 24 },
     taper: 0.55,       // how strongly the stroke narrows at the ends (0=uniform, 1=full taper)
     hairCount: 7,      // number of dry-hair streaks in the tail
     tailStart: 0.66,   // fraction along the stroke where the loaded part ends
