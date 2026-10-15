@@ -655,6 +655,9 @@ export class PaintingEngine {
    */
   setSettings(settings) {
     this.settings = resolveSettings({ ...this.settings, ...settings });
+    // Propagate Painter-facing flags from settings if present
+    if (settings.smart !== undefined) this._smart = !!settings.smart;
+    if (settings.order !== undefined) this._order = settings.order;
   }
 
   /**

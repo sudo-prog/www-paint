@@ -293,6 +293,8 @@ export class App {
         style: settings.style,
         count: settings.strokeCount,
         layer: 0,
+        smart: settings.smart,
+        order: settings.order,
       });
 
       const elapsed = performance.now() - startTime;

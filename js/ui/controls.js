@@ -1,6 +1,6 @@
 /**
  * Controls Panel — binds all UI controls (style picker, sliders, selectors)
- * to the PaintingEngine settings.
+ * to the PaintingEngine settings via the Painter-based engine.
  *
  * Warm Dark Creative Tool: uses CSS tokens from :root, DM Sans / DM Mono typography.
  *
@@ -9,6 +9,36 @@
 
 import { getAllStyles } from "../styles/index.js";
 import { DEFAULT_SETTINGS } from "../engine/generator.js";
+
+/**
+ * Default settings surfaced by the controls panel.
+ *
+ * These flow into PaintingEngine.generate() which passes them to the Painter:
+ *   - style      → Painter style selection
+ *   - smart      → enables structure tensor, focus map, subject detection
+ *   - order      → Painter.orderSetup kind (down, up, right, left, diag,
+ *                  spiral, spiralin, rings, ringsin, clock, free)
+ *
+ * shapeBias, adaptiveSize, alignToGradient are intentionally NOT exposed —
+ * the Painter handles those internally.
+ *
+ * @type {object}
+ */
+const PAINTER_DEFAULT_SETTINGS = {
+  style: DEFAULT_SETTINGS.style || 'pencil',
+  strokeSize: { min: 6, max: 28, random: true },
+  strokeCount: DEFAULT_SETTINGS.strokeCount || 5000,
+  detailLevel: DEFAULT_SETTINGS.detailLevel ?? 0.7,
+  styleStrength: DEFAULT_SETTINGS.styleStrength ?? 0.8,
+  opacity: DEFAULT_SETTINGS.opacity ?? 0.85,
+  randomness: DEFAULT_SETTINGS.randomness ?? 0.3,
+  scatter: DEFAULT_SETTINGS.scatter ?? 0.3,
+  colorMode: DEFAULT_SETTINGS.colorMode || 'exact',
+  paletteSize: DEFAULT_SETTINGS.paletteSize || 8,
+  pathOrder: 'free',       // legacy — kept in settings for backward compat
+  smart: true,             // Painter smart mode on by default
+  order: 'free',           // maps to Painter.orderSetup kinds
+};
 
 /** Style metadata for the built-in styles. */
 const STYLE_PRESETS = {
@@ -20,20 +50,23 @@ const STYLE_PRESETS = {
   graphic:    { label: "Graphic",      category: "graphic" },
 };
 
-/** Path order options. */
+/**
+ * Path / ordering options that map directly to Painter.orderSetup.
+ * 'free' is a sentinel: the Painter skips orderSetup when the value
+ * is not in its KINDS list, yielding random placement.
+ */
 const PATH_ORDER_OPTIONS = [
-  { value: "free",        label: "Free" },
-  { value: "down",        label: "Top" },
-  { value: "up",          label: "Bottom" },
-  { value: "right",       label: "Left" },
-  { value: "left",        label: "Right" },
-  { value: "diag",        label: "Diag" },
-  { value: "spiral",      label: "Spiral" },
-  { value: "spiralin",    label: "Spiral In" },
-  { value: "rings",       label: "Rings" },
-  { value: "ringsin",     label: "Rings In" },
-  { value: "clock",       label: "Clock" },
-  { value: "one-line",    label: "One Line" },
+  { value: "free",      label: "Free" },
+  { value: "down",      label: "Down" },
+  { value: "up",        label: "Up" },
+  { value: "right",     label: "Right" },
+  { value: "left",      label: "Left" },
+  { value: "diag",      label: "Diagonal" },
+  { value: "spiral",    label: "Spiral" },
+  { value: "spiralin",  label: "Spiral In" },
+  { value: "rings",     label: "Rings" },
+  { value: "ringsin",   label: "Rings In" },
+  { value: "clock",     label: "Clock" },
 ];
 
 /** Color mode options. */
@@ -41,6 +74,12 @@ const COLOR_MODE_OPTIONS = [
   { value: "exact",     label: "Exact" },
   { value: "quantized", label: "Quantized" },
   { value: "palette",   label: "Palette" },
+];
+
+/** Smart-mode toggle options. */
+const SMART_OPTIONS = [
+  { value: false, label: "Off" },
+  { value: true,  label: "On" },
 ];
 
 /**
@@ -57,7 +96,7 @@ export class ControlsManager {
     /** @type {HTMLElement} */
     this.root = root;
     /** @type {object} */
-    this.settings = { ...DEFAULT_SETTINGS, ...opts.initialSettings };
+    this.settings = { ...PAINTER_DEFAULT_SETTINGS, ...opts.initialSettings };
     /** @type {Array<string>} */
     this.styles = getAllStyles().map((s) => s.name);
     /** @type {Record<string, object>} */
@@ -78,11 +117,10 @@ export class ControlsManager {
     this.root.innerHTML = "";
 
     const sections = [
-      { id: "style-section",   title: "STYLE",    render: () => this._renderStylePicker() },
-      { id: "brush-section",   title: "BRUSH",    render: () => this._renderBrushControls() },
-      { id: "path-section",    title: "PATH ORDER", render: () => this._renderPathOrder() },
-      { id: "color-section",   title: "COLOR",    render: () => this._renderColorMode() },
-      { id: "smart-section",   title: "SMART",    render: () => this._renderSmartToggle() },
+      { id: "style-section",   title: "STYLE",        render: () => this._renderStylePicker() },
+      { id: "brush-section",   title: "BRUSH",        render: () => this._renderBrushControls() },
+      { id: "path-section",    title: "PATH ORDER",   render: () => this._renderPathOrder() },
+      { id: "color-section",   title: "COLOR",        render: () => this._renderColorMode() },
     ];
 
     for (const s of sections) {
@@ -134,20 +172,21 @@ export class ControlsManager {
       btn.setAttribute("aria-label", label);
       btn.setAttribute("title", label);
 
-      btn.innerHTML = `
-        <span class="style-btn__swatch" aria-hidden="true"></span>
-        <span class="style-btn__label">${label}</span>
-      `;
+      // Safe DOM construction (no untrusted HTML; label comes from style registry)
+      const swatch = document.createElement("span");
+      swatch.className = "style-btn__swatch";
+      swatch.setAttribute("aria-hidden", "true");
+      swatch.style.backgroundColor = STYLE_SWATCH_COLORS[name] || "var(--accent)";
+
+      const spanLabel = document.createElement("span");
+      spanLabel.className = "style-btn__label";
+      spanLabel.textContent = label;
+
+      btn.appendChild(swatch);
+      btn.appendChild(spanLabel);
 
       if (name === this.settings.style) {
         btn.classList.add("style-btn--active");
-      }
-
-      // Color the swatch per style
-      const swatch = btn.querySelector(".style-btn__swatch");
-      if (swatch) {
-        swatch.className = "style-btn__swatch";
-        swatch.style.backgroundColor = STYLE_SWATCH_COLORS[name] || "var(--accent)";
       }
 
       this._inputs[`style-${name}`] = btn;
@@ -158,7 +197,7 @@ export class ControlsManager {
   }
 
   /**
-   * Render brush/stroke controls (sliders).
+   * Render brush/stroke controls (sliders + smart toggle).
    * @returns {HTMLElement}
    */
   _renderBrushControls() {
@@ -166,19 +205,22 @@ export class ControlsManager {
     wrapper.className = "brush-controls";
 
     const controls = [
-      { key: "strokeSizeMin", label: "Stroke Min",    type: "range", min: 0.5, max: 50, step: 0.5, value: this.settings.strokeSize?.min || DEFAULT_SETTINGS.strokeSize.min },
-      { key: "strokeSizeMax", label: "Stroke Max",    type: "range", min: 0.5, max: 100, step: 0.5, value: this.settings.strokeSize?.max || DEFAULT_SETTINGS.strokeSize.max },
-      { key: "strokeCount",   label: "Density",        type: "range", min: 500, max: 20000, step: 100, value: this.settings.strokeCount || DEFAULT_SETTINGS.strokeCount },
-      { key: "detailLevel",   label: "Detail",         type: "range", min: 0, max: 1, step: 0.05, value: this.settings.detailLevel || DEFAULT_SETTINGS.detailLevel, display: "percent" },
-      { key: "styleStrength", label: "Strength",       type: "range", min: 0, max: 1, step: 0.05, value: this.settings.styleStrength || 0.8, display: "percent" },
-      { key: "opacity",       label: "Opacity",         type: "range", min: 0, max: 1, step: 0.05, value: this.settings.opacity !== undefined ? this.settings.opacity : 0.85, display: "percent" },
-      { key: "randomness",    label: "Randomness",     type: "range", min: 0, max: 1, step: 0.05, value: this.settings.randomness || DEFAULT_SETTINGS.randomness, display: "percent" },
-      { key: "scatter",       label: "Scatter",        type: "range", min: 0, max: 1, step: 0.05, value: this.settings.scatter || DEFAULT_SETTINGS.scatter, display: "percent" },
+      { key: "strokeSizeMin", label: "Stroke Min",    type: "range", min: 0.5, max: 50, step: 0.5, value: this.settings.strokeSize?.min || PAINTER_DEFAULT_SETTINGS.strokeSize.min },
+      { key: "strokeSizeMax", label: "Stroke Max",    type: "range", min: 0.5, max: 100, step: 0.5, value: this.settings.strokeSize?.max || PAINTER_DEFAULT_SETTINGS.strokeSize.max },
+      { key: "strokeCount",   label: "Density",        type: "range", min: 500, max: 20000, step: 100, value: this.settings.strokeCount || PAINTER_DEFAULT_SETTINGS.strokeCount },
+      { key: "detailLevel",   label: "Detail",         type: "range", min: 0, max: 1, step: 0.05, value: this.settings.detailLevel ?? PAINTER_DEFAULT_SETTINGS.detailLevel, display: "percent" },
+      { key: "styleStrength", label: "Strength",       type: "range", min: 0, max: 1, step: 0.05, value: this.settings.styleStrength ?? PAINTER_DEFAULT_SETTINGS.styleStrength, display: "percent" },
+      { key: "opacity",       label: "Opacity",         type: "range", min: 0, max: 1, step: 0.05, value: this.settings.opacity ?? PAINTER_DEFAULT_SETTINGS.opacity, display: "percent" },
+      { key: "randomness",    label: "Randomness",     type: "range", min: 0, max: 1, step: 0.05, value: this.settings.randomness ?? PAINTER_DEFAULT_SETTINGS.randomness, display: "percent" },
+      { key: "scatter",       label: "Scatter",        type: "range", min: 0, max: 1, step: 0.05, value: this.settings.scatter ?? PAINTER_DEFAULT_SETTINGS.scatter, display: "percent" },
     ];
 
     for (const c of controls) {
       wrapper.appendChild(this._renderSlider(c));
     }
+
+    // Smart toggle
+    wrapper.appendChild(this._renderToggle("smart", "Smart Mode", SMART_OPTIONS, this.settings.smart ?? PAINTER_DEFAULT_SETTINGS.smart));
 
     return wrapper;
   }
@@ -234,20 +276,46 @@ export class ControlsManager {
   }
 
   /**
-   * Format a slider value for display.
-   * @param {object} spec
-   * @param {string|number} value
-   * @returns {string}
+   * Render a boolean toggle as a segmented control.
+   * @param {string} key — settings key
+   * @param {string} label — display label
+   * @param {Array<{value: *, label: string}>} options
+   * @param {*} currentValue
+   * @returns {HTMLElement}
    */
-  _formatSliderValue(spec, value) {
-    const v = parseFloat(value);
-    if (spec.display === "percent") {
-      return `${Math.round(v * 100)}%`;
+  _renderToggle(key, label, options, currentValue) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "control-toggle";
+
+    const title = document.createElement("span");
+    title.className = "toggle-label";
+    title.textContent = label;
+    wrapper.appendChild(title);
+
+    const segmented = document.createElement("div");
+    segmented.className = "segmented segmented--small";
+    segmented.setAttribute("role", "radiogroup");
+    segmented.setAttribute("aria-label", key);
+
+    for (const opt of options) {
+      const btn = document.createElement("button");
+      btn.className = "segmented__btn";
+      btn.type = "button";
+      btn.textContent = opt.label;
+      btn.dataset.value = opt.value;
+      btn.dataset.key = key;
+      btn.setAttribute("role", "radio");
+
+      const isActive = opt.value === currentValue;
+      btn.classList.toggle("segmented__btn--active", isActive);
+      btn.setAttribute("aria-checked", isActive ? "true" : "false");
+
+      segmented.appendChild(btn);
     }
-    if (spec.key === "strokeCount") {
-      return Math.round(v).toLocaleString();
-    }
-    return v.toFixed(1);
+
+    this._inputs[key] = { segmented, key, isToggle: true };
+    wrapper.appendChild(segmented);
+    return wrapper;
   }
 
   /**
@@ -255,7 +323,7 @@ export class ControlsManager {
    * @returns {HTMLElement}
    */
   _renderPathOrder() {
-    return this._renderSegmentedControl("pathOrder", PATH_ORDER_OPTIONS);
+    return this._renderSegmentedControl("order", PATH_ORDER_OPTIONS);
   }
 
   /**
@@ -281,7 +349,7 @@ export class ControlsManager {
     segmented.setAttribute("role", "radiogroup");
     segmented.setAttribute("aria-label", key);
 
-    const current = this.settings[key] || DEFAULT_SETTINGS[key];
+    const current = this.settings[key] || PAINTER_DEFAULT_SETTINGS[key];
 
     for (const opt of options) {
       const btn = document.createElement("button");
@@ -291,11 +359,10 @@ export class ControlsManager {
       btn.dataset.value = opt.value;
       btn.dataset.key = key;
       btn.setAttribute("role", "radio");
-      btn.setAttribute("aria-checked", opt.value === current ? "true" : "false");
 
-      if (opt.value === current) {
-        btn.classList.add("segmented__btn--active");
-      }
+      const isActive = opt.value === current;
+      btn.classList.toggle("segmented__btn--active", isActive);
+      btn.setAttribute("aria-checked", isActive ? "true" : "false");
 
       segmented.appendChild(btn);
     }
@@ -308,67 +375,32 @@ export class ControlsManager {
   /* ─── Events ────────────────────────────────────────────────── */
 
   /**
-   * Render the smart mode toggle.
-   * @returns {HTMLElement}
-   */
-  _renderSmartToggle() {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'smart-toggle-container';
-
-    const label = document.createElement('label');
-    label.className = 'smart-toggle-label';
-    label.htmlFor = 'ctrl-smart';
-    label.textContent = 'Smart Mode';
-
-    const toggle = document.createElement('input');
-    toggle.type = 'checkbox';
-    toggle.id = 'ctrl-smart';
-    toggle.className = 'smart-toggle-input';
-    toggle.checked = this.settings.smart !== false; // default true
-
-    toggle.addEventListener('change', () => {
-      this.settings.smart = toggle.checked;
-      this.root.dispatchEvent(new CustomEvent('settings-change', {
-        detail: { key: 'smart', value: toggle.checked, settings: { ...this.settings } },
-      }));
-    });
-
-    this._inputs.smart = { input: toggle };
-
-    label.appendChild(toggle);
-    wrapper.appendChild(label);
-
-    const hint = document.createElement('span');
-    hint.className = 'smart-toggle-hint';
-    hint.textContent = 'Structure tensor + focus map';
-    wrapper.appendChild(hint);
-
-    return wrapper;
-  }
-
-  /**
    * Dispatch a synthetic settings-change event.
    * @param {string} key
-   * @param {string|number} value
+   * @param {string|number|boolean} value
    * @param {object} spec
    * @private
    */
   _dispatchChange(key, value, spec) {
-    const numValue = spec.type !== "select" ? parseFloat(value) : value;
     let settings = {};
 
     if (key === "strokeSizeMin") {
-      settings.strokeSize = { ...this.settings.strokeSize, min: numValue };
+      settings.strokeSize = { ...this.settings.strokeSize, min: parseFloat(value) };
     } else if (key === "strokeSizeMax") {
-      settings.strokeSize = { ...this.settings.strokeSize, max: numValue };
+      settings.strokeSize = { ...this.settings.strokeSize, max: parseFloat(value) };
+    } else if (key === "smart") {
+      // Toggle values arrive as strings from DOM; coerce to boolean
+      settings.smart = value === "true" || value === true;
+    } else if (spec && spec.type !== "select") {
+      settings[key] = parseFloat(value);
     } else {
-      settings[key] = numValue;
+      settings[key] = value;
     }
 
     Object.assign(this.settings, settings);
 
     const event = new CustomEvent("settings-change", {
-      detail: { key, value: numValue, settings: { ...this.settings } },
+      detail: { key, value: settings[key] !== undefined ? settings[key] : value, settings: { ...this.settings } },
     });
     this.root.dispatchEvent(event);
   }
@@ -385,7 +417,7 @@ export class ControlsManager {
         if (styleName) this._selectStyle(styleName);
       }
 
-      // Segmented control
+      // Segmented control (covers selectors and toggles)
       const segBtn = e.target.closest(".segmented__btn");
       if (segBtn && !segBtn.closest(".style-grid")) {
         const container = segBtn.parentElement;
@@ -399,10 +431,16 @@ export class ControlsManager {
           segBtn.classList.add("segmented__btn--active");
           segBtn.setAttribute("aria-checked", "true");
 
-          this.settings[key] = value;
+          // Coerce value based on input type
+          let typedValue = value;
+          if (this._inputs[key]?.isToggle) {
+            typedValue = value === "true" || value === true;
+          }
+
+          this.settings[key] = typedValue;
 
           const event = new CustomEvent("settings-change", {
-            detail: { key, value, settings: { ...this.settings } },
+            detail: { key, value: typedValue, settings: { ...this.settings } },
           });
           this.root.dispatchEvent(event);
         }
@@ -453,25 +491,55 @@ export class ControlsManager {
       const entry = this._inputs[key];
       if (!entry) continue;
       let val;
-      if (key === "strokeSizeMin") val = this.settings.strokeSize?.min || DEFAULT_SETTINGS.strokeSize.min;
-      else if (key === "strokeSizeMax") val = this.settings.strokeSize?.max || DEFAULT_SETTINGS.strokeSize.max;
-      else val = this.settings[key] !== undefined ? this.settings[key] : DEFAULT_SETTINGS[key];
+      if (key === "strokeSizeMin") val = this.settings.strokeSize?.min || PAINTER_DEFAULT_SETTINGS.strokeSize.min;
+      else if (key === "strokeSizeMax") val = this.settings.strokeSize?.max || PAINTER_DEFAULT_SETTINGS.strokeSize.max;
+      else val = this.settings[key] !== undefined ? this.settings[key] : PAINTER_DEFAULT_SETTINGS[key];
 
       entry.input.value = val;
       entry.valueSpan.textContent = this._formatSliderValue(entry.spec, val);
     }
 
+    // Toggle (smart)
+    for (const key of ["smart"]) {
+      const entry = this._inputs[key];
+      if (!entry || !entry.isToggle) continue;
+      const value = this.settings[key] !== undefined ? this.settings[key] : PAINTER_DEFAULT_SETTINGS[key];
+      entry.segmented.querySelectorAll(".segmented__btn").forEach((b) => {
+        const isActive = b.dataset.value === String(value);
+        b.classList.toggle("segmented__btn--active", isActive);
+        b.setAttribute("aria-checked", isActive ? "true" : "false");
+      });
+    }
+
     // Segmented selectors
-    for (const key of ["pathOrder", "colorMode"]) {
-      if (!this._inputs[key]) continue;
-      const container = this._inputs[key].segmented;
-      const value = this.settings[key] || DEFAULT_SETTINGS[key];
+    for (const key of ["order", "colorMode"]) {
+      const entry = this._inputs[key];
+      if (!entry) continue;
+      const container = entry.segmented;
+      const value = this.settings[key] || PAINTER_DEFAULT_SETTINGS[key];
       container.querySelectorAll(".segmented__btn").forEach((b) => {
         const active = b.dataset.value === value;
         b.classList.toggle("segmented__btn--active", active);
         b.setAttribute("aria-checked", active ? "true" : "false");
       });
     }
+  }
+
+  /**
+   * Format a slider value for display.
+   * @param {object} spec
+   * @param {string|number} value
+   * @returns {string}
+   */
+  _formatSliderValue(spec, value) {
+    const v = parseFloat(value);
+    if (spec.display === "percent") {
+      return `${Math.round(v * 100)}%`;
+    }
+    if (spec.key === "strokeCount") {
+      return Math.round(v).toLocaleString();
+    }
+    return v.toFixed(1);
   }
 
   /**
@@ -517,5 +585,5 @@ const STYLE_SWATCH_COLORS = {
   graphic:    "#8A7F9D", // muted purple
 };
 
-export { STYLE_PRESETS, PATH_ORDER_OPTIONS, COLOR_MODE_OPTIONS };
+export { STYLE_PRESETS, PATH_ORDER_OPTIONS, COLOR_MODE_OPTIONS, SMART_OPTIONS, PAINTER_DEFAULT_SETTINGS };
 export default ControlsManager;
