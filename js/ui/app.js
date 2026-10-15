@@ -58,6 +58,7 @@ export class App {
     this._statusTimeout = null;
 
     this._init();
+    window.__app = this; // debug hook
   }
 
   /* ─── Initialization ────────────────────────────────────────── */
@@ -82,7 +83,7 @@ export class App {
       canvas: this.canvasEl,
       width: this.canvasEl.width,
       height: this.canvasEl.height,
-      useWorker: false,
+      useWorker: true,
       background: this._background,
     });
 

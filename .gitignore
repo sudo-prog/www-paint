@@ -8,3 +8,11 @@ _skills/
 _p5brush/
 _reference/
 _skills/
+
+# Test / probe artifacts (kept on disk, not committed)
+graphify-out/
+app-test-result.png
+test-*.png
+test-*.html
+assets/test-*.jpg
+assets/test-*.png

@@ -258,7 +258,7 @@ export function pointAt(s, t) {
  */
 // Gradient axis of a shape: [dx, dy, from, to] projection extents
 export function shapeAxis(s) {
-  const p = s.params;
+  const p = s.p;
   const g = s.t === 'T' ? p[6] : s.t === 'S' ? p[7] : p[5];
   const dx = Math.cos(g), dy = Math.sin(g);
   if (s.t === 'E') {

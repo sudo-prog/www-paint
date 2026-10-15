@@ -121,6 +121,7 @@ export class PaintingEngine {
 
     // Current painter (for abort/stop support)
     this._currentPainter = null;
+    this._currentWorker = null;
 
     // Cached results from last generate() run
     this._lastSim = 0;
@@ -318,6 +319,25 @@ export class PaintingEngine {
         ? this._order
         : null;
 
+    // ── Worker path ───────────────────────────────────────────────
+    if (this.useWorker && typeof Worker !== 'undefined') {
+      const shapes = await this._generateViaWorker({
+        width: this.width,
+        height: this.height,
+        pixels: this._pixels,
+        style,
+        smart: this._smart,
+        order: painterOrder,
+        count,
+        seed,
+      });
+      const selected = shapes.map((ps, i) => this._convertShape(ps, i, layerIdx));
+      const layer = this.getLayer(layerIdx);
+      if (layer) layer.strokes = selected;
+      this.renderer.setLayers(this.layers);
+      return selected;
+    }
+
     // Completion promise — resolves when Painter calls onDone.
     // The Painter.start() method uses setTimeout-based continuation, so we
     // can't rely on `await painter.start()` alone — it returns after the first
@@ -381,6 +401,68 @@ export class PaintingEngine {
     this.renderer.setLayers(this.layers);
 
     return selected;
+  }
+
+  /**
+   * Run the Painter inside a Web Worker so the main thread stays responsive.
+   * Streams committed shapes back via postMessage and resolves with the
+   * full ordered shape array when the worker reports done.
+   * @private
+   */
+  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed }) {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(new URL('./painter-worker.js', import.meta.url), { type: 'module' });
+      this._currentWorker = worker;
+      const shapes = [];
+
+      worker.onmessage = (e) => {
+        const m = e.data;
+        if (!m) return;
+        if (m.type === 'shape') {
+          shapes.push(m.shape);
+        } else if (m.type === 'done') {
+          this._lastSim = m.result ? m.result.sim : 0;
+          this._lastCount = shapes.length;
+          worker.terminate();
+          this._currentWorker = null;
+          resolve(shapes);
+        } else if (m.type === 'error') {
+          worker.terminate();
+          this._currentWorker = null;
+          reject(new Error(m.message || 'painter worker error'));
+        }
+      };
+
+      worker.onerror = (err) => {
+        worker.terminate();
+        this._currentWorker = null;
+        reject(new Error((err && err.message) || 'painter worker failed'));
+      };
+
+      // Copy pixel data so the engine keeps its own buffer intact.
+      const copy = new Uint8ClampedArray(pixels);
+
+      worker.postMessage({
+        type: 'start',
+        id: 1,
+        width,
+        height,
+        imageData: copy,
+        options: {
+          style,
+          smart,
+          abstract: this.settings.abstract || false,
+          palette: this.settings.palette || null,
+          size: this.settings.sizeK || 1,
+          sizeRand: this.settings.sizeRand || false,
+          order,
+          outline: this.settings.outline || 'off',
+          rfill: this.settings.rfill || 'off',
+          maxShapes: count,
+          seed,
+        },
+      });
+    });
   }
 
   /**
@@ -757,6 +839,9 @@ export class PaintingEngine {
    * The generate() promise will resolve shortly after.
    */
   stop() {
+    if (this._currentWorker) {
+      try { this._currentWorker.postMessage({ type: 'stop', id: 1 }); } catch (_) {}
+    }
     if (this._currentPainter) {
       this._currentPainter.stop();
     }

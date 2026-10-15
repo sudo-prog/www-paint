@@ -73,6 +73,15 @@ export class Painter {
     this.bgStyles = [];
     this.LINES = true;
     this.SSZ = {};
+
+    // Static tables — must be assigned to instance for this.* access
+    this.SMALL = Painter.SMALL;
+    this.FLAT = Painter.FLAT;
+    this.KIND = Painter.KIND;
+    this.RELIEF_ST = Painter.RELIEF_ST;
+    this.SHAPE_ID = Painter.SHAPE_ID;
+    this.NO_STROKE = Painter.NO_STROKE;
+    this.MIX = Painter.MIX;
     this.PAL = this.palette;
     this.ORD = null;
     this.passNo = 0;
@@ -372,13 +381,13 @@ export class Painter {
     for (let i = 0; i < ns; i++) {
       const row = this.spans[i * 3] * W;
       for (let x = this.spans[i * 3 + 1]; x <= this.spans[i * 3 + 2]; x++, j++) {
-        const ai = this.aBuf[j]; if (ai <= 0) continue;
+        const ai = this.aBuf[j]; if (ai <= 0 || !Number.isFinite(ai)) continue;
         const wp = wmap ? wmap[row + x] : 1, t = this.tBuf[j], u = 1 - t, w = ai * ai * wp, ia = 1 - ai, o = (row + x) * 3;
         A00 += w * u * u; A01 += w * u * t; A11 += w * t * t; n++;
         for (let ch = 0; ch < 3; ch++) { const e = (this.T[o + ch] - this.C[o + ch] * ia) * ai * wp; b0[ch] += u * e; b1[ch] += t * e; }
       }
     }
-    if (n < 2) return Infinity;
+    if (n < 2 || !Number.isFinite(A00) || !Number.isFinite(A11)) return Infinity;
     const lam = 0.02 * (A00 + A11) + 1e-6, a00 = A00 + lam, a01 = A01 - lam, a11 = A11 + lam, det = a00 * a11 - a01 * a01;
     let c0 = [0, 0, 0], c1 = [0, 0, 0];
     if (this.PAL) {
@@ -396,7 +405,7 @@ export class Painter {
     for (let i = 0; i < ns; i++) {
       const row = this.spans[i * 3] * W;
       for (let x = this.spans[i * 3 + 1]; x <= this.spans[i * 3 + 2]; x++, j++) {
-        const ai = this.aBuf[j]; if (ai <= 0) continue;
+        const ai = this.aBuf[j]; if (ai <= 0 || !Number.isFinite(ai)) continue;
         const t = this.tBuf[j], ia = 1 - ai, o = (row + x) * 3, wp = wmap ? wmap[row + x] : 1;
         for (let ch = 0; ch < 3; ch++) {
           const tv = this.T[o + ch], cv = this.C[o + ch], nv = cv * ia + (c0[ch] + (c1[ch] - c0[ch]) * t) * ai - tv;
@@ -680,14 +689,18 @@ export class Painter {
   async start() {
     this._running = true;
     this._stopped = false;
-    const t0 = performance.now();
-    if (this.OL && this.OUTL === 'first' && this.olI < this.OL.length) { while (this.olI < this.OL.length && performance.now() - t0 < 25) this.emitOutline(this.OL[this.olI++]); if (this.olI < this.OL.length) { setTimeout(() => this.start(), 0); return; } }
+    this._startCount = (this._startCount || 0) + 1;
+    if (this._startCount % 50 === 0) console.log(`[Painter] start() #${this._startCount} count=${this.count} stuck=${this.stuck} maxShapes=${this.maxShapes}`);
+    if (this.OL && this.OUTL === 'first' && this.olI < this.OL.length) { while (this.olI < this.OL.length) this.emitOutline(this.OL[this.olI++]); }
     if (!this._loopChecked) { this._loopChecked = true; let e = 0; for (let i = 0; i < this.errMap.length; i += 7) e += this.errMap[i]; if (e / (this.errMap.length / 7) < 6) this.stuck = 3001; }
-    if (this.UNTIL != null && this.count >= this.UNTIL && this.count < this.maxShapes) { setTimeout(() => this.start(), 8); return; }
-    while (this._running && this.count < this.maxShapes && (this.UNTIL == null || this.count < this.UNTIL) && performance.now() - t0 < 25) { if (this.step()) this.stuck = 0; else if (++this.stuck > 3000) break; }
-    if ((this.count >= this.maxShapes || this.stuck > 3000) && this.OL && this.OUTL === 'last' && this.olI < this.OL.length) { while (this.olI < this.OL.length && performance.now() - t0 < 40) this.emitOutline(this.OL[this.olI++]); if (this.olI < this.OL.length) { setTimeout(() => this.start(), 0); return; } }
-    if (this.count >= this.maxShapes || this.stuck > 3000) { this._running = false; this.rebuildCum(); if (this.onDone) this.onDone({ count: this.count, sim: this.sim }); return; }
-    setTimeout(() => this.start(), 0);
+    // Synchronous loop — step() is expensive (~1s per step in browser),
+    // so we run it directly without setTimeout batching.
+    while (this._running && this.count < this.maxShapes && (this.UNTIL == null || this.count < this.UNTIL)) {
+      if (this.step()) this.stuck = 0;
+      else if (++this.stuck > 3000) break;
+    }
+    if (this.OL && this.OUTL === 'last' && this.olI < this.OL.length) { while (this.olI < this.OL.length) this.emitOutline(this.OL[this.olI++]); }
+    if (this.count >= this.maxShapes || this.stuck > 3000) { this._running = false; this.rebuildCum(); if (this.onDone) this.onDone({ count: this.count, sim: this.sim }); }
   }
 
   stop() { this._running = false; this._stopped = true; }
@@ -713,4 +726,5 @@ export class Painter {
   static get MIX() { return { painterly: [['S', 0.45], ['B', 0.25], ['E', 0.15], ['T', 0.15]], soft: [['B', 0.75], ['S', 0.25]], mixed: [['E', 0.2], ['B', 0.2], ['T', 0.2], ['R', 0.15], ['S', 0.25]], geometric: [['T', 0.55], ['R', 0.45]], bubbles: [['B', 0.55], ['E', 0.45]], flat: [['S', 0.6], ['E', 0.25], ['T', 0.15]], points: [['E', 1]], hatch: [['S', 0.88], ['B', 0.12]], calligraphy: [['S', 0.85], ['B', 0.15]], watercolour: [['S', 0.6], ['B', 0.3], ['E', 0.1]], oil: [['S', 0.85], ['B', 0.15]], acrylic: [['S', 0.85], ['B', 0.15]], knife: [['S', 0.8], ['B', 0.2]], gouache: [['S', 0.8], ['B', 0.2]], sumi: [['S', 0.8], ['B', 0.2]], marker: [['S', 0.9], ['R', 0.1]], confetti: [['R', 0.7], ['T', 0.3]], graffiti: [['S', 0.82], ['B', 0.18]], mosaic: [['R', 1]], glass: [['T', 0.55], ['E', 0.25], ['R', 0.2]], linocut: [['B', 0.35], ['E', 0.25], ['T', 0.2], ['S', 0.2]], riso: [['B', 0.35], ['E', 0.25], ['R', 0.15], ['S', 0.25]], tape: [['S', 0.8], ['R', 0.2]], scribble: [['B', 0.45], ['E', 0.35], ['T', 0.2]], halftone: [['E', 0.35], ['B', 0.25], ['R', 0.2], ['T', 0.2]], string: [['S', 0.85], ['B', 0.15]], glitch: [['R', 1]], bokeh: [['E', 1]], paper: [['T', 0.35], ['R', 0.3], ['E', 0.2], ['B', 0.15]], stitch: [['B', 0.5], ['E', 0.25], ['R', 0.25]], pencil: [['S', 1]], pastel: [['S', 0.6], ['B', 0.25], ['E', 0.15]], pen: [['B', 0.35], ['E', 0.3], ['T', 0.2], ['S', 0.15]], ink: [['S', 0.75], ['B', 0.25]], wash: [['B', 0.55], ['E', 0.3], ['T', 0.15]], wet: [['B', 0.5], ['E', 0.28], ['S', 0.12], ['T', 0.1]], thread: [['S', 0.62], ['E', 0.16], ['R', 0.12], ['T', 0.1]], hylics: [['S', 0.4], ['B', 0.25], ['E', 0.15], ['T', 0.1], ['R', 0.1]], lens: [['E', 0.45], ['B', 0.25], ['S', 0.2], ['T', 0.1]], crystal: [['T', 0.45], ['R', 0.25], ['E', 0.2], ['S', 0.1]], frost: [['B', 0.4], ['E', 0.3], ['R', 0.2], ['S', 0.1]], neon: [['S', 0.7], ['E', 0.2], ['R', 0.1]], embroid: [['S', 0.55], ['E', 0.2], ['B', 0.15], ['T', 0.1]], plast: [['S', 0.82], ['B', 0.18]], ceramic: [['S', 0.82], ['B', 0.18]], stone: [['S', 0.82], ['B', 0.18]], metal: [['S', 0.82], ['B', 0.18]], foam: [['S', 0.82], ['B', 0.18]], molten: [['S', 0.82], ['B', 0.18]], pewter: [['S', 0.82], ['B', 0.18]], terrazzo: [['S', 0.82], ['B', 0.18]], copper: [['S', 0.82], ['B', 0.18]], gold: [['S', 0.82], ['B', 0.18]], bronze: [['S', 0.82], ['B', 0.18]], beads: [['S', 0.82], ['B', 0.18]], puffy: [['S', 0.82], ['B', 0.18]], charcoal: [['S', 1]] }; }
 }
 
+if (typeof window !== 'undefined') window.Painter = Painter; // debug hook
 export default Painter;
