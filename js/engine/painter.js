@@ -110,6 +110,11 @@ export class Painter {
     // Initialize image data
     this._initImage(imageData);
 
+    // Initialize cumE for smart mode (must be after _initImage sets W/H)
+    if (this.smart) {
+      this.cumE = new Float64Array(this.W * this.H);
+    }
+
     // Initialize analysis
     if (this.smart) {
       this.analyse();
