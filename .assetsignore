@@ -1,0 +1,31 @@
+# Cloudflare Pages upload exclusions (same syntax as .gitignore)
+# Only the app itself should ship — dev references, vendored source and
+# local artifacts must never be uploaded.
+
+_reference/
+_p5brush/
+_nothing_cn/
+_nothing_design/
+_skills/
+node_modules/
+.turbo/
+graphify-out/
+.git/
+.github/
+docs/
+tests/
+test-images/
+
+# Test / probe artifacts
+test-*.png
+test-*.html
+app-test-result.png
+_probe_brush.html
+assets/test-*.jpg
+assets/test-*.png
+
+# Tooling / meta
+wrangler.toml
+*.md
+.gitignore
+.assetsignore

@@ -1,0 +1,48 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Static site — no build step. Stage only the app files so dev
+      # references and local artifacts never ship (see deploy.sh).
+      - name: Stage app files
+        run: |
+          mkdir -p /tmp/site
+          rsync -a \
+            --exclude '_reference/' --exclude '_p5brush/' --exclude '_nothing_cn/' \
+            --exclude '_nothing_design/' --exclude '_skills/' --exclude 'node_modules/' \
+            --exclude '.turbo/' --exclude 'graphify-out/' --exclude '.git/' \
+            --exclude '.github/' --exclude 'docs/' --exclude 'tests/' \
+            --exclude 'test-images/' --exclude 'test-*.png' --exclude 'test-*.html' \
+            --exclude 'app-test-result.png' --exclude '_probe_brush.html' \
+            --exclude 'assets/test-*.jpg' --exclude 'assets/test-*.png' \
+            --exclude '*.md' \
+            ./ /tmp/site/
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::notice::Cloudflare secrets not configured — skipping auto-deploy."
+            echo "Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repo secrets,"
+            echo "or deploy manually with ./deploy.sh"
+            exit 0
+          fi
+          npx --yes wrangler@4 pages deploy /tmp/site \
+            --project-name www-paint --branch main --commit-dirty=true

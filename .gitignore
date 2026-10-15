@@ -19,3 +19,6 @@ assets/test-*.png
 
 # Visual test images (kept on disk, not committed)
 test-images/
+
+# Local probe pages
+_probe_brush.html

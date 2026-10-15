@@ -1,0 +1,6 @@
+# Cloudflare Pages configuration — WWW_PAINT
+# Static site (no build step). Pages serves the repo root directly.
+name = "www-paint"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "."
+send_metrics = false
