@@ -36,6 +36,19 @@ import PenStyle from './pen.js';
 import WashStyle from './wash.js';
 import DotsStyle from './dots.js';
 import ConfettiStyle from './confetti.js';
+import HylicsStyle from './hylics.js';
+import LinocutStyle from './linocut.js';
+import RisoStyle from './riso.js';
+import TapeStyle from './tape.js';
+import ThreadStyle from './thread.js';
+import StitchStyle from './stitch.js';
+import NeonStyle from './neon.js';
+import BokehStyle from './bokeh.js';
+import PaperStyle from './paper.js';
+import GlitchStyle from './glitch.js';
+import FrostStyle from './frost.js';
+import EmbroidStyle from './embroid.js';
+import PlastStyle from './plast.js';
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
@@ -61,7 +74,20 @@ const registry = {
   pen:          { class: PenStyle,         category: 'draw',    label: 'Pen' },
   wash:         { class: WashStyle,        category: 'paint',   label: 'Wash' },
   dots:         { class: DotsStyle,        category: 'graphic', label: 'Dots' },
-  confetti:     { class: ConfettiStyle,    category: 'graphic', label: 'Confetti' }
+  confetti:     { class: ConfettiStyle,    category: 'graphic', label: 'Confetti' },
+  hylics:       { class: HylicsStyle,      category: 'graphic', label: 'Hylics' },
+  linocut:      { class: LinocutStyle,     category: 'graphic', label: 'Linocut' },
+  riso:         { class: RisoStyle,        category: 'graphic', label: 'Riso' },
+  tape:         { class: TapeStyle,        category: 'craft',   label: 'Tape' },
+  thread:       { class: ThreadStyle,      category: 'craft',   label: 'Thread' },
+  stitch:       { class: StitchStyle,      category: 'craft',   label: 'Stitch' },
+  neon:         { class: NeonStyle,        category: 'graphic', label: 'Neon' },
+  bokeh:        { class: BokehStyle,       category: 'graphic', label: 'Bokeh' },
+  paper:        { class: PaperStyle,       category: 'graphic', label: 'Paper' },
+  glitch:       { class: GlitchStyle,      category: 'graphic', label: 'Glitch' },
+  frost:        { class: FrostStyle,       category: 'graphic', label: 'Frost' },
+  embroid:      { class: EmbroidStyle,     category: 'craft',   label: 'Embroidery' },
+  plast:        { class: PlastStyle,       category: 'graphic', label: 'Plastic' }
 };
 
 // Ordered list for UI / iteration
@@ -128,7 +154,9 @@ export {
   CharcoalStyle, MarkerStyle, CalligraphyStyle, CrossHatchStyle,
   MosaicStyle, ScribbleStyle, HalftoneStyle, StringStyle,
   SumiStyle, GouacheStyle, KnifeStyle, PastelStyle, PenStyle, WashStyle,
-  DotsStyle, ConfettiStyle
+  DotsStyle, ConfettiStyle,
+  HylicsStyle, LinocutStyle, RisoStyle, TapeStyle, ThreadStyle, StitchStyle,
+  NeonStyle, BokehStyle, PaperStyle, GlitchStyle, FrostStyle, EmbroidStyle, PlastStyle
 };
 
 export default { getStyle, getAllStyles, getStylesByCategory, getStyleInfo, registerStyle };

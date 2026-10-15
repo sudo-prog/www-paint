@@ -47,6 +47,7 @@ export class Painter {
     this.order = options.order || null;
     this.outline = options.outline || 'off';
     this.rfill = options.rfill || 'off';
+    this.pen = options.pen || false;
     this.maxShapes = options.maxShapes || 3000;
     this.seed = options.seed || 12345;
     this.onShape = options.onShape || null;
@@ -62,9 +63,10 @@ export class Painter {
     this.HURRY = 1;
     this.UNTIL = null;
     this.ACC = false;
-    this.PEN = false;
-    this.pENS = [];
-    this.pEN_ID = 0;
+    this.PEN = !!this.pen;
+    this.PENS = [];
+    this.PEN_ID = 0;
+    this.penTurn = 0;
     this.penPos = null;
     this.stepProg = 0;
     this.stepStyle = this.style;

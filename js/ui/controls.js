@@ -38,6 +38,9 @@ const PAINTER_DEFAULT_SETTINGS = {
   pathOrder: 'free',       // legacy — kept in settings for backward compat
   smart: true,             // Painter smart mode on by default
   order: 'free',           // maps to Painter.orderSetup kinds
+  oneLine: false,            // Painter one-line pen mode
+  outline: 'off',            // Painter outline mode: off | first | last
+  rfill: 'off',              // Painter region fill: off | scribble | rows
 };
 
 /** Style metadata for the built-in styles. */
@@ -74,6 +77,26 @@ const COLOR_MODE_OPTIONS = [
   { value: "exact",     label: "Exact" },
   { value: "quantized", label: "Quantized" },
   { value: "palette",   label: "Palette" },
+];
+
+/** Outline mode options (maps to Painter OUTL: 'off' | 'first' | 'last'). */
+const OUTLINE_OPTIONS = [
+  { value: "off",    label: "Off" },
+  { value: "first",  label: "First" },
+  { value: "last",   label: "Last" },
+];
+
+/** Region fill options (maps to Painter RFILL: 'off' | 'scribble' | 'rows'). */
+const RFILL_OPTIONS = [
+  { value: "off",      label: "Off" },
+  { value: "scribble", label: "Scribble" },
+  { value: "rows",     label: "Rows" },
+];
+
+/** One-line pen mode toggle options. */
+const ONELINE_OPTIONS = [
+  { value: "false", label: "Off" },
+  { value: "true",  label: "On" },
 ];
 
 /** Smart-mode toggle options. */
@@ -120,6 +143,7 @@ export class ControlsManager {
       { id: "style-section",   title: "STYLE",        render: () => this._renderStylePicker() },
       { id: "brush-section",   title: "BRUSH",        render: () => this._renderBrushControls() },
       { id: "path-section",    title: "PATH ORDER",   render: () => this._renderPathOrder() },
+      { id: "motion-section",  title: "MOTION & PATH",  render: () => this._renderMotionSection() },
       { id: "color-section",   title: "COLOR",        render: () => this._renderColorMode() },
     ];
 
@@ -335,6 +359,20 @@ export class ControlsManager {
   }
 
   /**
+   * Render the motion & path controls: one-line pen toggle, outline mode,
+   * and region fill.
+   * @returns {HTMLElement}
+   */
+  _renderMotionSection() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "motion-controls";
+    wrapper.appendChild(this._renderToggle("oneLine", "One Line", ONELINE_OPTIONS, this.settings.oneLine ?? PAINTER_DEFAULT_SETTINGS.oneLine));
+    wrapper.appendChild(this._renderSegmentedControl("outline", OUTLINE_OPTIONS));
+    wrapper.appendChild(this._renderSegmentedControl("rfill", RFILL_OPTIONS));
+    return wrapper;
+  }
+
+  /**
    * Render a segmented control from options.
    * @param {string} key — settings key
    * @param {Array<{value: string, label: string}>} options
@@ -499,8 +537,8 @@ export class ControlsManager {
       entry.valueSpan.textContent = this._formatSliderValue(entry.spec, val);
     }
 
-    // Toggle (smart)
-    for (const key of ["smart"]) {
+    // Toggle (smart, oneLine)
+    for (const key of ["smart", "oneLine"]) {
       const entry = this._inputs[key];
       if (!entry || !entry.isToggle) continue;
       const value = this.settings[key] !== undefined ? this.settings[key] : PAINTER_DEFAULT_SETTINGS[key];
@@ -512,7 +550,7 @@ export class ControlsManager {
     }
 
     // Segmented selectors
-    for (const key of ["order", "colorMode"]) {
+    for (const key of ["order", "colorMode", "outline", "rfill"]) {
       const entry = this._inputs[key];
       if (!entry) continue;
       const container = entry.segmented;

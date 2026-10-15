@@ -291,6 +291,7 @@ export class PaintingEngine {
    * @param {number} [opts.layer]
    * @param {boolean} [opts.smart]    Enable smart mode (structure tensor, focus map, subject detection).
    * @param {string} [opts.order]      Path ordering: 'down', 'up', 'right', 'left', 'diag', 'spiral', 'spiralin', 'rings', 'ringsin', 'clock', or 'free'.
+   * @param {boolean} [opts.pen]      Enable one-line pen mode.
    * @param {number} [opts.seed]       Override the master seed for this run.
    * @param {function(object, number): void} [opts.onShape]  Optional live callback
    *   invoked once per committed shape (engine-format) as it is generated.
@@ -337,6 +338,7 @@ export class PaintingEngine {
         order: painterOrder,
         count,
         seed,
+        pen: opts.pen !== undefined ? opts.pen : this.settings.oneLine,
         onShape: opts.onShape,
       });
       const selected = shapes.map((ps, i) => this._convertShape(ps, i, layerIdx));
@@ -375,6 +377,7 @@ export class PaintingEngine {
         rfill: this.settings.rfill || 'off',
         maxShapes: count,
         seed,
+        pen: this.settings.oneLine || false,
         // Collect and convert each shape via the onShape callback
         onShape: (ps) => {
           selected.push(this._convertShape(ps, selected.length, layerIdx));
@@ -417,7 +420,7 @@ export class PaintingEngine {
    * full ordered shape array when the worker reports done.
    * @private
    */
-  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed, onShape }) {
+  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed, pen, onShape }) {
     return new Promise((resolve, reject) => {
       const worker = new Worker(new URL('./painter-worker.js', import.meta.url), { type: 'module' });
       this._currentWorker = worker;
@@ -472,6 +475,7 @@ export class PaintingEngine {
           rfill: this.settings.rfill || 'off',
           maxShapes: count,
           seed,
+          pen,
         },
       });
     });
