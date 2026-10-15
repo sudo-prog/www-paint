@@ -137,7 +137,7 @@ body {
   transition: transform var(--duration-normal);
   will-change: transform;
 }
-.panel--controls { width: var(--panel-width); border-right: 1px solid var(--panel-border); display: flex; flex-direction: column; }
+.panel--controls { width: var(--panel-width); border-right: 1px solid var(--panel-border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
 .panel--layers { width: var(--layers-width); border-left: 1px solid var(--panel-border); display: none; }
 .panel--layers.panel--active { display: flex; }
 
@@ -229,19 +229,19 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   border: 1px solid var(--panel-border);
   background: transparent;
   color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: var(--text-tiny);
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  padding: 10px 20px;
-  min-height: 36px;
+  padding: 7px 12px;
+  min-height: 28px;
   line-height: 1;
   transition: var(--duration-fast);
 }
@@ -257,7 +257,11 @@ body {
 .btn__icon { display: flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; }
 
 /* ── Controls Panel ── */
-.panel__scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: var(--space-md); }
+.panel--controls { padding: 0; }
+.panel--controls .control-section { padding: 0 var(--space-xs); }
+.panel--controls .control-section:first-child { padding-top: var(--space-xs); }
+.panel--controls .control-section:last-child { padding-bottom: var(--space-md); }
+.panel__scroll { overflow-y: auto; overflow-x: hidden; padding: var(--space-sm); }
 .panel__section { margin-bottom: var(--space-lg); }
 .panel__section:last-child { margin-bottom: 0; }
 .panel__title {
@@ -286,8 +290,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 14px 8px;
+  gap: 4px;
+  padding: 10px 6px;
   background: var(--surface-raised);
   border: 2px solid transparent;
   border-radius: var(--radius-md);
@@ -340,26 +344,27 @@ body {
 .slider-row { display: flex; align-items: center; gap: var(--space-xs); }
 .slider-row input[type="range"] {
   flex: 1;
-  height: 4px;
+  min-width: 0;
+  height: 6px;
   -webkit-appearance: none;
   background: var(--panel-border);
-  border-radius: 2px;
+  border-radius: 3px;
   outline: none;
   cursor: pointer;
 }
 .slider-row input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--editor-bg);
   box-shadow: 0 0 0 2px var(--surface-raised);
 }
 .slider-row input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--editor-bg);
@@ -369,14 +374,14 @@ body {
   font-size: var(--text-tiny);
   font-weight: 600;
   color: var(--text-primary);
-  min-width: 48px;
+  min-width: 36px;
   text-align: right;
 }
 
 .generate-btn-container { margin-top: var(--space-sm); }
 .generate-btn {
   width: 100%;
-  padding: 14px;
+  padding: 10px;
   font-size: var(--text-small);
   font-weight: 700;
   background: var(--accent);
@@ -634,7 +639,7 @@ body {
 
 
 /* ── Control Sections (used by controls.js) ── */
-.control-section { margin-bottom: var(--space-xl); }
+.control-section { margin-bottom: var(--space-md); }
 .control-section:last-child { margin-bottom: 0; }
 .control-section__title {
   font-family: var(--font-mono);
@@ -643,7 +648,7 @@ body {
   color: var(--text-secondary);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
   padding: 0 var(--space-xs);
 }
 .control-section__body { padding: 0 var(--space-xs); }

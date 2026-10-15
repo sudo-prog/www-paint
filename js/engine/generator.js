@@ -22,7 +22,7 @@ import { sampleRegion, sampleLuminance, sampleEdge } from './analyzer.js';
  */
 export const DEFAULT_SETTINGS = {
   style: 'pencil',
-  strokeSize: { min: 2, max: 8, random: true },
+  strokeSize: { min: 3, max: 14, random: true },
   spacing: 0.5,
   scatter: 0.3,
   strokeCount: 1000,
@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS = {
   colorMode: 'exact',   // exact | quantized | palette
   paletteSize: 8,
   pathOrder: 'free',    // free | top-bottom | spiral | one-line | edges-first
-  shapeBias: { E: 0.1, B: 0.15, T: 0.05, R: 0.3, S: 0.4 },
+  shapeBias: { E: 0.04, B: 0.04, T: 0.02, R: 0.10, S: 0.80 },
   // Smart sizing: when true, stroke size adapts to local detail
   adaptiveSize: true,
   // Angle bias: when true, stroke orientation follows local gradient direction
@@ -329,7 +329,7 @@ function generateParams(type, x, y, size, angle, random, settings) {
       return [x, y, w, h, rot, gradAngle, 0, 0];
 
     case 'S': { // Stroke: [x0,y0, x1,y1, x2,y2, w, gradAngle]
-      const len = w * random.range(1, 3);
+      const len = w * random.range(5, 14);
       // Bias stroke direction toward gradient angle
       const strokeDir = angle + random.range(-Math.PI / 6, Math.PI / 6);
       const dx = Math.cos(strokeDir) * len;
