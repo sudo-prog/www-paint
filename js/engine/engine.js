@@ -1,36 +1,43 @@
 /**
  * PaintingEngine — top-level orchestrator that unifies the individual engine
- * modules (analyzer, generator, scorer, renderer, exporter) into a single
- * class with the API documented in ARCHITECTURE.md.
+ * modules (analyzer, painter, renderer, exporter) into a single class with the
+ * API documented in ARCHITECTURE.md.
  *
  * The engine is UI-agnostic: it accepts a canvas (or context), manages image
- * state, runs generation+scoring (optionally via a Web Worker), and renders
- * layers through the Renderer.
+ * state, runs generation via the Painter class (optionally via a Web Worker),
+ * and renders layers through the Renderer.
+ *
+ * The PaintingEngine manages:
+ *   - Layers (create, remove, reorder, duplicate, lock, opacity, blend mode)
+ *   - Image loading and analysis (luminance, edges, palette)
+ *   - Stroke generation via the Painter (hill-climbing, error-map, color solving)
+ *   - Canvas rendering via the Renderer
+ *   - Export (PNG/JPG/HTML/Project)
  *
  * @module engine
  */
 
 import { analyzeImage } from './analyzer.js';
-import {
-  generateCandidates,
-  resolveSettings,
-  estimateShapeCount,
-  orderShapes,
-  DEFAULT_SETTINGS,
-} from './generator.js';
-import { selectBest, selectGreedyResidual, selectWithResidual, ResidualMap } from './scorer.js';
+import { Painter } from './painter.js';
 import { Renderer, createRenderer } from './renderer.js';
 import {
   exportImage,
-  exportHTML,
+  exportHTML as exportHTMLFunc,
   exportProject,
   importProject,
 } from './exporter.js';
 import { getStyle, getAllStyles } from '../styles/index.js';
+import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
+
+// Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
+// The actual painting is done by Painter, but the settings object is still
+// consumed by the Painter's configuration and retained for backward-compatible
+// UI consumers.
+export { DEFAULT_SETTINGS };
 
 /**
  * @typedef {object} Layer
- * @property {string} id
+ * @property {number} id
  * @property {string} name
  * @property {boolean} visible
  * @property {number} opacity
@@ -78,7 +85,7 @@ export class PaintingEngine {
     const styles = getAllStyles();
     this._styleList = styles.map(s => s.name);
     for (const { name, instance } of styles) {
-      // The renderer expects a module with a ` draw(ctx, shape, progress)` method.
+      // The renderer expects a module with a `draw(ctx, shape, progress)` method.
       // Style classes have `render(ctx, shape, progress)` — adapt it.
       this.renderer.registerStyle(name, {
         draw: (ctx, shape, progress) => instance.render(ctx, shape, progress),
@@ -86,19 +93,21 @@ export class PaintingEngine {
     }
 
     // Image state
-    this._imageData = null;   // ImageData
-    this._analysis = null;    // AnalysisResult
-    this._sourceImage = null; // HTMLImageElement
+    this._imageData = null;    // ImageData
+    this._pixels = null;       // Raw RGBA Uint8ClampedArray for Painter
+    this._analysis = null;     // AnalysisResult
+    this._sourceImage = null;  // HTMLImageElement
 
     // Layer & settings state
     this.layers = [];
     this.settings = { ...DEFAULT_SETTINGS };
     this._seed = 0x1337BEEF;
-    this._worker = null;
-    this._pendingWorkerId = 0;
+
+    // Smart mode and path ordering defaults
+    this._smart = false;
+    this._order = 'free';
 
     this._initLayers();
-    this._initWorker();
   }
 
   // ─── Initialization ───────────────────────────────────────────────
@@ -126,32 +135,12 @@ export class PaintingEngine {
     ];
   }
 
-  _initWorker() {
-    if (!this.useWorker) return;
-    if (typeof Worker === 'undefined') {
-      console.warn('PaintingEngine: Web Workers not available, falling back to main thread');
-      this.useWorker = false;
-      return;
-    }
-    try {
-      this._worker = new Worker(
-        new URL('./worker.js', import.meta.url),
-        { type: 'module' }
-      );
-      this._worker.onmessage = this._onWorkerMessage.bind(this);
-      this._worker.onerror = (err) => console.error('Worker error:', err);
-    } catch (e) {
-      console.warn('PaintingEngine: worker creation failed, using main thread', e);
-      this.useWorker = false;
-      this._worker = null;
-    }
-  }
-
   // ─── Image Loading ────────────────────────────────────────────────
 
   /**
    * Load an image from an HTMLImageElement, HTMLCanvasElement, or data URL.
-   * Performs analysis and populates the generator's internal state.
+   * Performs analysis and populates the engine's internal state for the Painter.
+   * Stores raw RGBA pixel data alongside the analysis result.
    *
    * @param {HTMLImageElement|HTMLCanvasElement|string} source
    * @returns {Promise<void>}
@@ -164,17 +153,19 @@ export class PaintingEngine {
         this.height = img.height;
         this.renderer.setSize(this.width, this.height);
 
-        // Extract pixel data
+        // Extract pixel data (both ImageData and raw RGBA Uint8ClampedArray)
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = img.width;
         tempCanvas.height = img.height;
         const ctx = tempCanvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
         this._imageData = ctx.getImageData(0, 0, img.width, img.height);
+        // Store raw RGBA pixel data for Painter (it may modify in-place)
+        this._pixels = new Uint8ClampedArray(this._imageData.data);
 
         // Analyze
         this._analysis = analyzeImage(
-          this._imageData.data,
+          this._pixels,
           img.width,
           img.height,
           {
@@ -182,13 +173,6 @@ export class PaintingEngine {
             edgeThreshold: 0.15,
           }
         );
-
-        // Auto-set stroke count if not specified
-        if (!this.settings.strokeCount || this.settings.strokeCount === DEFAULT_SETTINGS.strokeCount) {
-          this.settings.strokeCount = estimateShapeCount(
-            img.width, img.height, this.settings.style
-          );
-        }
 
         resolve();
       };
@@ -213,6 +197,7 @@ export class PaintingEngine {
 
   /**
    * Load an image from a File object (from drag-and-drop or file input).
+   * Stores raw RGBA pixel data alongside the analysis result.
    *
    * @param {File} file
    * @returns {Promise<void>}
@@ -235,9 +220,11 @@ export class PaintingEngine {
           const ctx = tempCanvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
           this._imageData = ctx.getImageData(0, 0, img.width, img.height);
+          // Store raw RGBA pixel data for Painter
+          this._pixels = new Uint8ClampedArray(this._imageData.data);
 
           this._analysis = analyzeImage(
-            this._imageData.data,
+            this._pixels,
             img.width,
             img.height,
             {
@@ -245,12 +232,6 @@ export class PaintingEngine {
               edgeThreshold: 0.15,
             }
           );
-
-          if (!this.settings.strokeCount || this.settings.strokeCount === DEFAULT_SETTINGS.strokeCount) {
-            this.settings.strokeCount = estimateShapeCount(
-              img.width, img.height, this.settings.style
-            );
-          }
 
           resolve();
         };
@@ -265,19 +246,20 @@ export class PaintingEngine {
   // ─── Generation ───────────────────────────────────────────────────
 
   /**
-   * Generate stroke candidates and select the best ones.
+   * Generate stroke candidates and select the best ones using the Painter.
    *
-   * When `opts.useResidual` is true (or `settings.useResidual === true`),
-   * the engine uses a {@link ResidualMap} to track painting progress and
-   * scores candidates against the residual error.  This produces better
-   * coverage but is slower.
+   * The Painter handles all painting logic:
+   *   - Size progression (big washes first, fine strokes last)
+   *   - Hill-climbing to find optimal positions
+   *   - Color solving (weighted least squares over covered pixels)
+   *   - Error map tracking (residual after each stroke)
    *
    * @param {object} opts
    * @param {string} [opts.style]
    * @param {number} [opts.count]
    * @param {number} [opts.layer]
-   * @param {boolean} [opts.useGreedy] - Use greedy residual selection.
-   * @param {boolean} [opts.useResidual] - Use true residual map selection.
+   * @param {boolean} [opts.smart] - Enable smart mode (structure tensor, focus map, subject detection).
+   * @param {string} [opts.order] - Path ordering: 'down', 'up', 'spiral', 'free'.
    * @param {boolean} [opts.useWorker] - Override worker usage for this call.
    * @returns {Promise<Array<object>>} Selected shape objects.
    */
@@ -285,39 +267,49 @@ export class PaintingEngine {
     const style = opts.style || this.settings.style || 'pencil';
     const count = opts.count || this.settings.strokeCount || 1000;
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
-    const useResidual = opts.useResidual || this.settings.useResidual || false;
 
     // Update settings
     if (opts.style) this.settings.style = style;
     if (opts.count) this.settings.strokeCount = count;
 
+    // Update smart mode and order if provided
+    if (opts.smart !== undefined) this._smart = opts.smart;
+    if (opts.order !== undefined) this._order = opts.order;
+
     if (!this._analysis) {
       throw new Error('No image loaded. Call loadImage first.');
     }
 
-    const resolved = resolveSettings({ ...this.settings, style });
     const seed = this._seed;
+    const selected = [];
 
-    let selected;
-    if (opts.useWorker === true && this._worker) {
-      selected = await this._generateInWorker(resolved, seed, count, layerIdx, opts);
-    } else {
-      // Main-thread path
-      const candidates = generateCandidates(this._analysis, resolved, seed);
-      if (useResidual || this.settings.useResidual) {
-        selected = selectWithResidual(candidates, this._analysis, count, {
-          residualWeight: 0.6,
-          minResidual: 0.02,
-        });
-      } else if (opts.useGreedy) {
-        selected = selectGreedyResidual(candidates, this._analysis, count);
-      } else {
-        selected = selectBest(candidates, this._analysis, count);
-      }
-    }
+    // Create Painter with correct constructor signature.
+    // Painter expects: { width, height, imageData, options }
+    // where options: { style, smart, abstract, palette, size, sizeRand, order, outline, rfill, onShape, onProgress, onDone }
+    const painter = new Painter({
+      width: this.width,
+      height: this.height,
+      imageData: this._pixels,
+      options: {
+        style,
+        smart: this._smart,
+        abstract: this.settings.abstract || false,
+        palette: this.settings.palette || null,
+        size: this.settings.sizeK || 1,
+        sizeRand: this.settings.sizeRand || false,
+        order: this._order !== 'free' ? this._order : null,
+        outline: this.settings.outline || 'off',
+        rfill: this.settings.rfill || 'off',
+        maxShapes: count,
+        seed,
+        onShape: (shape) => { selected.push(shape); },
+        onProgress: null,
+        onDone: null,
+      },
+    });
 
-    // Apply ordering (pass analysis for edges-first mode)
-    selected = orderShapes(selected, resolved, this._analysis);
+    // Run the painting
+    await painter.start();
 
     // Assign to layer
     const layer = this.getLayer(layerIdx);
@@ -329,47 +321,6 @@ export class PaintingEngine {
     this.renderer.setLayers(this.layers);
 
     return selected;
-  }
-
-  _generateInWorker(settings, seed, count, layerIdx, opts) {
-    return new Promise((resolve, reject) => {
-      const id = ++this._pendingWorkerId;
-      const batch = [];
-
-      const handler = (e) => {
-        const msg = e.data;
-        if (msg.id !== id) return;
-
-        if (msg.type === 'shapes') {
-          batch.push(...msg.batch);
-        } else if (msg.type === 'complete') {
-          this._worker.removeEventListener('message', handler);
-          // Post-process: order shapes (pass analysis for path ordering)
-          const resolved = resolveSettings(settings);
-          const ordered = orderShapes(batch, resolved, this._analysis);
-          const layer = this.getLayer(layerIdx);
-          if (layer) {
-            layer.strokes = ordered.map(s => ({ ...s, layer: layerIdx }));
-          }
-          this.renderer.setLayers(this.layers);
-          resolve(ordered);
-        } else if (msg.type === 'error') {
-          this._worker.removeEventListener('message', handler);
-          reject(new Error(msg.message));
-        }
-      };
-
-      this._worker.addEventListener('message', handler);
-      this._worker.postMessage({
-        type: 'start',
-        id,
-        w: this.width,
-        h: this.height,
-        imageData: this._imageData,
-        settings: { ...settings, strokeCount: count, seed, useResidual: opts.useResidual },
-        seed,
-      });
-    });
   }
 
   // ─── Rendering ────────────────────────────────────────────────────
@@ -393,12 +344,11 @@ export class PaintingEngine {
   // ─── Export ───────────────────────────────────────────────────────
 
   /**
-   * Export the current painting as a PNG or JPG blob.
+   * Export the current painting as a PNG blob.
    *
    * @param {object} [opts]
    * @param {number} [opts.width]
    * @param {number} [opts.height]
-   * @param {string} [opts.format='png']
    * @param {number} [opts.quality=0.92]
    * @param {string} [opts.background]
    * @returns {Promise<Blob>}
@@ -415,6 +365,13 @@ export class PaintingEngine {
 
   /**
    * Export as JPG blob.
+   *
+   * @param {object} [opts]
+   * @param {number} [opts.width]
+   * @param {number} [opts.height]
+   * @param {number} [opts.quality=0.92]
+   * @param {string} [opts.background]
+   * @returns {Promise<Blob>}
    */
   async exportJPG(opts = {}) {
     return exportImage(this.renderer, this.layers, {
@@ -438,7 +395,7 @@ export class PaintingEngine {
    * @returns {string} HTML document string.
    */
   exportHTML(opts = {}) {
-    return exportHTML(this.layers, {
+    return exportHTMLFunc(this.layers, {
       width: opts.width || this.width,
       height: opts.height || this.height,
       format: opts.format || 'packed',
@@ -486,7 +443,7 @@ export class PaintingEngine {
   async importProject(jsonStr) {
     const project = importProject(jsonStr);
 
-    // Restore settings
+    // Restore settings (merge with current DEFAULT_SETTINGS)
     this.settings = { ...DEFAULT_SETTINGS, ...project.settings };
     this.width = project.width;
     this.height = project.height;
@@ -613,6 +570,22 @@ export class PaintingEngine {
   }
 
   /**
+   * Enable or disable smart mode (structure tensor, focus map, subject detection).
+   * @param {boolean} enabled
+   */
+  setSmart(enabled) {
+    this._smart = !!enabled;
+  }
+
+  /**
+   * Set the path ordering mode.
+   * @param {string} order - 'down', 'up', 'spiral', 'free'
+   */
+  setOrder(order) {
+    this._order = order || 'free';
+  }
+
+  /**
    * Get the list of available style names.
    * @returns {string[]}
    */
@@ -681,7 +654,6 @@ export class PaintingEngine {
 
   /**
    * Re-render at a new resolution (for high-DPI export).
-   * Convenience method.
    */
   setSize(w, h) {
     this.width = w;
@@ -690,13 +662,14 @@ export class PaintingEngine {
   }
 
   /**
-   * Destroy the engine (clean up worker).
+   * Destroy the engine (clean up resources).
    */
   destroy() {
-    if (this._worker) {
-      this._worker.terminate();
-      this._worker = null;
-    }
+    // Clean up image data references
+    this._pixels = null;
+    this._imageData = null;
+    this._analysis = null;
+    this._sourceImage = null;
   }
 }
 

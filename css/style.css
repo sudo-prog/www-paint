@@ -378,6 +378,12 @@ body {
   text-align: right;
 }
 
+/* ── Smart Toggle ── */
+.smart-toggle-container { display: flex; flex-direction: column; gap: 4px; }
+.smart-toggle-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-family: var(--font-mono); font-size: var(--text-tiny); font-weight: 600; color: var(--text-secondary); }
+.smart-toggle-input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.smart-toggle-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-disabled); }
+
 .generate-btn-container { margin-top: var(--space-sm); }
 .generate-btn {
   width: 100%;

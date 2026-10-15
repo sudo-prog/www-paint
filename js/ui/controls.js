@@ -23,10 +23,17 @@ const STYLE_PRESETS = {
 /** Path order options. */
 const PATH_ORDER_OPTIONS = [
   { value: "free",        label: "Free" },
-  { value: "top-bottom",  label: "Top" },
+  { value: "down",        label: "Top" },
+  { value: "up",          label: "Bottom" },
+  { value: "right",       label: "Left" },
+  { value: "left",        label: "Right" },
+  { value: "diag",        label: "Diag" },
   { value: "spiral",      label: "Spiral" },
+  { value: "spiralin",    label: "Spiral In" },
+  { value: "rings",       label: "Rings" },
+  { value: "ringsin",     label: "Rings In" },
+  { value: "clock",       label: "Clock" },
   { value: "one-line",    label: "One Line" },
-  { value: "edges-first", label: "Edges" },
 ];
 
 /** Color mode options. */
@@ -75,6 +82,7 @@ export class ControlsManager {
       { id: "brush-section",   title: "BRUSH",    render: () => this._renderBrushControls() },
       { id: "path-section",    title: "PATH ORDER", render: () => this._renderPathOrder() },
       { id: "color-section",   title: "COLOR",    render: () => this._renderColorMode() },
+      { id: "smart-section",   title: "SMART",    render: () => this._renderSmartToggle() },
     ];
 
     for (const s of sections) {
@@ -298,6 +306,45 @@ export class ControlsManager {
   }
 
   /* ─── Events ────────────────────────────────────────────────── */
+
+  /**
+   * Render the smart mode toggle.
+   * @returns {HTMLElement}
+   */
+  _renderSmartToggle() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'smart-toggle-container';
+
+    const label = document.createElement('label');
+    label.className = 'smart-toggle-label';
+    label.htmlFor = 'ctrl-smart';
+    label.textContent = 'Smart Mode';
+
+    const toggle = document.createElement('input');
+    toggle.type = 'checkbox';
+    toggle.id = 'ctrl-smart';
+    toggle.className = 'smart-toggle-input';
+    toggle.checked = this.settings.smart !== false; // default true
+
+    toggle.addEventListener('change', () => {
+      this.settings.smart = toggle.checked;
+      this.root.dispatchEvent(new CustomEvent('settings-change', {
+        detail: { key: 'smart', value: toggle.checked, settings: { ...this.settings } },
+      }));
+    });
+
+    this._inputs.smart = { input: toggle };
+
+    label.appendChild(toggle);
+    wrapper.appendChild(label);
+
+    const hint = document.createElement('span');
+    hint.className = 'smart-toggle-hint';
+    hint.textContent = 'Structure tensor + focus map';
+    wrapper.appendChild(hint);
+
+    return wrapper;
+  }
 
   /**
    * Dispatch a synthetic settings-change event.
