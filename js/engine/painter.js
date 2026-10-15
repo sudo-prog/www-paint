@@ -19,7 +19,7 @@
  * @module painter
  */
 
-import { poly as SHPpoly, axis as SHPaxis } from './shapes.js';
+import { poly as SHPpoly, shapeAxis as SHPaxis } from './shapes.js';
 
 // ── Utility ─────────────────────────────────────────────────────────────────
 

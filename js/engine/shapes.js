@@ -256,6 +256,27 @@ export function pointAt(s, t) {
  * @param {number} t - Interpolation parameter 0..1.
  * @returns {[number, number, number]} Interpolated RGB.
  */
+// Gradient axis of a shape: [dx, dy, from, to] projection extents
+export function shapeAxis(s) {
+  const p = s.params;
+  const g = s.t === 'T' ? p[6] : s.t === 'S' ? p[7] : p[5];
+  const dx = Math.cos(g), dy = Math.sin(g);
+  if (s.t === 'E') {
+    const d = p[0] * dx + p[1] * dy;
+    const h = Math.hypot(p[2] * Math.cos(g - p[4]), p[3] * Math.sin(g - p[4]));
+    return [dx, dy, d - h, d + h];
+  }
+  const pts = s.t === 'T' ? p.slice(0, 6) : s.t === 'R' ? corners(p) : p.slice(0, 6);
+  const pad = s.t === 'S' ? p[6] / 2 : 0;
+  let m = 1e9, n = -1e9;
+  for (let i = 0; i < pts.length; i += 2) {
+    const d = pts[i] * dx + pts[i + 1] * dy;
+    if (d < m) m = d;
+    if (d > n) n = d;
+  }
+  return [dx, dy, m - pad, n + pad];
+}
+
 export function gradientAt(s, t) {
   const c0 = s.color0 || [0, 0, 0];
   const c1 = s.color1 || c0;
@@ -506,6 +527,57 @@ export function shapeToCode(s, indent = 0) {
   return `${pad}{t:"${s.type}",p:[${s.params.join(',')}],c0:[${s.color0.join(',')}],c1:[${s.color1.join(',')}],a:${s.alpha},s:"${s.style}"}`;
 }
 
+/**
+ * Generate polygon vertices for a shape's boundary.
+ * Ported from the original SHP.poly function in the Code Painter worker.
+ * @param {object} s Shape object with { t, p }.
+ * @returns {number[]} Flat array of [x, y, x, y, ...] vertices.
+ */
+function corners(p) {
+  const [x, y, w, h, r] = p, c = Math.cos(r), n = Math.sin(r), o = [];
+  for (const [u, v] of [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]) o.push(x + u * c - v * n, y + u * n + v * c);
+  return o;
+}
+export function poly(s) {
+  const p = s.p, out = [];
+  if (s.t === 'E' || s.t === 'B') {
+    const [x, y, rx, ry, r] = p, c = Math.cos(r), n = Math.sin(r), m = Math.max(12, Math.min(40, Math.round((rx + ry) * 0.7)));
+    for (let i = 0; i < m; i++) { const a = i / m * Math.PI * 2, u = Math.cos(a) * rx, v = Math.sin(a) * ry; out.push(x + u * c - v * n, y + u * n + v * c); }
+  } else if (s.t === 'T') out.push(...p.slice(0, 6));
+  else if (s.t === 'R') out.push(...corners(p));
+  else if (s.t === 'S') {
+    const [x0, y0, x1, y1, x2, y2, w] = p, hw = w / 2, N = 10, L = [], R = [];
+    const pt = t => { const u = 1 - t; return [u * u * x0 + 2 * u * t * x1 + t * t * x2, u * u * y0 + 2 * u * t * y1 + t * t * y2]; };
+    const tan = t => { const dx = 2 * (1 - t) * (x1 - x0) + 2 * t * (x2 - x1), dy = 2 * (1 - t) * (y1 - y0) + 2 * t * (y2 - y1), d = Math.hypot(dx, dy) || 1; return [dx / d, dy / d]; };
+    for (let i = 0; i <= N; i++) { const t = i / N, [px, py] = pt(t), [tx, ty] = tan(t); L.push([px - ty * hw, py + tx * hw]); R.push([px + ty * hw, py - tx * hw]); }
+    const cap = (cx, cy, base) => { const o = []; for (let i = 1; i < 6; i++) { const a = base - i / 6 * Math.PI; o.push([cx + Math.cos(a) * hw, cy + Math.sin(a) * hw]); } return o; };
+    const [ex, ey] = pt(1), [sx, sy] = pt(0), [ex_, ey_] = tan(1), [sx_, sy_] = tan(0);
+    for (const q of L) out.push(...q);
+    for (const q of cap(ex, ey, Math.atan2(ex_, -ey_))) out.push(...q);
+    for (let i = R.length - 1; i >= 0; i--) out.push(...R[i]);
+    for (const q of cap(sx, sy, Math.atan2(-sx_, sy_))) out.push(...q);
+  }
+  return out;
+}
+
+/**
+ * Get the gradient axis of a shape: [dirX, dirY, from, to]
+ * Ported from the original SHP.axis function in the Code Painter worker.
+ * @param {object} s Shape object with { t, p }.
+ * @returns {[number, number, number, number]} [gx, gy, min, max] projection extents.
+ */
+export function axis(s) {
+  const p = s.p, g = s.t === 'T' ? p[6] : s.t === 'S' ? p[7] : p[5], dx = Math.cos(g), dy = Math.sin(g);
+  if (s.t === 'E') {
+    const d = p[0] * dx + p[1] * dy, h = Math.hypot(p[2] * Math.cos(g - p[4]), p[3] * Math.sin(g - p[4]));
+    return [dx, dy, d - h, d + h];
+  }
+  const pts = s.t === 'T' ? p.slice(0, 6) : s.t === 'R' ? corners(p) : p.slice(0, 6), pad = s.t === 'S' ? p[6] / 2 : 0;
+  let m = 1e9, n = -1e9;
+  for (let i = 0; i < pts.length; i += 2) { const d = pts[i] * dx + pts[i + 1] * dy; if (d < m) m = d; if (d > n) n = d; }
+  return [dx, dy, m - pad, n + pad];
+}
+
 // Export a default shapes module object for convenience
 export default {
   SHAPE_TYPES,
@@ -525,4 +597,6 @@ export default {
   shapeToSVG,
   shapeToCode,
   getRuntimeSource,
+  poly,
+  axis,
 };
