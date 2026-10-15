@@ -707,13 +707,4 @@ export class Painter {
   static get MIX() { return { painterly: [['S', 0.45], ['B', 0.25], ['E', 0.15], ['T', 0.15]], soft: [['B', 0.75], ['S', 0.25]], mixed: [['E', 0.2], ['B', 0.2], ['T', 0.2], ['R', 0.15], ['S', 0.25]], geometric: [['T', 0.55], ['R', 0.45]], bubbles: [['B', 0.55], ['E', 0.45]], flat: [['S', 0.6], ['E', 0.25], ['T', 0.15]], points: [['E', 1]], hatch: [['S', 0.88], ['B', 0.12]], calligraphy: [['S', 0.85], ['B', 0.15]], watercolour: [['S', 0.6], ['B', 0.3], ['E', 0.1]], oil: [['S', 0.85], ['B', 0.15]], acrylic: [['S', 0.85], ['B', 0.15]], knife: [['S', 0.8], ['B', 0.2]], gouache: [['S', 0.8], ['B', 0.2]], sumi: [['S', 0.8], ['B', 0.2]], marker: [['S', 0.9], ['R', 0.1]], confetti: [['R', 0.7], ['T', 0.3]], graffiti: [['S', 0.82], ['B', 0.18]], mosaic: [['R', 1]], glass: [['T', 0.55], ['E', 0.25], ['R', 0.2]], linocut: [['B', 0.35], ['E', 0.25], ['T', 0.2], ['S', 0.2]], riso: [['B', 0.35], ['E', 0.25], ['R', 0.15], ['S', 0.25]], tape: [['S', 0.8], ['R', 0.2]], scribble: [['B', 0.45], ['E', 0.35], ['T', 0.2]], halftone: [['E', 0.35], ['B', 0.25], ['R', 0.2], ['T', 0.2]], string: [['S', 0.85], ['B', 0.15]], glitch: [['R', 1]], bokeh: [['E', 1]], paper: [['T', 0.35], ['R', 0.3], ['E', 0.2], ['B', 0.15]], stitch: [['B', 0.5], ['E', 0.25], ['R', 0.25]], pencil: [['S', 1]], pastel: [['S', 0.6], ['B', 0.25], ['E', 0.15]], pen: [['B', 0.35], ['E', 0.3], ['T', 0.2], ['S', 0.15]], ink: [['S', 0.75], ['B', 0.25]], wash: [['B', 0.55], ['E', 0.3], ['T', 0.15]], wet: [['B', 0.5], ['E', 0.28], ['S', 0.12], ['T', 0.1]], thread: [['S', 0.62], ['E', 0.16], ['R', 0.12], ['T', 0.1]], hylics: [['S', 0.4], ['B', 0.25], ['E', 0.15], ['T', 0.1], ['R', 0.1]], lens: [['E', 0.45], ['B', 0.25], ['S', 0.2], ['T', 0.1]], crystal: [['T', 0.45], ['R', 0.25], ['E', 0.2], ['S', 0.1]], frost: [['B', 0.4], ['E', 0.3], ['R', 0.2], ['S', 0.1]], neon: [['S', 0.7], ['E', 0.2], ['R', 0.1]], embroid: [['S', 0.55], ['E', 0.2], ['B', 0.15], ['T', 0.1]], plast: [['S', 0.82], ['B', 0.18]], ceramic: [['S', 0.82], ['B', 0.18]], stone: [['S', 0.82], ['B', 0.18]], metal: [['S', 0.82], ['B', 0.18]], foam: [['S', 0.82], ['B', 0.18]], molten: [['S', 0.82], ['B', 0.18]], pewter: [['S', 0.82], ['B', 0.18]], terrazzo: [['S', 0.82], ['B', 0.18]], copper: [['S', 0.82], ['B', 0.18]], gold: [['S', 0.82], ['B', 0.18]], bronze: [['S', 0.82], ['B', 0.18]], beads: [['S', 0.82], ['B', 0.18]], puffy: [['S', 0.82], ['B', 0.18]], charcoal: [['S', 1]] }; }
 }
 
-// Static properties
-Painter.RELIEF_ST = Painter.RELIEF_ST;
-Painter.SHAPE_ID = Painter.SHAPE_ID;
-Painter.NO_STROKE = Painter.NO_STROKE;
-Painter.FLAT = Painter.FLAT;
-Painter.KIND = Painter.KIND;
-Painter.SMALL = Painter.SMALL;
-Painter.MIX = Painter.MIX;
-
 export default Painter;
