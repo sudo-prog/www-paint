@@ -26,7 +26,7 @@ import {
   exportProject,
   importProject,
 } from './exporter.js';
-import { getStyle, getAllStyles } from '../styles/index.js';
+import { getAllStyles } from '../styles/index.js';
 import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
 
 // Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
@@ -34,6 +34,16 @@ import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
 // consumed by the Painter's configuration and retained for backward-compatible
 // UI consumers.
 export { DEFAULT_SETTINGS };
+
+/**
+ * Valid Painter order modes (everything else maps to "free" / null).
+ * These match the KINDS array in Painter.orderSetup().
+ * @type {string[]}
+ */
+const PAINTER_ORDER_KINDS = [
+  'down', 'up', 'right', 'left', 'diag',
+  'spiral', 'spiralin', 'rings', 'ringsin', 'clock',
+];
 
 /**
  * @typedef {object} Layer
@@ -50,11 +60,13 @@ export { DEFAULT_SETTINGS };
  * PaintingEngine — the main entry point for stroke-based image painting.
  *
  * Construction:
- *   const engine = new PaintingEngine({
- *     canvas: document.getElementById('canvas'),
- *     width: 1920, height: 1080,
- *     useWorker: true
- *   });
+ * ```js
+ * const engine = new PaintingEngine({
+ *   canvas: document.getElementById('canvas'),
+ *   width: 1920, height: 1080,
+ *   useWorker: true
+ * });
+ * ```
  */
 export class PaintingEngine {
   /**
@@ -106,6 +118,13 @@ export class PaintingEngine {
     // Smart mode and path ordering defaults
     this._smart = false;
     this._order = 'free';
+
+    // Current painter (for abort/stop support)
+    this._currentPainter = null;
+
+    // Cached results from last generate() run
+    this._lastSim = 0;
+    this._lastCount = 0;
 
     this._initLayers();
   }
@@ -163,7 +182,7 @@ export class PaintingEngine {
         // Store raw RGBA pixel data for Painter (it may modify in-place)
         this._pixels = new Uint8ClampedArray(this._imageData.data);
 
-        // Analyze
+        // Analyze (for UI previews / getAnalysis())
         this._analysis = analyzeImage(
           this._pixels,
           img.width,
@@ -253,20 +272,28 @@ export class PaintingEngine {
    *   - Hill-climbing to find optimal positions
    *   - Color solving (weighted least squares over covered pixels)
    *   - Error map tracking (residual after each stroke)
+   *   - Smart mode (structure tensor, focus map, subject detection)
+   *   - Path ordering ('down', 'up', 'spiral', 'rings', 'clock', etc.)
+   *   - Edge outlines, region fill, one-line mode
+   *
+   * Shapes emitted by the Painter in the `{t, p, c0, c1, a, st, fl}` format are
+   * converted to the internal `{type, params, color0, color1, alpha, style,
+   * layer, order, seed, flat}` format expected by the Renderer and Exporter.
    *
    * @param {object} opts
    * @param {string} [opts.style]
    * @param {number} [opts.count]
    * @param {number} [opts.layer]
-   * @param {boolean} [opts.smart] - Enable smart mode (structure tensor, focus map, subject detection).
-   * @param {string} [opts.order] - Path ordering: 'down', 'up', 'spiral', 'free'.
-   * @param {boolean} [opts.useWorker] - Override worker usage for this call.
-   * @returns {Promise<Array<object>>} Selected shape objects.
+   * @param {boolean} [opts.smart]    Enable smart mode (structure tensor, focus map, subject detection).
+   * @param {string} [opts.order]      Path ordering: 'down', 'up', 'right', 'left', 'diag', 'spiral', 'spiralin', 'rings', 'ringsin', 'clock', or 'free'.
+   * @param {number} [opts.seed]       Override the master seed for this run.
+   * @returns {Promise<Array<object>>} Selected shape objects (in internal format).
    */
   async generate(opts = {}) {
     const style = opts.style || this.settings.style || 'pencil';
     const count = opts.count || this.settings.strokeCount || 1000;
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
+    const seed = opts.seed !== undefined ? opts.seed : this._seed;
 
     // Update settings
     if (opts.style) this.settings.style = style;
@@ -279,13 +306,31 @@ export class PaintingEngine {
     if (!this._analysis) {
       throw new Error('No image loaded. Call loadImage first.');
     }
+    if (!this._pixels) {
+      throw new Error('No pixel data available. Call loadImage first.');
+    }
 
-    const seed = this._seed;
     const selected = [];
+
+    // Map engine order string to Painter order (or null for 'free'/unrecognized)
+    const painterOrder =
+      this._order && PAINTER_ORDER_KINDS.includes(this._order)
+        ? this._order
+        : null;
+
+    // Completion promise — resolves when Painter calls onDone.
+    // The Painter.start() method uses setTimeout-based continuation, so we
+    // can't rely on `await painter.start()` alone — it returns after the first
+    // 25ms batch. The onDone callback fires only when all shapes are committed.
+    let resolveDone;
+    const done = new Promise((resolve) => {
+      resolveDone = resolve;
+    });
 
     // Create Painter with correct constructor signature.
     // Painter expects: { width, height, imageData, options }
-    // where options: { style, smart, abstract, palette, size, sizeRand, order, outline, rfill, onShape, onProgress, onDone }
+    // where imageData is a raw RGBA Uint8ClampedArray and options contains
+    // style, smart, order, maxShapes, seed, onShape, onDone, etc.
     const painter = new Painter({
       width: this.width,
       height: this.height,
@@ -297,30 +342,73 @@ export class PaintingEngine {
         palette: this.settings.palette || null,
         size: this.settings.sizeK || 1,
         sizeRand: this.settings.sizeRand || false,
-        order: this._order !== 'free' ? this._order : null,
+        order: painterOrder,
         outline: this.settings.outline || 'off',
         rfill: this.settings.rfill || 'off',
         maxShapes: count,
         seed,
-        onShape: (shape) => { selected.push(shape); },
-        onProgress: null,
-        onDone: null,
+        // Collect and convert each shape via the onShape callback
+        onShape: (ps) => {
+          selected.push(this._convertShape(ps, selected.length, layerIdx));
+        },
+        // Resolve the completion promise when painting is done
+        onDone: (result) => {
+          this._lastSim = result.sim;
+          this._lastCount = result.count;
+          resolveDone(result);
+        },
       },
     });
 
-    // Run the painting
-    await painter.start();
+    // Retain a reference so we can abort if needed
+    this._currentPainter = painter;
 
-    // Assign to layer
+    // start() is async with setTimeout-based continuation.
+    // Call it (fire-and-forget) and await the onDone promise instead,
+    // which resolves only when the Painter has completed all batches.
+    painter.start();
+    await done;
+
+    this._currentPainter = null;
+
+    // Assign converted shapes to layer
     const layer = this.getLayer(layerIdx);
     if (layer) {
-      layer.strokes = selected.map(s => ({ ...s, layer: layerIdx }));
+      layer.strokes = selected;
     }
 
     // Notify renderer of updated layers
     this.renderer.setLayers(this.layers);
 
     return selected;
+  }
+
+  /**
+   * Convert a Painter-emitted shape to the internal format expected by
+   * the Renderer and Exporter.
+   *
+   * Painter shape:  { t, p, a, st, fl, c0, c1 }
+   * Engine shape:   { id, type, params, color0, color1, alpha, style, layer, order, seed, flat }
+   *
+   * @param {object} ps  Shape from Painter's onShape callback.
+   * @param {number} order  Paint order index (sequential).
+   * @param {number} layerIdx  Target layer index.
+   * @returns {object} Converted shape in internal format.
+   */
+  _convertShape(ps, order, layerIdx) {
+    return {
+      id: `stroke_${layerIdx}_${order}`,
+      type: ps.t,
+      params: ps.p,
+      color0: ps.c0,
+      color1: ps.c1,
+      alpha: ps.a,
+      style: ps.st,
+      layer: layerIdx,
+      order,
+      seed: this._seed,
+      flat: ps.fl,
+    };
   }
 
   // ─── Rendering ────────────────────────────────────────────────────
@@ -579,7 +667,8 @@ export class PaintingEngine {
 
   /**
    * Set the path ordering mode.
-   * @param {string} order - 'down', 'up', 'spiral', 'free'
+   * @param {string} order - 'down', 'up', 'right', 'left', 'diag', 'spiral',
+   *                         'spiralin', 'rings', 'ringsin', 'clock', or 'free'.
    */
   setOrder(order) {
     this._order = order || 'free';
@@ -637,6 +726,14 @@ export class PaintingEngine {
   }
 
   /**
+   * Get the last similarity score (0–100) from the most recent generate() run.
+   * @returns {number}
+   */
+  getSimilarity() {
+    return this._lastSim;
+  }
+
+  /**
    * Clear all strokes from a layer (or all layers).
    * @param {number} [layerIndex]
    */
@@ -653,6 +750,16 @@ export class PaintingEngine {
   }
 
   /**
+   * Stop the current Painter if it is running.
+   * The generate() promise will resolve shortly after.
+   */
+  stop() {
+    if (this._currentPainter) {
+      this._currentPainter.stop();
+    }
+  }
+
+  /**
    * Re-render at a new resolution (for high-DPI export).
    */
   setSize(w, h) {
@@ -665,11 +772,15 @@ export class PaintingEngine {
    * Destroy the engine (clean up resources).
    */
   destroy() {
+    // Stop any running painter
+    this.stop();
+
     // Clean up image data references
     this._pixels = null;
     this._imageData = null;
     this._analysis = null;
     this._sourceImage = null;
+    this._currentPainter = null;
   }
 }
 
