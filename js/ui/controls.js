@@ -364,6 +364,10 @@ export class ControlsManager {
    * @returns {HTMLElement}
    */
   _renderMotionSection() {
+    // Motion playback controls (play/pause/speed/scrubber) are rendered by the
+    // separate MotionController into a dedicated #motion-controls container in
+    // the DOM, not here in the controls panel. This section only hosts the
+    // static path-motion toggles (one-line, outline, region fill).
     const wrapper = document.createElement("div");
     wrapper.className = "motion-controls";
     wrapper.appendChild(this._renderToggle("oneLine", "One Line", ONELINE_OPTIONS, this.settings.oneLine ?? PAINTER_DEFAULT_SETTINGS.oneLine));

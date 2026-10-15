@@ -943,3 +943,152 @@ body {
 }
 
 .layer-row__drag:active { cursor: grabbing; }
+
+/* ─── Motion Controls ────────────────────────────────────────── */
+.motion-controls-root {
+  display: flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--panel-bg, var(--editor-bg));
+  border-top: 1px solid var(--border-color, #333);
+  gap: var(--space-sm);
+}
+
+@media (min-width: 768px) {
+  .motion-controls-root {
+    flex-direction: row;
+  }
+}
+
+.motion-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  font-family: var(--font-mono, 'DM Mono', monospace);
+}
+
+.motion-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.motion-btn {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 4px;
+  background: var(--btn-bg, #2a2a2a);
+  color: var(--text-primary, #fff);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.motion-btn:hover {
+  background: var(--btn-hover, #3a3a3a);
+  border-color: var(--accent, #8a7f9d);
+}
+
+.motion-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.motion-btn.hidden {
+  display: none;
+}
+
+.motion-scrubber-wrap {
+  position: relative;
+  flex: 1;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.motion-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: var(--accent, #8a7f9d);
+  border-radius: 2px;
+  opacity: 0.3;
+  transition: width 0.05s linear;
+}
+
+.motion-scrubber {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--track-bg, #444);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.motion-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent, #8a7f9d);
+  border: 2px solid var(--bg-primary, #121212);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.motion-scrubber::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.motion-scrubber:focus {
+  filter: brightness(1.2);
+}
+
+.motion-speed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.motion-speed-label {
+  font-size: 10px;
+  color: var(--text-disabled, #888);
+  font-family: var(--font-mono, 'DM Mono', monospace);
+}
+
+.motion-speed select {
+  all: unset;
+  padding: 2px 6px;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 4px;
+  background: var(--btn-bg, #2a2a2a);
+  color: var(--text-primary, #fff);
+  font-size: 11px;
+  font-family: var(--font-mono, 'DM Mono', monospace);
+  cursor: pointer;
+}
+
+.motion-counter {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-disabled, #888);
+  font-family: var(--font-mono, 'DM Mono', monospace);
+  white-space: nowrap;
+}
+
+.motion-controls-root.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

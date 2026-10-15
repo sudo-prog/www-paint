@@ -16,3 +16,6 @@ test-*.png
 test-*.html
 assets/test-*.jpg
 assets/test-*.png
+
+# Visual test images (kept on disk, not committed)
+test-images/

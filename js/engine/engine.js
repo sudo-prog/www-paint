@@ -98,15 +98,7 @@ export class PaintingEngine {
     });
 
     // Register all available styles into the renderer
-    const styles = getAllStyles();
-    this._styleList = styles.map(s => s.name);
-    for (const { name, instance } of styles) {
-      // The renderer expects a module with a `draw(ctx, shape, progress)` method.
-      // Style classes have `render(ctx, shape, progress)` — adapt it.
-      this.renderer.registerStyle(name, {
-        draw: (ctx, shape, progress) => instance.render(ctx, shape, progress),
-      });
-    }
+    this._registerAllStyles();
 
     // Image state
     this._imageData = null;    // ImageData
@@ -132,6 +124,25 @@ export class PaintingEngine {
     this._lastCount = 0;
 
     this._initLayers();
+  }
+
+  /**
+   * Register every built-in style onto the CURRENT renderer.
+   * Must be re-callable: app.js swaps `this.renderer` for the CanvasManager's
+   * renderer after construction, which would otherwise leave `_styles` empty
+   * and silently force every style onto the generic fallback draw path.
+   * @private
+   */
+  _registerAllStyles() {
+    const styles = getAllStyles();
+    this._styleList = styles.map(s => s.name);
+    for (const { name, instance } of styles) {
+      // The renderer expects a module with a `draw(ctx, shape, progress)` method.
+      // Style classes have `render(ctx, shape, progress)` — adapt it.
+      this.renderer.registerStyle(name, {
+        draw: (ctx, shape, progress) => instance.render(ctx, shape, progress),
+      });
+    }
   }
 
   // ─── Initialization ───────────────────────────────────────────────

@@ -12,6 +12,7 @@ import { CanvasManager } from "./canvas.js";
 import { ControlsManager } from "./controls.js";
 import { LayersManager } from "./layers.js";
 import { ExportManager } from "./export.js";
+import { MotionController } from "./motion.js";
 
 /**
  * WWW_PAINT Application Controller.
@@ -89,6 +90,9 @@ export class App {
 
     // Wire canvas manager's renderer to engine
     this.engine.renderer = this.canvasMgr.renderer;
+    // Re-register styles onto the swapped renderer (the engine's constructor
+    // populated its ORIGINAL renderer, which we just replaced).
+    this.engine._registerAllStyles();
 
     // Create UI managers
     this.controls = new ControlsManager(this.controlsRoot, {
@@ -96,6 +100,15 @@ export class App {
     });
     this.layers = new LayersManager(this.layersRoot);
     this.exportMgr = new ExportManager(this.exportRoot);
+
+    // Create motion controller (playback controls for stroke animation)
+    const motionContainer = document.getElementById('motion-controls') || null;
+    if (motionContainer) {
+      this.motion = new MotionController({
+        canvasMgr: this.canvasMgr,
+        container: motionContainer,
+      });
+    }
 
     // Sync layers to engine
     this.layers.setLayers(this.engine.layers);
@@ -327,6 +340,9 @@ export class App {
 
       // Update layers panel
       this.layers.setLayers(this.engine.layers);
+
+      // Refresh the motion playback counter so it reflects the new stroke count
+      this.motion?.refreshStrokeCount?.();
 
       this._setStatus(
         "Done — " + totalStrokes.toLocaleString() + " strokes in " + Math.round(elapsed) + "ms",
@@ -618,6 +634,7 @@ export class App {
     this.controls?.destroy();
     this.layers?.destroy();
     this.exportMgr?.destroy();
+    this.motion?.destroy();
   }
 }
 

@@ -49,6 +49,22 @@ import GlitchStyle from './glitch.js';
 import FrostStyle from './frost.js';
 import EmbroidStyle from './embroid.js';
 import PlastStyle from './plast.js';
+import CeramicStyle from './ceramic.js';
+import StoneStyle from './stone.js';
+import MetalStyle from './metal.js';
+import ChromeStyle from './chrome.js';
+import GlassStyle from './glass.js';
+import LensStyle from './lens.js';
+import CrystalStyle from './crystal.js';
+import GoldStyle from './gold.js';
+import BronzeStyle from './bronze.js';
+import CopperStyle from './copper.js';
+import PewterStyle from './pewter.js';
+import FoamStyle from './foam.js';
+import BeadsStyle from './beads.js';
+import PuffyStyle from './puffy.js';
+import TerrazzoStyle from './terrazzo.js';
+import MoltenStyle from './molten.js';
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
@@ -87,7 +103,23 @@ const registry = {
   glitch:       { class: GlitchStyle,      category: 'graphic', label: 'Glitch' },
   frost:        { class: FrostStyle,       category: 'graphic', label: 'Frost' },
   embroid:      { class: EmbroidStyle,     category: 'craft',   label: 'Embroidery' },
-  plast:        { class: PlastStyle,       category: 'graphic', label: 'Plastic' }
+  plast:        { class: PlastStyle,       category: 'graphic', label: 'Plastic' },
+  ceramic:      { class: CeramicStyle,     category: '3d',      label: 'Ceramic' },
+  stone:        { class: StoneStyle,       category: '3d',      label: 'Stone' },
+  metal:        { class: MetalStyle,       category: '3d',      label: 'Metal' },
+  chrome:       { class: ChromeStyle,      category: '3d',      label: 'Chrome' },
+  glass:        { class: GlassStyle,       category: '3d',      label: 'Glass' },
+  lens:         { class: LensStyle,        category: '3d',      label: 'Lens' },
+  crystal:      { class: CrystalStyle,     category: '3d',      label: 'Crystal' },
+  gold:         { class: GoldStyle,        category: '3d',      label: 'Gold' },
+  bronze:       { class: BronzeStyle,      category: '3d',      label: 'Bronze' },
+  copper:       { class: CopperStyle,      category: '3d',      label: 'Copper' },
+  pewter:       { class: PewterStyle,      category: '3d',      label: 'Pewter' },
+  foam:         { class: FoamStyle,        category: '3d',      label: 'Foam' },
+  beads:        { class: BeadsStyle,       category: '3d',      label: 'Beads' },
+  puffy:        { class: PuffyStyle,       category: '3d',      label: 'Puffy' },
+  terrazzo:     { class: TerrazzoStyle,    category: '3d',      label: 'Terrazzo' },
+  molten:       { class: MoltenStyle,      category: '3d',      label: 'Molten' }
 };
 
 // Ordered list for UI / iteration
@@ -156,7 +188,10 @@ export {
   SumiStyle, GouacheStyle, KnifeStyle, PastelStyle, PenStyle, WashStyle,
   DotsStyle, ConfettiStyle,
   HylicsStyle, LinocutStyle, RisoStyle, TapeStyle, ThreadStyle, StitchStyle,
-  NeonStyle, BokehStyle, PaperStyle, GlitchStyle, FrostStyle, EmbroidStyle, PlastStyle
+  NeonStyle, BokehStyle, PaperStyle, GlitchStyle, FrostStyle, EmbroidStyle, PlastStyle,
+  CeramicStyle, StoneStyle, MetalStyle, ChromeStyle, GlassStyle, LensStyle,
+  CrystalStyle, GoldStyle, BronzeStyle, CopperStyle, PewterStyle, FoamStyle,
+  BeadsStyle, PuffyStyle, TerrazzoStyle, MoltenStyle
 };
 
 export default { getStyle, getAllStyles, getStylesByCategory, getStyleInfo, registerStyle };
