@@ -28,6 +28,14 @@ import MosaicStyle from './mosaic.js';
 import ScribbleStyle from './scribble.js';
 import HalftoneStyle from './halftone.js';
 import StringStyle from './string.js';
+import SumiStyle from './sumi.js';
+import GouacheStyle from './gouache.js';
+import KnifeStyle from './knife.js';
+import PastelStyle from './pastel.js';
+import PenStyle from './pen.js';
+import WashStyle from './wash.js';
+import DotsStyle from './dots.js';
+import ConfettiStyle from './confetti.js';
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
@@ -45,7 +53,15 @@ const registry = {
   mosaic:       { class: MosaicStyle,      category: 'graphic', label: 'Mosaic' },
   scribble:     { class: ScribbleStyle,    category: 'graphic', label: 'Scribble' },
   halftone:     { class: HalftoneStyle,    category: 'graphic', label: 'Halftone' },
-  string:       { class: StringStyle,      category: 'craft',   label: 'String Art' }
+  string:       { class: StringStyle,      category: 'craft',   label: 'String Art' },
+  sumi:         { class: SumiStyle,        category: 'paint',   label: 'Sumi Ink' },
+  gouache:      { class: GouacheStyle,     category: 'paint',   label: 'Gouache' },
+  knife:        { class: KnifeStyle,       category: 'paint',   label: 'Palette Knife' },
+  pastel:       { class: PastelStyle,      category: 'draw',    label: 'Pastel' },
+  pen:          { class: PenStyle,         category: 'draw',    label: 'Pen' },
+  wash:         { class: WashStyle,        category: 'paint',   label: 'Wash' },
+  dots:         { class: DotsStyle,        category: 'graphic', label: 'Dots' },
+  confetti:     { class: ConfettiStyle,    category: 'graphic', label: 'Confetti' }
 };
 
 // Ordered list for UI / iteration
@@ -110,7 +126,9 @@ export function registerStyle(name, styleClass, category, label) {
 export {
   PencilStyle, InkStyle, WatercolorStyle, OilStyle, GraffitiStyle, GraphicStyle,
   CharcoalStyle, MarkerStyle, CalligraphyStyle, CrossHatchStyle,
-  MosaicStyle, ScribbleStyle, HalftoneStyle, StringStyle
+  MosaicStyle, ScribbleStyle, HalftoneStyle, StringStyle,
+  SumiStyle, GouacheStyle, KnifeStyle, PastelStyle, PenStyle, WashStyle,
+  DotsStyle, ConfettiStyle
 };
 
 export default { getStyle, getAllStyles, getStylesByCategory, getStyleInfo, registerStyle };

@@ -123,6 +123,19 @@ export class CanvasManager {
   }
 
   /**
+   * Draw one stroke directly onto the canvas, on top of what is already there.
+   * Used for live streaming during generation (no clear, no full re-render).
+   * @param {object} shape — engine-format shape
+   * @param {number} [progress=1]
+   */
+  drawStroke(shape, progress = 1) {
+    if (!shape) return;
+    try {
+      this.renderer.drawShapeAt(shape, progress);
+    } catch (e) { /* ignore a single bad stroke */ }
+  }
+
+  /**
    * Render the painting progressively (animated reveal) from 0 to 1.
    * @param {object} [opts]
    * @param {number} [opts.duration=2000] — animation duration in ms

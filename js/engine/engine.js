@@ -21,10 +21,14 @@ import { analyzeImage } from './analyzer.js';
 import { Painter } from './painter.js';
 import { Renderer, createRenderer } from './renderer.js';
 import {
+  aliasStyle,
+} from './style-alias.js';
+import {
   exportImage,
   exportHTML as exportHTMLFunc,
   exportProject,
   importProject,
+  exportSVG as exportSVGFunc,
 } from './exporter.js';
 import { getAllStyles } from '../styles/index.js';
 import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
@@ -288,6 +292,9 @@ export class PaintingEngine {
    * @param {boolean} [opts.smart]    Enable smart mode (structure tensor, focus map, subject detection).
    * @param {string} [opts.order]      Path ordering: 'down', 'up', 'right', 'left', 'diag', 'spiral', 'spiralin', 'rings', 'ringsin', 'clock', or 'free'.
    * @param {number} [opts.seed]       Override the master seed for this run.
+   * @param {function(object, number): void} [opts.onShape]  Optional live callback
+   *   invoked once per committed shape (engine-format) as it is generated.
+   *   Useful for streaming strokes onto the canvas during generation.
    * @returns {Promise<Array<object>>} Selected shape objects (in internal format).
    */
   async generate(opts = {}) {
@@ -330,6 +337,7 @@ export class PaintingEngine {
         order: painterOrder,
         count,
         seed,
+        onShape: opts.onShape,
       });
       const selected = shapes.map((ps, i) => this._convertShape(ps, i, layerIdx));
       const layer = this.getLayer(layerIdx);
@@ -356,7 +364,7 @@ export class PaintingEngine {
       height: this.height,
       imageData: this._pixels,
       options: {
-        style,
+        style: aliasStyle(style),
         smart: this._smart,
         abstract: this.settings.abstract || false,
         palette: this.settings.palette || null,
@@ -409,7 +417,7 @@ export class PaintingEngine {
    * full ordered shape array when the worker reports done.
    * @private
    */
-  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed }) {
+  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed, onShape }) {
     return new Promise((resolve, reject) => {
       const worker = new Worker(new URL('./painter-worker.js', import.meta.url), { type: 'module' });
       this._currentWorker = worker;
@@ -420,6 +428,10 @@ export class PaintingEngine {
         if (!m) return;
         if (m.type === 'shape') {
           shapes.push(m.shape);
+          if (onShape) {
+            const idx = shapes.length - 1;
+            try { onShape(this._convertShape(m.shape, idx, 0), idx); } catch (e) { /* never let a draw error kill generation */ }
+          }
         } else if (m.type === 'done') {
           this._lastSim = m.result ? m.result.sim : 0;
           this._lastCount = shapes.length;
@@ -449,7 +461,7 @@ export class PaintingEngine {
         height,
         imageData: copy,
         options: {
-          style,
+          style: aliasStyle(style),
           smart,
           abstract: this.settings.abstract || false,
           palette: this.settings.palette || null,
@@ -573,6 +585,19 @@ export class PaintingEngine {
       background: opts.background || this.background,
       styleList: this._styleList,
     });
+  }
+
+  /**
+   * Export as SVG document string.
+   *
+   * @param {object} [opts]
+   * @param {number} [opts.width]
+   * @param {number} [opts.height]
+   * @param {string} [opts.background]
+   * @returns {string} SVG document string.
+   */
+  exportSVG(opts = {}) {
+    return exportSVGFunc(this.layers, opts.width || this.width, opts.height || this.height, opts.background || this.background);
   }
 
   /**

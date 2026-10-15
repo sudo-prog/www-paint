@@ -99,6 +99,9 @@ export class ExportManager {
         <button type="button" class="btn btn--ghost" data-action="export-html">
           Export HTML
         </button>
+        <button type="button" class="btn btn--ghost" data-action="export-svg">
+          Export SVG
+        </button>
         <button type="button" class="btn btn--ghost" data-action="save-project">
           Save Project
         </button>
@@ -193,6 +196,7 @@ export class ExportManager {
     const actions = {
       "export-image":  () => this._emit("export-image", { ...this.options }),
       "export-html":    () => this._emit("export-html",   { ...this.options }),
+      "export-svg":     () => this._emit("export-svg",     { ...this.options }),
       "save-project":   () => this._emit("save-project",  { ...this.options }),
       "load-project":   () => this._emit("load-project",  { ...this.options }),
     };

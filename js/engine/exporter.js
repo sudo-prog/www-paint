@@ -59,8 +59,8 @@ export function packLayers(layers, styleList) {
     packed.push(packShape(s, styleList));
   }
 
-  // Each packed row: [type(1), params(8), color0(3), color1(3), alpha(1), styleIdx(1), layer(1), order(1), seed(1)] = 19
-  const ELEMENTS_PER_SHAPE = 19;
+  // Each packed row: [type(1), params(8), color0(3), color1(3), alpha(1), styleIdx(1), layer(1), order(1), seed(1)] = 20
+  const ELEMENTS_PER_SHAPE = 20;
   const buf = new Uint8Array(packed.length * ELEMENTS_PER_SHAPE);
   let offset = 0;
   for (const row of packed) {
@@ -199,10 +199,10 @@ var styles={};
 function decodePacked(b64){
 var bytes=atob(b64);
 var out=[];
-for(var i=0;i<bytes.length;i+=18){
+for(var i=0;i<bytes.length;i+=20){
 var d=[];
-for(var j=0;j<18;j++)d.push(bytes.charCodeAt(i+j));
-out.push({t:String.fromCharCode(d[0]),p:d.slice(1,9),c0:d.slice(9,12),c1:d.slice(12,15),a:d[15]/255,s:styles[d[16]]||'default',l:d[17],o:d[18]});
+for(var j=0;j<20;j++)d.push(bytes.charCodeAt(i+j));
+out.push({t:String.fromCharCode(d[0]),p:d.slice(1,9),c0:d.slice(9,12),c1:d.slice(12,15),a:d[15]/255,s:styles[d[16]]||'default',l:d[17],o:d[18],seed:d[19]});
 }
 return out;
 }

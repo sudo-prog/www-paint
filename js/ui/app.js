@@ -174,6 +174,9 @@ export class App {
     this.exportMgr.root.addEventListener("export-html", () => {
       this._handleExportHTML();
     });
+    this.exportMgr.root.addEventListener("export-svg", () => {
+      this._handleExportSVG();
+    });
     this.exportMgr.root.addEventListener("save-project", () => {
       this._handleSaveProject();
     });
@@ -290,33 +293,40 @@ export class App {
 
       const startTime = performance.now();
 
+      // Clear the canvas once so we start from the background, then stream each
+      // generated stroke live onto the canvas.
+      this.canvasMgr.render({ progress: 0, clear: true });
+
+      let strokeCount = 0;
       const strokes = await this.engine.generate({
         style: settings.style,
         count: settings.strokeCount,
         layer: 0,
         smart: settings.smart,
         order: settings.order,
+        onShape: (shape) => {
+          this.canvasMgr.drawStroke(shape, 1);
+          strokeCount++;
+          if (strokeCount % 50 === 0) {
+            this._setStatus(
+              "Generating… " + strokeCount.toLocaleString() + " strokes",
+              true,
+              0,
+              true
+            );
+          }
+        },
       });
+
+      // Safety re-render so the finished painting is fully consistent with the
+      // stored strokes (cheap, not an animation).
+      this.engine.render();
 
       const elapsed = performance.now() - startTime;
       const totalStrokes = strokes.length;
 
       // Update layers panel
       this.layers.setLayers(this.engine.layers);
-
-      // Animate the render
-      this.engine.render({ progress: 0 });
-      await this.canvasMgr.renderAnimated({
-        duration: Math.min(3000, Math.max(1000, totalStrokes * 5)),
-        onFrame: (progress) => {
-          this._setStatus(
-            "Rendering " + Math.round(progress * totalStrokes) + " / " + totalStrokes,
-            true,
-            0,
-            true
-          );
-        },
-      });
 
       this._setStatus(
         "Done — " + totalStrokes.toLocaleString() + " strokes in " + Math.round(elapsed) + "ms",
@@ -394,6 +404,32 @@ export class App {
     } catch (err) {
       console.error(err);
       this._showError("HTML export failed: " + err.message);
+    }
+  }
+
+  /**
+   * Export as SVG.
+   * @private
+   */
+  async _handleExportSVG() {
+    if (!this.engine._sourceImage) {
+      this._showError("No painting to export");
+      return;
+    }
+
+    try {
+      const svg = this.engine.exportSVG({
+        width: this.engine.width,
+        height: this.engine.height,
+        background: this.engine.background,
+      });
+
+      const blob = new Blob([svg], { type: "image/svg+xml" });
+      this._downloadBlob(blob, "www-paint-export.svg");
+      this.exportMgr.hide();
+    } catch (err) {
+      console.error(err);
+      this._showError("SVG export failed: " + err.message);
     }
   }
 
