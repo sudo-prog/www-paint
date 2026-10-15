@@ -437,7 +437,8 @@ export class Painter {
   samplePos(edges) {
     const W = this.W, H = this.H;
     if (this.abstract && !this.ORD && this.rnd() < 0.3) return [this.rnd() * W, this.band ? this.band[0] + this.rnd() * (this.band[1] - this.band[0]) : this.rnd() * H];
-    const tab = edges ? this.cumE : this.cum, r = this.rnd() * (edges ? this.cumETotal : this.cumTotal);
+    const useEdges = edges && this.cumE;
+    const tab = useEdges ? this.cumE : this.cum, r = this.rnd() * (useEdges ? this.cumETotal : this.cumTotal);
     let lo = 0, hi = W * H - 1;
     while (lo < hi) { const m = (lo + hi) >> 1; if (tab[m] < r) lo = m + 1; else hi = m; }
     return [lo % W + this.rnd(), (lo / W | 0) + this.rnd()];
