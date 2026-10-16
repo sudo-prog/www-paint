@@ -257,7 +257,8 @@ export function shapePoly(s) {
 export function shapeAxis(s) {
   s = normalizeShape(s);
   const p = s.p;
-  const g = s.t === 'T' ? p[6] : s.t === 'S' ? p[7] : p[5];
+  // For E/B/R, p[5] may be a gradient angle (Code Painter) or c0 (colour array, after _convertShape)
+  const g = s.t === 'T' ? p[6] : s.t === 'S' ? p[7] : (typeof p[5] === 'number' ? p[5] : 0);
   const dx = Math.cos(g);
   const dy = Math.sin(g);
   if (s.t === 'E') {
@@ -378,7 +379,9 @@ export function makeShape(type, params, color0, color1, alpha = 1, style = 'defa
   };
 }
 
-// Extract colors + opacity from a shape's params (Code Painter stores them at the tail of args)
+// Extract colors + opacity from a shape.
+// Primary source: colours embedded at the tail of params (Code Painter style).
+// Fallback: top-level color0/color1/alpha fields (engine-converted shape).
 export function colsOf(shape) {
   const a = shape.params;
   // Color index depends on shape type — Code Painter stores c0/c1 at the tail of params
@@ -387,9 +390,15 @@ export function colsOf(shape) {
   // E/B (ellipse/blob): [cx,cy,rx,ry,rot,c0,c1,o] -> c0@5, c1@6
   // R (rect): [cx,cy,w,h,r,c0,c1,o]               -> c0@5, c1@6
   const i = shape.type === 'S' ? 8 : shape.type === 'T' ? 7 : 5;
-  const c0 = a[i];
-  const c1 = a[i + 1];
-  const o = a[a.length - 1];
+  let c0 = a[i];
+  let c1 = a[i + 1];
+  let o = a[a.length - 1];
+  // Fallback to top-level fields if params doesn't carry colours
+  if (c0 === undefined) {
+    c0 = shape.color0;
+    c1 = shape.color1;
+    o = shape.alpha;
+  }
   return [
     Array.isArray(c0) ? rgbToHex(c0) : (typeof c0 === 'string' ? c0 : '#000000'),
     Array.isArray(c1) ? rgbToHex(c1) : (typeof c1 === 'string' ? c1 : '#000000'),

@@ -505,10 +505,29 @@ export class PaintingEngine {
    * @returns {object} Converted shape in internal format.
    */
   _convertShape(ps, order, layerIdx) {
+    // Embed colors into params at the indices the style renderers expect.
+    // Painter shape: { t, p, a, st, fl, c0, c1 }
+    //   - S-type p: [x0,y0,x1,y1,x2,y2,w,gradAngle] (8)  → append c0,c1,alpha → 11
+    //   - T-type p: [x1,y1,x2,y2,x3,y3,across] (7)       → append c0,c1,alpha → 10
+    //   - E/B/R-type p: [x,y,rx,ry,rot,gradOrFeather] (6) → replace[5]→c0, append c1,alpha → 8
+    //     (B-type's index-5 is a feather value, not a real gradient angle; E/R gradient is secondary to the fill colour)
+    const t = ps.t;
+    let p = ps.p.slice();
+    const c0 = ps.c0;
+    const c1 = ps.c1;
+    const a = ps.a;
+    if (t === 'E' || t === 'B' || t === 'R') {
+      // Replace index 5 (gradAngle/feather/across) with c0, then append c1 and alpha
+      p[5] = c0;
+      p.push(c1, a);
+    } else {
+      // S-type and T-type: append c0, c1, alpha to the end
+      p.push(c0, c1, a);
+    }
     return {
       id: `stroke_${layerIdx}_${order}`,
       type: ps.t,
-      params: ps.p,
+      params: p,
       color0: ps.c0,
       color1: ps.c1,
       alpha: ps.a,
@@ -691,6 +710,14 @@ export class PaintingEngine {
    */
   getLayer(index) {
     return this.layers.find(l => l.id === index);
+  }
+
+  /**
+   * Get the active (top-most) layer.
+   * @returns {Layer|undefined}
+   */
+  getActiveLayer() {
+    return this.layers.length > 0 ? this.layers[this.layers.length - 1] : undefined;
   }
 
   /**

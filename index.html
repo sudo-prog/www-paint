@@ -32,6 +32,9 @@
         <button type="button" class="nav-btn" data-nav="layers">
           <span class="nav-btn__icon">┅</span>Layers
         </button>
+        <button type="button" class="nav-btn" id="btn-paint-mode" title="Toggle paint mode">
+          <span class="nav-btn__icon">✏</span>Paint
+        </button>
       </nav>
 
       <div class="top-bar__right">
@@ -68,6 +71,33 @@
           </div>
         </div>
       </section>
+
+      <!-- Paint Toolbar (freehand painting controls) -->
+      <aside class="paint-toolbar" id="paint-toolbar" role="complementary" aria-label="Paint toolbar">
+        <div class="paint-toolbar__row">
+          <label class="paint-toolbar__label">Brush</label>
+          <select class="paint-toolbar__select" id="paint-preset">
+            <option value="HB">HB</option>
+            <option value="2B">2B</option>
+            <option value="charcoal">Charcoal</option>
+            <option value="pen">Pen</option>
+          </select>
+        </div>
+        <div class="paint-toolbar__row">
+          <label class="paint-toolbar__label">Color</label>
+          <input type="color" class="paint-toolbar__color" id="paint-color" value="#222222">
+        </div>
+        <div class="paint-toolbar__row">
+          <label class="paint-toolbar__label">Weight</label>
+          <input type="range" class="paint-toolbar__slider" id="paint-weight" min="1" max="20" step="0.5" value="4">
+          <span class="paint-toolbar__value" id="paint-weight-value">4</span>
+        </div>
+        <div class="paint-toolbar__row paint-toolbar__row--full">
+          <button type="button" class="btn btn--ghost btn--sm" id="paint-clear" aria-label="Clear layer">
+            Clear Layer
+          </button>
+        </div>
+      </aside>
 
       <!-- Motion Controls (playback bar for stroke animation) -->
       <div class="motion-controls-root" id="motion-controls" role="region" aria-label="Playback controls">
@@ -109,7 +139,9 @@
       "./js/ui/canvas.js": "./js/ui/canvas.js?v=20261015",
       "./js/ui/export.js": "./js/ui/export.js?v=20261015",
       "./js/ui/layers.js": "./js/ui/layers.js?v=20261015",
-      "./js/ui/motion.js": "./js/ui/motion.js?v=20261015"
+      "./js/ui/motion.js": "./js/ui/motion.js?v=20261015",
+      "./js/engine/paint-brush.js": "./js/engine/paint-brush.js?v=20261015",
+      "./js/vendor/brush.esm.js": "./js/vendor/brush.esm.js?v=20261015"
     }
   }
   </script>
@@ -146,6 +178,15 @@
 
       // Generate button (round, top bar)
       document.getElementById('btn-gener')?.addEventListener('click', () => app.generate());
+
+      // Paint mode weight slider value display
+      const weightSlider = document.getElementById('paint-weight');
+      const weightValue = document.getElementById('paint-weight-value');
+      if (weightSlider && weightValue) {
+        weightSlider.addEventListener('input', () => {
+          weightValue.textContent = weightSlider.value;
+        });
+      }
 
       // Export button (round, top bar)
       document.getElementById('btn-export')?.addEventListener('click', () => {

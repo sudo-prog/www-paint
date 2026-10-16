@@ -13,6 +13,7 @@ import { ControlsManager } from "./controls.js";
 import { LayersManager } from "./layers.js";
 import { ExportManager } from "./export.js";
 import { MotionController } from "./motion.js";
+import { PaintBrushEngine } from "../engine/paint-brush.js";
 
 /**
  * WWW_PAINT Application Controller.
@@ -110,8 +111,29 @@ export class App {
       });
     }
 
+    // Create PaintBrushEngine for freehand painting
+    this.paintBrush = new PaintBrushEngine({
+      renderer: this.engine.renderer,
+      width: this.canvasEl.width,
+      height: this.canvasEl.height,
+    });
+
+    // Hook paint surfaces into the renderer so strokes are composited
+    this.engine.renderer._paintSurfaceProvider = (layerId) => {
+      return this.paintBrush.exportLayer(layerId);
+    };
+
+    // Sync renderer layers so paint surfaces composite during render
+    this.engine.renderer.setLayers(this.engine.layers);
+
+    // Paint mode state
+    this._paintMode = false;
+    this._painting = false;
+    this._brushPreset = 'HB';
+    this._brushColor = '#222222';
+    this._brushWeight = 1;
+
     // Sync layers to engine
-    this.layers.setLayers(this.engine.layers);
 
     // Bind events
     this._bindAllEvents();
@@ -199,7 +221,192 @@ export class App {
     this.exportMgr.root.addEventListener("load-project-file", (e) => {
       this._handleLoadProjectFile(e.detail.file);
     });
+
+    // Paint mode toggle
+    const paintToggle = document.getElementById("btn-paint-mode");
+    if (paintToggle) {
+      paintToggle.addEventListener("click", () => {
+        this._togglePaintMode();
+      });
+    }
+
+    // Paint toolbar controls
+    const presetSelect = document.getElementById("paint-preset");
+    if (presetSelect) {
+      presetSelect.addEventListener("change", () => {
+        this._brushPreset = presetSelect.value;
+        this._updatePaintStatus();
+      });
+    }
+    const colorInput = document.getElementById("paint-color");
+    if (colorInput) {
+      colorInput.addEventListener("input", () => {
+        this._brushColor = colorInput.value;
+        this._updatePaintStatus();
+      });
+    }
+    const weightInput = document.getElementById("paint-weight");
+    if (weightInput) {
+      weightInput.addEventListener("input", () => {
+        this._brushWeight = parseFloat(weightInput.value);
+        this._updatePaintStatus();
+      });
+    }
+    const clearBtn = document.getElementById("paint-clear");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        this._clearPaintLayer();
+      });
+    }
+
+    // Mouse/touch events for freehand painting
+    this._bindPaintEvents();
   }
+
+  /**
+   * Bind mouse/touch events on the canvas for freehand painting in Paint mode.
+   * @private
+   */
+  _bindPaintEvents() {
+    const canvas = this.canvasEl;
+    if (!canvas) return;
+
+    const handleDown = (e) => {
+      if (!this._paintMode) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (this.engine.renderer.width / rect.width);
+      const y = (e.clientY - rect.top) * (this.engine.renderer.height / rect.height);
+      const layer = this.engine.getActiveLayer() || this.engine.layers[0];
+      if (!layer) return;
+      this._painting = true;
+      this.paintBrush.beginStroke(layer.id, {
+        x, y, brushName: this._brushPreset, color: this._brushColor,
+        weight: this._brushWeight,
+      });
+    };
+
+    const handleMove = (e) => {
+      if (!this._paintMode || !this._painting) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (this.engine.renderer.width / rect.width);
+      const y = (e.clientY - rect.top) * (this.engine.renderer.height / rect.height);
+      this.paintBrush.moveStroke(x, y);
+    };
+
+    const handleUp = (e) => {
+      if (!this._paintMode || !this._painting) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (this.engine.renderer.width / rect.width);
+      const y = (e.clientY - rect.top) * (this.engine.renderer.height / rect.height);
+      this.paintBrush.endStroke(x, y);
+      this._painting = false;
+      // Composite onto main canvas
+      const layer = this.engine.getActiveLayer() || this.engine.layers[0];
+      if (layer) {
+        this.paintBrush.renderLayer(layer, 1, this.canvasMgr.ctx);
+      }
+      // Hide the placeholder overlay so the stroke is visible
+      const placeholder = document.getElementById('canvas-placeholder');
+      if (placeholder) placeholder.style.display = 'none';
+    };
+
+    const handleLeave = () => {
+      if (this._painting) {
+        this._painting = false;
+      }
+    };
+
+    canvas.addEventListener('mousedown', handleDown);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleUp);
+    canvas.addEventListener('mouseleave', handleLeave);
+    canvas.addEventListener('mouseout', handleLeave);
+
+    // Touch events
+    canvas.addEventListener('touchstart', handleDown, { passive: false });
+    canvas.addEventListener('touchmove', handleMove, { passive: false });
+    canvas.addEventListener('touchend', (e) => {
+      if (!this._paintMode || !this._painting) return;
+      e.preventDefault();
+      const touch = e.touches[0] || e.changedTouches[0];
+      if (!touch) { this._painting = false; return; }
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) * (this.engine.renderer.width / rect.width);
+      const y = (touch.clientY - rect.top) * (this.engine.renderer.height / rect.height);
+      this.paintBrush.endStroke(x, y);
+      this._painting = false;
+      const layer = this.engine.getActiveLayer() || this.engine.layers[0];
+      if (layer) {
+        this.paintBrush.renderLayer(layer, 1, this.canvasMgr.ctx);
+      }
+      const placeholder = document.getElementById('canvas-placeholder');
+      if (placeholder) placeholder.style.display = 'none';
+    }, { passive: false });
+    canvas.addEventListener('touchcancel', handleLeave);
+
+    // Store handlers for cleanup
+    this._paintHandlers = { handleDown, handleMove, handleUp, handleLeave,
+      touchEnd: canvas.addEventListener  // placeholder, actual cleanup in destroy
+    };
+  }
+
+  /**
+   * Toggle between Generate mode and Paint mode.
+   * @private
+   */
+  _togglePaintMode() {
+    this._paintMode = !this._paintMode;
+    const btn = document.getElementById('btn-paint-mode');
+    if (btn) {
+      btn.classList.toggle('nav-btn--active', this._paintMode);
+    }
+    const toolbar = document.getElementById('paint-toolbar');
+    if (toolbar) {
+      toolbar.classList.toggle('paint-toolbar--active', this._paintMode);
+    }
+    // Hide placeholder overlay when entering paint mode
+    const placeholder = document.getElementById('canvas-placeholder');
+    if (placeholder) {
+      placeholder.style.display = this._paintMode ? 'none' : '';
+    }
+    this._setStatus(
+      this._paintMode ? 'Paint mode — freehand on active layer' : 'Generate mode',
+      false, this._paintMode ? 0 : 2000
+    );
+  }
+
+  /**
+   * Update the status bar with current brush info.
+   * @private
+   */
+  _updatePaintStatus() {
+    if (this._paintMode) {
+      this._setStatus(
+        `Brush: ${this._brushPreset} | Color: ${this._brushColor} | Weight: ${this._brushWeight}`,
+        false, 0
+      );
+    }
+  }
+
+  /**
+   * Clear the active layer's brush surface.
+   * @private
+   */
+  _clearPaintLayer() {
+    const layer = this.engine.getActiveLayer() || this.engine.layers[0];
+    if (layer) {
+      this.paintBrush.clearLayer(layer.id);
+      this.paintBrush.renderLayer(layer, 1, this.canvasMgr.ctx);
+      this._setStatus('Paint layer cleared', false, 2000);
+      const placeholder = document.getElementById('canvas-placeholder');
+      if (placeholder) placeholder.style.display = '';
+    }
+  }
+
+  /* ─── Drag and Drop ────────────────────────────────────────────── */
 
   /**
    * Set up drag-and-drop image upload on the canvas area.
@@ -219,6 +426,7 @@ export class App {
         this._setStatus("Loading image...", true);
         await this.engine.loadImageFile(file);
         this.canvasMgr.setSize(this.engine.width, this.engine.height);
+        this.paintBrush.resize(this.engine.width, this.engine.height);
         this._updateStatus();
 
         const placeholder = document.getElementById("canvas-placeholder");
@@ -247,6 +455,7 @@ export class App {
           this._setStatus("Loading image...", true);
           await this.engine.loadImageFile(file);
           this.canvasMgr.setSize(this.engine.width, this.engine.height);
+          this.paintBrush.resize(this.engine.width, this.engine.height);
           this._updateStatus();
           const placeholder = document.getElementById("canvas-placeholder");
           if (placeholder) placeholder.style.display = "none";
@@ -496,6 +705,7 @@ export class App {
       this.layers.setLayers(this.engine.layers);
       this.controls.setSettings(this.engine.settings);
       this.canvasMgr.setSize(this.engine.width, this.engine.height);
+      this.paintBrush.resize(this.engine.width, this.engine.height);
       this.canvasMgr.setBackground(this.engine.background);
       this.engine.render();
 
@@ -635,6 +845,11 @@ export class App {
     this.layers?.destroy();
     this.exportMgr?.destroy();
     this.motion?.destroy();
+    if (this.paintBrush) {
+      for (const [layerId] of this.paintBrush.surfaces) {
+        this.paintBrush.removeLayer(layerId);
+      }
+    }
   }
 }
 

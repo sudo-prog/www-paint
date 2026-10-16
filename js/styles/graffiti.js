@@ -26,7 +26,7 @@
 
 import {
   rngFor, gaussR, lerp, clamp01,
-  quadPts, hexRgb, shade, shade2, mixHex, rgbaOf
+  quadPts, hexRgb, shade, shade2, mixHex, rgbaOf, rgbToHex
 } from './base.js';
 
 export class GraffitiStyle {
@@ -99,7 +99,8 @@ export class GraffitiStyle {
   render(ctx, shape, progress = 1, dir = 1) {
     const a = shape.params;
     const R = rngFor(a);
-    const colour = a[shape.type === 'S' ? 8 : 6];
+    let colour = a[shape.type === 'S' ? 8 : 6];
+    colour = Array.isArray(colour) ? rgbToHex(colour) : (typeof colour === 'string' ? colour : '#000000');
     const o = a[a.length - 1];
 
     // g(): skewed gaussian for speckle distribution (favors center)
@@ -203,9 +204,10 @@ export class GraffitiStyle {
     ctx.scale(rx / m, ry / m);
 
     const G = ctx.createRadialGradient(0, 0, 0, 0, 0, m * 1.25);
-    G.addColorStop(0, a[6]);
-    G.addColorStop(0.62, a[6]);
-    G.addColorStop(1, a[6] + '00');
+    const blobCol = Array.isArray(a[6]) ? rgbToHex(a[6]) : (typeof a[6] === 'string' ? a[6] : '#000000');
+    G.addColorStop(0, blobCol);
+    G.addColorStop(0.62, blobCol);
+    G.addColorStop(1, blobCol + '00');
     ctx.globalAlpha = o * 0.9 * u;
     ctx.fillStyle = G;
     ctx.beginPath();
@@ -213,7 +215,7 @@ export class GraffitiStyle {
     ctx.fill();
 
     // Speckled halo
-    ctx.fillStyle = a[6];
+    ctx.fillStyle = blobCol;
     const n = Math.min(this.defaults.haloSpeckles, Math.round(m * 1.2));
     for (let i = 0; i < n * u; i++) {
       const an = R() * 6.283;

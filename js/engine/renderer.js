@@ -110,7 +110,6 @@ export class Renderer {
     // Sort strokes by order field
     const strokes = [...(layer.strokes || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
     const total = strokes.length;
-    if (total === 0) return;
 
     const visibleCount = Math.ceil(total * progress);
 
@@ -125,6 +124,17 @@ export class Renderer {
     for (let i = 0; i < visibleCount; i++) {
       const shape = strokes[i];
       this.drawShapeAt(shape, 1);
+    }
+
+    // Composite paint surface for this layer (freehand painting)
+    if (this._paintSurfaceProvider) {
+      const paintCanvas = this._paintSurfaceProvider(layer.id);
+      if (paintCanvas) {
+        const prevTransform = ctx.getTransform();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(paintCanvas, 0, 0);
+        ctx.setTransform(prevTransform);
+      }
     }
 
     ctx.restore();

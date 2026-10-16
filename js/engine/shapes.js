@@ -382,7 +382,7 @@ export function drawShape(ctx, s, progress = 1) {
   ctx.globalAlpha = a;
 
   // Build gradient from color0 → color1 along the shape's gradient direction.
-  const gradAngle = p[7] !== undefined ? p[7] : 0;
+  const gradAngle = s.type === 'S' && p[7] !== undefined ? p[7] : 0;
   const [sx, sy] = pointAt(s, 0);
   const [ex, ey] = pointAt(s, 1);
   const cosA = Math.cos(gradAngle);
@@ -409,7 +409,8 @@ export function drawShape(ctx, s, progress = 1) {
       break;
     case 'B': {
       // Soft blob: radial gradient with feather
-      const feather = p[5] !== undefined ? p[5] : 0.5;
+      // After _convertShape, p[5] is c0 (colour array), so default feather
+      const feather = 0.3;
       const r = Math.max(p[2] || 1, p[3] || 1);
       const blobGrad = ctx.createRadialGradient(
         p[0], p[1], r * (1 - feather),
@@ -511,7 +512,7 @@ export function shapeToSVG(s) {
  * @returns {string} JS source string for the runtime.
  */
 export function getRuntimeSource() {
-  return `var RUNTIME={};RUNTIME.draw=function(c,q){var x=c.createContext(),p=q.p,x0=p[0],y0=p[1],x1=p[2],y1=p[3],x2=p[4],y2=p[5],w=p[6]||1,gA=p[7]||0;var g=c.createLinearGradient(x0,y0,x1,y1),c0='rgb('+Math.round(q.c0[0])+','+Math.round(q.c0[1])+','+Math.round(q.c0[2])+')',c1='rgb('+Math.round(q.c1[0])+','+Math.round(q.c1[1])+','+Math.round(q.c1[2])+')';g.addColorStop(0,c0);g.addColorStop(1,c1);x.fillStyle=g;x.strokeStyle=g;x.globalAlpha=q.a||1;switch(q.t){case'E':x.beginPath();x.ellipse(x0,y0,p[2],p[3],p[4]||0,0,6.28318);x.fill();break;case'T':x.beginPath();x.moveTo(x0,y0);x.lineTo(x1,y1);x.lineTo(x2,y2);x.closePath();x.fill();break;case'R':x.save();x.translate(x0,y0);x.rotate(p[4]||0);x.fillRect(-p[2]/2,-p[3]/2,p[2],p[3]);x.restore();break;case'S':x.lineWidth=w;x.lineCap='round';x.beginPath();x.moveTo(x0,y0);x.quadraticCurveTo(x1,y1,x2,y2);x.stroke();break;case'B':var f=p[5]||0.5;x.save();var r=Math.max(p[2],p[3]),rg=x.createRadialGradient(x0,y0,r*(1-f),x0,y0,r);rg.addColorStop(0,c0);rg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=rg;x.beginPath();x.ellipse(x0,y0,p[2],p[3],p[4]||0,0,6.28318);x.fill();x.restore();break;}};`;
+  return `var RUNTIME={};RUNTIME.draw=function(c,q){var x=c.createContext(),p=q.p,x0=p[0],y0=p[1],x1=p[2],y1=p[3],x2=p[4],y2=p[5],w=p[6]||1,gA=p[7]||0;var g=c.createLinearGradient(x0,y0,x1,y1),c0='rgb('+Math.round(q.c0[0])+','+Math.round(q.c0[1])+','+Math.round(q.c0[2])+')',c1='rgb('+Math.round(q.c1[0])+','+Math.round(q.c1[1])+','+Math.round(q.c1[2])+')';g.addColorStop(0,c0);g.addColorStop(1,c1);x.fillStyle=g;x.strokeStyle=g;x.globalAlpha=q.a||1;switch(q.t){case'E':x.beginPath();x.ellipse(x0,y0,p[2],p[3],p[4]||0,0,6.28318);x.fill();break;case'T':x.beginPath();x.moveTo(x0,y0);x.lineTo(x1,y1);x.lineTo(x2,y2);x.closePath();x.fill();break;case'R':x.save();x.translate(x0,y0);x.rotate(p[4]||0);x.fillRect(-p[2]/2,-p[3]/2,p[2],p[3]);x.restore();break;case'S':x.lineWidth=w;x.lineCap='round';x.beginPath();x.moveTo(x0,y0);x.quadraticCurveTo(x1,y1,x2,y2);x.stroke();break;case'B':var f=0.3;x.save();var r=Math.max(p[2],p[3]),rg=x.createRadialGradient(x0,y0,r*(1-f),x0,y0,r);rg.addColorStop(0,c0);rg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=rg;x.beginPath();x.ellipse(x0,y0,p[2],p[3],p[4]||0,0,6.28318);x.fill();x.restore();break;}};`;
 }
 
 /**

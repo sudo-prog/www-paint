@@ -30,7 +30,7 @@
 
 import {
   rngFor, gaussR, lerp, clamp01,
-  quadPts, normalAt, boxOf, offsetPts, shapePoly, outlinePath
+  quadPts, normalAt, boxOf, offsetPts, shapePoly, outlinePath, rgbToHex
 } from './base.js';
 
 export class PencilStyle {
@@ -141,7 +141,7 @@ export class PencilStyle {
     const a = shape.params;
     const w = Math.max(1.5, Math.min(30, a[6]));
     const P = quadPts(a, progress, 1, 20);
-    const fill = a[8];
+    const fill = a[8] !== undefined ? a[8] : (shape.color0 ? (Array.isArray(shape.color0) ? rgbToHex(shape.color0) : shape.color0) : '#000000');
 
     // Pass 1: main stamped line (firm)
     const pen1 = {
@@ -162,7 +162,7 @@ export class PencilStyle {
     };
     const set2 = this._stampBuild(P2, pen2, R);
 
-    const fillStr = typeof fill === 'string' ? fill : '#000000';
+    const fillStr = typeof fill === 'string' ? fill : (Array.isArray(fill) ? rgbToHex(fill) : '#000000');
 
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';
@@ -263,8 +263,8 @@ export class PencilStyle {
     const cs = Math.cos(ang);
     const sn = Math.sin(ang);
     const rot = (px, py) => [b.cx + px * cs - py * sn, b.cy + px * sn + py * cs];
-    const fill = a[6];
-    const fillStr = typeof fill === 'string' ? fill : '#000000';
+    const fill = a[6] !== undefined ? a[6] : (shape.color0 ? (Array.isArray(shape.color0) ? rgbToHex(shape.color0) : shape.color0) : '#000000');
+    const fillStr = typeof fill === 'string' ? fill : (Array.isArray(fill) ? rgbToHex(fill) : '#000000');
 
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';
