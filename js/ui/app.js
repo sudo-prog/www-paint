@@ -143,6 +143,15 @@ export class App {
 
     // Update status
     this._updateStatus();
+
+    // Initialize debug overlay (hooks console, watches for errors)
+    if (window.__DebugOverlay) {
+      window.__DebugOverlay.init();
+    }
+    // Initialize UI settings (applies saved theme on load)
+    if (window.__UISettings) {
+      window.__UISettings.init();
+    }
   }
 
   /**
