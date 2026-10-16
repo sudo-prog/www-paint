@@ -176,6 +176,22 @@ export class ControlsManager {
     generateBtn.textContent = "Generate Painting";
     generateBtn.dataset.action = "generate";
     genSection.appendChild(generateBtn);
+
+    const stopBtn = document.createElement("button");
+    stopBtn.className = "btn btn--sm btn--danger stop-btn";
+    stopBtn.type = "button";
+    stopBtn.textContent = "Stop";
+    stopBtn.dataset.action = "stop";
+    stopBtn.setAttribute("disabled", "disabled");
+    genSection.appendChild(stopBtn);
+
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "btn btn--sm btn--ghost reset-btn";
+    resetBtn.type = "button";
+    resetBtn.textContent = "Reset";
+    resetBtn.dataset.action = "reset";
+    genSection.appendChild(resetBtn);
+
     this.root.appendChild(genSection);
   }
 
@@ -496,6 +512,22 @@ export class ControlsManager {
         this.root.dispatchEvent(new CustomEvent("generate", {
           detail: { settings: { ...this.settings } },
         }));
+      });
+    }
+
+    // Stop button
+    const stopBtn = this.root.querySelector('[data-action="stop"]');
+    if (stopBtn) {
+      stopBtn.addEventListener("click", () => {
+        this.root.dispatchEvent(new CustomEvent("stop-generation"));
+      });
+    }
+
+    // Reset button
+    const resetBtn = this.root.querySelector('[data-action="reset"]');
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        this.root.dispatchEvent(new CustomEvent("reset-canvas"));
       });
     }
   }

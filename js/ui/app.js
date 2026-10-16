@@ -168,6 +168,14 @@ export class App {
       this.generate();
     });
 
+    this.controls.root.addEventListener("stop-generation", () => {
+      this.stopGeneration();
+    });
+
+    this.controls.root.addEventListener("reset-canvas", () => {
+      this.resetCanvas();
+    });
+
     // Layers → App
     this.layers.root.addEventListener("layer-add", () => {
       const layer = this.engine.addLayer();
@@ -516,6 +524,8 @@ export class App {
     this._generating = true;
     const genBtn = this.controls.root.querySelector('[data-action="generate"]');
     if (genBtn) genBtn.setAttribute("disabled", "disabled");
+    const stopBtn = this.controls.root.querySelector('[data-action="stop"]');
+    if (stopBtn) stopBtn.removeAttribute("disabled");
     this._setStatus("Generating strokes...", true);
 
     try {
@@ -575,7 +585,38 @@ export class App {
       this._generating = false;
       const genBtn = this.controls.root.querySelector('[data-action="generate"]');
       if (genBtn) genBtn.removeAttribute("disabled");
+      const stopBtn = this.controls.root.querySelector('[data-action="stop"]');
+      if (stopBtn) stopBtn.setAttribute("disabled", "disabled");
     }
+  }
+
+  /**
+   * Stop an in-progress generation.
+   */
+  stopGeneration() {
+    if (!this._generating) return;
+    this.engine.stop();
+    this._generating = false;
+    const genBtn = this.controls.root.querySelector('[data-action="generate"]');
+    if (genBtn) genBtn.removeAttribute('disabled');
+    const stopBtn = this.controls.root.querySelector('[data-action="stop"]');
+    if (stopBtn) stopBtn.setAttribute('disabled', 'disabled');
+    this._setStatus('Generation stopped', false, 3000);
+  }
+
+  /**
+   * Reset the canvas — clear all strokes and re-render the source image.
+   */
+  async resetCanvas() {
+    if (this._generating) {
+      this.stopGeneration();
+    }
+    this.engine.clearStrokes();
+    this.engine.renderer.setLayers(this.engine.layers);
+    this.engine.render({ clear: true });
+    this.layers.setLayers(this.engine.layers);
+    this.motion?.refreshStrokeCount?.();
+    this._setStatus('Canvas reset — ready to generate', false, 3000);
   }
 
   /* ─── Export Handlers ───────────────────────────────────────── */

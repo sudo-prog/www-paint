@@ -104,40 +104,80 @@ export class LayersManager {
       row.style.opacity = "0.5";
     }
 
-    // Active state
     const isActive = this.layers.findIndex((l) => l.id === layer.id) === this.layers.length - 1;
     if (isActive) row.classList.add("layer-row--active");
 
-    row.innerHTML = `
-      <div class="layer-row__drag" aria-hidden="true">≡</div>
-      <div class="layer-row__controls">
-        <button type="button" class="layer-visibility-btn" data-action="toggle-visibility"
-                title="${layer.visible === false ? "Show" : "Hide"}">
-          ${layer.visible === false ? "○" : "◉"}
-        </button>
-        <select class="layer-blend-select" data-action="blend-change">
-          ${BLEND_MODES.map((m) =>
-            `<option value="${m.value}" ${m.value === layer.blendMode ? "selected" : ""}>${m.label}</option>`
-          ).join("")}
-        </select>
-      </div>
-      <div class="layer-row__name" title="${layer.name || "Layer"}">${layer.name || "Layer"}</div>
-      <div class="layer-opacity-row">
-        <label class="layer-opacity-label">Op:</label>
-        <input type="range" class="layer-opacity-input" min="0" max="1" step="0.05"
-               value="${layer.opacity !== undefined ? layer.opacity : 1}"
-               data-action="opacity-change"/>
-        <span class="layer-opacity-value">${Math.round((layer.opacity || 1) * 100)}%</span>
-      </div>
-      <div class="layer-row__actions">
-        <button type="button" class="layer-action-btn" data-action="duplicate-layer" title="Duplicate">
-          <span aria-hidden="true">⋯</span>
-        </button>
-        <button type="button" class="layer-action-btn layer-action-btn--danger" data-action="delete-layer" title="Delete">
-          <span aria-hidden="true">✕</span>
-        </button>
-      </div>
-    `;
+    // Line 1: drag handle + name + visibility + actions
+    const mainRow = document.createElement("div");
+    mainRow.className = "layer-row__main";
+
+    const drag = document.createElement("div");
+    drag.className = "layer-row__drag";
+    drag.textContent = "≡";
+    drag.setAttribute("aria-hidden", "true");
+    mainRow.appendChild(drag);
+
+    const name = document.createElement("div");
+    name.className = "layer-row__name";
+    name.textContent = layer.name || "Layer";
+    name.title = layer.name || "Layer";
+    mainRow.appendChild(name);
+
+    const visibilityBtn = document.createElement("button");
+    visibilityBtn.type = "button";
+    visibilityBtn.className = "layer-visibility-btn";
+    visibilityBtn.dataset.action = "toggle-visibility";
+    visibilityBtn.title = layer.visible === false ? "Show" : "Hide";
+    visibilityBtn.textContent = layer.visible === false ? "○" : "◉";
+    mainRow.appendChild(visibilityBtn);
+
+    const actions = document.createElement("div");
+    actions.className = "layer-row__actions";
+
+    const dupBtn = document.createElement("button");
+    dupBtn.type = "button";
+    dupBtn.className = "layer-action-btn";
+    dupBtn.dataset.action = "duplicate-layer";
+    dupBtn.title = "Duplicate";
+    dupBtn.textContent = "⋯";
+    actions.appendChild(dupBtn);
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "layer-action-btn layer-action-btn--danger";
+    delBtn.dataset.action = "delete-layer";
+    delBtn.title = "Delete";
+    delBtn.textContent = "✕";
+    actions.appendChild(delBtn);
+
+    mainRow.appendChild(actions);
+
+    // Line 2: opacity slider (full width)
+    const opacityRow = document.createElement("div");
+    opacityRow.className = "layer-opacity-row";
+
+    const opacityLabel = document.createElement("label");
+    opacityLabel.className = "layer-opacity-label";
+    opacityLabel.textContent = "Op:";
+    opacityRow.appendChild(opacityLabel);
+
+    const opacityInput = document.createElement("input");
+    opacityInput.type = "range";
+    opacityInput.className = "layer-opacity-input";
+    opacityInput.min = "0";
+    opacityInput.max = "1";
+    opacityInput.step = "0.05";
+    opacityInput.value = layer.opacity !== undefined ? layer.opacity : 1;
+    opacityInput.dataset.action = "opacity-change";
+    opacityRow.appendChild(opacityInput);
+
+    const opacityValue = document.createElement("span");
+    opacityValue.className = "layer-opacity-value";
+    opacityValue.textContent = `${Math.round((layer.opacity || 1) * 100)}%`;
+    opacityRow.appendChild(opacityValue);
+
+    row.appendChild(mainRow);
+    row.appendChild(opacityRow);
 
     return row;
   }

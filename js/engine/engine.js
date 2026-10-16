@@ -142,6 +142,15 @@ export class PaintingEngine {
       this.renderer.registerStyle(name, {
         draw: (ctx, shape, progress) => instance.render(ctx, shape, progress),
       });
+      // Also register under Painter alias name so shapes emitted by the Painter
+      // with internal style tags (e.g. 'watercolour' for 'watercolor') find the
+      // correct renderer instead of falling back to the flat drawShape().
+      const painterName = aliasStyle(name);
+      if (painterName !== name) {
+        this.renderer.registerStyle(painterName, {
+          draw: (ctx, shape, progress) => instance.render(ctx, shape, progress),
+        });
+      }
     }
   }
 
