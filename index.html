@@ -49,6 +49,9 @@
         <button type="button" class="round-btn round-btn--ghost" id="btn-export" aria-label="Export" title="Export">
           <span class="round-btn__icon">⬇</span>
         </button>
+        <button type="button" class="round-btn round-btn--ghost" id="btn-ui-settings" aria-label="UI Settings" title="UI Settings">
+          <span class="round-btn__icon">◐</span>
+        </button>
       </div>
     </header>
 
@@ -127,6 +130,8 @@
   {
     "imports": {
       "./js/ui/app.js": "./js/ui/app.js?v=20261015",
+      "./js/ui/debug.js": "./js/ui/debug.js?v=20261015",
+      "./js/ui/settings.js": "./js/ui/settings.js?v=20261015",
       "./js/ui/controls.js": "./js/ui/controls.js?v=20261015",
       "./js/engine/engine.js": "./js/engine/engine.js?v=20261015",
       "./js/engine/painter.js": "./js/engine/painter.js?v=20261015",
@@ -145,6 +150,12 @@
     }
   }
   </script>
+  <!-- Load debug + settings FIRST so console hooks are live before app init -->
+  <script type="module">
+    import './js/ui/debug.js?v=20261015';
+    import './js/ui/settings.js?v=20261015';
+  </script>
+
   <script type="module">
     import { initApp } from './js/ui/app.js?v=20261015';
 
@@ -244,5 +255,9 @@
 
     }
   </script>
+
+  <div id="debug-root"></div>
+  <div id="settings-root"></div>
+
 </body>
 </html>

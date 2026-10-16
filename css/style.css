@@ -407,7 +407,7 @@ body::before {
   white-space: nowrap;
 }
 
-.status__msg { font-weight: 500; color: var(--primary); }
+.status__msg { font-weight: 500; color: var(--primary); margin-left: auto; }
 .status__msg.loading { position: relative; padding-left: calc(var(--space-4) + 12px); }
 .status__msg.loading::before {
   content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
@@ -997,4 +997,438 @@ body::before {
   .top-bar, .panel, .motion-controls-root, .status-footer { background: rgba(12, 12, 12, 0.98); }
   .glass { background: rgba(20, 20, 20, 0.95); }
   .glass-clear { background: rgba(20, 20, 20, 0.9); }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Debug Overlay — Terminal-style error/warning capture panel
+   ────────────────────────────────────────────────────────────── */
+
+.debug-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-normal);
+}
+
+.debug-overlay--open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.debug-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.debug-panel {
+  position: relative;
+  width: 600px;
+  height: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), var(--glass-highlight);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(12, 12, 12, 0.88);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  flex-shrink: 0;
+}
+
+.debug-header__title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #00FF41;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.debug-close-btn {
+  width: var(--touch-sm);
+  height: var(--touch-sm);
+  min-width: var(--touch-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--secondary);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--t-fast);
+  box-shadow: var(--glass-shadow-sm), var(--glass-highlight);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.debug-close-btn:hover {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--line-2);
+}
+
+.debug-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.debug-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.debug-section-title {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.debug-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-log-entry {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #00FF41;
+  line-height: 1.4;
+  word-break: break-word;
+  padding: 2px 0;
+}
+
+.debug-log-entry--error {
+  color: #FF4438;
+}
+
+.debug-log-entry--warn {
+  color: #FFD700;
+}
+
+.debug-log-entry .prefix {
+  font-weight: 700;
+}
+
+.debug-settings {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #00FF41;
+  line-height: 1.4;
+  white-space: pre;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: var(--space-3);
+  overflow-x: auto;
+}
+
+.debug-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--glass-border);
+  background: rgba(12, 12, 12, 0.88);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  flex-shrink: 0;
+}
+
+.debug-copy-btn {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+  transition: var(--t-fast);
+  box-shadow: var(--glass-shadow-sm), var(--glass-highlight);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.debug-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--line-2);
+  color: var(--accent);
+}
+
+.debug-logbook-entry {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.debug-logbook__time {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #00FF41;
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.debug-logbook__settings,
+.debug-logbook__log {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--secondary);
+  line-height: 1.3;
+  white-space: pre;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: var(--space-2);
+  overflow-x: auto;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   UI Settings Modal — Light/Dark theme customization
+   ────────────────────────────────────────────────────────────── */
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-normal);
+}
+
+.settings-overlay--open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.settings-content {
+  position: relative;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 12, 12, 0.95);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), var(--glass-highlight);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.settings-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(23, 23, 23, 0.88);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  flex-shrink: 0;
+}
+
+.settings-body {
+  padding: var(--space-5);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--glass-border);
+  background: rgba(12, 12, 12, 0.88);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  flex-shrink: 0;
+}
+
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mode-toggle__track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--glass-shadow-sm), var(--glass-highlight);
+}
+
+.mode-toggle__fill {
+  position: absolute;
+  top: var(--space-1);
+  bottom: var(--space-1);
+  width: 50%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transition: transform var(--t-fast);
+  z-index: 0;
+}
+
+.mode-toggle__btn {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  background: transparent;
+  padding: var(--space-2);
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  transition: var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.mode-toggle__btn:hover {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mode-toggle__btn--active {
+  color: var(--bg);
+  background: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.mode-indicator {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Color Pickers */
+.color-pickers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.color-row__label {
+  flex-shrink: 0;
+  width: 140px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.color-row__input {
+  width: 40px;
+  height: var(--touch-sm);
+  padding: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  background: transparent;
+  cursor: pointer;
+  box-shadow: var(--glass-shadow-sm), var(--glass-highlight);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.color-row__input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-row__input::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--r-sm);
+}
+
+.color-row__hex {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  min-width: 60px;
+  text-align: left;
 }
