@@ -96,6 +96,9 @@ export class ExportManager {
         <button type="button" class="btn btn--primary" data-action="export-image">
           Export Image
         </button>
+        <button type="button" class="btn btn--ghost" data-action="export-layers">
+          Export Layers
+        </button>
         <button type="button" class="btn btn--ghost" data-action="export-html">
           Export HTML
         </button>

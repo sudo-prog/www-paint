@@ -36,6 +36,28 @@ export async function exportImage(renderer, layers, opts = {}) {
 }
 
 /**
+ * Export each named layer as a separate PNG blob.
+ *
+ * @param {Renderer} renderer - Active renderer instance.
+ * @param {Array<object>} layers - Layer list with _name or name properties.
+ * @param {number} width - Export width.
+ * @param {number} height - Export height.
+ * @param {object} [opts]
+ * @param {string} [opts.background] - Background color for each layer canvas.
+ * @returns {Promise<Object<string, Blob>>} Map of layer name to PNG blob.
+ */
+export async function exportAllLayersAsPNG(renderer, layers, width, height, opts = {}) {
+  var result = {};
+  for (const layer of layers) {
+    var name = layer._name || layer.name;
+    if (!name) continue;
+    var blob = await renderer.exportLayerImage(layers, name, width, height, opts);
+    result[name] = blob;
+  }
+  return result;
+}
+
+/**
  * Serialize layers to a compact packed binary representation.
  *
  * Uses bit-packing: coordinates are quantized to 1px grid with 12-bit
@@ -324,6 +346,7 @@ ${shapesSVG}
 
 export default {
   exportImage,
+  exportAllLayersAsPNG,
   packLayers,
   exportHTML,
   exportProject,

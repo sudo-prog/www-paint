@@ -51,6 +51,13 @@ export class Painter {
     this.maxShapes = options.maxShapes || 3000;
     this.seed = options.seed || 12345;
     this.onShape = options.onShape || null;
+
+    /**
+     * Multi-layer mode: when true, each shape is tagged with a layer name
+     * (background, shadows, outline, midtone, highlights) based on its
+     * generation position and visual properties.
+     */
+    this.layerMode = options.layerMode || false;
     this.onProgress = options.onProgress || null;
     this.onDone = options.onDone || null;
 
@@ -632,7 +639,7 @@ export class Painter {
 
   outlineShape(o, st) { const s = { t: 'S', p: o.p.slice(), a: o.a, st, fl: true }; if (this.RELIEF_ST.includes(st)) s.p[6] = Math.max(2.5, s.p[6] * 1.6); this.evaluate(s); s.c0 = o.col.slice(); s.c1 = o.col.slice(); return s; }
 
-  emitOutline(o, tag) { let st = this.styles[Math.floor(this.rnd() * this.styles.length)] || 'painterly'; if (this.SHAPE_ID.has(st) || this.NO_STROKE.has(st)) st = 'flat'; const s = this.outlineShape(o, st); this.commit(s); this.count++; this._emitShape(s); }
+  emitOutline(o, tag) { let st = this.styles[Math.floor(this.rnd() * this.styles.length)] || 'painterly'; if (this.SHAPE_ID.has(st) || this.NO_STROKE.has(st)) st = 'flat'; const s = this.outlineShape(o, st); s._fromOutline = true; this.commit(s); this.count++; this._emitShape(s); }
 
   burnOutlines(list) { for (const o of list) { const s = { t: 'S', p: o.p, a: 1 }, ns = this.raster(SHPpoly(s)); if (!ns) continue; this.field(s, ns); let j = 0; for (let i = 0; i < ns; i++) { const row = this.spans[i * 3] * this.W; for (let x = this.spans[i * 3 + 1]; x <= this.spans[i * 3 + 2]; x++, j++) { const ai = this.aBuf[j]; if (ai <= 0) continue; const q = (row + x) * 3; for (let ch = 0; ch < 3; ch++) this.T[q + ch] = this.T[q + ch] * (1 - ai) + o.col[ch] * ai; } } } }
 
@@ -708,9 +715,62 @@ export class Painter {
   stop() { this._running = false; this._stopped = true; }
 
   _emitShape(s) {
-    this._shapes.push({ ...s, c0: s.c0.slice(), c1: s.c1.slice(), p: s.p.slice() });
-    if (this.onShape) this.onShape({ ...s, c0: s.c0.slice(), c1: s.c1.slice(), p: s.p.slice() });
+    if (this.layerMode) {
+      s.layer = this._assignLayer(s);
+    }
+    this._shapes.push({ ...s, c0: s.c0.slice(), c1: s.c1.slice(), p: s.p.slice(), layer: s.layer });
+    if (this.onShape) this.onShape({ ...s, c0: s.c0.slice(), c1: s.c1.slice(), p: s.p.slice(), layer: s.layer });
     if (this.onProgress) this.onProgress(this.count / this.maxShapes);
+  }
+
+  /**
+   * Assign a shape to a named layer based on generation progress and visual content.
+   * Layers: background, shadows, outline, midtone, highlights
+   *
+   * @param {object} s - The shape being emitted.
+   * @returns {string} Layer name.
+   */
+  _assignLayer(s) {
+    // Outlines are always assigned to the 'outline' layer
+    if (s._fromOutline) return 'outline';
+
+    const prog = this.count / this.maxShapes;
+
+    // Early shapes (first ~5%) fill large background areas
+    if (prog < 0.05) return 'background';
+
+    // Determine luminance at the shape centroid
+    const p = s.p;
+    let cx, cy;
+    if (s.t === 'S' && p.length >= 8) {
+      cx = (p[0] + p[2] + p[4]) / 3;
+      cy = (p[1] + p[3] + p[5]) / 3;
+    } else if (s.t === 'T' && p.length >= 4) {
+      cx = (p[0] + p[2]) / 2;
+      cy = (p[1] + p[3]) / 2;
+    } else if (p.length >= 2) {
+      cx = p[0];
+      cy = p[1];
+    } else {
+      cx = this.W / 2;
+      cy = this.H / 2;
+    }
+
+    const px = Math.floor(cx);
+    const py = Math.floor(cy);
+    const k = this.pix(px, py);
+
+    let luminance = 0.5;
+    if (this.T && k >= 0 && k < this.T.length / 3) {
+      const r = this.T[k * 3];
+      const g = this.T[k * 3 + 1];
+      const b = this.T[k * 3 + 2];
+      luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    }
+
+    if (luminance < 0.3) return 'shadows';
+    if (luminance > 0.7) return 'highlights';
+    return 'midtone';
   }
 
   getShapes() { return this._shapes; }

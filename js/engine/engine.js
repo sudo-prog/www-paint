@@ -25,6 +25,7 @@ import {
 } from './style-alias.js';
 import {
   exportImage,
+  exportAllLayersAsPNG as exportAllLayersFunc,
   exportHTML as exportHTMLFunc,
   exportProject,
   importProject,
@@ -179,6 +180,34 @@ export class PaintingEngine {
     ];
   }
 
+  /**
+   * Named layer definitions for multi-layer rendering mode.
+   * When multiLayer is enabled, shapes are assigned to these layers
+   * by the Painter's _assignLayer method.
+   */
+  static LAYER_NAMES = ['background', 'shadows', 'outline', 'midtone', 'highlights'];
+
+  /**
+   * Initialize named layer objects for multi-layer mode.
+   * Each layer has a _name property used by the Renderer for offscreen compositing.
+   * @returns {Array<object>}
+   */
+  _initMultiLayerLayers() {
+    const names = Engine.LAYER_NAMES;
+    const labels = ['Background', 'Shadows', 'Outline', 'Midtone', 'Highlights'];
+    return names.map((name, i) => ({
+      id: i,
+      name: name,
+      _name: name,
+      label: labels[i],
+      visible: true,
+      opacity: 1,
+      blendMode: 'normal',
+      strokes: [],
+      locked: false,
+    }));
+  }
+
   // ─── Image Loading ────────────────────────────────────────────────
 
   /**
@@ -323,6 +352,7 @@ export class PaintingEngine {
     const count = opts.count || this.settings.strokeCount || 1000;
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
     const seed = opts.seed !== undefined ? opts.seed : this._seed;
+    const multiLayer = opts.multiLayer !== undefined ? opts.multiLayer : (this.settings.multiLayer || false);
 
     // Update settings
     if (opts.style) this.settings.style = style;
@@ -359,13 +389,39 @@ export class PaintingEngine {
         count,
         seed,
         pen: opts.pen !== undefined ? opts.pen : this.settings.oneLine,
+        layerMode: multiLayer,
         onShape: opts.onShape,
       });
-      const selected = shapes.map((ps, i) => this._convertShape(ps, i, layerIdx));
-      const layer = this.getLayer(layerIdx);
-      if (layer) layer.strokes = selected;
+      const allShapes = shapes.map((ps, i) => {
+        const s = this._convertShape(ps, i, layerIdx);
+        if (multiLayer && ps.layer) s.layerName = ps.layer;
+        return s;
+      });
+
+      if (multiLayer) {
+        const namedLayers = this._initMultiLayerLayers();
+        const layerByName = {};
+        for (const l of namedLayers) { layerByName[l._name] = l; }
+        for (const s of allShapes) {
+          const ln = s.layerName || 'midtone';
+          if (layerByName[ln]) {
+            layerByName[ln].strokes.push(s);
+          } else if (layerByName['midtone']) {
+            layerByName['midtone'].strokes.push(s);
+          }
+        }
+        this.layers = namedLayers;
+        this.renderer.multiLayer = true;
+      } else {
+        const layer = this.getLayer(layerIdx);
+        if (layer) {
+          layer.strokes = allShapes;
+        }
+        this.renderer.multiLayer = false;
+      }
+
       this.renderer.setLayers(this.layers);
-      return selected;
+      return allShapes;
     }
 
     // Completion promise — resolves when Painter calls onDone.
@@ -398,9 +454,14 @@ export class PaintingEngine {
         maxShapes: count,
         seed,
         pen: this.settings.oneLine || false,
+        layerMode: multiLayer,
         // Collect and convert each shape via the onShape callback
         onShape: (ps) => {
-          selected.push(this._convertShape(ps, selected.length, layerIdx));
+          const shape = this._convertShape(ps, selected.length, layerIdx);
+          if (multiLayer && ps.layer) {
+            shape.layerName = ps.layer;
+          }
+          selected.push(shape);
         },
         // Resolve the completion promise when painting is done
         onDone: (result) => {
@@ -422,10 +483,28 @@ export class PaintingEngine {
 
     this._currentPainter = null;
 
-    // Assign converted shapes to layer
-    const layer = this.getLayer(layerIdx);
-    if (layer) {
-      layer.strokes = selected;
+    if (multiLayer) {
+      // Rebuild layers as named layer objects for multi-layer rendering
+      const namedLayers = this._initMultiLayerLayers();
+      const layerByName = {};
+      for (const l of namedLayers) { layerByName[l._name] = l; }
+      for (const s of selected) {
+        const ln = s.layerName || 'midtone';
+        if (layerByName[ln]) {
+          layerByName[ln].strokes.push(s);
+        } else if (layerByName['midtone']) {
+          layerByName['midtone'].strokes.push(s);
+        }
+      }
+      this.layers = namedLayers;
+      this.renderer.multiLayer = true;
+    } else {
+      // Assign converted shapes to layer
+      const layer = this.getLayer(layerIdx);
+      if (layer) {
+        layer.strokes = selected;
+      }
+      this.renderer.multiLayer = false;
     }
 
     // Notify renderer of updated layers
@@ -440,7 +519,7 @@ export class PaintingEngine {
    * full ordered shape array when the worker reports done.
    * @private
    */
-  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed, pen, onShape }) {
+  _generateViaWorker({ width, height, pixels, style, smart, order, count, seed, pen, onShape, layerMode }) {
     return new Promise((resolve, reject) => {
       const worker = new Worker(new URL('./painter-worker.js', import.meta.url), { type: 'module' });
       this._currentWorker = worker;
@@ -453,7 +532,11 @@ export class PaintingEngine {
           shapes.push(m.shape);
           if (onShape) {
             const idx = shapes.length - 1;
-            try { onShape(this._convertShape(m.shape, idx, 0), idx); } catch (e) { /* never let a draw error kill generation */ }
+            try {
+              const converted = this._convertShape(m.shape, idx, 0);
+              if (layerMode && m.shape.layer) converted.layerName = m.shape.layer;
+              onShape(converted, idx);
+            } catch (e) { /* never let a draw error kill generation */ }
           }
         } else if (m.type === 'done') {
           this._lastSim = m.result ? m.result.sim : 0;
@@ -496,6 +579,7 @@ export class PaintingEngine {
           maxShapes: count,
           seed,
           pen,
+          layerMode: layerMode || false,
         },
       });
     });
@@ -641,6 +725,25 @@ export class PaintingEngine {
    */
   exportSVG(opts = {}) {
     return exportSVGFunc(this.layers, opts.width || this.width, opts.height || this.height, opts.background || this.background);
+  }
+
+  /**
+   * Export each named layer as a separate PNG blob.
+   *
+   * @param {object} [opts]
+   * @param {number} [opts.width]
+   * @param {number} [opts.height]
+   * @param {string} [opts.background]
+   * @returns {Promise<Object<string, Blob>>} Map of layer name to PNG blob.
+   */
+  async exportAllLayersAsPNG(opts = {}) {
+    return exportAllLayersFunc(
+      this.renderer,
+      this.layers,
+      opts.width || this.width,
+      opts.height || this.height,
+      { background: opts.background || this.background }
+    );
   }
 
   /**

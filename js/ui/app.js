@@ -236,6 +236,9 @@ export class App {
     this.exportMgr.root.addEventListener("export-image", (e) => {
       this._handleExportImage(e.detail);
     });
+    this.exportMgr.root.addEventListener("export-layers", (e) => {
+      this._handleExportLayers(e.detail);
+    });
     this.exportMgr.root.addEventListener("export-html", () => {
       this._handleExportHTML();
     });
@@ -644,6 +647,7 @@ export class App {
         layer: 0,
         smart: settings.smart,
         order: settings.order,
+        multiLayer: settings.multiLayer || false,
         onShape: (shape) => {
           this.canvasMgr.drawStroke(shape, 1);
           strokeCount++;
@@ -804,6 +808,35 @@ export class App {
     } catch (err) {
       console.error(err);
       this._showError("SVG export failed: " + err.message);
+    }
+  }
+
+  /**
+   * Export each named layer as a separate PNG file.
+   * @param {object} opts
+   * @private
+   */
+  async _handleExportLayers(opts) {
+    if (!this.engine._sourceImage) {
+      this._showError("No painting to export");
+      return;
+    }
+
+    try {
+      var layerBlobs = await this.engine.exportAllLayersAsPNG({
+        width: opts.width || this.engine.width,
+        height: opts.height || this.engine.height,
+        background: opts.background,
+      });
+
+      for (const [name, blob] of Object.entries(layerBlobs)) {
+        this._downloadBlob(blob, "www-paint-layer-" + name + ".png");
+      }
+
+      this.exportMgr.hide();
+    } catch (err) {
+      console.error(err);
+      this._showError("Layer export failed: " + err.message);
     }
   }
 

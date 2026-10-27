@@ -42,6 +42,7 @@ const PAINTER_DEFAULT_SETTINGS = {
   oneLine: false,            // Painter one-line pen mode
   outline: 'off',            // Painter outline mode: off | first | last
   rfill: 'off',              // Painter region fill: off | scribble | rows
+  multiLayer: false,        // Multi-layer rendering mode (before generation)
 };
 
 /** Style metadata for the built-in styles. */
@@ -104,6 +105,12 @@ const ONELINE_OPTIONS = [
 const SMART_OPTIONS = [
   { value: false, label: "Off" },
   { value: true,  label: "On" },
+];
+
+/** Render mode options: Single-layer or Multi-layer (before generation). */
+const MULTILAYER_OPTIONS = [
+  { value: false, label: "Single" },
+  { value: true,  label: "Multi" },
 ];
 
 /**
@@ -545,6 +552,8 @@ export class ControlsManager {
     // static path-motion toggles (one-line, outline, region fill).
     const wrapper = document.createElement("div");
     wrapper.className = "motion-controls";
+    // Multi-layer mode toggle — must be set BEFORE generation starts
+    wrapper.appendChild(this._renderSegmentedControl("multiLayer", MULTILAYER_OPTIONS));
     wrapper.appendChild(this._renderToggle("oneLine", "One Line", ONELINE_OPTIONS, this.settings.oneLine ?? PAINTER_DEFAULT_SETTINGS.oneLine));
     wrapper.appendChild(this._renderSegmentedControl("outline", OUTLINE_OPTIONS));
     wrapper.appendChild(this._renderSegmentedControl("rfill", RFILL_OPTIONS));
@@ -608,6 +617,9 @@ export class ControlsManager {
     } else if (key === "smart") {
       // Toggle values arrive as strings from DOM; coerce to boolean
       settings.smart = value === "true" || value === true;
+    } else if (key === "multiLayer") {
+      // Segmented control values arrive as strings; coerce to boolean
+      settings.multiLayer = value === "true" || value === true;
     } else if (spec && spec.type !== "select") {
       settings[key] = parseFloat(value);
     } else {
@@ -755,7 +767,7 @@ export class ControlsManager {
     }
 
     // Segmented selectors
-    for (const key of ["order", "colorMode", "outline", "rfill"]) {
+    for (const key of ["order", "colorMode", "outline", "rfill", "multiLayer"]) {
       const entry = this._inputs[key];
       if (!entry) continue;
       const container = entry.segmented;

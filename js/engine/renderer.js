@@ -32,6 +32,10 @@ export class Renderer {
     this.background = opts.background || '#ffffff';
     this._layers = [];
     this._styles = {}; // style name → style module
+    /** Multi-layer mode: render each layer to a separate offscreen canvas, then composite. */
+    this.multiLayer = false;
+    /** Map of layer name to offscreen canvas for multi-layer rendering. */
+    this._layerCanvases = new Map();
   }
 
   /**
@@ -55,6 +59,32 @@ export class Renderer {
       this.ctx.canvas.width = w;
       this.ctx.canvas.height = h;
     }
+  }
+
+  /**
+   * Create or retrieve an offscreen canvas for a named layer.
+   * Used when multiLayer mode is active.
+   *
+   * @param {string} layerName
+   * @returns {OffscreenCanvas|HTMLCanvasElement}
+   */
+  _getLayerCanvas(layerName) {
+    if (!this._layerCanvases.has(layerName)) {
+      var canvas = typeof OffscreenCanvas !== 'undefined'
+        ? new OffscreenCanvas(this.width, this.height)
+        : (typeof document !== 'undefined' ? document.createElement('canvas') : null);
+      if (canvas) {
+        canvas.width = this.width;
+        canvas.height = this.height;
+        var ctx2 = canvas.getContext('2d');
+        if (ctx2) {
+          ctx2.fillStyle = this.background;
+          ctx2.fillRect(0, 0, this.width, this.height);
+        }
+      }
+      this._layerCanvases.set(layerName, canvas);
+    }
+    return this._layerCanvases.get(layerName);
   }
 
   /**
@@ -92,8 +122,45 @@ export class Renderer {
 
     // Sort layers by index, render in order
     const sorted = [...(layers || [])].sort((a, b) => a.id - b.id);
-    for (const layer of sorted) {
-      this.renderLayer(layer, progress);
+
+    if (this.multiLayer) {
+      // Multi-layer mode: render each layer to its own offscreen canvas,
+      // then composite all canvases onto the main canvas in layer order.
+      this._layerCanvases.clear();
+      for (const layer of sorted) {
+        if (!layer.visible) continue;
+        var layerName = layer._name || layer.name || ('layer_' + layer.id);
+        var layerCanvas = this._getLayerCanvas(layerName);
+        if (!layerCanvas) continue;
+        var layerCtx = layerCanvas.getContext('2d');
+        if (!layerCtx) continue;
+        // Clear the layer canvas with transparent background
+        layerCtx.clearRect(0, 0, this.width, this.height);
+        // Temporarily swap ctx to render to the layer canvas
+        var oldCtx = this.ctx;
+        this.ctx = layerCtx;
+        this.renderLayer(layer, progress);
+        this.ctx = oldCtx;
+      }
+      // Composite all layer canvases onto the main canvas
+      for (const layer of sorted) {
+        if (!layer.visible) continue;
+        var ln = layer._name || layer.name || ('layer_' + layer.id);
+        var lc = this._layerCanvases.get(ln);
+        if (!lc) continue;
+        this.ctx.save();
+        this.ctx.globalAlpha = (layer.opacity !== undefined ? layer.opacity : 1);
+        if (layer.blendMode) {
+          var bm = layer.blendMode === 'normal' ? 'source-over' : layer.blendMode;
+          this.ctx.globalCompositeOperation = bm;
+        }
+        this.ctx.drawImage(lc, 0, 0);
+        this.ctx.restore();
+      }
+    } else {
+      for (const layer of sorted) {
+        this.renderLayer(layer, progress);
+      }
     }
   }
 
@@ -197,6 +264,57 @@ export class Renderer {
     this.ctx = oldCtx;
     this.setSize(oldW, oldH);
     this.background = oldBg;
+  /**
+   * Export a single named layer as a PNG blob.
+   *
+   * @param {Array<object>} layers - Layer list.
+   * @param {string} layerName - The named layer to export.
+   * @param {number} width
+   * @param {number} height
+   * @param {object} [opts]
+   * @returns {Promise<Blob>} PNG blob of the isolated layer.
+   */
+  async exportLayerImage(layers, layerName, width, height, opts = {}) {
+    var background = opts.background || this.background;
+    var exportCanvas = typeof OffscreenCanvas !== 'undefined'
+      ? new OffscreenCanvas(width, height)
+      : (typeof document !== 'undefined' ? document.createElement('canvas') : null);
+
+    if (!exportCanvas) throw new Error('Cannot create canvas for export (no document)');
+
+    exportCanvas.width = width;
+    exportCanvas.height = height;
+    var exportCtx = exportCanvas.getContext('2d');
+    if (!exportCtx) throw new Error('Cannot get 2D context for export');
+
+    var oldW = this.width;
+    var oldH = this.height;
+    var oldCtx = this.ctx;
+    var oldBg = this.background;
+
+    this.ctx = exportCtx;
+    this.setSize(width, height);
+    this.background = background;
+    this.clear();
+
+    // Render only the requested named layer
+    var target = (layers || []).find(function(l) { return (l._name || l.name) === layerName; });
+    if (target && target.visible) {
+      this.renderLayer(target, 1);
+    }
+
+    // Restore
+    this.ctx = oldCtx;
+    this.setSize(oldW, oldH);
+    this.background = oldBg;
+
+    // Convert canvas to blob
+    if (exportCanvas.convertToBlob) {
+      return exportCanvas.convertToBlob({ type: 'image/png' });
+    }
+    return new Promise(function(resolve) { exportCanvas.toBlob(resolve, 'image/png'); });
+  }
+
 
     if (exportCanvas.convertToBlob) {
       return exportCanvas.convertToBlob(opts);
