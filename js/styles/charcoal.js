@@ -29,6 +29,11 @@ import {
   boxOf, shade2, mixHex, shade, hexRgb
 } from './base.js';
 
+// ── p5.brain (p5.brush) integration ─────────────────────────────────────────
+// Try the real p5.brush stamped-brush engine first; fall back to the custom
+// stampBuild renderer when p5.brush is not loaded or fails.
+import { stampStrokeSync, isBrushReady } from '../engine/brush-stamp-engine.js';
+
 /**
  * Resolve colors from a shape, handling both formats:
  *  - Engine format: shape.color0/color1 are RGB arrays, shape.alpha is number
@@ -168,9 +173,14 @@ export class CharcoalStyle {
     return strokes;
   }
 
+  /**
+   * Build a candidate stroke shape from an edge.
+   * Uses seeded RNG (rngFor) for deterministic stroke-width.
+   */
   _makeStroke(edge, color) {
     const c = Array.isArray(color) ? color : [color, color, color];
-    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, Math.random());
+    const R = rngFor(edge.seed || [edge.x0, edge.y0, edge.x1, edge.y1, 0, 0]);
+    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, R());
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],
@@ -182,21 +192,22 @@ export class CharcoalStyle {
   }
 
   _makeHatching(region, color) {
+    const R = rngFor([region.cx, region.cy, region.w, region.h, 0, 0]);
     const strokes = [];
     const size = Math.max(region.w, region.h);
-    const w = lerp(this.defaults.strokeSize.min * 0.5, this.defaults.strokeSize.max * 0.7, Math.random());
+    const w = lerp(this.defaults.strokeSize.min * 0.5, this.defaults.strokeSize.max * 0.7, R());
     const gap = w * 2;
     const half = size * 0.75;
-    const ang = -0.95 + (Math.random() - 0.5) * 0.3;
+    const ang = -0.95 + (R() - 0.5) * 0.3;
 
-    for (let y = -half; y <= half; y += gap * (0.85 + Math.random() * 0.3)) {
-      const j = (Math.random() - 0.5) * gap * 0.2;
+    for (let y = -half; y <= half; y += gap * (0.85 + R() * 0.3)) {
+      const j = (R() - 0.5) * gap * 0.2;
       strokes.push({
         type: 'S',
         params: [
-          region.cx - half + Math.random() * size * 0.15, region.cy + y + j,
+          region.cx - half + R() * size * 0.15, region.cy + y + j,
           region.cx, region.cy + y,
-          region.cx + half - Math.random() * size * 0.15, region.cy + y - j,
+          region.cx + half - R() * size * 0.15, region.cy + y - j,
           w, ang, color, color, 1
         ],
         seed: [region.cx, region.cy, w, y]
@@ -205,11 +216,34 @@ export class CharcoalStyle {
     return strokes;
   }
 
+  /**
+   * Render a charcoal stroke or area.
+   *
+   * Tries the p5.brain (p5.brush) engine via stampStrokeSync() first for
+   * authentic charcoal brush dynamics. Falls back to the custom multi-pass
+   * stampBuild renderer when p5.brush is not loaded or fails.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} shape
+   * @param {number} progress - 0..1
+   */
   render(ctx, shape, progress = 1) {
     const a = shape.params;
     const [c0, c1, o] = resolveColors(shape);
 
     if (shape.type === 'S') {
+      // Try p5.brain (p5.brush) first — authentic charcoal tip dynamics
+      if (isBrushReady()) {
+        const ok = stampStrokeSync(ctx, shape, {
+          brushName: 'charcoal',
+          color: shape.color0 || a[8] || [0, 0, 0],
+          alpha: shape.alpha ?? a[a.length - 1] ?? 1,
+          size: a[6],
+          progress,
+        });
+        if (ok) return;
+      }
+      // Fallback: custom multi-pass stamped-brush renderer
       const R = rngFor(shape.seed || a.slice(0, 8));
       this._renderStroke(ctx, shape, R, c0, c1, o, progress);
     } else {

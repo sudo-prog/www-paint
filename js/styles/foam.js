@@ -5,6 +5,7 @@
  */
 
 import { renderReliefShape } from '../engine/relief.js';
+import { rngFor } from './base.js';
 
 export class FoamStyle {
   name = 'foam';
@@ -35,9 +36,15 @@ export class FoamStyle {
     return strokes;
   }
 
+  /**
+   * Build a candidate stroke shape from an edge.
+   * Uses seeded RNG (rngFor) for deterministic stroke-width, so the same
+   * edge always produces the same stroke geometry.
+   */
   _makeStroke(edge, color) {
     const c = Array.isArray(color) ? color : [color, color, color];
-    const w = 5 + Math.random() * 20;
+    const R = rngFor([edge.x0 || 0, edge.y0 || 0, edge.x1 || 0, edge.y1 || 0, 0, 0]);
+    const w = 5 + R() * 20;
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],

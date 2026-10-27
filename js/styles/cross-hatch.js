@@ -154,9 +154,14 @@ export class CrossHatchStyle {
     return strokes;
   }
 
+  /**
+   * Build a candidate stroke shape from an edge.
+   * Uses seeded RNG (rngFor) for deterministic stroke-width.
+   */
   _makeStroke(edge, color) {
     const c = Array.isArray(color) ? color : [color, color, color];
-    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, Math.random());
+    const R = rngFor(edge.seed || [edge.x0, edge.y0, edge.x1, edge.y1, 0, 0]);
+    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, R());
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],
@@ -174,7 +179,7 @@ export class CrossHatchStyle {
   _makeHatching(region, color) {
     const strokes = [];
     const size = Math.max(region.w, region.h, 8);
-    const w = lerp(this.defaults.strokeSize.min * 0.5, this.defaults.strokeSize.max * 0.7, Math.random());
+    const w = lerp(this.defaults.strokeSize.min * 0.5, this.defaults.strokeSize.max * 0.7, R());
     const gap = w * 2.5 * (2 - this.defaults.density);  // closer spacing = denser
     const half = size * 0.75;
     const R = rngFor([region.cx, region.cy, region.w, region.h, w, 0]);

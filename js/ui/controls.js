@@ -7,7 +7,8 @@
  * @module controls
  */
 
-import { getAllStyles } from "../styles/index.js";
+import { getAllStyles, CATEGORY_LABELS } from "../styles/index.js";
+import { buildThumbnailCache } from "./thumbnails.js";
 import { DEFAULT_SETTINGS } from "../engine/generator.js";
 
 /**
@@ -124,6 +125,8 @@ export class ControlsManager {
     this.styles = getAllStyles().map((s) => s.name);
     /** @type {Record<string, object>} */
     this._inputs = {};
+    /** @type {Map<string, string>} */
+    this._styleThumbs = buildThumbnailCache();
 
     this._render();
     this._bindEvents();
@@ -134,10 +137,28 @@ export class ControlsManager {
 
   /**
    * Build the entire controls panel DOM.
+   *
+   * The panel's chrome — the identity strip, the header and its collapse chevron,
+   * and the collapsed rail icons — belongs to the shell, not to this manager.
+   * Clearing innerHTML would delete it, so only the sections are cleared and the
+   * chrome is re-appended after them.
    */
   _render() {
     this.root.classList.add("controls-panel");
+
+    // Preserve the shell chrome that lives inside this panel.
+    const chrome = Array.from(this.root.children).filter(
+      (el) => el.classList.contains("panel-strip") || el.classList.contains("panel-head") || el.classList.contains("rail-icons"),
+    );
+    const scrollable = this.root.querySelector(".controls-scroll");
+
     this.root.innerHTML = "";
+    for (const el of chrome) this.root.appendChild(el);
+
+    // The sections scroll; the chrome above them stays put.
+    const host = document.createElement("div");
+    host.className = "controls-scroll";
+    this.root.appendChild(host);
 
     const sections = [
       { id: "style-section",   title: "STYLE",        render: () => this._renderStylePicker() },
@@ -162,7 +183,7 @@ export class ControlsManager {
       body.appendChild(s.render());
       section.appendChild(body);
 
-      this.root.appendChild(section);
+      host.appendChild(section);
     }
 
     // Generate button at the bottom
@@ -192,48 +213,196 @@ export class ControlsManager {
     resetBtn.dataset.action = "reset";
     genSection.appendChild(resetBtn);
 
-    this.root.appendChild(genSection);
+    host.appendChild(genSection);
   }
 
   /**
-   * Render the style picker as a grid of buttons.
+   * Render the style picker as categorized dropdown with thumbnail previews.
+   *
+   * Layout:
+   *   .style-picker
+   *     .style-picker__trigger    ← shows selected style thumbnail + label
+   *     .style-picker__dropdown
+   *       .style-cat-list         ← category pills (Draw, Paint, Graphic, Craft, 3D)
+   *       .style-thumb-grid       ← thumbnails for the selected category
+   *
    * @returns {HTMLElement}
    */
   _renderStylePicker() {
     const wrapper = document.createElement("div");
-    wrapper.className = "style-grid";
+    wrapper.className = "style-picker";
 
-    for (const { name, label } of getAllStyles()) {
-      const btn = document.createElement("button");
-      btn.className = "style-btn";
-      btn.type = "button";
-      btn.dataset.style = name;
-      btn.id = `style-${name}`;
-      btn.setAttribute("aria-label", label);
-      btn.setAttribute("title", label);
+    const styles = getAllStyles();
+    const cats = new Map();
+    for (const s of styles) {
+      if (!cats.has(s.category)) cats.set(s.category, []);
+      cats.get(s.category).push(s);
+    }
+    const orderedCats = [...cats.keys()].sort((a, b) => {
+      const order = ['draw', 'paint', 'graphic', 'craft', '3d'];
+      return order.indexOf(a) - order.indexOf(b);
+    });
 
-      // Safe DOM construction (no untrusted HTML; label comes from style registry)
-      const swatch = document.createElement("span");
-      swatch.className = "style-btn__swatch";
-      swatch.setAttribute("aria-hidden", "true");
-      swatch.style.backgroundColor = STYLE_SWATCH_COLORS[name] || "var(--accent)";
+    let selectedCat = orderedCats[0];
+    let selectedStyle = this.settings.style;
 
-      const spanLabel = document.createElement("span");
-      spanLabel.className = "style-btn__label";
-      spanLabel.textContent = label;
+    // ── trigger ──────────────────────────────────────────────────────
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "style-picker__trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
 
-      btn.appendChild(swatch);
-      btn.appendChild(spanLabel);
+    const triggerThumb = document.createElement("span");
+    triggerThumb.className = "style-picker__trigger-thumb";
+    const triggerLabel = document.createElement("span");
+    triggerLabel.className = "style-picker__trigger-label";
+    const triggerChev = document.createElement("span");
+    triggerChev.className = "style-picker__chev";
+    triggerChev.textContent = "▾";
+    triggerChev.setAttribute("aria-hidden", "true");
 
-      if (name === this.settings.style) {
-        btn.classList.add("style-btn--active");
+    trigger.appendChild(triggerThumb);
+    trigger.appendChild(triggerLabel);
+    trigger.appendChild(triggerChev);
+
+    const updateTrigger = () => {
+      const entry = styles.find(s => s.name === selectedStyle);
+      triggerLabel.textContent = entry ? entry.label : "Select style…";
+      if (entry && this._styleThumbs && this._styleThumbs.has(entry.name)) {
+        triggerThumb.style.backgroundImage = `url(${this._styleThumbs.get(entry.name)})`;
+        triggerThumb.style.backgroundSize = "cover";
+        triggerThumb.title = entry.label;
+      } else {
+        triggerThumb.style.backgroundImage = "";
+        triggerThumb.style.backgroundColor = "var(--line)";
       }
+    };
 
-      this._inputs[`style-${name}`] = btn;
-      wrapper.appendChild(btn);
+    // ── dropdown ─────────────────────────────────────────────────────
+    const dropdown = document.createElement("div");
+    dropdown.className = "style-picker__dropdown";
+    dropdown.setAttribute("role", "listbox");
+    dropdown.style.display = "none";
+
+    // Category pills
+    const catList = document.createElement("div");
+    catList.className = "style-cat-list";
+    for (const cat of orderedCats) {
+      const catBtn = document.createElement("button");
+      catBtn.type = "button";
+      catBtn.className = "style-cat-btn" + (cat === selectedCat ? " style-cat-btn--active" : "");
+      catBtn.textContent = CATEGORY_LABELS[cat] || cat;
+      catBtn.dataset.cat = cat;
+      catBtn.addEventListener("click", () => {
+        selectedCat = cat;
+        catList.querySelectorAll(".style-cat-btn").forEach(b => b.classList.toggle("style-cat-btn--active", b.dataset.cat === cat));
+        rebuildGrid(selectedCat);
+        updateTrigger();
+      });
+      catList.appendChild(catBtn);
     }
 
+    // Thumbnail grid — rebuilt on category switch so hidden= elements never
+    // sit in the DOM intercepting pointer events.
+    const thumbGrid = document.createElement("div");
+    thumbGrid.className = "style-thumb-grid";
+
+    const rebuildGrid = (cat) => {
+      thumbGrid.innerHTML = "";
+      const items = styles.filter(s => s.category === cat);
+      for (const s of items) {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "style-thumb" + (s.name === selectedStyle ? " style-thumb--active" : "");
+        item.dataset.style = s.name;
+        item.dataset.cat = s.category;
+        item.setAttribute("title", s.label);
+        item.setAttribute("role", "option");
+        item.setAttribute("aria-selected", s.name === selectedStyle ? "true" : "false");
+
+        const img = document.createElement("img");
+        img.src = this._styleThumbs.get(s.name) || "";
+        img.alt = s.label;
+        img.loading = "lazy";
+        img.width = 48;
+        img.height = 48;
+
+        const lbl = document.createElement("span");
+        lbl.className = "style-thumb__label";
+        lbl.textContent = s.label;
+
+        item.appendChild(img);
+        item.appendChild(lbl);
+
+        item.addEventListener("click", () => {
+          selectedStyle = s.name;
+          thumbGrid.querySelectorAll(".style-thumb").forEach(t => {
+            t.classList.toggle("style-thumb--active", t.dataset.style === selectedStyle);
+            t.setAttribute("aria-selected", t.dataset.style === selectedStyle ? "true" : "false");
+          });
+          this._selectStyle(selectedStyle);
+          closeDropdown();
+          updateTrigger();
+        });
+
+        thumbGrid.appendChild(item);
+      }
+    };
+
+    // Initial grid
+    rebuildGrid(selectedCat);
+
+    dropdown.appendChild(catList);
+    dropdown.appendChild(thumbGrid);
+
+    // ── open / close ──────────────────────────────────────────────────
+    function openDropdown() {
+      dropdown.style.display = "flex";
+      trigger.setAttribute("aria-expanded", "true");
+    }
+    function closeDropdown() {
+      dropdown.style.display = "none";
+      trigger.setAttribute("aria-expanded", "false");
+    }
+
+    trigger.addEventListener("click", () => {
+      if (dropdown.style.display === "none") openDropdown();
+      else closeDropdown();
+    });
+
+    // Close on outside click
+    document.addEventListener("click", (e) => {
+      if (!wrapper.contains(e.target)) closeDropdown();
+    });
+
+    // Keyboard: Escape closes
+    dropdown.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeDropdown();
+    });
+
+    // Store refs for later
+    this._styleTrigger = trigger;
+    this._styleThumbGrid = thumbGrid;
+    this._styleCatList = catList;
+
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(dropdown);
+
+    // Initial trigger state
+    updateTrigger();
+
     return wrapper;
+  }
+
+  /**
+   * Select a style by name and dispatch the change.
+   * @param {string} name
+   * @private
+   */
+  _selectStyle(name) {
+    this.settings.style = name;
+    this._dispatchChange("style", name, { key: "style" });
   }
 
   /**
@@ -316,45 +485,35 @@ export class ControlsManager {
   }
 
   /**
-   * Render a boolean toggle as a segmented control.
+   * Render a boolean toggle as a compact pill.
    * @param {string} key — settings key
    * @param {string} label — display label
-   * @param {Array<{value: *, label: string}>} options
+   * @param {Array<{value: *, label: string}>} options — exactly 2: Off, On
    * @param {*} currentValue
    * @returns {HTMLElement}
    */
   _renderToggle(key, label, options, currentValue) {
     const wrapper = document.createElement("div");
-    wrapper.className = "control-toggle";
+    wrapper.className = "control-toggle control-toggle--inline";
 
-    const title = document.createElement("span");
-    title.className = "toggle-label";
-    title.textContent = label;
-    wrapper.appendChild(title);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pill-toggle" + (currentValue ? " pill-toggle--on" : "");
+    btn.textContent = label;
+    btn.dataset.key = key;
+    btn.setAttribute("role", "switch");
+    btn.setAttribute("aria-checked", currentValue ? "true" : "false");
 
-    const segmented = document.createElement("div");
-    segmented.className = "segmented segmented--small";
-    segmented.setAttribute("role", "radiogroup");
-    segmented.setAttribute("aria-label", key);
+    btn.addEventListener("click", () => {
+      const next = !(this.settings[key] ?? false);
+      btn.classList.toggle("pill-toggle--on", next);
+      btn.setAttribute("aria-checked", next ? "true" : "false");
+      this.settings[key] = next;
+      this._dispatchChange(key, next, { key });
+    });
 
-    for (const opt of options) {
-      const btn = document.createElement("button");
-      btn.className = "segmented__btn";
-      btn.type = "button";
-      btn.textContent = opt.label;
-      btn.dataset.value = opt.value;
-      btn.dataset.key = key;
-      btn.setAttribute("role", "radio");
-
-      const isActive = opt.value === currentValue;
-      btn.classList.toggle("segmented__btn--active", isActive);
-      btn.setAttribute("aria-checked", isActive ? "true" : "false");
-
-      segmented.appendChild(btn);
-    }
-
-    this._inputs[key] = { segmented, key, isToggle: true };
-    wrapper.appendChild(segmented);
+    this._inputs[key] = { input: btn, key, isToggle: true };
+    wrapper.appendChild(btn);
     return wrapper;
   }
 
@@ -537,11 +696,10 @@ export class ControlsManager {
    * @param {string} name
    */
   _selectStyle(name) {
-    this.root.querySelectorAll(".style-btn").forEach((b) => {
-      b.classList.remove("style-btn--active");
+    this.root.querySelectorAll(".style-thumb").forEach((b) => {
+      b.classList.toggle("style-thumb--active", b.dataset.style === name);
+      b.setAttribute("aria-selected", b.dataset.style === name ? "true" : "false");
     });
-    const target = this.root.querySelector(`[data-style="${name}"]`);
-    if (target) target.classList.add("style-btn--active");
 
     this.settings.style = name;
     this.root.dispatchEvent(new CustomEvent("settings-change", {
@@ -555,10 +713,21 @@ export class ControlsManager {
    * Sync internal settings to the UI controls.
    */
   _syncToUI() {
-    // Style
-    this.root.querySelectorAll(".style-btn").forEach((b) => {
-      b.classList.toggle("style-btn--active", b.dataset.style === this.settings.style);
+    // Style — highlight the active thumbnail and update the trigger
+    this.root.querySelectorAll(".style-thumb").forEach((b) => {
+      b.classList.toggle("style-thumb--active", b.dataset.style === this.settings.style);
+      b.setAttribute("aria-selected", b.dataset.style === this.settings.style ? "true" : "false");
     });
+    if (this._styleTrigger) {
+      const entry = getAllStyles().find(s => s.name === this.settings.style);
+      const triggerLabel = this._styleTrigger.querySelector(".style-picker__trigger-label");
+      const triggerThumb = this._styleTrigger.querySelector(".style-picker__trigger-thumb");
+      if (triggerLabel && entry) triggerLabel.textContent = entry.label;
+      if (triggerThumb && entry && this._styleThumbs.has(entry.name)) {
+        triggerThumb.style.backgroundImage = `url(${this._styleThumbs.get(entry.name)})`;
+        triggerThumb.style.backgroundSize = "cover";
+      }
+    }
 
     // Sliders
     for (const key of ["strokeSizeMin", "strokeSizeMax", "strokeCount", "detailLevel", "styleStrength", "opacity", "randomness", "scatter"]) {
@@ -573,16 +742,16 @@ export class ControlsManager {
       entry.valueSpan.textContent = this._formatSliderValue(entry.spec, val);
     }
 
-    // Toggle (smart, oneLine)
+    // Pill toggle (smart, oneLine)
     for (const key of ["smart", "oneLine"]) {
       const entry = this._inputs[key];
       if (!entry || !entry.isToggle) continue;
       const value = this.settings[key] !== undefined ? this.settings[key] : PAINTER_DEFAULT_SETTINGS[key];
-      entry.segmented.querySelectorAll(".segmented__btn").forEach((b) => {
-        const isActive = b.dataset.value === String(value);
-        b.classList.toggle("segmented__btn--active", isActive);
-        b.setAttribute("aria-checked", isActive ? "true" : "false");
-      });
+      const btn = entry.input;
+      if (btn) {
+        btn.classList.toggle("pill-toggle--on", !!value);
+        btn.setAttribute("aria-checked", value ? "true" : "false");
+      }
     }
 
     // Segmented selectors

@@ -91,9 +91,14 @@ export class MarkerStyle {
     return strokes;
   }
 
+  /**
+   * Build a candidate stroke shape from an edge.
+   * Uses seeded RNG (rngFor) for deterministic stroke-width.
+   */
   _makeStroke(edge, color) {
     const c = Array.isArray(color) ? color : [color, color, color];
-    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, Math.random());
+    const R = rngFor(edge.seed || [edge.x0, edge.y0, edge.x1, edge.y1, 0, 0]);
+    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, R());
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],

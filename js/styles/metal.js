@@ -5,6 +5,7 @@
  */
 
 import { renderReliefShape } from '../engine/relief.js';
+import { rngFor } from './base.js';
 
 export class MetalStyle {
   name = 'metal';
@@ -37,7 +38,9 @@ export class MetalStyle {
 
   _makeStroke(edge, color) {
     const c = Array.isArray(color) ? color : [color, color, color];
-    const w = 5 + Math.random() * 20;
+    // Use seeded RNG from edge coordinates so strokes are deterministic
+    const R = rngFor([edge.x0 || 0, edge.y0 || 0, edge.x1 || 0, edge.y1 || 0, 0, 0]);
+    const w = 5 + R() * 20;
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],

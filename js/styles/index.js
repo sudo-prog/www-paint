@@ -194,4 +194,13 @@ export {
   BeadsStyle, PuffyStyle, TerrazzoStyle, MoltenStyle
 };
 
+/** Human-readable category labels for the UI. */
+export const CATEGORY_LABELS = {
+  draw:    'Drawing',
+  paint:   'Painting',
+  graphic: 'Graphic',
+  craft:   'Craft',
+  '3d':    '3D / Material',
+};
+
 export default { getStyle, getAllStyles, getStylesByCategory, getStyleInfo, registerStyle };

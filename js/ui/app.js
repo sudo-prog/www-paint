@@ -14,6 +14,7 @@ import { LayersManager } from "./layers.js";
 import { ExportManager } from "./export.js";
 import { MotionController } from "./motion.js";
 import { PaintBrushEngine } from "../engine/paint-brush.js";
+import { initBrushEngine } from "../engine/brush-stamp-engine.js";
 
 /**
  * WWW_PAINT Application Controller.
@@ -123,6 +124,13 @@ export class App {
       return this.paintBrush.exportLayer(layerId);
     };
 
+    // Initialize p5.brush (p5.brain) engine for style renderers
+    // (pencil, charcoal, etc.) that use stampStrokeSync for authentic
+    // brush tip dynamics. Falls back to custom renderers if p5.brush
+    // fails to load — no blocking, no errors.
+    initBrushEngine(this.canvasEl.width, this.canvasEl.height)
+      .catch(err => console.warn('[app] p5.brush init failed, using fallback renderers:', err));
+
     // Sync renderer layers so paint surfaces composite during render
     this.engine.renderer.setLayers(this.engine.layers);
 
@@ -141,8 +149,13 @@ export class App {
     // Setup drag-and-drop
     this._setupDragDrop();
 
+    // Panel collapse → thin black icon rail. The canvas widens to reclaim the
+    // space, so the canvas stays the hero and the panels stay behind.
+    this._bindCollapseControls();
+
     // Update status
     this._updateStatus();
+    this._syncCanvasHeader();
 
     // Initialize debug overlay (hooks console, watches for errors)
     if (window.__DebugOverlay) {
@@ -372,6 +385,9 @@ export class App {
 
   /**
    * Toggle between Generate mode and Paint mode.
+   *
+   * Paint mode swaps the LEFT panel's contents rather than adding a surface: the
+   * shell keeps exactly two side panels, and the canvas window stays where it is.
    * @private
    */
   _togglePaintMode() {
@@ -380,10 +396,16 @@ export class App {
     if (btn) {
       btn.classList.toggle('nav-btn--active', this._paintMode);
     }
+
+    const controlsPanel = document.getElementById('controls-root');
     const toolbar = document.getElementById('paint-toolbar');
-    if (toolbar) {
-      toolbar.classList.toggle('paint-toolbar--active', this._paintMode);
-    }
+    if (controlsPanel) controlsPanel.classList.toggle('panel--hidden', this._paintMode);
+    if (toolbar) toolbar.classList.toggle('paint-toolbar--active', this._paintMode);
+
+    // The canvas header names the active mode.
+    const modeEl = document.getElementById('canvas-mode');
+    if (modeEl) modeEl.textContent = this._paintMode ? 'Paint' : 'Generate';
+
     // Hide placeholder overlay when entering paint mode
     const placeholder = document.getElementById('canvas-placeholder');
     if (placeholder) {
@@ -409,6 +431,76 @@ export class App {
   }
 
   /**
+   * Wire the per-panel collapse chevrons.
+   *
+   * Collapsing a panel turns it into a thin black icon rail and widens the canvas
+   * window to reclaim the space. The chevron lives in each panel header.
+   * @private
+   */
+  _bindCollapseControls() {
+    document.querySelectorAll(".collapse-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const panel = btn.closest(".panel");
+        if (!panel) return;
+        this._setPanelCollapsed(panel, !panel.classList.contains("is-collapsed"));
+      });
+    });
+  }
+
+  /**
+   * Collapse or expand one side panel and move the canvas window with it.
+   *
+   * Desktop: collapse to the icon rail and widen the window.
+   * Mobile: the panels are overlays, so "collapse" slides the panel off-screen
+   * instead — the canvas is already full-bleed there.
+   * @param {HTMLElement} panel
+   * @param {boolean} collapsed
+   * @private
+   */
+  _setPanelCollapsed(panel, collapsed) {
+    const mobile = window.matchMedia("(max-width: 768px)").matches;
+
+    if (mobile) {
+      panel.classList.toggle("panel--mobile-closed", collapsed);
+      const toggle = panel.querySelector(".mobile-toggle");
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", String(!collapsed));
+        toggle.classList.toggle("mobile-toggle--active", !collapsed);
+      }
+      return;
+    }
+
+    panel.classList.toggle("is-collapsed", collapsed);
+
+    // Named `canvasWindow`, not `window` — a local called `window` shadows the
+    // global and throws a TDZ ReferenceError on the matchMedia line above it.
+    const canvasWindow = document.getElementById("canvas-area");
+    if (!canvasWindow) return;
+
+    if (panel.classList.contains("panel--controls") || panel.id === "paint-toolbar") {
+      canvasWindow.classList.toggle("nav-left", collapsed);
+    } else {
+      canvasWindow.classList.toggle("nav-right", collapsed);
+    }
+
+    panel.querySelectorAll(".collapse-btn").forEach((b) => {
+      b.setAttribute("aria-expanded", String(!collapsed));
+      b.setAttribute("title", collapsed ? "Expand panel" : "Collapse panel");
+    });
+  }
+
+  /**
+   * Keep the canvas header's dimensions in step with the loaded image.
+   * @private
+   */
+  _syncCanvasHeader() {
+    const dims = document.getElementById("canvas-dims");
+    if (dims && this.engine) {
+      dims.textContent = `${this.engine.width} × ${this.engine.height}`;
+    }
+  }
+
+  /**
    * Clear the active layer's brush surface.
    * @private
    */
@@ -426,6 +518,29 @@ export class App {
   /* ─── Drag and Drop ────────────────────────────────────────────── */
 
   /**
+   * Load an image file into the engine and bring the whole shell up to date.
+   *
+   * The single implementation behind every load path (Open button, drag-and-drop,
+   * click-to-pick) — there used to be three copies, and they drifted: one resized
+   * only the renderer and left the canvas and the header stale.
+   * @param {File} file
+   * @private
+   */
+  async loadImageFile(file) {
+    this._setStatus("Loading image...", true);
+    await this.engine.loadImageFile(file);
+    this.canvasMgr.setSize(this.engine.width, this.engine.height);
+    this.paintBrush.resize(this.engine.width, this.engine.height);
+    this._updateStatus();
+
+    const placeholder = document.getElementById("canvas-placeholder");
+    if (placeholder) placeholder.style.display = "none";
+
+    this.engine.render();
+    this._syncCanvasHeader();
+  }
+
+  /**
    * Set up drag-and-drop image upload on the canvas area.
    * @private
    */
@@ -440,16 +555,7 @@ export class App {
       }
 
       try {
-        this._setStatus("Loading image...", true);
-        await this.engine.loadImageFile(file);
-        this.canvasMgr.setSize(this.engine.width, this.engine.height);
-        this.paintBrush.resize(this.engine.width, this.engine.height);
-        this._updateStatus();
-
-        const placeholder = document.getElementById("canvas-placeholder");
-        if (placeholder) placeholder.style.display = "none";
-
-        this.engine.render();
+        await this.loadImageFile(file);
       } catch (err) {
         console.error(err);
         this._showError("Failed to load image: " + err.message);
@@ -469,14 +575,7 @@ export class App {
           return;
         }
         try {
-          this._setStatus("Loading image...", true);
-          await this.engine.loadImageFile(file);
-          this.canvasMgr.setSize(this.engine.width, this.engine.height);
-          this.paintBrush.resize(this.engine.width, this.engine.height);
-          this._updateStatus();
-          const placeholder = document.getElementById("canvas-placeholder");
-          if (placeholder) placeholder.style.display = "none";
-          this.engine.render();
+          await this.loadImageFile(file);
         } catch (err) {
           console.error(err);
           this._showError("Failed to load image: " + err.message);
@@ -760,6 +859,7 @@ export class App {
       this.engine.render();
 
       this._updateStatus();
+      this._syncCanvasHeader();
       this._setStatus("Project loaded successfully", false, 2000);
       this.exportMgr.hide();
     } catch (err) {

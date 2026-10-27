@@ -33,6 +33,13 @@ import {
   quadPts, normalAt, boxOf, offsetPts, shapePoly, outlinePath, rgbToHex
 } from './base.js';
 
+// ── p5.brain (p5.brush) integration ─────────────────────────────────────────
+// Try the real p5.brush stamped-brush engine first; fall back to the custom
+// _stampBuild renderer when p5.brush is not loaded or fails. This gives us
+// authentic brush tip dynamics (pressure, scatter, grain) on top of our
+// seeded-RNG shape generation.
+import { stampStrokeSync, isBrushReady } from '../engine/brush-stamp-engine.js';
+
 export class PencilStyle {
   name = 'pencil';
   category = 'draw';
@@ -83,9 +90,15 @@ export class PencilStyle {
     return strokes;
   }
 
+  /**
+   * Build a candidate stroke shape from an edge.
+   * Uses seeded RNG (rngFor) for deterministic stroke-width, so the same
+   * edge always produces the same stroke geometry.
+   */
   _makeStroke(edge, color) {
     const c = Array.isArray(color) ? color : [color, color, color];
-    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, Math.random());
+    const R = rngFor(edge.seed || [edge.x0, edge.y0, edge.x1, edge.y1, 0, 0]);
+    const w = lerp(this.defaults.strokeSize.min, this.defaults.strokeSize.max, R());
     return {
       type: 'S',
       params: [edge.x0, edge.y0, edge.cx, edge.cy, edge.x1, edge.y1, w, 0, c, c, 1],
@@ -94,21 +107,22 @@ export class PencilStyle {
   }
 
   _makeHatching(region, color) {
+    const R = rngFor([region.cx, region.cy, region.w, region.h, 0, 0]);
     const strokes = [];
     const size = Math.max(region.w, region.h);
-    const w = lerp(this.defaults.strokeSize.min * 0.6, this.defaults.strokeSize.max * 0.8, Math.random());
+    const w = lerp(this.defaults.strokeSize.min * 0.6, this.defaults.strokeSize.max * 0.8, R());
     const gap = w * this.defaults.hatchGap;
     const half = size * 0.75;
-    const ang = -0.95 + (Math.random() - 0.5) * 0.3;
+    const ang = -0.95 + (R() - 0.5) * 0.3;
     const cs = Math.cos(ang);
     const sn = Math.sin(ang);
     const rot = (px, py) => [region.cx + px * cs - py * sn, region.cy + px * sn + py * cs];
 
-    for (let y = -half; y <= half; y += gap * (0.85 + Math.random() * 0.3)) {
-      const j = (Math.random() - 0.5) * gap * this.defaults.hatchJitter;
-      const p0 = rot(-half + Math.random() * size * 0.15, y + j);
+    for (let y = -half; y <= half; y += gap * (0.85 + R() * 0.3)) {
+      const j = (R() - 0.5) * gap * this.defaults.hatchJitter;
+      const p0 = rot(-half + R() * size * 0.15, y + j);
       const mid = rot(0, y);
-      const p1 = rot(half - Math.random() * size * 0.15, y - j);
+      const p1 = rot(half - R() * size * 0.15, y - j);
       strokes.push({
         type: 'S',
         params: [p0[0], p0[1], mid[0], mid[1], p1[0], p1[1], w, ang, color, color, 1],
@@ -119,10 +133,15 @@ export class PencilStyle {
   }
 
   /**
-   * Render a single stroke using the stamped-brush algorithm.
-   * Faithful to Code Painter's stampBuild/stampLine.
+   * Render a pencil stroke or area.
+   *
+   * Tries the p5.brain (p5.brush) engine via stampStrokeSync() first for
+   * authentic brush dynamics. If p5.brush is not ready or stampStroke
+   * returns false, falls back to the custom _renderStroke / _renderArea
+   * stamped-brush implementation.
+   *
    * @param {CanvasRenderingContext2D} ctx
-   * @param {object} shape - {type, params, seed}
+   * @param {object} shape - {type, params, seed, color, alpha}
    * @param {number} progress - 0..1
    */
   render(ctx, shape, progress = 1) {
@@ -130,6 +149,18 @@ export class PencilStyle {
 
     if (shape.type === 'S') {
       const R = rngFor(shape.seed || a.slice(0, 8));
+      // Try p5.brain (p5.brush) first for authentic brush tip dynamics
+      if (isBrushReady()) {
+        const ok = stampStrokeSync(ctx, shape, {
+          brushName: 'pencil',
+          color: shape.color0 || a[8] || [0, 0, 0],
+          alpha: shape.alpha ?? a[a.length - 1] ?? 1,
+          size: a[6],
+          progress,
+        });
+        if (ok) return;
+      }
+      // Fallback: custom stamped-brush renderer
       this._renderStroke(ctx, shape, R, progress);
     } else {
       const R = rngFor(a.slice(0, 6).map((v, i) => (v || 0) + (shape.seed ? shape.seed[i] || 0 : 0)));

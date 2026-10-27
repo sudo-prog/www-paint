@@ -44,13 +44,20 @@ export class LayersManager {
    */
   _render() {
     this.root.classList.add("layers-panel");
-    this.root.innerHTML = "";
 
-    // Header
+    // Preserve the shell chrome (identity strip, header, collapse chevron, rail
+    // icons) — it belongs to the shell, not to this manager.
+    const chrome = Array.from(this.root.children).filter(
+      (el) => el.classList.contains("panel-strip") || el.classList.contains("panel-head") || el.classList.contains("rail-icons"),
+    );
+    this.root.innerHTML = "";
+    for (const el of chrome) this.root.appendChild(el);
+
+    // Body. The shell supplies the panel header (title + collapse chevron);
+    // this manager adds the "add layer" action into it.
     const header = document.createElement("div");
     header.className = "layers-header";
     header.innerHTML = `
-      <h3 class="layers-title">Layers</h3>
       <button type="button" class="btn btn--icon btn--sm" data-action="add-layer" aria-label="Add layer">
         <span aria-hidden="true">+</span>
       </button>

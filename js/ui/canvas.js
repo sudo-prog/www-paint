@@ -46,12 +46,20 @@ export class CanvasManager {
 
   /**
    * Update canvas resolution for device pixel ratio.
+   *
+   * CRITICAL: never read the canvas's rendered box here. The canvas is sized BY
+   * its own width/height attributes, so reading getBoundingClientRect() and
+   * writing it back captures whatever the CSS happened to give at that instant
+   * and permanently resizes the artwork to it — the canvas silently shrank to
+   * its first laid-out size. The backing store is the logical size times the DPR.
    */
   _updateDPR() {
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = this.canvas.getBoundingClientRect();
-    this.canvas.width = Math.round(rect.width * this.dpr);
-    this.canvas.height = Math.round(rect.height * this.dpr);
+    const logicalW = this.canvas.width || 1024;
+    const logicalH = this.canvas.height || 768;
+    this.canvas.width = Math.round(logicalW * this.dpr);
+    this.canvas.height = Math.round(logicalH * this.dpr);
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(this.dpr, this.dpr);
     this.renderer.width = this.canvas.width;
     this.renderer.height = this.canvas.height;
@@ -59,13 +67,15 @@ export class CanvasManager {
 
   /**
    * Set canvas display size and update resolution.
-   * @param {number} width  — CSS pixels
-   * @param {number} height — CSS pixels
+   * @param {number} width  — logical pixels
+   * @param {number} height — logical pixels
    * @returns {this}
    */
   setSize(width, height) {
-    this.canvas.style.width = width + "px";
-    this.canvas.style.height = height + "px";
+    // Setting the logical size resets the backing store, so re-apply the DPR.
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.canvas.style.aspectRatio = `${width} / ${height}`;
     this._updateDPR();
     return this;
   }
