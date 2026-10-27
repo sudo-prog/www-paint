@@ -8,6 +8,8 @@
  * @module analyzer
  */
 
+import { createRNG } from '../utils/rng.js';
+
 /// Sobel kernels for horizontal and vertical edge detection.
 const SOBEL_X = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
 const SOBEL_Y = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
@@ -42,6 +44,7 @@ export function analyzeImage(pixels, width, height, options = {}) {
   const {
     edgeThreshold = 0.15,
     paletteSize = 16,
+    seed = 12345,
   } = options;
 
   const n = width * height;
@@ -95,7 +98,7 @@ export function analyzeImage(pixels, width, height, options = {}) {
   }
 
   // 4. Extract palette via simple k-means (lightweight)
-  const palette = extractPalette(rgbSamples, paletteSize);
+  const palette = extractPalette(rgbSamples, paletteSize, seed);
 
   return {
     luminance,
@@ -135,14 +138,23 @@ function sobelPixel(lum, w, h, x, y, kernel) {
 }
 
 /**
- * Extract a color palette from RGB samples using simple k-means++.
+ * Extract a color palette from RGB samples using simple k-means++ clustering.
+ *
+ * Uses a deterministic seeded PRNG (mulberry32) for centroid initialization,
+ * so the same input + seed always produces the same palette. This is critical
+ * for reproducible painting generation.
  *
  * @param {Array<[number, number, number]>} samples
  * @param {number} k
+ * @param {number} [seed=12345] - Seeded PRNG state for deterministic initialization.
  * @returns {Array<[number, number, number]>}
  */
-function extractPalette(samples, k) {
+function extractPalette(samples, k, seed = 12345) {
   if (samples.length === 0) return [[0, 0, 0]];
+
+  // Deterministic PRNG (mulberry32) — replaces non-deterministic Math.random()
+  // in centroid initialization for reproducible palette extraction.
+  const rnd = createRNG(seed >>> 0);
 
   // Subsample for performance
   const step = Math.max(1, Math.floor(samples.length / 5000));
@@ -155,11 +167,11 @@ function extractPalette(samples, k) {
   // K-means with fixed iterations
   const clusters = k;
   const centroids = new Array(clusters);
-  // Initialize: pick spread-out samples
+  // Initialize: pick spread-out samples (deterministically via seeded RNG)
   const used = new Set();
   for (let c = 0; c < clusters; c++) {
     let idx;
-    do { idx = Math.floor(Math.random() * (data.length / 3)) * 3; }
+    do { idx = Math.floor(rnd() * (data.length / 3)) * 3; }
     while (used.has(idx));
     used.add(idx);
     centroids[c] = [data[idx], data[idx + 1], data[idx + 2]];
