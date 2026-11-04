@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WWW_PAINT — Brush. Generate. Create.</title>
+
+  <!-- Fonts: Doto (dot-matrix display) + Geist (UI) + Geist Mono (data/labels) -->
+  <!-- Fonts are self-hosted in /fonts/open/ via @font-face in style.css.
+       External Google Fonts links are omitted so the app works in environments
+       that block external requests (e.g. Maestro's managed Chromium). -->
+
+  <link rel="stylesheet" href="./css/style.css?v=20261029a"/>
+</head>
+<body>
+  <div class="app">
+    <!-- ── Top Bar ──
+         Quiet strip: no background, no bottom hairline. The LAYERS design drops
+         this entirely; WWW_PAINT keeps it for the primary actions, but its
+         identity and metadata came down into the panels. -->
+    <header class="top-bar" role="banner">
+      <div class="top-bar__left">
+        <div class="logo" aria-label="WWW_PAINT">
+          <span class="logo__dot"></span>
+          <span class="logo__text">WWW</span>
+          <span class="logo__slash">_</span>
+          <span class="logo__text">PAINT</span>
+        </div>
+      </div>
+
+      <nav class="top-bar__center" aria-label="Main navigation">
+        <button type="button" class="nav-btn nav-btn--active" data-nav="controls" aria-label="Brush"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg></span><span class="btn-label">Brush</span></button>
+        <button type="button" class="nav-btn" data-nav="layers" aria-label="Layers"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 12h16M4 6h16"/></svg></span><span class="btn-label">Layers</span></button>
+        <button type="button" class="nav-btn nav-btn-secondary" id="btn-paint-mode" aria-label="Paint mode" title="Toggle paint mode"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L13 16l-4 1 1-4Z"/></svg></span><span class="btn-label">Paint</span></button>
+      </nav>
+
+      <div class="top-bar__right">
+        <button type="button" class="btn btn--ghost btn--sm" id="btn-load-image" aria-label="Open image"><span class="btn-icon"><svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"></path><polyline points="17 4l4 4l0 0l0 0l0 0"></polyline><line x1="17" y1="4" x2="23" y2="4"></line></svg></span><span class="btn-label">Open</span></button>
+        <button type="button" class="round-btn round-btn--primary" id="btn-gener" aria-label="Generate painting" title="Generate painting">
+          <span class="btn-icon"><svg class="round-btn__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8 10H4v4h4l2 4l2 -4h4l-2 -4h-4z"/></svg></span>
+        </button>
+        <button type="button" class="round-btn round-btn--ghost" id="btn-export" aria-label="Export" title="Export">
+          <span class="btn-icon"><svg class="round-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 10l5 5l5-5"/></svg></span>
+        </button>
+        <button type="button" class="round-btn round-btn--ghost" id="btn-ui-settings" aria-label="UI Settings" title="UI Settings">
+          <span class="btn-icon"><svg class="round-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m10 0h6"/></svg></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Main Content ── -->
+    <main class="main">
+      <!-- Floating mobile toggle buttons (visible on mobile, hidden on desktop) -->
+      <button class="mobile-toggle" id="toggle-controls" aria-label="Toggle controls" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>
+      </button>
+      <button class="mobile-toggle" id="toggle-layers" aria-label="Toggle layers" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 12h16M4 6h16"/></svg>
+      </button>
+
+      <!-- Controls Panel — BEHIND the canvas. -->
+      <aside class="panel panel--controls" id="controls-root" role="complementary" aria-label="Brush controls">
+        <div class="panel-strip">
+          <span class="strip-name">Untitled</span>
+          <span class="strip-sep" aria-hidden="true"></span>
+          <span class="strip-chip">1024 × 768</span>
+        </div>
+        <div class="panel-head">
+          <span class="panel-title">Brush</span>
+          <span class="panel-head__actions">
+            <button class="collapse-btn" data-rail="controls" aria-expanded="true" aria-controls="controls-root" title="Collapse panel">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+              <span class="sr-only">Collapse controls panel</span>
+            </button>
+          </span>
+        </div>
+        <div class="rail-icons">
+          <button class="rail-icon-btn is-active" aria-label="Brush">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg>
+            <span class="sr-only">Brush</span>
+          </button>
+          <button class="rail-icon-btn" aria-label="Color">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/></svg>
+            <span class="sr-only">Color</span>
+          </button>
+        </div>
+        <!-- Built by controls.js -->
+      </aside>
+
+      <!-- Paint Toolbar (freehand painting controls) — swaps the left panel -->
+      <aside class="panel paint-toolbar" id="paint-toolbar" role="complementary" aria-label="Paint toolbar">
+        <div class="panel-strip">
+          <span class="strip-name">Paint</span>
+        </div>
+        <div class="paint-toolbar__row">
+          <label class="paint-toolbar__label">Brush</label>
+          <select class="paint-toolbar__select" id="paint-preset">
+            <option value="HB">HB</option>
+            <option value="2B">2B</option>
+            <option value="charcoal">Charcoal</option>
+            <option value="pen">Pen</option>
+          </select>
+        </div>
+        <div class="paint-toolbar__row">
+          <label class="paint-toolbar__label">Color</label>
+          <input type="color" class="paint-toolbar__color" id="paint-color" value="#222222">
+        </div>
+        <div class="paint-toolbar__row">
+          <label class="paint-toolbar__label">Weight</label>
+          <input type="range" class="paint-toolbar__slider" id="paint-weight" min="1" max="20" step="0.5" value="4">
+          <span class="paint-toolbar__value" id="paint-weight-value">4</span>
+        </div>
+        <div class="paint-toolbar__row paint-toolbar__row--full">
+          <button type="button" class="btn btn--ghost btn--sm" id="paint-clear" aria-label="Clear layer">
+            Clear Layer
+          </button>
+        </div>
+      </aside>
+
+      <!-- Canvas Area — the bright WINDOW, on top of the panels. -->
+      <section class="canvas-wrapper" id="canvas-area" role="main">
+        <!-- The canvas header — the top bar's metadata, inside the window. -->
+        <div class="canvas-head">
+          <span>Canvas · <span id="canvas-dims">1024 × 768</span></span>
+          <span class="spacer"></span>
+          <span id="canvas-mode">Generate</span>
+        </div>
+
+        <div class="canvas-frame">
+          <canvas id="paint-canvas" width="1024" height="768" class="paint-canvas" aria-label="Painting canvas"></canvas>
+          <div class="canvas-placeholder" id="canvas-placeholder" role="status" aria-live="polite">
+            <div class="canvas-placeholder__icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/></svg>
+            </div>
+            <div class="canvas-placeholder__title">Drop an image to begin</div>
+            <div class="canvas-placeholder__hint">Or click Open above</div>
+            <input type="file" class="file-input-picker" accept="image/*" style="display: none;" aria-label="Select image file"/>
+          </div>
+        </div>
+      </section>
+
+      <!-- Motion Controls (playback bar for stroke animation) — pill on the canvas -->
+      <div class="motion-controls-root" id="motion-controls" role="region" aria-label="Playback controls">
+        <!-- Built by motion.js -->
+      </div>
+
+      <!-- Layers Panel — BEHIND the canvas. -->
+      <aside class="panel panel--layers" id="layers-root" role="complementary" aria-label="Layers">
+        <div class="panel-strip">
+          <span class="strip-chip">P3 Linear</span>
+          <span class="strip-sep" aria-hidden="true"></span>
+          <span class="strip-chip">ACES</span>
+        </div>
+        <div class="panel-head">
+          <span class="panel-title">Layers</span>
+          <span class="panel-head__actions">
+            <button class="collapse-btn" data-rail="layers" aria-expanded="true" aria-controls="layers-root" title="Collapse panel">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+              <span class="sr-only">Collapse layers panel</span>
+            </button>
+          </span>
+        </div>
+        <div class="rail-icons">
+          <button class="rail-icon-btn is-active" aria-label="Layers">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16"/></svg>
+            <span class="sr-only">Layers</span>
+          </button>
+          <button class="rail-icon-btn" aria-label="Blend">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>
+            <span class="sr-only">Blend</span>
+          </button>
+        </div>
+        <!-- Built by layers.js -->
+      </aside>
+    </main>
+
+    <!-- Status Footer -->
+    <footer class="status-footer" id="status-bar" role="status" aria-live="polite">
+      <span class="status__msg" id="status-message">Ready</span>
+    </footer>
+  </div>
+
+  <!-- Export Dialog -->
+  <div class="modal" id="export-root" aria-hidden="true" aria-labelledby="export-title" role="dialog" aria-modal="true">
+    <!-- Built by export.js -->
+  </div>
+
+  <input type="file" id="image-file-input" accept="image/*" style="display: none;" aria-label="Select image file"/>
+
+  
+  <!-- Maestro-compatible bundled script — single ESM file with no importmap/bare specifiers -->
+  <script type="module" src="./js/ui/bundle.js?v=20261029a"></script>
+
+  <div id="debug-root"></div>
+  <div id="settings-root"></div>
+
+</body>
+</html>

@@ -266,8 +266,16 @@ export class ControlsManager {
     triggerLabel.className = "style-picker__trigger-label";
     const triggerChev = document.createElement("span");
     triggerChev.className = "style-picker__chev";
-    triggerChev.textContent = "▾";
     triggerChev.setAttribute("aria-hidden", "true");
+    const chevSvg = document.createElement("svg");
+    chevSvg.setAttribute("viewBox", "0 0 24 24");
+    chevSvg.setAttribute("fill", "none");
+    chevSvg.setAttribute("stroke", "currentColor");
+    chevSvg.setAttribute("stroke-width", "1.75");
+    chevSvg.setAttribute("stroke-linecap", "round");
+    chevSvg.setAttribute("stroke-linejoin", "round");
+    chevSvg.innerHTML = "<path d=\"M6 9l6 6l6-6\"/>";
+    triggerChev.appendChild(chevSvg);
 
     trigger.appendChild(triggerThumb);
     trigger.appendChild(triggerLabel);
@@ -291,6 +299,10 @@ export class ControlsManager {
     dropdown.className = "style-picker__dropdown";
     dropdown.setAttribute("role", "listbox");
     dropdown.style.display = "none";
+    // Append to <body> so `position: fixed` uses the viewport as the
+    // containing block — NOT a panel ancestor that has backdrop-filter,
+    // which would create a new containing block and clip/trap the dropdown.
+    document.body.appendChild(dropdown);
 
     // Category pills
     const catList = document.createElement("div");
@@ -367,20 +379,29 @@ export class ControlsManager {
     function openDropdown() {
       dropdown.style.display = "flex";
       trigger.setAttribute("aria-expanded", "true");
+      // Position the dropdown as a fixed element anchored to the trigger.
+      // Since the dropdown is a child of <body> (to escape backdrop-filter
+      // containing blocks), we position against the viewport.
+      const rect = trigger.getBoundingClientRect();
+      dropdown.style.top = `${rect.bottom}px`;
+      dropdown.style.left = `${rect.left}px`;
     }
     function closeDropdown() {
       dropdown.style.display = "none";
       trigger.setAttribute("aria-expanded", "false");
     }
 
-    trigger.addEventListener("click", () => {
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
       if (dropdown.style.display === "none") openDropdown();
       else closeDropdown();
     });
 
-    // Close on outside click
+    // Close on outside click — dropdown is in <body>, not inside wrapper
     document.addEventListener("click", (e) => {
-      if (!wrapper.contains(e.target)) closeDropdown();
+      if (e.target !== trigger && !dropdown.contains(e.target)) {
+        closeDropdown();
+      }
     });
 
     // Keyboard: Escape closes
@@ -394,7 +415,7 @@ export class ControlsManager {
     this._styleCatList = catList;
 
     wrapper.appendChild(trigger);
-    wrapper.appendChild(dropdown);
+    // dropdown was already appended to <body> above
 
     // Initial trigger state
     updateTrigger();
@@ -407,7 +428,16 @@ export class ControlsManager {
    * @param {string} name
    * @private
    */
+  /**
+   * Select a style and update UI.
+   * @param {string} name
+   */
   _selectStyle(name) {
+    this.root.querySelectorAll(".style-thumb").forEach((b) => {
+      b.classList.toggle("style-thumb--active", b.dataset.style === name);
+      b.setAttribute("aria-selected", b.dataset.style === name ? "true" : "false");
+    });
+
     this.settings.style = name;
     this._dispatchChange("style", name, { key: "style" });
   }
@@ -701,22 +731,6 @@ export class ControlsManager {
         this.root.dispatchEvent(new CustomEvent("reset-canvas"));
       });
     }
-  }
-
-  /**
-   * Select a style and update UI.
-   * @param {string} name
-   */
-  _selectStyle(name) {
-    this.root.querySelectorAll(".style-thumb").forEach((b) => {
-      b.classList.toggle("style-thumb--active", b.dataset.style === name);
-      b.setAttribute("aria-selected", b.dataset.style === name ? "true" : "false");
-    });
-
-    this.settings.style = name;
-    this.root.dispatchEvent(new CustomEvent("settings-change", {
-      detail: { key: "style", value: name, settings: { ...this.settings } },
-    }));
   }
 
   /* ─── Public API ────────────────────────────────────────────── */

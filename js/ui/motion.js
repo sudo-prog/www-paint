@@ -107,11 +107,11 @@ export class MotionController {
     playGroup.setAttribute('role', 'group');
     playGroup.setAttribute('aria-label', 'Playback controls');
 
-    this._playBtn = this._makeButton('play', '▶', 'Play (Space)');
-    this._pauseBtn = this._makeButton('pause', '❚❚', 'Pause (Space)');
-    this._stopBtn = this._makeButton('stop', '■', 'Stop (S)');
-    this._stepBackBtn = this._makeButton('step-back', '⏮', 'Step backward');
-    this._stepForwardBtn = this._makeButton('step-forward', '⏭', 'Step forward');
+    this._playBtn = this._makeButton('play', 'play', 'Play (Space)');
+    this._pauseBtn = this._makeButton('pause', 'pause', 'Pause (Space)');
+    this._stopBtn = this._makeButton('stop', 'stop', 'Stop (S)');
+    this._stepBackBtn = this._makeButton('step-back', 'step-back', 'Step backward');
+    this._stepForwardBtn = this._makeButton('step-forward', 'step-forward', 'Step forward');
 
     // Hide pause initially (we start paused)
     this._pauseBtn.classList.add('hidden');
@@ -150,7 +150,7 @@ export class MotionController {
     speedGroup.className = 'motion-speed';
     const speedLabel = document.createElement('span');
     speedLabel.className = 'motion-speed-label';
-    speedLabel.textContent = 'Speed';
+    speedLabel.textContent = 'Spd';
     speedLabel.setAttribute('for', 'motion-speed-select');
 
     this._speedSelect = document.createElement('select');
@@ -187,16 +187,35 @@ export class MotionController {
    * @returns {HTMLButtonElement}
    * @private
    */
-  _makeButton(action, text, title) {
+  _makeButton(action, iconName, title) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'motion-btn';
     btn.dataset.action = action;
+    btn.dataset.icon = iconName;
     btn.setAttribute('aria-label', title);
     btn.setAttribute('title', title);
-    // Visible text is the label text (emoji icons)
-    btn.textContent = text;
+    // Inline SVG icon (inherits currentColor via stroke)
+    btn.innerHTML = this._iconSVG(iconName);
+    btn.classList.add('motion-btn--icon');
     return btn;
+  }
+
+  /**
+   * Return inline SVG markup for a motion control icon.
+   * @param {string} name — one of: play, pause, stop, step-back, step-forward
+   * @returns {string} SVG HTML
+   * @private
+   */
+  _iconSVG(name) {
+    const icons = {
+      play:       '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 19h14L5 12V19Zm0 0V5v14"/></svg>',
+      pause:      '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="5" height="14"/><rect x="13" y="5" width="5" height="14"/></svg>',
+      stop:       '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14"/></svg>',
+      'step-back': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="19" x2="13" y2="12"/><line x1="13" y1="12" x2="19" y2="5"/></svg>',
+      'step-forward': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="11" y2="12"/><line x1="11" y1="12" x2="5" y2="19"/></svg>',
+    };
+    return icons[name] || '';
   }
 
   /* ─── Events ────────────────────────────────────────────────── */
@@ -541,12 +560,12 @@ export class MotionController {
       this._playBtn.classList.remove('hidden');
     }
 
-    // Counter
+    // Counter — compact form for mobile fit
     const pct = Math.round(this.progress * 100);
     const visible = Math.ceil(this._totalStrokes * this.progress);
     if (this._counterText) {
       this._counterText.textContent =
-        `${pct}% · ${visible.toLocaleString()}/${this._totalStrokes.toLocaleString()} strokes`;
+        `${pct}% · ${visible.toLocaleString()}/${this._totalStrokes.toLocaleString()}`;
     }
   }
 

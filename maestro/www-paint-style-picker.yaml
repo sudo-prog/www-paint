@@ -1,0 +1,43 @@
+# WWW_PAINT — style picker + pill toggle verification
+# Requires Chrome 147 (CHROME_BINARY) — Selenium 4.43 in Maestro 2.11.0
+# doesn't support CDP v155 (system Chrome 155).
+# Run: CHROME_BINARY=.../chrome-for-testing-147 maestro test --headless --screen-size 1440x900 maestro/www-paint-style-picker.yaml
+url: http://localhost:3001/index.maestro.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+
+# App loaded — verify style trigger shows current style
+- assertVisible: "Pencil / Graphite"
+
+# Open the style picker dropdown by tapping the trigger
+- tapOn: "Pencil / Graphite"
+
+# Verify all 5 category pills are visible
+- assertVisible: "Drawing"
+- assertVisible: "Painting"
+- assertVisible: "Graphic"
+- assertVisible: "Craft"
+- assertVisible: "3D / Material"
+
+# Click Graphic category
+- tapOn: "Graphic"
+
+# Scroll to find Neon style thumbnail
+- scrollUntilVisible:
+    element:
+      text: "Neon"
+
+# Select Neon style (tap on the thumbnail area, not just the tiny text)
+- tapOn:
+    text: "Neon"
+    point: "50%,50%"
+
+# Verify the trigger now shows Neon
+- assertVisible: "Neon"
+
+# Take screenshot for visual verification
+- takeScreenshot: style-picker-final

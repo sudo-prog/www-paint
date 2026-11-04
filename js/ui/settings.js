@@ -1,8 +1,12 @@
 /**
  * UI Settings — light/dark theme customization modal.
  *
- * Provides a modal dialog for customizing CSS custom properties
+ * Provides a modal dialog for customizing the LAYERS design tokens
  * for both light and dark modes. Persists to localStorage.
+ *
+ * Theme switching works by toggling data-theme="dark" on the <html>
+ * element. The CSS [data-theme="dark"] block overrides the token values.
+ * Custom color overrides are applied to :root and cascade down.
  *
  * @module settings
  */
@@ -10,45 +14,44 @@
 const SETTINGS_KEY = "www_paint_ui_settings";
 const ROOT_EL = document.documentElement;
 
-/* ─── Default Colors ───────────────────────────────────────────── */
+/* ─── Default Colors ─────────────────────────────────────────────
+   These match the LAYERS token names from css/style.css :root.
+   Only semantic colour tokens are user-tunable in the settings modal.
+   ─────────────────────────────────────────────────────────────── */
 
 const DEFAULT_DARK = {
-  "--bg": "#000000",
-  "--surface": "#0C0C0C",
-  "--accent": "#D71921",
-  "--primary": "#EDEDED",
-  "--secondary": "#8C8C8C",
-  "--canvas-bg": "#000000",
+  "--bg-primary":    "#0a0b0d",
+  "--bg-secondary":  "#101215",
+  "--accent":        "#7aa2ff",
+  "--text-primary":  "#f2f4f7",
+  "--text-secondary":"#9aa3af",
 };
 
 const DEFAULT_LIGHT = {
-  "--bg": "#F5F5F5",
-  "--surface": "#FFFFFF",
-  "--accent": "#D71921",
-  "--primary": "#1A1A1A",
-  "--secondary": "#666666",
-  "--canvas-bg": "#F5F5F5",
+  "--bg-primary":    "#ffffff",
+  "--bg-secondary":  "#f5f5f5",
+  "--accent":        "#0066ff",
+  "--text-primary":  "#0a0a0a",
+  "--text-secondary":"#555555",
 };
 
+/* The keys that the settings modal lets the user customise. */
 const COLOR_KEYS = [
-  { key: "--bg",          label: "Background" },
-  { key: "--surface",     label: "Surface" },
-  { key: "--accent",      label: "Accent" },
-  { key: "--primary",     label: "Primary Text" },
-  { key: "--secondary",   label: "Secondary Text" },
-  { key: "--canvas-bg",   label: "Canvas Background" },
+  { key: "--bg-primary",    label: "Background" },
+  { key: "--bg-secondary",  label: "Secondary" },
+  { key: "--accent",        label: "Accent" },
+  { key: "--text-primary",  label: "Primary Text" },
+  { key: "--text-secondary",label: "Secondary Text" },
 ];
 
 /* ─── State ────────────────────────────────────────────────────── */
 
 /** @type {{dark: object, light: object, activeMode: 'dark'|'light'}} */
 let _settings = {
-  dark: { ...DEFAULT_DARK },
+  dark:  { ...DEFAULT_DARK },
   light: { ...DEFAULT_LIGHT },
-  activeMode: "dark",
+  activeMode: "light",
 };
-
-let _initialized = false;
 let _overlay = null;
 let _onSettingsKeyDown = null;
 
@@ -63,16 +66,16 @@ function _loadSettings() {
     if (raw) {
       const parsed = JSON.parse(raw);
       _settings = {
-        dark: { ...DEFAULT_DARK, ...(parsed.dark || {}) },
+        dark:  { ...DEFAULT_DARK,  ...(parsed.dark  || {}) },
         light: { ...DEFAULT_LIGHT, ...(parsed.light || {}) },
-        activeMode: parsed.activeMode || "dark",
+        activeMode: parsed.activeMode || "light",
       };
     }
   } catch (e) {
     _settings = {
-      dark: { ...DEFAULT_DARK },
+      dark:  { ...DEFAULT_DARK },
       light: { ...DEFAULT_LIGHT },
-      activeMode: "dark",
+      activeMode: "light",
     };
   }
 }
@@ -87,22 +90,10 @@ function _saveSettings() {
 /* ─── CSS Application ──────────────────────────────────────────── */
 
 /**
- * Read the current :root custom properties for a given mode's keys.
- * If the property doesn't exist yet, use the stored value.
- * @param {'dark'|'light'} mode
- */
-function _readCurrentCSSValues(mode) {
-  const modeColors = _settings[mode];
-  for (const { key } of COLOR_KEYS) {
-    const stored = modeColors[key];
-    if (stored && stored.startsWith("#")) {
-      modeColors[key] = stored;
-    }
-  }
-}
-
-/**
- * Apply a set of colors to :root CSS custom properties live.
+ * Apply a set of colours to :root CSS custom properties live.
+ * Only the tunable colour keys are written — the rest of the token
+ * set (surfaces, borders, glass) falls out from the [data-theme]
+ * attribute selector in CSS.
  * @param {object} colors
  */
 function _applyColorsToCSS(colors) {
@@ -115,10 +106,20 @@ function _applyColorsToCSS(colors) {
 }
 
 /**
- * Apply the current mode's colors to the live document.
+ * Switch the document to a given theme by setting data-theme on <html>.
+ * CSS [data-theme="dark"] overrides the surface/border/glass tokens.
+ * Colour overrides from user settings are applied on top.
+ */
+function _applyTheme(theme) {
+  ROOT_EL.setAttribute("data-theme", theme);
+  _applyColorsToCSS(_settings[theme]);
+}
+
+/**
+ * Apply the current mode's colours to the live document.
  */
 function _applyCurrentMode() {
-  _applyColorsToCSS(_settings[_settings.activeMode]);
+  _applyTheme(_settings.activeMode);
 }
 
 /* ─── Overlay DOM ──────────────────────────────────────────────── */
@@ -149,10 +150,11 @@ function _ensureOverlay() {
   // Header
   const header = document.createElement("div");
   header.className = "settings-header";
+  const titleId = "settings-title";
   header.innerHTML = `
-    <h2 class="modal__title" id="settings-title">UI SETTINGS</h2>
+    <h2 class="modal__title" id="${titleId}">UI SETTINGS</h2>
     <button type="button" class="btn btn--icon btn--sm btn--ghost" id="settings-close" aria-label="Close">
-      <span aria-hidden="true">✕</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   `;
 
@@ -170,7 +172,7 @@ function _ensureOverlay() {
       <div class="mode-indicator" id="mode-indicator">Editing: Dark Mode</div>
     </div>
 
-    <!-- Color Pickers -->
+    <!-- Colour Pickers -->
     <div class="color-pickers" id="color-pickers">
       ${_renderColorRows()}
     </div>
@@ -181,7 +183,7 @@ function _ensureOverlay() {
   footer.className = "settings-footer";
   footer.innerHTML = `
     <button type="button" class="btn btn--ghost btn--sm" id="settings-restore">RESTORE DEFAULT</button>
-    <button type="button" class="btn btn--primary btn--sm" id="settings-save">SAVE & EXIT</button>
+    <button type="button" class="btn btn--primary btn--sm" id="settings-save">SAVE &amp; EXIT</button>
   `;
 
   content.appendChild(header);
@@ -189,7 +191,7 @@ function _ensureOverlay() {
   content.appendChild(footer);
   _overlay.appendChild(content);
 
-  // Bind events
+  // Wire events
   const closeBtn = _overlay.querySelector("#settings-close");
   closeBtn?.addEventListener("click", () => _UISettings.hide());
 
@@ -208,7 +210,8 @@ function _ensureOverlay() {
     btn.addEventListener("click", () => {
       _settings.activeMode = btn.dataset.mode;
       _updateModeToggle();
-      _renderColorRows();
+      const pickers = _overlay.querySelector("#color-pickers");
+      if (pickers) pickers.innerHTML = _renderColorRows();
     });
   });
 
@@ -216,7 +219,8 @@ function _ensureOverlay() {
   const restoreBtn = _overlay.querySelector("#settings-restore");
   restoreBtn?.addEventListener("click", () => {
     _restoreDefault();
-    _renderColorRows();
+    const pickers = _overlay.querySelector("#color-pickers");
+    if (pickers) pickers.innerHTML = _renderColorRows();
   });
 
   // Save & exit
@@ -227,7 +231,7 @@ function _ensureOverlay() {
     _UISettings.hide();
   });
 
-  // Wire color input changes
+  // Wire colour input changes
   _overlay.addEventListener("input", (e) => {
     const input = e.target;
     if (input.classList.contains("color-row__input")) {
@@ -245,7 +249,7 @@ function _ensureOverlay() {
 }
 
 /**
- * Render color picker rows for the current mode.
+ * Render colour picker rows for the current mode.
  * @returns {string} HTML string
  */
 function _renderColorRows() {
@@ -291,7 +295,7 @@ function _updateModeToggle() {
 }
 
 /**
- * Restore default colors for the current mode.
+ * Restore default colours for the current mode.
  */
 function _restoreDefault() {
   if (_settings.activeMode === "dark") {
@@ -305,13 +309,17 @@ function _restoreDefault() {
 
 /**
  * UISettings — singleton manager for the theme settings modal.
+ *
+ * Uses the LAYERS token names (--bg-primary, --text-primary, --accent, etc.)
+ * and toggles data-theme="dark" on <html> to switch surface colours.
  */
 export const _UISettings = {
   /** @type {boolean} */
   initialized: false,
 
   /**
-   * Initialize: load stored settings and apply them to :root.
+   * Initialise: load stored settings and apply them to :root.
+   * Sets the data-theme attribute so CSS [data-theme] selectors activate.
    */
   init() {
     if (this.initialized) return;
@@ -366,5 +374,13 @@ export const _UISettings = {
 
 // Expose on window for App.init() access
 window.__UISettings = _UISettings;
+
+// Auto-initialise if the DOM is already loaded, so the settings button
+// click handler is attached even if app.js hasn't run yet.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => _UISettings.init());
+} else {
+  _UISettings.init();
+}
 
 export default _UISettings;

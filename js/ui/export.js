@@ -57,7 +57,7 @@ export class ExportManager {
     header.innerHTML = `
       <h2 class="modal__title" id="export-title">Export</h2>
       <button type="button" class="btn btn--icon btn--sm btn--ghost" data-action="close" aria-label="Close">
-        <span aria-hidden="true">✕</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     `;
 
@@ -122,7 +122,7 @@ export class ExportManager {
     const footer = document.createElement("div");
     footer.className = "modal__footer";
     footer.innerHTML = `
-      <button type="button" class="btn btn--sm btn--ghost" data-action="close">
+      <button type="button" class="btn btn--sm btn--ghost" data-action="close" id="btn-cancel">
         Cancel
       </button>
     `;

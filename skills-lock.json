@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "maestro": {
+      "source": "TerminalSkills/skills",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/maestro/SKILL.md",
+      "computedHash": "92e16abb89e974369b0308c36a6ded352bb805f50d9310f8bde2c4a2a92a57ec"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+appId: url:http://127.0.0.1:8765/index.html
+name: "WWW PAINT — Full UI Audit"
+tags:
+  - audit
+  - web
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "btn-paint-mode"
+- assertVisible:
+    id: "btn-load-image"
+- assertVisible:
+    id: "btn-gener"
+- assertVisible:
+    id: "btn-export"
+- assertVisible:
+    id: "btn-ui-settings"
+- assertVisible:
+    id: "paint-canvas"
+- assertVisible:
+    id: "canvas-placeholder"
+- tapOn:
+    id: "btn-paint-mode"
+- assertVisible:
+    id: "paint-toolbar"
+- assertVisible:
+    id: "paint-preset"
+- assertVisible:
+    id: "paint-color"
+- assertVisible:
+    id: "paint-weight"
+- tapOn:
+    id: "btn-gener"
+- assertVisible:
+    id: "btn-gener"
+- tapOn:
+    id: "btn-export"
+- tapOn:
+    id: "btn-ui-settings"
+- tapOn:
+    text: "Brush"
+- assertVisible:
+    id: "controls-root"
+- tapOn:
+    text: "Layers"
+- assertVisible:
+    id: "layers-root"
+- tapOn:
+    text: "Brush"
+- assertVisible:
+    id: "controls-root"
+- takeScreenshot: audit-final-state

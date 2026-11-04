@@ -264,6 +264,8 @@ export class Renderer {
     this.ctx = oldCtx;
     this.setSize(oldW, oldH);
     this.background = oldBg;
+  }
+
   /**
    * Export a single named layer as a PNG blob.
    *
@@ -313,15 +315,6 @@ export class Renderer {
       return exportCanvas.convertToBlob({ type: 'image/png' });
     }
     return new Promise(function(resolve) { exportCanvas.toBlob(resolve, 'image/png'); });
-  }
-
-
-    if (exportCanvas.convertToBlob) {
-      return exportCanvas.convertToBlob(opts);
-    }
-    return new Promise(resolve => {
-      exportCanvas.toBlob(blob => resolve(blob), opts.type || 'image/png', opts.quality);
-    });
   }
 
   /**

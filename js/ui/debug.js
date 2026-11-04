@@ -218,7 +218,9 @@ function _ensureOverlay() {
   header.className = "debug-header";
   header.innerHTML = `
     <span class="debug-header__title">WWW_PAINT DEBUG SESSION</span>
-    <button type="button" class="debug-close-btn" aria-label="Close debug overlay">✕</button>
+    <button type="button" class="debug-close-btn" aria-label="Close debug overlay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   `;
 
   const body = document.createElement("div");
@@ -268,7 +270,7 @@ function _ensureOverlay() {
     logbookToggle.addEventListener("click", () => {
       const expanded = logbookContent.style.display !== "none";
       logbookContent.style.display = expanded ? "none" : "block";
-      logbookToggle.textContent = expanded ? "Previous Sessions ▼" : "Previous Sessions ▲";
+      logbookToggle.innerHTML = expanded ? 'Previous Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6l6-6"/></svg>' : 'Previous Sessions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6l-6 6"/></svg>';
     });
   }
 

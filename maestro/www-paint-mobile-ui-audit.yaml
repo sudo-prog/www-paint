@@ -1,0 +1,86 @@
+# WWW_PAINT — mobile UI audit
+# Tests the mobile layout (triggers max-width: 768px media query).
+# Run with: maestro test --headless --screen-size 390x844 www-paint-mobile-ui-audit.yaml
+# (--screen-size requires --headless; without it Maestro uses 1200x803 desktop)
+
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+
+# ── Status settles ──
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── 1. Top bar ──
+- assertVisible: "Brush"
+- assertVisible: "Layers"
+- assertVisible: "Paint"
+- assertVisible: "Open"
+
+# ── 2. Canvas placeholder ──
+- assertVisible: "Drop an image to begin"
+- assertVisible: "Or click Open above"
+
+# ── 3. Footer strip ──
+- assertVisible: "pencil"
+- assertVisible: "Strokes"
+
+# ── Screenshot: canvas with footer strip ──
+- takeScreenshot: canvas-with-footer
+
+# ── 4. Mobile toggle buttons should be visible at narrow viewport ──
+- assertVisible:
+    id: "toggle-controls"
+
+# ── 5. Open controls panel via floating mobile toggle ──
+- tapOn:
+    id: "toggle-controls"
+
+# ── 6. Controls panel opens ──
+- assertVisible: "Untitled"
+- assertVisible: "STROKE MIN"
+
+# ── 7. Style picker trigger visible ──
+- assertVisible: "Pencil / Graphite"
+
+# ── Screenshot: controls panel expanded ──
+- takeScreenshot: controls-panel
+
+# ── 8. Open style picker dropdown ──
+- tapOn: "Pencil / Graphite"
+
+# ── 9. Category pills visible ──
+- assertVisible: "Drawing"
+
+# ── Screenshot: style picker open ──
+- takeScreenshot: style-picker-open
+
+# ── 10. Close dropdown ──
+- tapOn: "Pencil / Graphite"
+
+# ── 11. Open settings modal ──
+- tapOn:
+    id: "btn-ui-settings"
+
+# ── 12. Verify settings modal opened ──
+- extendedWaitUntil:
+    visible: "UI SETTINGS"
+    timeout: 10000
+- assertVisible: "Background"
+- assertVisible: "Accent"
+- assertVisible: "Primary Text"
+
+# ── Screenshot: settings modal ──
+- takeScreenshot: settings-modal-open
+
+# ── 13. Close settings ──
+- tapOn:
+    id: "settings-close"
+
+# ── Screenshot: final clean state ──
+- takeScreenshot: final-clean-state

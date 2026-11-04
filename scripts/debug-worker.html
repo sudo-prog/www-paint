@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head><title>Worker Debug</title></head>
+<body>
+<script>
+async function test() {
+  try {
+    const resp = await fetch('scripts/codepainter-worker.js');
+    const workerSrc = await resp.text();
+    const blob = new Blob([workerSrc], { type: 'application/javascript' });
+    const workerUrl = URL.createObjectURL(blob);
+    const worker = new Worker(workerUrl);
+    
+    worker.onmessage = (e) => {
+      console.log('WORKER MSG:', JSON.stringify(e.data).substring(0, 200));
+    };
+    worker.onerror = (err) => {
+      console.error('WORKER ERROR:', err.message, err.filename, err.lineno);
+    };
+    
+    // Send a simple test message
+    const testData = new Uint8ClampedArray(256 * 256 * 4);
+    for (let i = 0; i < testData.length; i++) testData[i] = 128;
+    
+    worker.postMessage({
+      type: 'start', gen: 1, w: 256, h: 256, data: testData, current: null, count0: 0,
+      shapes: 10, styles: ['painterly'], bgStyles: [],
+      smart: false, abstract: false, lines: false,
+      outline: 'off', rfill: 'off', stylesize: {},
+      seed: 42, size: 1, sizeRand: false, palette: null,
+      under: false, order: null, line: null, band: null, fresh: null, video: false,
+    });
+    
+    setTimeout(() => { console.log('Test complete after 30s'); }, 30000);
+  } catch(e) {
+    console.error('Test error:', e);
+  }
+}
+test();
+</script>
+</body>
+</html>

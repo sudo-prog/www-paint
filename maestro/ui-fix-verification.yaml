@@ -1,0 +1,105 @@
+# WWW_PAINT — UI Fix Verification
+# Verifies the LAYERS design system is correctly applied after the fix.
+# Run: maestro test --device "chromium" maestro/ui-fix-verification.yaml
+
+url: http://127.0.0.1:8099/index.html
+
+---
+# Start the app
+- launchApp:
+    clearState: true
+
+# ── 1. App loads ──
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "PAINT"
+    timeout: 10000
+
+# ── 2. Status settles ──
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── 3. Top bar buttons visible ──
+- assertVisible:
+    id: "btn-load-image"
+- assertVisible:
+    id: "btn-gener"
+- assertVisible:
+    id: "btn-export"
+- assertVisible:
+    id: "btn-ui-settings"
+
+# ── 4. Canvas placeholder ──
+- assertVisible: "Drop an image to begin"
+- assertVisible: "Or click Open above"
+
+# ── 5. Screenshot: default light theme ──
+- takeScreenshot: light-theme-default
+
+# ── 6. Open settings modal ──
+- tapOn:
+    id: "btn-ui-settings"
+
+# Wait for the modal to render (it's created dynamically by JS)
+- extendedWaitUntil:
+    visible: "UI SETTINGS"
+    timeout: 10000
+
+# ── 7. Verify settings modal has correct content ──
+- assertVisible: "Background"
+- assertVisible: "Accent"
+- assertVisible: "Primary Text"
+
+# ── Screenshot: settings modal ──
+- takeScreenshot: settings-modal
+
+# ── 8. Switch to dark mode ──
+- tapOn: "DARK"
+
+# Screenshot: dark mode preview in settings
+- takeScreenshot: settings-dark-preview
+
+# ── 9. Save dark mode ──
+- tapOn: "SAVE & EXIT"
+
+# ── Screenshot: dark theme applied ──
+- takeScreenshot: dark-theme-applied
+
+# ── 10. Switch back to light mode ──
+- tapOn:
+    id: "btn-ui-settings"
+- extendedWaitUntil:
+    visible: "UI SETTINGS"
+    timeout: 10000
+- tapOn: "LIGHT"
+- tapOn: "SAVE & EXIT"
+
+# ── Screenshot: light theme restored ──
+- takeScreenshot: light-theme-restored
+
+# ── 11. Verify panels (glass) ──
+- assertVisible:
+    id: "controls-root"
+- assertVisible:
+    id: "layers-root"
+
+# ── 12. Verify canvas area ──
+- assertVisible:
+    id: "canvas-area"
+- assertVisible:
+    id: "paint-canvas"
+
+# ── 13. Verify status footer ──
+- assertVisible:
+    id: "status-bar"
+
+# ── 14. Verify nav buttons ──
+- assertVisible: "Brush"
+- assertVisible: "Layers"
+- assertVisible: "Paint"
+
+# ── Screenshot: final state ──
+- takeScreenshot: final-state

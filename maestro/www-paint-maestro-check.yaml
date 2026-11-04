@@ -1,0 +1,15 @@
+# WWW_PAINT — minimal Maestro check
+url: http://localhost:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- assertVisible: "WWW"
+- assertVisible: "Brush"
+- assertVisible: "Layers"
+- assertVisible: "Paint"
+- assertVisible: "Open"
+- assertVisible: "Generate Painting"
+- takeScreenshot: maestro-check-desktop

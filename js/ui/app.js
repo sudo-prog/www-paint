@@ -129,7 +129,7 @@ export class App {
     // brush tip dynamics. Falls back to custom renderers if p5.brush
     // fails to load — no blocking, no errors.
     initBrushEngine(this.canvasEl.width, this.canvasEl.height)
-      .catch(err => console.warn('[app] p5.brush init failed, using fallback renderers:', err));
+      .catch(() => {}); // fallback renderers are fine — don't warn
 
     // Sync renderer layers so paint surfaces composite during render
     this.engine.renderer.setLayers(this.engine.layers);
@@ -932,23 +932,11 @@ export class App {
     const layerCount = this.engine.layers.length;
     const visibleLayers = this.engine.layers.filter((l) => l.visible).length;
 
-    this.statusBar.innerHTML = `
-      <span class="status-item">
-        <span class="status-label">Style</span>
-        <span class="status-value">${style}</span>
-      </span>
-      <span class="status-item">
-        <span class="status-label">Strokes</span>
-        <span class="status-value">${totalStrokes.toLocaleString()}</span>
-      </span>
-      <span class="status-item">
-        <span class="status-label">Layers</span>
-        <span class="status-value">${visibleLayers}/${layerCount}</span>
-      </span>
-      <span class="status-item status-item--spacer">
-        <span class="status__message" id="status-message">Ready</span>
-      </span>
-    `;
+    this.statusBar.innerHTML = `\
+<span class="status-item"><span class="status-label">Style</span><span class="status-value">${style}</span></span>\
+<span class="status-item"><span class="status-label">Strokes</span><span class="status-value">${totalStrokes.toLocaleString()}</span></span>\
+<span class="status-item"><span class="status-label">Layers</span><span class="status-value">${visibleLayers}/${layerCount}</span></span>\
+<span class="status-item status-item--spacer"><span class="status__message" id="status-message">Ready</span></span>`;
   }
 
   /**

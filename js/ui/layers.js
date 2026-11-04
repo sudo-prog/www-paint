@@ -120,7 +120,7 @@ export class LayersManager {
 
     const drag = document.createElement("div");
     drag.className = "layer-row__drag";
-    drag.textContent = "≡";
+    drag.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="1"/><circle cx="16" cy="6" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="18" r="1"/><circle cx="16" cy="18" r="1"/></svg>';
     drag.setAttribute("aria-hidden", "true");
     mainRow.appendChild(drag);
 
@@ -135,7 +135,10 @@ export class LayersManager {
     visibilityBtn.className = "layer-visibility-btn";
     visibilityBtn.dataset.action = "toggle-visibility";
     visibilityBtn.title = layer.visible === false ? "Show" : "Hide";
-    visibilityBtn.textContent = layer.visible === false ? "○" : "◉";
+    visibilityBtn.textContent = "";
+    visibilityBtn.innerHTML = layer.visible === false
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M8 12h8"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>';
     mainRow.appendChild(visibilityBtn);
 
     const actions = document.createElement("div");
@@ -146,7 +149,8 @@ export class LayersManager {
     dupBtn.className = "layer-action-btn";
     dupBtn.dataset.action = "duplicate-layer";
     dupBtn.title = "Duplicate";
-    dupBtn.textContent = "⋯";
+    dupBtn.textContent = "";
+    dupBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5v14M5 12h14"/></svg>';
     actions.appendChild(dupBtn);
 
     const delBtn = document.createElement("button");
@@ -154,7 +158,8 @@ export class LayersManager {
     delBtn.className = "layer-action-btn layer-action-btn--danger";
     delBtn.dataset.action = "delete-layer";
     delBtn.title = "Delete";
-    delBtn.textContent = "✕";
+    delBtn.textContent = "";
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     actions.appendChild(delBtn);
 
     mainRow.appendChild(actions);

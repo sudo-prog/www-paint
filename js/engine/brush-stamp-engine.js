@@ -22,7 +22,6 @@ async function _loadBrush() {
   try {
     _brush = await import('../vendor/brush.esm.js');
   } catch (err) {
-    console.warn('[brush] failed to load p5.brush, fallback stamping will be used:', err.message);
     _brush = null;
   }
   return _brush;
@@ -46,7 +45,6 @@ export async function initBrushEngine(width, height) {
 
   const brush = await _loadBrush();
   if (!brush) {
-    console.warn('[brush] init skipped — p5.brush not loaded');
     _ready = false;
     return false;
   }
