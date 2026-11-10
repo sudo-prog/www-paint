@@ -12,6 +12,7 @@
  * - Generator (settings resolution, candidate generation)
  * - Scorer (shape scoring, selection)
  * - Optimiser core — Track R1 (error-driven placement + local hill-climb)
+ * - Optimiser multi-scale — Track R2 (coarse→fine, structure-guided)
  * - Exporter (project export/import round-trip)
  */
 
@@ -35,7 +36,7 @@ import {
   orderShapes, estimateShapeCount
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
-import { optimise, OPTIMISER_DEFAULTS } from '../js/engine/optimizer.js';
+import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan } from '../js/engine/optimizer.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 
 // Simple test runner
@@ -612,6 +613,71 @@ test('optimiser: placement is error-driven (drawn to the error region)', () => {
   if (!(frac > 0.4)) {
     throw new Error(`only ${(frac * 100).toFixed(0)}% of strokes landed on the error region`);
   }
+});
+
+// ─── Optimiser multi-scale (Track R2) ─────────────────────────────
+console.log('\nOptimiser multi-scale (Track R2):');
+
+test('optimiser: scale plan is coarse→fine (radii/blur shrink, weights sum to 1)', () => {
+  const plan = buildScalePlan(resolveOptimiserOptions({}), 10);
+  assertEqual(plan.length, 3, 'three passes by default');
+  for (let i = 1; i < plan.length; i++) {
+    if (!(plan[i].radiusMul < plan[i - 1].radiusMul)) {
+      throw new Error('radius multiplier must shrink from coarse to fine');
+    }
+  }
+  if (plan[plan.length - 1].blurR !== 0) {
+    throw new Error('the finest pass must work against the unblurred target');
+  }
+  if (!(plan[0].blurR > 0)) throw new Error('the coarse pass must use a blurred reference');
+  if (!(plan[0].weight > plan[plan.length - 1].weight)) {
+    throw new Error('the coarse pass should carry the larger budget share');
+  }
+  const wsum = plan.reduce((s, p) => s + p.weight, 0);
+  assertApprox(wsum, 1, 1e-6, 'pass weights must sum to 1');
+});
+
+test('optimiser: scales:1 collapses to a single unblurred pass', () => {
+  const plan = buildScalePlan(resolveOptimiserOptions({ scales: 1 }), 10);
+  assertEqual(plan.length, 1);
+  assertEqual(plan[0].weight, 1);
+  assertEqual(plan[0].blurR, 0);
+  assertEqual(plan[0].radiusMul, 1);
+});
+
+test('optimiser: multi-scale still emits exactly the stroke budget', () => {
+  const S = 96;
+  const px = makeRGBImage(S, S, (x) => (x < S / 2 ? [200, 40, 40] : [30, 60, 150]));
+  const r = optimise(analyzeImage(px, S, S), { count: 120, seed: 5 });
+  assertEqual(r.shapes.length, 120);
+  assertEqual(r.stats.scales, 3);
+});
+
+test('optimiser: multi-scale beats a single pass on a structured target', () => {
+  const S = 96;
+  // Flat colour fields + hard edges — exactly the case coarse→fine exists for.
+  const px = makeRGBImage(S, S, (x, y) => {
+    const d = Math.hypot(x - S / 2, y - S / 2);
+    if (d < S * 0.22) return [220, 60, 60];
+    if (x < S / 2 && y < S / 2) return [40, 70, 120];
+    if (x >= S / 2 && y < S / 2) return [200, 190, 120];
+    if (x < S / 2 && y >= S / 2) return [60, 150, 90];
+    return [30, 30, 40];
+  });
+  const an = analyzeImage(px, S, S);
+  const one = optimise(an, { count: 300, seed: 12345, scales: 1 });
+  const multi = optimise(an, { count: 300, seed: 12345, scales: 3 });
+  if (!(multi.stats.simMae > one.stats.simMae + 0.5)) {
+    throw new Error(`multi-scale did not beat a single pass: ${one.stats.simMae} -> ${multi.stats.simMae}`);
+  }
+});
+
+test('optimiser: multi-scale is deterministic for the same seed', () => {
+  const S = 80;
+  const px = makeRGBImage(S, S, (x, y) => [x * 3, y * 3, 128]);
+  const a = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
+  const b = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
+  assertEqual(a.shapes, b.shapes, 'multi-scale shape lists should be identical');
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

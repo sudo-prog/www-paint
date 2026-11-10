@@ -1,6 +1,6 @@
 # Clean-Room Engine — Decision & Track
 
-**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0 + R1 done**
+**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0 + R1 + R2 done**
 
 ---
 
@@ -77,7 +77,11 @@ matching it.
 **Status:** R0 ✔ (harness + baseline gap) · **R1 ✔** — the optimiser core
 (`js/engine/optimizer.js`, residual-driven placement + per-stroke local
 hill-climb) beats the R0 baseline on all four bench images; rings already meets
-the R6 "within 2 points of reference" gate. Evidence: `docs/checkpoints/R1.md`,
+the R6 "within 2 points of reference" gate. **R2 ✔** — structure-guided
+multi-scale (coarse→fine pass schedule on the same optimiser) improves both
+simMae and SSIM on every *structured* bench image (blobs 93.22→97.52 simMae,
+0.832→0.867 SSIM); `noise` is the deliberate unfittable control. Evidence:
+`docs/checkpoints/R1.md`, `docs/checkpoints/R2.md`,
 `docs/research/parity/baseline.json`.
 
 Ship-safety: the app stays runnable at every step. The legacy painter remains the default

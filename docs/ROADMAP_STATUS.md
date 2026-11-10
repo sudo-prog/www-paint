@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R1 done
+**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R2 done
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -32,7 +32,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 |---|---|---|---|
 | 1.1 | Harden p5.brush integration | todo | partial today via `brush-stamp-engine.js` |
 | 1.2 | Structure tensor + orientation/coherence maps | **done** | `analyzer.js` `computeStructureTensor` + `sampleStructure` + `structureDebugRGBA`; `generator.js` `alignToStructure`; **UI: STRUCTURE section — Smart Mode + Edge Follow + Align Wobble sliders** (`controls.js`/`painter.js`/`engine.js`); `tests/visual/structure-debug.html` → `docs/research/structure-debug.png`; 10 new tests (41/41), visual baselines 9/9. See `docs/checkpoints/P1.md` + `docs/UI_CONTROLS.md` |
-| 1.3 | Multi-scale stroke generation + stable seeding | todo | — |
+| 1.3 | Multi-scale stroke generation + stable seeding | **done** | delivered in the modular engine as Track **R2** (coarse→fine, structure-guided; three scales, residual decreases across passes); app wiring at R6. See `docs/checkpoints/R2.md` |
 | 1.4 | Better stroke initialization (CCL + PCA orientation/size) + dual-stage residual refine | todo | — |
 | 1.5 | Lightweight smudge / blend + optional height buffer | todo | — |
 | 1.6 | Watercolor / ink parameter unification | todo | — |
@@ -72,7 +72,7 @@ engine of record; the legacy auto-painter is reference-only.
 |---|---|---|
 | R0 | Parity harness + baseline gap | **done** — gap recorded in `docs/research/parity/baseline.json` |
 | R1 | Optimiser core (residual placement + our own local refine) | **done** — `js/engine/optimizer.js`; beats R0 on all 4 images (blobs 87.8→93.2, rings 89.2→97.9, smooth 94.4→98.7 simMae; SSIM ~0.49→0.83+). See `docs/checkpoints/R1.md` |
-| R2 | Structure-guided multi-scale | todo |
+| R2 | Structure-guided multi-scale | **done** — coarse→fine pass schedule in `optimizer.js` (per-scale blurred reference, coarse-first budget split, scale-aware structure elongation). Both metrics up on every structured image: blobs 93.22→**97.52** simMae / 0.832→**0.867** SSIM, rings +0.08, smooth +0.12; `noise` (negative control) −0.08. See `docs/checkpoints/R2.md` |
 | R3 | CCL + PCA stroke init | todo |
 | R4 | Feature parity (outlines / region-fill / order / per-style shaping) | todo |
 | R5 | Exceed (per-layer styles, smudge, wet media, Style Profiles, AI) | todo |
