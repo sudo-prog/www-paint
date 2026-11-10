@@ -13,9 +13,9 @@
  *      committed, a small coordinate-ascent search nudges its position, size,
  *      rotation and colour and keeps whichever change lowers the local error.
  *
- * Nothing here is derived from the Code Painter port: it is written from the
- * literature and works on plain pixel buffers (no canvas, no DOM), which keeps
- * it deterministic and unit-testable under plain `node`.
+ * Written from the SBR literature, this module works on plain pixel buffers
+ * (no canvas, no DOM), which keeps it deterministic and unit-testable under
+ * plain `node`.
  *
  * A stroke is modelled as an anti-aliased filled ellipse ("brush dab") whose
  * colour is the local average of the target, with `color0 === color1` so the

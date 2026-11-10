@@ -219,7 +219,6 @@ export class PencilStyle {
    * Walks `lines` (array of polylines), stamps tips with pressure + grain +
    * scatter. Returns { A, B, st, base } where A is the main stamped path, B the
    * secondary (scatter) path, and base is the base alpha.
-   * Mirrors Code Painter's stampBuild.
    */
   _stampBuild(lines, o, R) {
     // Derive a per-brush seed from the pen parameters for deterministic jitter
@@ -280,7 +279,7 @@ export class PencilStyle {
 
   /**
    * Area hatching: parallel stamped strokes across a filled shape.
-   * Mirrors Code Painter's pencil area-shading approach.
+   * Parallel stamped strokes build the shaded area.
    */
   _renderArea(ctx, shape, R) {
     const a = shape.params;

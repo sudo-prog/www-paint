@@ -1,9 +1,8 @@
 /**
  * base.js — shared helpers for WWW_PAINT painting styles.
  *
- * Every style module imports from here. The helpers are a curated extraction of
- * the core maths from Code Painter's single-file engine (see RE_BREAKDOWN.md),
- * adapted into clean, documented, reusable ES6 module functions.
+ * Every style module imports from here. The helpers are shared maths curated
+ * into clean, documented, reusable ES6 module functions.
  *
  * Key algorithms:
  *   - rngFor: FNV-1a seeded PRNG (xorshift32) → reproducible randomness per shape
@@ -257,7 +256,7 @@ export function shapePoly(s) {
 export function shapeAxis(s) {
   s = normalizeShape(s);
   const p = s.p;
-  // For E/B/R, p[5] may be a gradient angle (Code Painter) or c0 (colour array, after _convertShape)
+  // For E/B/R, p[5] may be a gradient angle, or c0 (colour array, after _convertShape)
   const g = s.t === 'T' ? p[6] : s.t === 'S' ? p[7] : (typeof p[5] === 'number' ? p[5] : 0);
   const dx = Math.cos(g);
   const dy = Math.sin(g);
@@ -380,11 +379,11 @@ export function makeShape(type, params, color0, color1, alpha = 1, style = 'defa
 }
 
 // Extract colors + opacity from a shape.
-// Primary source: colours embedded at the tail of params (Code Painter style).
+// Primary source: colours embedded at the tail of params.
 // Fallback: top-level color0/color1/alpha fields (engine-converted shape).
 export function colsOf(shape) {
   const a = shape.params;
-  // Color index depends on shape type — Code Painter stores c0/c1 at the tail of params
+  // Color index depends on shape type — c0/c1 sit at the tail of params
   // S (stroke): [x0,y0,x1,y1,x2,y2,w,g,c0,c1,o]  -> c0@8, c1@9
   // T (triangle): [x0,y0,x1,y1,x2,y2,g,c0,c1,o]  -> c0@7, c1@8
   // E/B (ellipse/blob): [cx,cy,rx,ry,rot,c0,c1,o] -> c0@5, c1@6

@@ -66,7 +66,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 ## Track R — Clean-room engine (see `docs/CLEANROOM.md`)
 
 Decision 2026-11-10: the modular engine (`analyzer`/`generator`/`scorer`) is the
-engine of record; the faithful Code Painter port is reference-only.
+engine of record; the legacy auto-painter is reference-only.
 
 | ID | Milestone | Status |
 |---|---|---|

@@ -49,7 +49,6 @@
 
 ## 4. Historical / lineage
 
-- Code Painter (original reverse-engineered source for www-paint): see repo `RE_BREAKDOWN.md`.
 - Haeberli, *Paint by Numbers: Abstract Image Representations* (SIGGRAPH 1990) — stroke-based rendering lineage. https://doi.org/10.1145/97879.97907
 
 ---

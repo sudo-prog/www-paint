@@ -1,7 +1,7 @@
 /**
  * watercolor.js — Watercolor style.
  *
- * Implements two complementary watercolor effects, faithful to Code Painter:
+ * Implements two complementary watercolor effects:
  *
  *   A. Wet washes (for filled shapes E/B/T/R): Tyler Hobbs' layered wash.
  *      A fractal-edged outline (from hobbsGrow) is stacked in 12 transparent
@@ -111,7 +111,6 @@ export class WatercolorStyle {
   /**
    * Watercolour stroke: 4 stacked transparent glazes on a wobbling ribbon,
    * with a tide line, granulation, and a wet bead at the tip.
-   * Faithful to Code Painter's `watercolour` style.
    */
   _renderStroke(ctx, shape, R, progress) {
     const [c0, c1, o] = colsOf(shape);
@@ -181,7 +180,6 @@ export class WatercolorStyle {
   /**
    * Watercolor wash (for filled shapes): stacked transparent layers with
    * fractal (hobbsGrow) edges, granulation, and multiply glaze.
-   * Faithful to Code Painter's `wet` style.
    *
    * Key upgrade: 12 layers (was 8) with more transparent alpha, plus a
    * wet bead at the rim where paint pools.

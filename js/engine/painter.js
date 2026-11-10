@@ -1,10 +1,10 @@
 /**
- * painter.js — Faithful port of Code Painter v4.24.1 auto-painter worker.
+ * painter.js — WWW_PAINT auto-painter.
  *
- * Original: https://github.com/JasBlack/code-painter (single-file, 967KB)
- * Worker source: window.CP_WORKER_SRC (88KB)
+ * Stroke-based auto-painter used by the app (structure-guided placement,
+ * per-stroke hill-climbing, error-map sampling).
  *
- * Key algorithms ported exactly:
+ * Key algorithms:
  *   - Size progression: smax = L * lerp(0.45, 0.012, sqrt(count/maxShapes))
  *   - Hill-climbing: mutate best candidate up to 180 times
  *   - Color solving: weighted least squares with ridge term

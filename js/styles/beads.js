@@ -1,7 +1,7 @@
 /**
  * beads.js — Bead chain relief style.
  *
- * Material id 12. Reference: Code Painter RELIEF table (beads), RELIEF_FS m == 12.
+ * Material id 12. Relief material "beads" (shader branch m == 12).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

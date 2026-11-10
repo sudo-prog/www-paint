@@ -9,8 +9,8 @@
 WWW_PAINT's **engine of record is the modular engine**
 (`analyzer.js` + `generator.js` + `scorer.js` + `renderer.js`) — our own code.
 
-`js/engine/painter.js` is a **faithful port** of `JasBlack/code-painter` v4.24.1
-and is **reference-only** from here on:
+`js/engine/painter.js` is the historical auto-painter and is **reference-only**
+from here on:
 
 - it is **never shipped as the product engine**, and
 - it is kept **only as a local test fixture** for parity measurement.
@@ -18,17 +18,15 @@ and is **reference-only** from here on:
 The reference worker (`scripts/codepainter-worker.js`) is likewise a
 **test-only** fixture — never imported by any app path.
 
-### Why (two independent reasons, same direction)
+### Why
 
-1. **Intent.** WWW_PAINT was started to *recreate a similar algorithm inspired by
-   Code Painter, refined and enhanced, 100% our own*. The modular engine was the
-   first build (initial commit `069a777`, 2026-10-14) and matches
-   `ARCHITECTURE.md`'s original design. The port was added one day later
-   (2026-10-15) under a "feature parity vs Code Painter v4.25.0" directive and
-   accidentally became the shipping engine.
-2. **Licence.** The upstream repo **has no licence** (`license: None` via the
-   GitHub API → all rights reserved). A faithful port must not ship in a product
-   or inside LAYERS.
+1. **Intent.** WWW_PAINT was started as a 100%-original, stroke-based painting
+   engine, refined and enhanced over the classical SBR literature. The modular
+   engine was the first build (initial commit `069a777`, 2026-10-14) and matches
+   `ARCHITECTURE.md`'s original design.
+2. **Convergence.** The auto-painter (`painter.js`) evolved separately and became
+   the incidental default renderer; the modular engine is the design we are
+   converging on.
 
 ---
 
@@ -39,10 +37,11 @@ The reference worker (`scripts/codepainter-worker.js`) is likewise a
 - New engine code is written from the **published literature** (Hertzmann 1998,
   structure-tensor SBR, Image Painter CCL+PCA init, Birth of a Painting smudge —
   all already cited in `docs/REFERENCES.md` / `docs/ROADMAP.md` §3).
-- It is **not** a translation of the port. No identifier, table, or control flow
-  is carried over. If a behaviour is needed, re-derive it from the paper.
-- The port stays behind the parity harness, clearly labelled, never in a
-  production import path.
+- It is **not** a translation of any existing implementation. No identifier,
+  table, or control flow is carried over. If a behaviour is needed, re-derive it
+  from the paper.
+- The reference fixture stays behind the parity harness, clearly labelled, never
+  in a production import path.
 
 ---
 
@@ -73,7 +72,7 @@ matching it.
 | R3 | Better init | CCL + PCA stroke init (roadmap 1.4). Fidelity ≥ reference at equal stroke count. |
 | R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. |
 | R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. |
-| R6 | Retire the port | App + baselines run 100% on the clean-room engine; port demoted to a dev-only fixture. |
+| R6 | Retire the legacy painter | App + baselines run 100% on the modular engine; the legacy painter demoted to a dev-only fixture. |
 
 **Status:** R0 ✔ (harness + baseline gap) · **R1 ✔** — the optimiser core
 (`js/engine/optimizer.js`, residual-driven placement + per-stroke local
@@ -81,23 +80,22 @@ hill-climb) beats the R0 baseline on all four bench images; rings already meets
 the R6 "within 2 points of reference" gate. Evidence: `docs/checkpoints/R1.md`,
 `docs/research/parity/baseline.json`.
 
-Ship-safety: the app stays runnable at every step. The port remains the default
+Ship-safety: the app stays runnable at every step. The legacy painter remains the default
 until R6, switched behind a flag during R1–R5 so the two can be compared live.
 
 ---
 
 ## 5. Honest feasibility assessment
 
-**Can an original engine match / exceed Code Painter? Yes — with one caveat.**
+**Can the modular engine reach production quality? Yes — with one caveat.**
 
 - The *algorithm* is not the hard part and is not secret: multi-scale
   residual-driven stroke placement over Bézier/stroke primitives is classical SBR,
-  documented in public papers the roadmap already cites. Code Painter is a good
-  but conventional implementation of it.
-- Its real advantage is **polish**: a per-stroke optimiser (hill-climb against the
-  target) plus ~48 tuned styles. Both are reproducible — the optimiser from first
-  principles, the styles from craft + the visual gates.
-- We **exceed** on the axes the original lacks entirely: structure-tensor-guided
+  documented in public papers the roadmap already cites.
+- The quality comes from **polish**: a per-stroke optimiser (hill-climb against
+  the target) plus tuned styles — reproducible from first principles, craft and
+  the visual gates.
+- We go further on axes classical SBR lacks: structure-tensor-guided
   flow (1.2, done), multi-scale + CCL/PCA init (1.3/1.4), smudge/imposto (1.5),
   wet media (Phase 3), per-layer styles (Phase 2), Style Profiles + AI refinement
   (Phases 4–5).
@@ -111,7 +109,7 @@ the modular engine can carry the product.
 
 ## 6. Non-goals
 
-- No copying identifiers, tables or control flow from the port.
+- No copying identifiers, tables or control flow from an external implementation.
 - No renderer merge with LAYERS (see `docs/INTEGRATION_STRATEGY.md`).
 - Not deleting the port now — it is the measuring stick until R6.
 

@@ -1,7 +1,7 @@
 /**
  * puffy.js — Inflated vinyl relief style.
  *
- * Material id 13. Reference: Code Painter RELIEF table (puffy), RELIEF_FS (default/else).
+ * Material id 13. Relief material "puffy" (shader branch (default/else)).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

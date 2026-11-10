@@ -1,7 +1,7 @@
 /**
  * bronze.js — Cast bronze relief style.
  *
- * Material id 11. Reference: Code Painter RELIEF table (bronze), RELIEF_FS m == 11.
+ * Material id 11. Relief material "bronze" (shader branch m == 11).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

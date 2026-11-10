@@ -1,7 +1,7 @@
 /**
  * molten.js — Molten metal relief style.
  *
- * Material id 6. Reference: Code Painter RELIEF table (molten), RELIEF_FS m == 6.
+ * Material id 6. Relief material "molten" (shader branch m == 6).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

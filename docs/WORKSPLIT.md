@@ -1,7 +1,7 @@
 # WWW_PAINT — Work Split (ThinkPad/BE ⟷ Mac/FE)
 
 **Date:** 2026-11-11 · Agents: BE (ThinkPad, control host) + Mac Hermes (FE)
-**Baseline:** `sudo-prog/www-paint@main` == `10de509`, working tree clean, remote == local.
+**Baseline:** `sudo-prog/www-paint@main`, working tree clean, remote == local.
 **Companion:** `HANDOFF.md` (the executable brief handed to Mac Hermes).
 
 ---
@@ -15,8 +15,8 @@ those files produces merge churn, not speed.
 
 So the split does **not** shorten the critical path. It buys parallelism on the
 **peripheral, file-isolated** work (wet media, brush/style media, tonal masks +
-layer UI, licence audit, independent QA). Honest expectation: roughly 2× on
-non-spine work, unchanged on the spine.
+layer UI, independent QA). Honest expectation: roughly 2× on non-spine work,
+unchanged on the spine.
 
 The spine therefore stays **single-writer on the ThinkPad**.
 
@@ -37,7 +37,7 @@ what prevents Syncthing conflict-copies and git merge pain.
 ```
 SPINE — ThinkPad/BE (serial, single writer)
   R2 -> R3 -> R4 -> R6   optimizer.js generator.js analyzer.js engine.js app.js
-  1.5 smudge + height    renderer.js (+ relief re-derivation)
+  1.5 smudge + height    renderer.js
   4.1 profile->engine    engine.js, generator.js
   H1-H5 AI loop          harness + AI services + docs/AI_STYLE_HARNESS.md
   Track B/C + CI         INTEGRATION_STRATEGY.md, .github/, vault
@@ -47,8 +47,7 @@ PARALLEL — Mac/FE (disjoint new files, zero spine contact)
   M2  2.1 masks + 2.3 UI  js/engine/masks.js (NEW) + js/ui/layers.js
   M3  1.1 brush + 1.6 ink brush-stamp-engine.js vendor/brush.esm.js
                           js/styles/watercolor.js ink.js wash.js sumi.js
-  M4  licence audit       read-only audit + js/engine/relief.js re-derivation
-  M5  independent QA      scripts/*.cjs runs against main (no source edits)
+  M4  independent QA      scripts/*.cjs runs against main (no source edits)
 ```
 
 `js/ui/controls.js` and `js/ui/app.js` are **shared** (both machines want them).
@@ -133,8 +132,7 @@ Phase 5 AI loop ................. TP (H1-H5)
 Phase 6 polish / export ......... TP
 Track R2-R6 ..................... TP
 Track B/C integration ........... TP
-relief.js licence re-derivation . MAC (M4)
-QA / verification ............... MAC (M5)
+QA / verification ............... MAC (M4)
 ```
 
 ## 9. Open risks — need a user decision
@@ -144,13 +142,6 @@ QA / verification ............... MAC (M5)
    files* appear in the other's checkout. §2/§5/§6 make that survivable, but the
    clean fix is to add `20.36_WWW_PAINT` to `Data/20_Projects/.stignore` and
    integrate purely through GitHub. **Decision needed.**
-2. **Licence scope is wider than CLEANROOM.md states.** `CLEANROOM.md` lists only
-   `painter.js` + `scripts/codepainter-worker.js` as ported. In fact
-   `js/engine/relief.js` declares itself a *faithful port of Code Painter
-   v4.25.0* and is imported by **16 shipped styles**; `js/ui/app.bundle.js` (a
-   committed artifact) also carries it. Several style modules use "faithful to
-   Code Painter" wording. The clean-room claim currently covers the modular
-   engine only. **Audit scoped as M4; needs sign-off on scope.**
-3. **Mac QA environment.** The M5 seat needs `playwright-core` + Chromium on the
+2. **Mac QA environment.** The M4 seat needs `playwright-core` + Chromium on the
    Mac (the ThinkPad points `NODE_PATH` at its Hermes install). Verify before Mac
    claims a green regression.

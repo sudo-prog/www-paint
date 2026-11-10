@@ -52,7 +52,7 @@ regressing other images.** Tier B additionally requires human approval.
   of similar past cases to warm-start, (c) search/optimisation over the parameter
   space, and (d) LLM proposals. A trainable model is a *later, optional* path
   (Phase 7 / differentiable SBR) and would train on **source images + our own
-  renderer** — never on Code Painter output.
+  renderer** — never on any external engine's output.
 - **Metrics are a proxy for taste.** The ground truth is the user's rating; both
   enter the loop, and a profile that scores well but that you reject is recorded
   as a *negative* example.
@@ -91,7 +91,7 @@ regressing other images.** Tier B additionally requires human approval.
 
 1. **Determinism** — a `(profile, seed, image-hash)` always re-bakes identically.
 2. **Bounded action space** — parameters clamped; stroke/wet-sim caps; a wall-clock budget per attempt.
-3. **No training on Code Painter output** — it is a measuring stick only.
+3. **No training on external engine output** — any reference fixture is a measuring stick only.
 4. **Human in the loop for Tier B** — code changes are never auto-merged.
 5. **Every attempt is recorded** — wins *and* losses (losses are training signal).
 

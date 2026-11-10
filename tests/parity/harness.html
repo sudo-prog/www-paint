@@ -15,13 +15,13 @@
  *
  * Runs three engines on identical deterministic images at the same seed/stroke
  * count and reports, per image:
- *   - `sim`  : the objective each engine reports (CP + our Painter).
+ *   - `sim`  : the objective each engine reports (reference + our Painter).
  *   - `mae`  : mean abs error of the RENDERED canvas vs the source, computed
  *              here (independent of any engine self-report) → `simMae`.
  *
  * Engines:
- *   - reference : Code Painter worker (scripts/codepainter-worker.js) — fixture
- *   - port      : js/engine/painter.js (our faithful port) — reference-only
+ *   - reference : external reference worker (scripts/codepainter-worker.js) — fixture
+ *   - port      : js/engine/painter.js — the app's painter
  *   - modular   : js/engine/optimizer.js (Track R1) — the engine of record
  *
  * window.runAll() → { images:[{name, results:{reference,port,modular}}] }

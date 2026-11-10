@@ -6,7 +6,7 @@
  * with shadows, reflections, and a glossy sheen. Falls back to a
  * shaded 2D tube when WebGL2 is unavailable.
  *
- * Reference: Code Painter RELIEF table (ceramic), RELIEF_FS m == 1.
+ * Relief material "ceramic" (shader branch m == 1).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

@@ -1,7 +1,7 @@
 /**
  * gold.js — Gold leaf relief style.
  *
- * Material id 10. Reference: Code Painter RELIEF table (gold), RELIEF_FS m == 10.
+ * Material id 10. Relief material "gold" (shader branch m == 10).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

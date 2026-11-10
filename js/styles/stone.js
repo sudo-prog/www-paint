@@ -1,7 +1,7 @@
 /**
  * stone.js — Stone / rock relief style.
  *
- * Material id 2. Reference: Code Painter RELIEF table (stone), RELIEF_FS m == 2.
+ * Material id 2. Relief material "stone" (shader branch m == 2).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

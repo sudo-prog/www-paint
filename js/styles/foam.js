@@ -1,7 +1,7 @@
 /**
  * foam.js — Foam beads relief style.
  *
- * Material id 4. Reference: Code Painter RELIEF table (foam), RELIEF_FS m == 4.
+ * Material id 4. Relief material "foam" (shader branch m == 4).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

@@ -530,7 +530,7 @@ export function shapeToCode(s, indent = 0) {
 
 /**
  * Generate polygon vertices for a shape's boundary.
- * Ported from the original SHP.poly function in the Code Painter worker.
+ * Tessellates a primitive into its boundary polygon (arc/rect/bezier stroke).
  * @param {object} s Shape object with { t, p }.
  * @returns {number[]} Flat array of [x, y, x, y, ...] vertices.
  */
@@ -563,7 +563,7 @@ export function poly(s) {
 
 /**
  * Get the gradient axis of a shape: [dirX, dirY, from, to]
- * Ported from the original SHP.axis function in the Code Painter worker.
+ * Projection extents of the shape along its gradient axis.
  * @param {object} s Shape object with { t, p }.
  * @returns {[number, number, number, number]} [gx, gy, min, max] projection extents.
  */

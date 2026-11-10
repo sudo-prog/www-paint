@@ -3,7 +3,7 @@
  * Parity benchmark driver (Clean-room Track R0).
  *
  * Serves the repo, opens tests/parity/harness.html and runs the three engines
- * (reference Code Painter / our port / our modular engine) on identical
+ * (external reference / our painter / our modular engine) on identical
  * deterministic images at the same seed + stroke count. Prints `sim` and the
  * independent `mae`/`simMae`, writes a comparison PNG + a JSON baseline.
  *

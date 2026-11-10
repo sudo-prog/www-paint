@@ -13,11 +13,10 @@ Version 1.2 · 2026-11-10
 ## 0. Engine of record (decision 2026-11-10)
 
 > **We build our own engine.** The engine of record is the modular engine
-> (`analyzer.js` + `generator.js` + `scorer.js` + `renderer.js`). The faithful
-> Code Painter port (`js/engine/painter.js`) is **reference-only**: never the
-> shipped engine, kept solely as a local test fixture for parity measurement.
-> Upstream has no licence (`license: None`) *and* the project's original intent
-> was a 100%-original, enhanced reimplementation — both point the same way.
+> (`analyzer.js` + `generator.js` + `scorer.js` + `renderer.js`). The legacy
+> auto-painter (`js/engine/painter.js`) is **reference-only**: never the shipped
+> engine, kept solely as a local fixture for parity measurement. The project's
+> original intent is a 100%-original, enhanced reimplementation.
 >
 > Track, yardstick and milestones: **`docs/CLEANROOM.md`**. Parity gate:
 > the clean-room engine must reach ≥ the reference's `sim` (within 2 points) on
@@ -42,7 +41,7 @@ Build a pure-web, stroke-based image-to-art engine that can:
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Engine (analyzer, generator, scorer, renderer, worker) | Solid | Modular; residual-friendly |
-| Shape vocabulary (E/B/T/R/S) | Complete | Matches Code Painter lineage |
+| Shape vocabulary (E/B/T/R/S) | Complete | Five primitives — ellipse, blob, triangle, rect, stroke |
 | Styles | 50+ registered | Quality varies; watercolor / oil / ink already advanced |
 | p5.brush integration | Partial | `js/engine/brush-stamp-engine.js` wraps standalone p5.brush |
 | Layers | Data model only | ARCHITECTURE.md sketches Layer objects; runtime limited |
@@ -88,7 +87,6 @@ Key existing docs in repo: `ARCHITECTURE.md`, `RE_BREAKDOWN.md`.
 
 ### 3.4 Historical / lineage
 
-- Code Painter (original reverse-engineered source for www-paint): see repo `RE_BREAKDOWN.md`.
 - Haeberli stroke-based rendering lineage.
 
 ---

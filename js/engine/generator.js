@@ -401,7 +401,7 @@ function generateParams(type, x, y, size, angle, random, settings) {
 
 /**
  * Estimate the number of shapes based on image size and style.
- * Mirrors Code Painter's autoShapes formula.
+ * Derived from image size, style and detail settings.
  *
  * @param {number} width
  * @param {number} height

@@ -6,10 +6,9 @@
  * colour that shifts across the shape, creating the appearance of
  * threads of coloured thread pinned at grid points.
  *
- * Based on Code Painter's string art handling: "hatch" and "string"
- * are NOT in the STYLE_DRAW object — they are handled as S-type line
- * strokes via the default `brushed`/`strokePart` rendering path.
- * Code Painter's pickType() maps "string" as 'S' (stroke) type.
+ * String-art handling: "hatch" and "string" are NOT custom STYLE_DRAW
+ * entries — they are handled as S-type line strokes via the default
+ * stamped/stroke rendering path, with "string" mapped to 'S' (stroke).
  *
  * The string art style generates:
  *   - For S-type (stroke) shapes: the stroke itself as a single line
@@ -21,7 +20,7 @@
  * The threads are drawn as thin straight lines, clipped to the shape,
  * with a gradient colour that varies by position.
  *
- * Reference: RE_BREAKDOWN.md §4.3, Code Painter pickType() (string → 'S')
+ * Reference: RE_BREAKDOWN.md §4.3
  */
 
 import {

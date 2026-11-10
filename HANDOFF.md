@@ -3,9 +3,9 @@
 **From:** Hermes / BE on the ThinkPad (control host)
 **To:** Hermes / Mac (FE)
 **Date:** 2026-11-11
-**Repo baseline:** `sudo-prog/www-paint@main` == `10de509`, clean, remote == local.
+**Repo baseline:** `sudo-prog/www-paint@main`, clean, remote == local.
 
-You are being handed **five parallel workstreams** on WWW_PAINT. The ThinkPad
+You are being handed **four parallel workstreams** on WWW_PAINT. The ThinkPad
 (BE) keeps the engine spine; you take the file-isolated work. Read this whole
 document before writing any code, then read the in-repo docs it points to.
 
@@ -13,8 +13,8 @@ document before writing any code, then read the in-repo docs it points to.
 
 ## 0. TL;DR
 
-- Build **5 streams**: M1 wet media · M2 masks+layer UI · M3 brush/media ·
-  M4 licence audit + `relief` re-derivation · M5 independent QA.
+- Build **4 streams**: M1 wet media · M2 masks+layer UI · M3 brush/media ·
+  M4 independent QA.
 - **One writer per file. You do not touch the engine spine** (§3, §6).
 - GitHub branches `machine/mac/*` → PR → `main`. Syncthing is *not* the
   integration path.
@@ -40,20 +40,18 @@ charcoal, and many graphic/3D styles).
 
 **Two engines — know which is which:**
 
-- **The Painter** (`js/engine/painter.js`) — a *faithful port* of
-  `JasBlack/code-painter`, which is **unlicensed (all rights reserved)**.
-  Reference-only. It is still what the app paints with today, until milestone R6.
+- **`js/engine/painter.js`** — the auto-painter the app currently paints with.
+  It is slated to be superseded (milestone R6).
 - **The modular engine** (`analyzer.js` + `generator.js` + `optimizer.js` +
-  `scorer.js` + `renderer.js`) — **the engine of record**, 100% our own code.
-  Track R (R0–R6) exists to make it good enough to retire the Painter.
+  `scorer.js` + `renderer.js`) — **the engine of record**. Track R (R0–R6) exists
+  to bring it up to production quality and switch the app over to it.
 
 **The governing principle** (`docs/CLEANROOM.md`):
 > Inspired by the *technique*, never copied from the *source*.
 
 Reimplement from the published literature (Hertzmann 1998, structure-tensor SBR,
 Image Painter CCL+PCA, Birth of a Painting smudge — all cited in
-`docs/REFERENCES.md`). Never edit the port and call it ours; a modified port is
-still a derivative work.
+`docs/REFERENCES.md`). Never translate another implementation and call it ours.
 
 ---
 
@@ -73,8 +71,8 @@ still a derivative work.
    project deliberately has no build step.
 7. **Never trust a sub-agent's self-report.** Re-run the command yourself; paste
    raw output.
-8. **Never fetch or copy anything from the Code Painter repository.** Ideas from
-   papers only.
+8. **Never copy code from an external implementation.** Ideas come from the
+   papers in `docs/REFERENCES.md`; write your own expression of them.
 
 ---
 
@@ -105,7 +103,7 @@ node tests/engine.test.js
 NODE_PATH=<your playwright-core parent dir> node scripts/visual-regression.cjs
 NODE_PATH=<...> node scripts/visual-regression.cjs --styles=watercolor,ink   # subset
 
-# Parity bench (reference port vs our modular engine) — writes baseline.json
+# Parity bench (modular engine vs the app painter) — writes baseline.json
 NODE_PATH=<...> node scripts/parity-bench.cjs
 
 # Structure-tensor debug map
@@ -113,7 +111,7 @@ NODE_PATH=<...> node scripts/structure-debug.cjs
 ```
 
 **Baseline known-good state:** unit `47/47`; visual `pass=9 fail=0 error=0`.
-The visual suite renders the **app engine (Painter path)** for **9 styles**:
+The visual suite renders the **app engine (painter path)** for **9 styles**:
 `pencil ink watercolor oil charcoal marker cross-hatch halftone graphic` at
 256px, seed `3047602159`, 700 strokes. If you edit any of those styles (you will,
 in M3), the hash **will** change — that is an intended change: re-baseline
@@ -141,9 +139,8 @@ and dry. Public sources only:
 **Deliverables**
 - `js/engine/wetsim.js` — NEW, implementing the frozen interface **IF-2** (§7).
   Pure 2D canvas + typed arrays. No WebGL. No DOM beyond a 2D context.
-- Node-testable: run on plain buffers so `node tests/engine.test.js` can assert
-  (a) determinism under a fixed seed and (b) that pigment mass is conserved on a
-  dry frame.
+- Node-testable: run on plain buffers so tests can assert (a) determinism under a
+  fixed seed and (b) that pigment mass is conserved on a dry frame.
 - A short design note `docs/checkpoints/P3.md` (research → design → result).
 - Wire-in is **ThinkPad's** job (one call site in `renderer.js`). Ship the module
   + tests; leave a `// TODO(integration)` comment with the exact call you expect.
@@ -199,40 +196,7 @@ watercolor/ink improved for 1.6; baselines re-baselined"*.
 vendored import to fail and confirm the canvas path still renders); unit tests
 green; side-by-side before/after PNGs in `docs/research/`.
 
-### M4 — Licence audit + `relief` re-derivation
-
-**Step 1 (mandatory, do this first):** audit the repo for ported/derivative code
-and write `docs/CLEANROOM_AUDIT.md`. Known starting point from the ThinkPad:
-
-- `js/engine/relief.js` header: *"Ported faithfully from Code Painter v4.25.0's
-  single-file relief engine"* — imported by **16 shipped styles**
-  (`foam beads terrazzo bronze copper stone chrome puffy glass lens crystal gold
-  molten metal ceramic pewter`).
-- `js/ui/app.bundle.js` is a committed bundle that also carries `relief`.
-- A handful of style modules use "faithful to Code Painter" wording
-  (e.g. `js/styles/watercolor.js`, `js/styles/charcoal.js`).
-- `docs/CLEANROOM.md` currently names only `painter.js` +
-  `scripts/codepainter-worker.js` as ported — that is incomplete.
-
-Classify **every** file: `clean` (original/paper-derived) · `lineage-citation`
-(merely cites the RE study) · `derivative` (needs re-derivation). Output a table.
-
-**Step 2 (after human sign-off on the audit):** re-derive `relief.js` as a new,
-original WebGL2 height-map impasto module from **public** sources only
-(dli/paint height+wetness separation; Birth of a Painting differentiable smudge).
-New file, new identifiers, new structure. Same public API surface so the 16
-styles keep working:
-```
-createReliefRenderer(width, height) -> { begin, stamp, composite } | null
-reliefFlat(ctx, shape, progress, materialName)          // no-WebGL fallback
-renderReliefShape(ctx, shape, progress, materialName)
-```
-
-**Do not touch the 16 style files' imports until the replacement lands and the
-human approves the swap.** Do not delete `relief.js` — demote it as the ThinkPad
-did with `painter.js` (reference-only fixture), pending approval.
-
-### M5 — Independent QA seat
+### M4 — Independent QA seat
 
 Standing role. On request (or after any ThinkPad push), verify `main`
 **independently** — never trust a summary:
@@ -248,7 +212,7 @@ Standing role. On request (or after any ThinkPad push), verify `main`
 - Report any disagreement with the ThinkPad's claim in OPS_LOG as
   `[MAC] [VERIFY] <claim> — DISAGREE: <evidence>`.
 
-**M5 makes no source edits.** Its output is evidence, not commits.
+**M4 makes no source edits.** Its output is evidence, not commits.
 
 ---
 
@@ -259,7 +223,7 @@ Standing role. On request (or after any ThinkPad push), verify `main`
 js/engine/optimizer.js      js/engine/generator.js
 js/engine/analyzer.js       js/engine/engine.js
 js/engine/painter.js        js/engine/scorer.js
-js/engine/renderer.js       js/engine/relief.js        (until M4 sign-off)
+js/engine/renderer.js       js/engine/relief.js
 js/ui/controls.js           js/ui/app.js
 tests/engine.test.js        scripts/parity-bench.cjs
 scripts/visual-regression.cjs   tests/parity/harness.html
@@ -272,7 +236,7 @@ docs/AI_STYLE_HARNESS.md        docs/STYLE_PROFILE.md
 js/engine/wetsim.js (new)   js/engine/masks.js (new)
 js/ui/layers.js             js/engine/brush-stamp-engine.js
 js/styles/*  (except the styles the ThinkPad is actively on)
-docs/checkpoints/P2.md P3.md   docs/CLEANROOM_AUDIT.md
+docs/checkpoints/P2.md P3.md
 docs/research/* (your new artefacts)   tests/wetsim.test.js (new)
 HANDOFF.md  (this file)
 ```
@@ -368,21 +332,18 @@ If you hit a blocker you cannot resolve, append a line starting
 | `docs/UI_CONTROLS.md` | Existing control reference + the two structure impls |
 | `docs/AI_STYLE_HARNESS.md` | The eval loop (context for metrics) |
 | `docs/ARCHITECTURE.md` | Original design |
-| `docs/RE_BREAKDOWN.md` | The RE study — **read for lineage only, never copy** |
 | `docs/WORKSPLIT.md` | The two-machine ownership map |
 
 ---
 
 ## 11. Suggested order
 
-1. **M5 setup** — get the tests + visual regression running on the Mac *first*.
+1. **M4 setup** — get the tests + visual regression running on the Mac *first*.
    You cannot verify anything until this works.
-2. **M4 step 1** — the licence audit (read-only, informs everything else).
-3. **M1** — wet media (biggest, self-contained).
-4. **M2** — masks (+ layer UI as far as ownership allows).
-5. **M3** — brush/water media (touches the baselines; do it when M5 is solid).
-6. **M4 step 2** — relief re-derivation (after human sign-off).
+2. **M1** — wet media (biggest, self-contained).
+3. **M2** — masks (+ layer UI as far as ownership allows).
+4. **M3** — brush/water media (touches the baselines; do it when M4 is solid).
 
 Report back to the human after each stream, not in one lump at the end.
 
-Signed-off-by: Hermes / BE (ThinkPad) — `main` @ `10de509`
+Signed-off-by: Hermes / BE (ThinkPad)

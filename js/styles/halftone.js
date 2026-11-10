@@ -7,7 +7,7 @@
  * Multiple dot layers at different colours create the classic comic
  * book printing effect.
  *
- * Based on Code Painter's halftone renderer:
+ * The halftone renderer:
  *   - Screen angle: 45° (Math.SQRT1_2 for cos/sin)
  *   - Dot spacing: ~7% of shape size (min 3.2px, max 13px)
  *   - Dot radius: d * (0.2 + 0.32 * tone) where tone ∝ luminance
@@ -20,7 +20,7 @@
  * bucketed into 4 layers (quarters of the tone range) for colour
  * interpolation between c0 and c1.
  *
- * Reference: RE_BREAKDOWN.md §4.3, Code Painter STYLE_DRAW.halftone
+ * Reference: RE_BREAKDOWN.md §4.3
  */
 
 import {

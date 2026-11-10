@@ -7,11 +7,9 @@
  * stroke (reusing the pencil's stamp technique) for a drawn, textured
  * look.
  *
- * Based on Code Painter's hatch style, which is handled via the
- * default `stamped`/`strokePart` rendering path (not a custom
- * STYLE_DRAW function). Code Painter's hatch creates straight lines
- * at ±45° within shapes, and the `pickType` function maps "hatch"
- * as an 'S' (stroke) type.
+ * Hatching is handled via the default stamped/stroke rendering path
+ * (not a custom STYLE_DRAW function). Hatch lines run at ±45° within
+ * shapes, and "hatch" maps to an 'S' (stroke) type.
  *
  * The approach:
  *   - For S-type (stroke) shapes: draw the hatch stroke itself plus
@@ -20,8 +18,7 @@
  *     at multiple angles (typically 0°, 45°, 90°, 135°) clipped to
  *     the shape boundary.
  *
- * Reference: RE_BREAKDOWN.md §4.2, p5.brush hatch.js,
- *            Code Painter STYLE_DRAW.pencil (hatching sub-routine)
+ * Reference: RE_BREAKDOWN.md §4.2, p5.brush hatch.js
  */
 
 import {

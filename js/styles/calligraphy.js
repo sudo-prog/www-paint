@@ -7,7 +7,7 @@
  * along it (thin on upstrokes). A linear gradient runs along the band
  * from c0 to c1, and ink pools at both ends as elliptical drops.
  *
- * Based on Code Painter's calligraphy renderer:
+ * The calligraphy renderer:
  *   - Band half-width: cos(0.7) * w/2, sin(0.7) * w/2 (≈40° nib angle)
  *   - Band = left offset points + right offset points (reversed)
  *   - Gradient along the stroke direction
@@ -16,8 +16,7 @@
  * This differs from marker (45° chisel, transparent) — calligraphy
  * uses a 40° nib and opaque ink with a gradient.
  *
- * Reference: RE_BREAKDOWN.md §4.2, p5.brush stroke.js (pressure system),
- *            Code Painter STYLE_DRAW.calligraphy
+ * Reference: RE_BREAKDOWN.md §4.2, p5.brush stroke.js (pressure system)
  */
 
 import {

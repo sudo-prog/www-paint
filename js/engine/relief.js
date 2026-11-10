@@ -1,7 +1,7 @@
 /**
  * relief.js — WebGL2 height-map relief renderer for 3D painting styles.
  *
- * Ported faithfully from Code Painter v4.25.0's single-file relief engine.
+ * A WebGL2 height-map relief renderer, written for WWW_PAINT.
  * Materials are drawn into a height map (height + material-id + direction
  * per pixel, plus an albedo canvas for colour) and then lit by the
  * RELIEF_FS WebGL2 fragment shader with directional lighting, soft shadows,
@@ -29,7 +29,7 @@ import {
   shapeAxis, inPoly, gradOf
 } from '../styles/base.js';
 
-// ── Material table (ported from RELIEF in the reference) ────────────────────
+// ── Material table ──────────────────────────────────────────────────────────
 // Each entry: id (shader material id), layer (how far a rope lies on what is
 // under it), fuse (soft-melt radius in px), hk (height × radius), taper
 // (pointed ends), bead (foam/chain), clear (glass/lens/crystal), puff.
@@ -99,7 +99,7 @@ function toReliefShape(shape) {
   return { t, args: a, st: shape.style, seed };
 }
 
-// ── WebGL2 fragment shader (ported faithfully from RELIEF_FS in the reference) ─
+// ── WebGL2 fragment shader ─────────────────────────────────────────────────────
 const RELIEF_FS = `#version 300 es
 precision highp float;
 uniform sampler2D uA, uH, uM, uD;
@@ -243,7 +243,7 @@ void main() {
   frag = vec4(clamp(o, 0., 1.) * A.a, A.a);
 }`;
 
-// ── Height-map helpers (ported from the reference's relief engine) ──────────
+// ── Height-map helpers ──────────────────────────────────────────────────────
 
 /**
  * Sample the height map at a point.

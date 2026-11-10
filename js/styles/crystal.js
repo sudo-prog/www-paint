@@ -1,7 +1,7 @@
 /**
  * crystal.js — Cut crystal relief style.
  *
- * Material id 19. Reference: Code Painter RELIEF table (crystal), RELIEF_FS m == 19.
+ * Material id 19. Relief material "crystal" (shader branch m == 19).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

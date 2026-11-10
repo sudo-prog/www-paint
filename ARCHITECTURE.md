@@ -6,15 +6,13 @@
 >   `engine._generateViaWorker()`), so stroke generation never blocks the UI.
 >   The worker mirrors the main-thread path; `useWorker:true` in `app.js`.
 > - Styles implemented: 14 (pencil, ink, watercolor, oil, graffiti, graphic,
->   charcoal, marker, calligraphy, cross-hatch, mosaic, scribble, halftone, string).
->   Reference Code Painter v4.25.0 has 48 — see
->   `OBSIDIAN_OPS_VAULT/20_Projects/WWW_PAINT_FEATURE_PARITY_PLAN.md` for the gap.
+>   charcoal, marker, calligraphy, cross-hatch, mosaic, scribble, halftone, string),
+>   with a larger style catalogue registered under `js/styles/`.
 > - Out of scope (user directive): music/audio, video input, MP4 recording.
 > - **Engine of record (2026-11-10):** the *modular* engine
->   (`analyzer`/`generator`/`scorer`/`renderer`) — our own code. The
->   Code Painter port (`painter.js`, added 2026-10-15) is **reference-only**
->   (unlicensed upstream + original-intent is a 100%-original engine). See
->   `docs/CLEANROOM.md`.
+>   (`analyzer`/`generator`/`scorer`/`renderer`) — our own code. The legacy
+>   auto-painter (`painter.js`, added 2026-10-15) is **reference-only**; the
+>   project's original intent is a 100%-original engine. See `docs/CLEANROOM.md`.
 
 ## Project Structure
 

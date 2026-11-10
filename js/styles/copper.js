@@ -1,7 +1,7 @@
 /**
  * copper.js — Rough copper relief style.
  *
- * Material id 9. Reference: Code Painter RELIEF table (copper), RELIEF_FS m == 9.
+ * Material id 9. Relief material "copper" (shader branch m == 9).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

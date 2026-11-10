@@ -6,7 +6,7 @@
  * image (with slight variation per tile), and the grout creates the
  * appearance of individual ceramic or glass tiles.
  *
- * Based on Code Painter's mosaic renderer:
+ * The mosaic renderer:
  *   - Tile size is ~9% of the smaller shape dimension (min 0.5px)
  *   - Grout: a dark stroke around each tile (shade(c, -0.62))
  *   - Tile fill: a linear gradient from shade(c, 0.2) to shade(c, -0.14)
@@ -15,7 +15,7 @@
  * The pattern is generated within the shape's bounding box and clipped
  * to the shape outline.
  *
- * Reference: RE_BREAKDOWN.md §4.3, Code Painter STYLE_DRAW.mosaic
+ * Reference: RE_BREAKDOWN.md §4.3
  */
 
 import {

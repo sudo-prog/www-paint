@@ -338,7 +338,6 @@ export class OilStyle {
 
   /**
    * Create a set of bristles with uneven widths and per-bristle properties.
-   * Mirrors Code Painter's bristleSet.
    * @param {number} r - Brush radius (half-width)
    * @param {function} R - Seeded RNG
    * @returns {Array<object>} Bristle descriptors

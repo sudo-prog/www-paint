@@ -1,7 +1,7 @@
 /**
  * chrome.js — Liquid chrome relief style.
  *
- * Material id 6. Reference: Code Painter RELIEF table (molten), RELIEF_FS m == 6. (In Code Painter, "chrome" is the UI label for the molten/liquid-chrome material.)
+ * Material id 6. Relief material "molten" (shader branch m == 6).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

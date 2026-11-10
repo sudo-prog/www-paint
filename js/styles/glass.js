@@ -1,7 +1,7 @@
 /**
  * glass.js — Stained glass relief style.
  *
- * Material id 17. Reference: Code Painter RELIEF table (glass), RELIEF_FS m == 17.
+ * Material id 17. Relief material "glass" (shader branch m == 17).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

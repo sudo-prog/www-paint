@@ -3,7 +3,7 @@
  *
  * Algorithm: stamped brush with heavy grain and soft edges, smudgy look.
  *
- * Based on Code Painter's charcoal renderer, which layers three effects:
+ * The charcoal renderer layers three effects:
  *   1. A faint grey smudge stroke (wide, low-opacity) down the centre —
  *      simulating charcoal dust smeared by the paper's texture.
  *   2. A wider charcoal-grey stroke at reduced opacity — the body of
@@ -20,7 +20,6 @@
  *
  * Reference: RE_BREAKDOWN.md §4.2 B (stamped brush), p5.brush stroke.js
  *            charcoal brush parameters (high grain, soft tips)
- *            Code Painter STYLE_DRAW.charcoal
  */
 
 import {
@@ -69,7 +68,7 @@ function resolveColors(shape) {
 /**
  * Core stamped-brush builder — shared with pencil, adapted for charcoal.
  *
- * Mirrors Code Painter's stampBuild and p5.brush's stamped tip rendering.
+ * Stamped tip rendering, shared with the p5.brush stamp path.
  * Walks a polyline, stamps tips with pressure + grain + scatter.
  * Returns { A, B, st, base } where A is the main stamped path, B the
  * secondary (scatter) path, and base is the base alpha.
@@ -255,7 +254,7 @@ export class CharcoalStyle {
   /**
    * Multi-pass charcoal stroke rendering.
    *
-   * Based on Code Painter's charcoal function:
+   * Multi-pass charcoal stroke:
    *   1. A faint grey smudge stroke (wide, low-opacity)
    *   2. A charcoal-grey body stroke (paper grain texture)
    *   3. Two passes of stamped dust (coarse + ragged crumbs)

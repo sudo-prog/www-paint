@@ -1,7 +1,7 @@
 /**
  * lens.js — Magnifying lens relief style.
  *
- * Material id 18. Reference: Code Painter RELIEF table (lens), RELIEF_FS m == 18.
+ * Material id 18. Relief material "lens" (shader branch m == 18).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

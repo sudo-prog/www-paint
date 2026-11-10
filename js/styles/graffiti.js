@@ -1,7 +1,7 @@
 /**
  * graffiti.js — Graffiti / Spray style.
  *
- * Algorithm: particle-based spray (faithful to Code Painter's `spray`).
+ * Algorithm: particle-based spray.
  * A spray-can stroke is built from:
  *
  *   1. Overspray haze: 4 concentric low-opacity strokes along the curve,
@@ -96,7 +96,6 @@ export class GraffitiStyle {
 
   /**
    * Render a spray stroke or blob.
-   * Faithful to Code Painter's `spray` function.
    * @param {CanvasRenderingContext2D} ctx
    * @param {object} shape
    * @param {number} progress - 0..1 (draws first `progress` of the stroke)
@@ -127,7 +126,7 @@ export class GraffitiStyle {
 
   /**
    * Spray line: overspray haze + speckle body + drips.
-   * Mirrors Code Painter's spray() for S-type shapes.
+   * Particle spray for S-type (stroke) shapes.
    */
   _renderSprayLine(ctx, a, R, o, u, dir, g) {
     let [x0, y0, x1, y1, x2, y2, w] = a;
@@ -200,7 +199,7 @@ export class GraffitiStyle {
 
   /**
    * Spray blob/ellipse: airbrushed burst with a speckled halo.
-   * Mirrors Code Painter's spray() for non-S shapes.
+   * Particle spray for area (non-S) shapes.
    */
   _renderSprayBlob(ctx, a, R, o, u, g) {
     const [cx, cy, rx, ry, rot] = a;

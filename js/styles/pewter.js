@@ -1,7 +1,7 @@
 /**
  * pewter.js — Brushed pewter relief style.
  *
- * Material id 7. Reference: Code Painter RELIEF table (pewter), RELIEF_FS m == 7.
+ * Material id 7. Relief material "pewter" (shader branch m == 7).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

@@ -1,7 +1,7 @@
 /**
  * terrazzo.js — Polished terrazzo relief style.
  *
- * Material id 8. Reference: Code Painter RELIEF table (terrazzo), RELIEF_FS m == 8.
+ * Material id 8. Relief material "terrazzo" (shader branch m == 8).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

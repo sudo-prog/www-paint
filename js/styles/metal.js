@@ -1,7 +1,7 @@
 /**
  * metal.js — Kinetic metal relief style.
  *
- * Material id 3. Reference: Code Painter RELIEF table (metal), RELIEF_FS m == 3.
+ * Material id 3. Relief material "metal" (shader branch m == 3).
  */
 
 import { renderReliefShape } from '../engine/relief.js';

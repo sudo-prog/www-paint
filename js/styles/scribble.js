@@ -6,7 +6,7 @@
  * angles build up a dense, chaotic scribble. The lines are clipped
  * to the shape outline.
  *
- * Based on Code Painter's scribble renderer:
+ * The scribble renderer:
  *   - `outlinePath(x, q)` to clip the drawing region
  *   - `pen going back and forth`: alternating direction at each step
  *   - `u < 0.7` for the first pass, `0.7` for fill (progress-based)
@@ -14,7 +14,7 @@
  *   - Line width ~3% of shape size, gap ~2.3× line width
  *   - 1-2 passes depending on random threshold
  *
- * Reference: RE_BREAKDOWN.md §4.3, Code Painter STYLE_DRAW.scribble
+ * Reference: RE_BREAKDOWN.md §4.3
  */
 
 import {

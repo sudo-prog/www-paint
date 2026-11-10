@@ -5,9 +5,9 @@
  * where strokes cross, with streaks along the grain and a blot where
  * the pen rests.
  *
- * Based on Code Painter's marker renderer, which builds a band-path
- * by offsetting the stroke centreline by half the width along the
- * chisel direction (cos(π/4), sin(π/4) ≈ 0.785 → 45°). The band is
+ * The marker renderer builds a band-path by offsetting the stroke
+ * centreline by half the width along the chisel direction
+ * (cos(π/4), sin(π/4) ≈ 0.785 → 45°). The band is
  * filled at 0.7 opacity; overlapping strokes naturally build up colour
  * through alpha compositing. Two highlight streaks run along the band,
  * and a soft blot appears at the tip when the stroke is complete.
@@ -16,8 +16,7 @@
  * The transparency means users (or the engine) must draw multiple passes
  * for dense colour.
  *
- * Reference: RE_BREAKDOWN.md §4.2, p5.brush stroke.js (marker brush),
- *            Code Painter STYLE_DRAW.marker
+ * Reference: RE_BREAKDOWN.md §4.2, p5.brush stroke.js (marker brush)
  */
 
 import {
