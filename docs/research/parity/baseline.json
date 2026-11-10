@@ -1,0 +1,50 @@
+{
+  "when": "2026-11-10T10:30:07.617Z",
+  "engine": "www-paint parity R0",
+  "seed": 12345,
+  "shapes": 400,
+  "images": [
+    {
+      "name": "blobs",
+      "results": {
+        "reference": {
+          "sim": 99.6136144890596,
+          "simMae": 99.54,
+          "mae": 1.17
+        },
+        "port": {
+          "sim": 99.55411531593425,
+          "simMae": 98.05,
+          "mae": 4.98
+        },
+        "modular": {
+          "sim": null,
+          "simMae": 87.81,
+          "mae": 31.1,
+          "strokes": 400
+        }
+      }
+    },
+    {
+      "name": "rings",
+      "results": {
+        "reference": {
+          "sim": 99.59855543541096,
+          "simMae": 99.52,
+          "mae": 1.24
+        },
+        "port": {
+          "sim": 99.60577428178229,
+          "simMae": 97.82,
+          "mae": 5.56
+        },
+        "modular": {
+          "sim": null,
+          "simMae": 89.2,
+          "mae": 27.55,
+          "strokes": 400
+        }
+      }
+    }
+  ]
+}

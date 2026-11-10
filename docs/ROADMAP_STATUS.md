@@ -60,3 +60,20 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 | A — Plug-in tidy (facade, `.d.ts`, CI guard) | deferred |
 | B — Contract alignment (Style Profile ⊇ LAYERS preset/effect-stack) | **partly done** via 0.1 (schema written); vendoring LAYERS AJV schemas todo |
 | C — Mount into LAYERS | todo |
+
+---
+
+## Track R — Clean-room engine (see `docs/CLEANROOM.md`)
+
+Decision 2026-11-10: the modular engine (`analyzer`/`generator`/`scorer`) is the
+engine of record; the faithful Code Painter port is reference-only.
+
+| ID | Milestone | Status |
+|---|---|---|
+| R0 | Parity harness + baseline gap | active |
+| R1 | Optimiser core (residual placement + our own local refine) | todo |
+| R2 | Structure-guided multi-scale | todo |
+| R3 | CCL + PCA stroke init | todo |
+| R4 | Feature parity (outlines / region-fill / order / per-style shaping) | todo |
+| R5 | Exceed (per-layer styles, smudge, wet media, Style Profiles, AI) | todo |
+| R6 | Retire the port (app + baselines 100% clean-room) | todo |

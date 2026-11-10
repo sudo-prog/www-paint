@@ -1,0 +1,117 @@
+# Clean-Room Engine — Decision & Track
+
+**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided, R0 in progress**
+
+---
+
+## 1. Decision
+
+WWW_PAINT's **engine of record is the modular engine**
+(`analyzer.js` + `generator.js` + `scorer.js` + `renderer.js`) — our own code.
+
+`js/engine/painter.js` is a **faithful port** of `JasBlack/code-painter` v4.24.1
+and is **reference-only** from here on:
+
+- it is **never shipped as the product engine**, and
+- it is kept **only as a local test fixture** for parity measurement.
+
+The reference worker (`scripts/codepainter-worker.js`) is likewise a
+**test-only** fixture — never imported by any app path.
+
+### Why (two independent reasons, same direction)
+
+1. **Intent.** WWW_PAINT was started to *recreate a similar algorithm inspired by
+   Code Painter, refined and enhanced, 100% our own*. The modular engine was the
+   first build (initial commit `069a777`, 2026-10-14) and matches
+   `ARCHITECTURE.md`'s original design. The port was added one day later
+   (2026-10-15) under a "feature parity vs Code Painter v4.25.0" directive and
+   accidentally became the shipping engine.
+2. **Licence.** The upstream repo **has no licence** (`license: None` via the
+   GitHub API → all rights reserved). A faithful port must not ship in a product
+   or inside LAYERS.
+
+---
+
+## 2. Principle
+
+> **Inspired by the *technique*, never copied from the *source*.**
+
+- New engine code is written from the **published literature** (Hertzmann 1998,
+  structure-tensor SBR, Image Painter CCL+PCA init, Birth of a Painting smudge —
+  all already cited in `docs/REFERENCES.md` / `docs/ROADMAP.md` §3).
+- It is **not** a translation of the port. No identifier, table, or control flow
+  is carried over. If a behaviour is needed, re-derive it from the paper.
+- The port stays behind the parity harness, clearly labelled, never in a
+  production import path.
+
+---
+
+## 3. The yardstick (how "match / exceed" is judged)
+
+Two independent metrics per test image, produced by `scripts/parity-bench.cjs`:
+
+| Metric | Meaning |
+|---|---|
+| `sim` | `100·(1 − MAE/255)` — the objective both engines report. Comparable across engines. |
+| `mae` | mean abs error of the **rendered canvas vs the source**, computed by the harness itself (not self-reported) — the trust anchor. |
+
+Plus a side-by-side PNG per run for eyeballing.
+
+**Gate:** the clean-room engine must reach **≥ the reference's `sim` within 2 points**
+on the benchmark before the port is retired; "exceed" means beating it, not
+matching it.
+
+---
+
+## 4. Track R — milestones
+
+| ID | Milestone | Exit criteria |
+|---|---|---|
+| **R0** | Parity harness + baseline | `parity-bench.cjs` runs N images × {ours, reference}, prints `sim`+`mae`, writes comparison PNGs. **Baseline gap recorded.** |
+| R1 | Optimiser core | Residual/error-driven stroke placement + per-stroke local refinement (our own hill-climb), on the modular engine. Beats R0 baseline. |
+| R2 | Structure-guided multi-scale | Coarse→fine; strokes follow the shared structure tensor (roadmap 1.2/1.3). |
+| R3 | Better init | CCL + PCA stroke init (roadmap 1.4). Fidelity ≥ reference at equal stroke count. |
+| R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. |
+| R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. |
+| R6 | Retire the port | App + baselines run 100% on the clean-room engine; port demoted to a dev-only fixture. |
+
+Ship-safety: the app stays runnable at every step. The port remains the default
+until R6, switched behind a flag during R1–R5 so the two can be compared live.
+
+---
+
+## 5. Honest feasibility assessment
+
+**Can an original engine match / exceed Code Painter? Yes — with one caveat.**
+
+- The *algorithm* is not the hard part and is not secret: multi-scale
+  residual-driven stroke placement over Bézier/stroke primitives is classical SBR,
+  documented in public papers the roadmap already cites. Code Painter is a good
+  but conventional implementation of it.
+- Its real advantage is **polish**: a per-stroke optimiser (hill-climb against the
+  target) plus ~48 tuned styles. Both are reproducible — the optimiser from first
+  principles, the styles from craft + the visual gates.
+- We **exceed** on the axes the original lacks entirely: structure-tensor-guided
+  flow (1.2, done), multi-scale + CCL/PCA init (1.3/1.4), smudge/imposto (1.5),
+  wet media (Phase 3), per-layer styles (Phase 2), Style Profiles + AI refinement
+  (Phases 4–5).
+
+**Caveat / risk:** parity is measured on *our* benchmark; a broad image set and a
+blind side-by-side are needed before claiming a win. Timeline is multi-week, not
+overnight — R1 is the first real quality step and the one that will show whether
+the modular engine can carry the product.
+
+---
+
+## 6. Non-goals
+
+- No copying identifiers, tables or control flow from the port.
+- No renderer merge with LAYERS (see `docs/INTEGRATION_STRATEGY.md`).
+- Not deleting the port now — it is the measuring stick until R6.
+
+## 7. References
+
+- `docs/ROADMAP.md` §0 (engine of record) and §3 (algorithms).
+- `docs/checkpoints/P1.md` — Phase 1.2 structure tensor (clean-room side).
+- `scripts/parity-bench.cjs`, `tests/parity/harness.html`.
+- `RE_BREAKDOWN.md` — the reverse-engineering study (already on file).

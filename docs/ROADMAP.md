@@ -1,12 +1,27 @@
 # WWW_PAINT — Project Brief & Development Roadmap
 
-Version 1.1 · 2026-11-09
+Version 1.2 · 2026-11-10
 
 > **This is the living brief.** Update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 > Work strictly in order (see §8 Agent Protocol). Do not start Phase N+1 until Phase N exit criteria are checked.
 
 - Live project: https://github.com/sudo-prog/www-paint
 - Demo: https://www-paint.pages.dev/
+
+---
+
+## 0. Engine of record (decision 2026-11-10)
+
+> **We build our own engine.** The engine of record is the modular engine
+> (`analyzer.js` + `generator.js` + `scorer.js` + `renderer.js`). The faithful
+> Code Painter port (`js/engine/painter.js`) is **reference-only**: never the
+> shipped engine, kept solely as a local test fixture for parity measurement.
+> Upstream has no licence (`license: None`) *and* the project's original intent
+> was a 100%-original, enhanced reimplementation — both point the same way.
+>
+> Track, yardstick and milestones: **`docs/CLEANROOM.md`**. Parity gate:
+> the clean-room engine must reach ≥ the reference's `sim` (within 2 points) on
+> `scripts/parity-bench.cjs` before the port is retired (milestone R6).
 
 ---
 
