@@ -469,6 +469,19 @@ test('structure tensor: deterministic + finite', () => {
   }
 });
 
+test('sampleStructure clamps out-of-range coordinates', () => {
+  const w = 16, h = 16;
+  const px = makeLumImage(w, h, (x) => (x * 255) / (w - 1));
+  const a = analyzeImage(px, w, h);
+  const st = a.structure;
+  for (const [x, y] of [[-500, 5], [5, -500], [9999, 5], [5, 9999], [-1, -1]]) {
+    const v = sampleStructure(st.orientation, w, h, x, y);
+    if (!Number.isFinite(v)) throw new Error(`non-finite at (${x},${y}): ${v}`);
+    const c = sampleStructure(st.coherence, w, h, x, y);
+    if (!Number.isFinite(c)) throw new Error(`non-finite coherence at (${x},${y}): ${c}`);
+  }
+});
+
 test('structure tensor: can be disabled', () => {
   const px = makeLumImage(8, 8, () => 100);
   const a = analyzeImage(px, 8, 8, { structure: false });

@@ -21,7 +21,9 @@ import { DEFAULT_SETTINGS } from "../engine/generator.js";
  *                  spiral, spiralin, rings, ringsin, clock, free)
  *
  * shapeBias, adaptiveSize, alignToGradient are intentionally NOT exposed —
- * the Painter handles those internally.
+ * the Painter handles those internally. Structure-tensor guidance IS exposed
+ * via the STRUCTURE section (smart / structureAlign / alignJitter); see
+ * docs/UI_CONTROLS.md for what each control does.
  *
  * @type {object}
  */
@@ -43,6 +45,9 @@ const PAINTER_DEFAULT_SETTINGS = {
   outline: 'off',            // Painter outline mode: off | first | last
   rfill: 'off',              // Painter region fill: off | scribble | rows
   multiLayer: false,        // Multi-layer rendering mode (before generation)
+  // Structure-tensor guidance (smart mode) — see the STRUCTURE section.
+  structureAlign: 1,        // 0..1 — how often strokes align to the tensor field
+  alignJitter: 0.12,        // radians — gaussian wobble around the tangent angle
 };
 
 /** Style metadata for the built-in styles. */
@@ -170,6 +175,7 @@ export class ControlsManager {
     const sections = [
       { id: "style-section",   title: "STYLE",        render: () => this._renderStylePicker() },
       { id: "brush-section",   title: "BRUSH",        render: () => this._renderBrushControls() },
+      { id: "structure-section", title: "STRUCTURE",  render: () => this._renderStructureSection() },
       { id: "path-section",    title: "PATH ORDER",   render: () => this._renderPathOrder() },
       { id: "motion-section",  title: "MOTION & PATH",  render: () => this._renderMotionSection() },
       { id: "color-section",   title: "COLOR",        render: () => this._renderColorMode() },
@@ -465,8 +471,38 @@ export class ControlsManager {
       wrapper.appendChild(this._renderSlider(c));
     }
 
-    // Smart toggle
-    wrapper.appendChild(this._renderToggle("smart", "Smart Mode", SMART_OPTIONS, this.settings.smart ?? PAINTER_DEFAULT_SETTINGS.smart));
+    // Smart Mode + structure-tensor guidance moved to the STRUCTURE section.
+    return wrapper;
+  }
+
+  /**
+   * Render the STRUCTURE section: the smart-mode toggle plus the two
+   * structure-tensor guidance sliders. Smart mode builds the image's structure
+   * tensor (orientation + coherence) and steers strokes along the flow; the two
+   * sliders tune that guidance. Ignored by the painter when smart mode is Off.
+   * @returns {HTMLElement}
+   */
+  _renderStructureSection() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "structure-controls";
+
+    const hint = document.createElement("p");
+    hint.className = "control-hint";
+    hint.textContent =
+      "Structure-aware painting: strokes follow the image's local edges and flow. " +
+      "Turn Smart Mode off for fully random strokes; the sliders have no effect when it is off.";
+    wrapper.appendChild(hint);
+
+    wrapper.appendChild(
+      this._renderToggle("smart", "Smart Mode", SMART_OPTIONS,
+        this.settings.smart ?? PAINTER_DEFAULT_SETTINGS.smart),
+    );
+
+    const sliders = [
+      { key: "structureAlign", label: "Edge Follow", type: "range", min: 0, max: 1, step: 0.05, value: this.settings.structureAlign ?? PAINTER_DEFAULT_SETTINGS.structureAlign, display: "percent" },
+      { key: "alignJitter",    label: "Align Wobble", type: "range", min: 0, max: 0.5, step: 0.01, value: this.settings.alignJitter ?? PAINTER_DEFAULT_SETTINGS.alignJitter, display: "deg" },
+    ];
+    for (const c of sliders) wrapper.appendChild(this._renderSlider(c));
 
     return wrapper;
   }
@@ -756,7 +792,7 @@ export class ControlsManager {
     }
 
     // Sliders
-    for (const key of ["strokeSizeMin", "strokeSizeMax", "strokeCount", "detailLevel", "styleStrength", "opacity", "randomness", "scatter"]) {
+    for (const key of ["strokeSizeMin", "strokeSizeMax", "strokeCount", "detailLevel", "styleStrength", "opacity", "randomness", "scatter", "structureAlign", "alignJitter"]) {
       const entry = this._inputs[key];
       if (!entry) continue;
       let val;
@@ -804,6 +840,9 @@ export class ControlsManager {
     const v = parseFloat(value);
     if (spec.display === "percent") {
       return `${Math.round(v * 100)}%`;
+    }
+    if (spec.display === "deg") {
+      return `${Math.round((v * 180) / Math.PI)}°`;
     }
     if (spec.key === "strokeCount") {
       return Math.round(v).toLocaleString();

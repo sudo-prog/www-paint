@@ -31,7 +31,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 | ID | Task | Status | Evidence |
 |---|---|---|---|
 | 1.1 | Harden p5.brush integration | todo | partial today via `brush-stamp-engine.js` |
-| 1.2 | Structure tensor + orientation/coherence maps | **done** | `analyzer.js` `computeStructureTensor` + `sampleStructure` + `structureDebugRGBA`; `generator.js` `alignToStructure`; `tests/visual/structure-debug.html` → `docs/research/structure-debug.png`; 9 new tests (40/40), visual baselines 9/9. See `docs/checkpoints/P1.md` |
+| 1.2 | Structure tensor + orientation/coherence maps | **done** | `analyzer.js` `computeStructureTensor` + `sampleStructure` + `structureDebugRGBA`; `generator.js` `alignToStructure`; **UI: STRUCTURE section — Smart Mode + Edge Follow + Align Wobble sliders** (`controls.js`/`painter.js`/`engine.js`); `tests/visual/structure-debug.html` → `docs/research/structure-debug.png`; 10 new tests (41/41), visual baselines 9/9. See `docs/checkpoints/P1.md` + `docs/UI_CONTROLS.md` |
 | 1.3 | Multi-scale stroke generation + stable seeding | todo | — |
 | 1.4 | Better stroke initialization (CCL + PCA orientation/size) + dual-stage residual refine | todo | — |
 | 1.5 | Lightweight smudge / blend + optional height buffer | todo | — |

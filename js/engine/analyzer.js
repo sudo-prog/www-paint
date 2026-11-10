@@ -432,7 +432,12 @@ export function computeStructureTensor(gx, gy, width, height, options = {}) {
  * @returns {number}
  */
 export function sampleStructure(arr, width, height, x, y) {
-  return sampleEdge(arr, width, height, x, y);
+  // Clamp to the valid range: unlike sampleEdge (only ever called with
+  // in-bounds points), structure samples are taken at stroke centroids which
+  // may fall outside the image, and an out-of-range index yields NaN.
+  const cx = x < 0 ? 0 : x > width - 1 ? width - 1 : x;
+  const cy = y < 0 ? 0 : y > height - 1 ? height - 1 : y;
+  return sampleEdge(arr, width, height, cx, cy);
 }
 
 /**

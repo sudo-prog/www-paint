@@ -444,6 +444,8 @@ export class PaintingEngine {
       options: {
         style: aliasStyle(style),
         smart: this._smart,
+        structureAlign: this.settings.structureAlign ?? 1,
+        alignJitter: this.settings.alignJitter ?? 0.12,
         abstract: this.settings.abstract || false,
         palette: this.settings.palette || null,
         size: this.settings.sizeK || 1,
@@ -569,6 +571,8 @@ export class PaintingEngine {
         options: {
           style: aliasStyle(style),
           smart,
+          structureAlign: this.settings.structureAlign ?? 1,
+          alignJitter: this.settings.alignJitter ?? 0.12,
           abstract: this.settings.abstract || false,
           palette: this.settings.palette || null,
           size: this.settings.sizeK || 1,

@@ -822,6 +822,12 @@ body {
 
 .control-section__body { display: flex; flex-direction: column; gap: var(--space-2); }
 
+/* Short helper text under a section title (e.g. STRUCTURE). */
+.control-hint {
+  margin: 0; font-family: var(--f-mono, monospace); font-size: 10px; line-height: 1.45;
+  color: var(--text-secondary); opacity: 0.8;
+}
+
 /* ── Style Grid — flat, technical ── */
 .style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-1); }
 .style-btn {

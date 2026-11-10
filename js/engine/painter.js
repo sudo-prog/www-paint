@@ -25,6 +25,7 @@ import { poly as SHPpoly, shapeAxis as SHPaxis } from './shapes.js';
 
 const cl255 = v => v < 0 ? 0 : v > 255 ? 255 : v;
 const lerp = (a, b, t) => a + (b - a) * t;
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
 
 // ── Painter class ───────────────────────────────────────────────────────────
 
@@ -40,6 +41,13 @@ export class Painter {
     // Options
     this.style = options.style || 'painterly';
     this.smart = options.smart !== false; // default true
+    // Structure-tensor guidance tuning (smart mode only). Defaults reproduce the
+    // original behaviour byte-for-byte, so they are safe to expose in the UI.
+    //   structureAlign — 0..1 weight on how often a stroke aligns to the local
+    //                    tensor field (1 = original, 0 = never align / ignore).
+    //   alignJitter    — gaussian wobble (radians) added to the tangent angle.
+    this.structureAlign = clamp01(options.structureAlign ?? 1);
+    this.alignJitter = Math.max(0, options.alignJitter ?? 0.12);
     this.abstract = options.abstract || false;
     this.palette = options.palette || null;
     this.sizeK = options.size || 1;
@@ -538,8 +546,8 @@ export class Painter {
     const edges = pos ? pos.edges : prog > 0.55 && this.rnd() < 0.5;
     const [x, y] = pos || this.samplePos(edges), i = this.pix(x, y), coh = this.Coh[i];
     const s = lerp(smin, smax, this.rnd());
-    const guided = this.rnd() < 0.3 + 0.65 * coh;
-    const along = guided ? this.Tan[i] + this.gauss() * 0.12 : this.rnd() * Math.PI;
+    const guided = this.rnd() < this.structureAlign * (0.3 + 0.65 * coh);
+    const along = guided ? this.Tan[i] + this.gauss() * this.alignJitter : this.rnd() * Math.PI;
     const across = guided ? along + Math.PI / 2 : this.rnd() * Math.PI * 2;
     const long = guided ? lerp(0.55, 1.15, this.rnd()) : lerp(0.25, 1, this.rnd()), thin = guided ? lerp(0.18, 0.6, this.rnd()) : lerp(0.25, 1, this.rnd());
     if (t === 'E') return { t, a: 0.8, p: [x, y, s * long, s * thin, along, across] };
