@@ -91,10 +91,10 @@ async function main() {
       Buffer.from(composite.replace(/^data:image\/png;base64,/, ''), 'base64'));
   }
   fs.writeFileSync(path.join(OUTDIR, 'baseline.json'),
-    JSON.stringify({ when: new Date().toISOString(), engine: 'www-paint parity R0',
+    JSON.stringify({ when: new Date().toISOString(), engine: 'www-paint parity (Track R)',
       seed: 12345, shapes: 400, images: results }, null, 2) + '\n');
 
-  console.log('\n=== EVAL BASELINE (H0/R0)  seed=12345 shapes=400 ===');
+  console.log('\n=== PARITY BENCH (Track R)  seed=12345 shapes=400 ===');
   console.log(pad('image', 10) + pad('engine', 24) + pad('sim(self)', 11) + pad('simMae', 9) + pad('ssim', 8) + 'mae');
   for (const r of results) {
     for (const k of ['reference', 'port', 'modular']) {

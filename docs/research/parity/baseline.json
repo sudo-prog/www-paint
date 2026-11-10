@@ -1,6 +1,6 @@
 {
-  "when": "2026-11-10T12:48:35.816Z",
-  "engine": "www-paint parity R0",
+  "when": "2026-11-10T16:20:21.056Z",
+  "engine": "www-paint parity (Track R)",
   "seed": 12345,
   "shapes": 400,
   "images": [
@@ -21,9 +21,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 87.81,
-          "mae": 31.1,
-          "ssim": 0.4872,
+          "simMae": 93.22,
+          "mae": 17.29,
+          "ssim": 0.8315,
           "strokes": 400
         }
       }
@@ -45,9 +45,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 89.2,
-          "mae": 27.55,
-          "ssim": 0.4903,
+          "simMae": 97.93,
+          "mae": 5.29,
+          "ssim": 0.8454,
           "strokes": 400
         }
       }
@@ -69,9 +69,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 94.36,
-          "mae": 14.39,
-          "ssim": 0.7157,
+          "simMae": 98.66,
+          "mae": 3.41,
+          "ssim": 0.9251,
           "strokes": 400
         }
       }
@@ -93,9 +93,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 80.65,
-          "mae": 49.35,
-          "ssim": 0.0184,
+          "simMae": 80.97,
+          "mae": 48.52,
+          "ssim": 0.0287,
           "strokes": 400
         }
       }

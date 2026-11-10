@@ -11,6 +11,7 @@
  * - Analyzer (image analysis)
  * - Generator (settings resolution, candidate generation)
  * - Scorer (shape scoring, selection)
+ * - Optimiser core — Track R1 (error-driven placement + local hill-climb)
  * - Exporter (project export/import round-trip)
  */
 
@@ -34,6 +35,7 @@ import {
   orderShapes, estimateShapeCount
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
+import { optimise, OPTIMISER_DEFAULTS } from '../js/engine/optimizer.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 
 // Simple test runner
@@ -532,6 +534,84 @@ test('generator respects alignToStructure (vertical stripes)', () => {
   const onCos = dirCos({ ...base, alignToStructure: true });
   if (!(offCos > 0.7)) throw new Error(`gradient mode should keep strokes near-horizontal, mean|cos|=${offCos}`);
   if (!(onCos < 0.5)) throw new Error(`structure mode should rotate strokes to vertical, mean|cos|=${onCos}`);
+});
+
+// ─── Optimiser core (Track R1) ────────────────────────────────────
+console.log('\nOptimiser (Track R1):');
+
+/**
+ * Build an RGBA image from a fn(x, y) -> [r, g, b] mapping.
+ * @param {number} w
+ * @param {number} h
+ * @param {(x:number,y:number)=>number[]} fn
+ * @returns {Uint8ClampedArray}
+ */
+function makeRGBImage(w, h, fn) {
+  const px = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const [r, g, b] = fn(x, y);
+      px[i] = Math.max(0, Math.min(255, Math.round(r)));
+      px[i + 1] = Math.max(0, Math.min(255, Math.round(g)));
+      px[i + 2] = Math.max(0, Math.min(255, Math.round(b)));
+      px[i + 3] = 255;
+    }
+  }
+  return px;
+}
+
+test('optimiser: default stroke budget is the R1 bench budget', () => {
+  assertEqual(OPTIMISER_DEFAULTS.count, 400);
+});
+
+test('optimiser: deterministic for the same seed', () => {
+  const px = makeRGBImage(48, 48, (x, y) => [(x * 5) & 255, (y * 5) & 255, 128]);
+  const r1 = optimise(analyzeImage(px, 48, 48), { count: 40, seed: 99 });
+  const r2 = optimise(analyzeImage(px, 48, 48), { count: 40, seed: 99 });
+  assertEqual(r1.shapes, r2.shapes, 'shape lists should be identical');
+});
+
+test('optimiser: honours count and returns valid shapes', () => {
+  const px = makeRGBImage(48, 48, (x, y) => [(x * 5) & 255, (y * 5) & 255, 128]);
+  const r = optimise(analyzeImage(px, 48, 48), { count: 40, seed: 7 });
+  assertEqual(r.shapes.length, 40);
+  for (const s of r.shapes) {
+    if (!isValidShape(s)) throw new Error('optimiser emitted an invalid shape');
+  }
+});
+
+test('optimiser: reduces error and fits a smooth target', () => {
+  const px = makeRGBImage(64, 64, (x, y) => [(x * 255) / 63, (y * 255) / 63, 128]);
+  const r = optimise(analyzeImage(px, 64, 64), { count: 150, seed: 1 });
+  if (!(r.stats.finalError < r.stats.initialError)) {
+    throw new Error(`no error reduction: ${r.stats.initialError} -> ${r.stats.finalError}`);
+  }
+  if (!(r.stats.simMae > 90)) {
+    throw new Error(`simMae too low on a smooth target: ${r.stats.simMae}`);
+  }
+});
+
+test('optimiser: a flat target needs no strokes', () => {
+  const px = makeRGBImage(32, 32, () => [50, 100, 150]);
+  const r = optimise(analyzeImage(px, 32, 32), { count: 100, seed: 3 });
+  assertEqual(r.shapes.length, 0);
+});
+
+test('optimiser: placement is error-driven (drawn to the error region)', () => {
+  const S = 96, R = S * 0.25;
+  const px = makeRGBImage(S, S, (x, y) =>
+    Math.hypot(x - S / 2, y - S / 2) < R ? [235, 35, 35] : [20, 20, 30]);
+  const r = optimise(analyzeImage(px, S, S), { count: 120, seed: 12345 });
+  const inside = r.shapes.filter((s) => {
+    const d = Math.hypot(s.params[0] - S / 2, s.params[1] - S / 2);
+    return d < R * 1.1;
+  }).length;
+  const frac = inside / r.shapes.length;
+  // The disc covers ~20% of the image; error-driven placement must over-serve it.
+  if (!(frac > 0.4)) {
+    throw new Error(`only ${(frac * 100).toFixed(0)}% of strokes landed on the error region`);
+  }
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

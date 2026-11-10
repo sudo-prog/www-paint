@@ -1,6 +1,6 @@
 # Clean-Room Engine — Decision & Track
 
-**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided, R0 in progress**
+**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0 + R1 done**
 
 ---
 
@@ -74,6 +74,12 @@ matching it.
 | R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. |
 | R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. |
 | R6 | Retire the port | App + baselines run 100% on the clean-room engine; port demoted to a dev-only fixture. |
+
+**Status:** R0 ✔ (harness + baseline gap) · **R1 ✔** — the optimiser core
+(`js/engine/optimizer.js`, residual-driven placement + per-stroke local
+hill-climb) beats the R0 baseline on all four bench images; rings already meets
+the R6 "within 2 points of reference" gate. Evidence: `docs/checkpoints/R1.md`,
+`docs/research/parity/baseline.json`.
 
 Ship-safety: the app stays runnable at every step. The port remains the default
 until R6, switched behind a flag during R1–R5 so the two can be compared live.

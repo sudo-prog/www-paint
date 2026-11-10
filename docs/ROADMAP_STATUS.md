@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-10 · Agent: BE (ThinkPad) · Phase 1.2 done
+**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R1 done
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -70,8 +70,8 @@ engine of record; the faithful Code Painter port is reference-only.
 
 | ID | Milestone | Status |
 |---|---|---|
-| R0 | Parity harness + baseline gap | active |
-| R1 | Optimiser core (residual placement + our own local refine) | todo |
+| R0 | Parity harness + baseline gap | **done** — gap recorded in `docs/research/parity/baseline.json` |
+| R1 | Optimiser core (residual placement + our own local refine) | **done** — `js/engine/optimizer.js`; beats R0 on all 4 images (blobs 87.8→93.2, rings 89.2→97.9, smooth 94.4→98.7 simMae; SSIM ~0.49→0.83+). See `docs/checkpoints/R1.md` |
 | R2 | Structure-guided multi-scale | todo |
 | R3 | CCL + PCA stroke init | todo |
 | R4 | Feature parity (outlines / region-fill / order / per-style shaping) | todo |

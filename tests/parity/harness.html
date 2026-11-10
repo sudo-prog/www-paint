@@ -22,14 +22,13 @@
  * Engines:
  *   - reference : Code Painter worker (scripts/codepainter-worker.js) — fixture
  *   - port      : js/engine/painter.js (our faithful port) — reference-only
- *   - modular   : js/engine/{analyzer,generator,scorer}.js — the engine of record
+ *   - modular   : js/engine/optimizer.js (Track R1) — the engine of record
  *
  * window.runAll() → { images:[{name, results:{reference,port,modular}}] }
  */
 import { Painter } from '/js/engine/painter.js';
 import { analyzeImage } from '/js/engine/analyzer.js';
-import { generateCandidates, resolveSettings } from '/js/engine/generator.js';
-import { selectWithResidual } from '/js/engine/scorer.js';
+import { optimise } from '/js/engine/optimizer.js';
 
 const out = document.getElementById('out');
 const SIZE = 256, SEED = 12345, SHAPES = 400, STYLE = 'painterly';
@@ -210,11 +209,10 @@ async function runModular(srcPx, size, bg) {
   const c = document.createElement('canvas'); c.width = size; c.height = size;
   const ctx = c.getContext('2d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
   const analysis = analyzeImage(new Uint8ClampedArray(srcPx), size, size);
-  const settings = resolveSettings({ style: STYLE, strokeCount: SHAPES });
-  const cands = generateCandidates(analysis, settings, SEED, 10000);
-  const sel = selectWithResidual(cands, analysis, SHAPES, { residualWeight: 0.6, minResidual: 0.02 });
-  for (const s of sel) drawModular(ctx, s);
-  return { sim: null, strokes: sel.length, ...metricsVsSource(ctx, size, srcPx), canvas: c };
+  // Track R1 optimiser core: residual/error-driven placement + local hill-climb.
+  const { shapes } = optimise(analysis, { count: SHAPES, seed: SEED });
+  for (const s of shapes) drawModular(ctx, s);
+  return { sim: null, strokes: shapes.length, ...metricsVsSource(ctx, size, srcPx), canvas: c };
 }
 
 async function runReference(srcPx, size, bg) {
