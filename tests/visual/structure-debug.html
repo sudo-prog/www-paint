@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WWW_PAINT — Structure tensor debug</title>
+<style>
+  html, body { margin: 0; background: #111; color: #ddd; font: 12px/1.4 monospace; }
+  #meta { padding: 8px; }
+  #wrap { display: flex; gap: 8px; padding: 8px; align-items: flex-start; }
+  .panel { display: flex; flex-direction: column; gap: 4px; }
+  .panel h4 { margin: 0; font-weight: normal; color: #888; }
+  canvas { image-rendering: pixelated; border: 1px solid #333; display: block; }
+</style>
+</head>
+<body>
+<div id="meta">structure tensor debug — loading…</div>
+<div id="wrap"></div>
+<script type="module">
+// Phase 1.2 debug visualization: source image next to the structure tensor
+// orientation/coherence/energy map (hue = tangent angle, saturation =
+// coherence, lightness = energy). Node/screenshot-friendly: sets
+// window.harnessReady = true and exposes window.summary when done.
+import { analyzeImage, structureDebugRGBA } from '/js/engine/analyzer.js';
+
+const meta = document.getElementById('meta');
+const wrap = document.getElementById('wrap');
+
+function panel(title, canvas) {
+  const d = document.createElement('div');
+  d.className = 'panel';
+  const h = document.createElement('h4');
+  h.textContent = title;
+  d.appendChild(h);
+  d.appendChild(canvas);
+  return d;
+}
+
+async function main() {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = () => rej(new Error('could not load /assets/test-image.png'));
+    img.src = '/assets/test-image.png';
+  });
+
+  const W = 360;
+  const H = Math.max(1, Math.round((W * img.height) / img.width));
+
+  const src = document.createElement('canvas');
+  src.width = W; src.height = H;
+  const sctx = src.getContext('2d');
+  sctx.drawImage(img, 0, 0, W, H);
+  const data = sctx.getImageData(0, 0, W, H).data;
+
+  const t0 = performance.now();
+  const a = analyzeImage(new Uint8ClampedArray(data), W, H, { structureRadius: 4 });
+  const ms = performance.now() - t0;
+
+  const rgba = structureDebugRGBA(a.structure);
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  out.getContext('2d').putImageData(new ImageData(rgba, W, H), 0, 0);
+
+  let cohSum = 0, energySum = 0;
+  for (let i = 0; i < a.structure.coherence.length; i++) {
+    cohSum += a.structure.coherence[i];
+    energySum += a.structure.energy[i];
+  }
+  const n = a.structure.coherence.length;
+  const meanCoherence = cohSum / n;
+  const meanEnergy = energySum / n;
+
+  meta.textContent =
+    `structure tensor debug — ${W}x${H} · analyze ${ms.toFixed(1)} ms · ` +
+    `mean coherence ${meanCoherence.toFixed(3)} · mean energy ${meanEnergy.toFixed(3)} ` +
+    `(hue = tangent angle · saturation = coherence · lightness = energy)`;
+
+  wrap.appendChild(panel('source', src));
+  wrap.appendChild(panel('structure', out));
+
+  window.summary = { width: W, height: H, ms, meanCoherence, meanEnergy, strokes: 0 };
+  window.harnessReady = true;
+}
+
+main().catch((e) => {
+  meta.textContent = 'ERROR ' + (e && e.message ? e.message : e);
+  window.harnessReady = true;
+});
+</script>
+</body>
+</html>

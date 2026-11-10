@@ -10,10 +10,10 @@
  */
 
 import { rng } from '../utils/rng.js';
-import { clamp } from '../utils/math.js';
+import { clamp, normalizeAngle } from '../utils/math.js';
 import { quantizeColor, colorDistanceWeighted } from '../utils/color.js';
 import { createShape, centroid, bounds, pointAt } from './shapes.js';
-import { sampleRegion, sampleLuminance, sampleEdge } from './analyzer.js';
+import { sampleRegion, sampleLuminance, sampleEdge, sampleStructure } from './analyzer.js';
 
 /**
  * Default settings for shape generation.
@@ -38,6 +38,10 @@ export const DEFAULT_SETTINGS = {
   adaptiveSize: true,
   // Angle bias: when true, stroke orientation follows local gradient direction
   alignToGradient: true,
+  // Structure alignment: when true, stroke orientation follows the structure
+  // tensor TANGENT (lies ALONG edges), weighted by local coherence. Takes
+  // precedence over alignToGradient where coherence is high.
+  alignToStructure: false,
   // Use residual-based selection for full-coverage painting
   useResidual: true,
 };
@@ -162,13 +166,30 @@ export function generateCandidates(analysis, settings, seed, maxCandidates = 500
     // --- Size (with adaptive + randomness fix) ---
     const adjustedSize = chooseSize(s, random, x, y, analysis);
 
-    // --- Angle: bias toward local gradient direction ---
+    // --- Angle: bias toward local gradient, optionally align to structure ---
     let strokeAngle = 0;
-    if (s.alignToGradient && edgeX && edgeY) {
+    let gradAngle = 0;
+    let haveGrad = false;
+    if (edgeX && edgeY) {
       const gx = sampleEdge(edgeX, width, height, x, y);
       const gy = sampleEdge(edgeY, width, height, x, y);
       if (gx !== 0 || gy !== 0) {
-        strokeAngle = Math.atan2(gy, gx);
+        gradAngle = Math.atan2(gy, gx);
+        haveGrad = true;
+      }
+    }
+    if (haveGrad && s.alignToGradient) {
+      strokeAngle = gradAngle;
+    }
+    // Structure alignment: rotate the stroke toward the tensor TANGENT so it
+    // lies ALONG the edge, weighted by local coherence (0 → keep gradient).
+    if (haveGrad && s.alignToStructure && analysis.structure) {
+      const st = analysis.structure;
+      const coh = clamp(sampleStructure(st.coherence, width, height, x, y), 0, 1);
+      if (coh > 0.05) {
+        const tan = nearestPeriodicAngle(gradAngle,
+          sampleStructure(st.orientation, width, height, x, y));
+        strokeAngle = angleLerp(gradAngle, tan, coh);
       }
     }
 
@@ -229,6 +250,35 @@ export function generateCandidates(analysis, settings, seed, maxCandidates = 500
   }
 
   return candidates;
+}
+
+/**
+ * Return the PI-periodic representation of `angle` closest to `base`.
+ *
+ * Line orientation is PI-periodic, so a tangent sampled from the structure
+ * tensor may be 180° off from the directed gradient angle; folding it to the
+ * nearest equivalent lets the two be blended without a flip.
+ *
+ * @param {number} base - Reference (directed) angle in radians.
+ * @param {number} angle - PI-periodic angle in radians.
+ * @returns {number}
+ */
+function nearestPeriodicAngle(base, angle) {
+  let t = angle;
+  while (t - base > Math.PI / 2) t -= Math.PI;
+  while (t - base < -Math.PI / 2) t += Math.PI;
+  return t;
+}
+
+/**
+ * Interpolate between two angles along the shorter arc.
+ * @param {number} a - Start angle.
+ * @param {number} b - End angle.
+ * @param {number} t - Factor in [0, 1].
+ * @returns {number}
+ */
+function angleLerp(a, b, t) {
+  return a + normalizeAngle(b - a) * t;
 }
 
 /**

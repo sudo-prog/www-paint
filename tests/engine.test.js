@@ -25,7 +25,10 @@ import {
 } from '../js/utils/color.js';
 import { clamp, lerp, mapRange, dist2, toRad, toDeg, quantize } from '../js/utils/math.js';
 import { createRNG, rng } from '../js/utils/rng.js';
-import { analyzeImage, sampleRegion, sampleLuminance, sampleEdge } from '../js/engine/analyzer.js';
+import {
+  analyzeImage, sampleRegion, sampleLuminance, sampleEdge,
+  computeStructureTensor, sampleStructure, structureDebugRGBA
+} from '../js/engine/analyzer.js';
 import {
   generateCandidates, resolveSettings, DEFAULT_SETTINGS,
   orderShapes, estimateShapeCount
@@ -383,6 +386,139 @@ test('packLayers produces base64', () => {
   if (packed.length < 10) {
     throw new Error('Packed data too short');
   }
+});
+
+// ─── Structure tensor (Phase 1.2) ─────────────────────────────────
+console.log('\nStructure tensor:');
+
+/**
+ * Build an RGBA image whose luminance is given by fn(x, y) -> 0..255.
+ * @param {number} w
+ * @param {number} h
+ * @param {(x:number,y:number)=>number} fn
+ * @returns {Uint8ClampedArray}
+ */
+function makeLumImage(w, h, fn) {
+  const px = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const v = Math.max(0, Math.min(255, Math.round(fn(x, y))));
+      const i = (y * w + x) * 4;
+      px[i] = px[i + 1] = px[i + 2] = v;
+      px[i + 3] = 255;
+    }
+  }
+  return px;
+}
+
+test('structure tensor: vertical stripes → tangent ~ PI/2', () => {
+  const w = 48, h = 48;
+  const px = makeLumImage(w, h, (x) => (x * 255) / (w - 1)); // ramp along x
+  const a = analyzeImage(px, w, h);
+  if (!a.structure) throw new Error('analysis.structure missing');
+  const st = a.structure;
+  assertEqual(st.orientation.length, w * h);
+  assertEqual(st.coherence.length, w * h);
+  assertEqual(st.energy.length, w * h);
+  const theta = sampleStructure(st.orientation, w, h, w / 2, h / 2);
+  assertApprox(theta, Math.PI / 2, 0.2, 'tangent for vertical stripes');
+  const coh = sampleStructure(st.coherence, w, h, w / 2, h / 2);
+  if (coh < 0.9) throw new Error(`coherence should be high for a clean ramp, got ${coh}`);
+});
+
+test('structure tensor: horizontal stripes → tangent ~ 0', () => {
+  const w = 48, h = 48;
+  const px = makeLumImage(w, h, (x, y) => (y * 255) / (h - 1)); // ramp along y
+  const a = analyzeImage(px, w, h);
+  const theta = sampleStructure(a.structure.orientation, w, h, w / 2, h / 2);
+  assertApprox(theta, 0, 0.2, 'tangent for horizontal stripes');
+});
+
+test('structure tensor: diagonal stripes → tangent ~ 3PI/4', () => {
+  const w = 48, h = 48;
+  const px = makeLumImage(w, h, (x, y) => ((x + y) * 255) / (w + h - 2));
+  const a = analyzeImage(px, w, h);
+  const theta = sampleStructure(a.structure.orientation, w, h, w / 2, h / 2);
+  assertApprox(theta, (3 * Math.PI) / 4, 0.25, 'tangent for diagonal stripes');
+});
+
+test('structure tensor: flat image → zero energy/coherence, no NaN', () => {
+  const w = 20, h = 20;
+  const px = makeLumImage(w, h, () => 128);
+  const a = analyzeImage(px, w, h);
+  const st = a.structure;
+  for (const arr of [st.orientation, st.coherence, st.energy]) {
+    for (let i = 0; i < arr.length; i++) {
+      if (!Number.isFinite(arr[i])) throw new Error(`non-finite value at ${i}: ${arr[i]}`);
+    }
+  }
+  assertApprox(sampleStructure(st.energy, w, h, 10, 10), 0, 1e-4, 'flat energy');
+  assertApprox(sampleStructure(st.coherence, w, h, 10, 10), 0, 1e-3, 'flat coherence');
+});
+
+test('structure tensor: deterministic + finite', () => {
+  const w = 24, h = 24;
+  const px = makeLumImage(w, h, (x, y) => Math.sin(x * 0.6) * 60 + Math.cos(y * 0.4) * 60 + 128);
+  const a1 = analyzeImage(px, w, h);
+  const a2 = analyzeImage(px, w, h);
+  for (const key of ['orientation', 'coherence', 'energy']) {
+    assertEqual(Array.from(a1.structure[key]), Array.from(a2.structure[key]), `${key} deterministic`);
+    for (let i = 0; i < a1.structure[key].length; i++) {
+      if (!Number.isFinite(a1.structure[key][i])) throw new Error(`non-finite ${key}[${i}]`);
+    }
+  }
+});
+
+test('structure tensor: can be disabled', () => {
+  const px = makeLumImage(8, 8, () => 100);
+  const a = analyzeImage(px, 8, 8, { structure: false });
+  assertEqual(a.structure, null);
+});
+
+test('structureDebugRGBA returns full RGBA buffer', () => {
+  const w = 16, h = 16;
+  const px = makeLumImage(w, h, (x) => (x * 255) / (w - 1));
+  const a = analyzeImage(px, w, h);
+  const rgba = structureDebugRGBA(a.structure);
+  assertEqual(rgba.length, w * h * 4);
+  for (let i = 3; i < rgba.length; i += 4) {
+    if (rgba[i] !== 255) throw new Error('alpha should be 255');
+  }
+});
+
+test('computeStructureTensor works standalone', () => {
+  const w = 8, h = 8, n = w * h;
+  const gx = new Float32Array(n).fill(10);   // constant horizontal gradient
+  const gy = new Float32Array(n).fill(0);
+  const st = computeStructureTensor(gx, gy, w, h, { radius: 1 });
+  const theta = sampleStructure(st.orientation, w, h, 4, 4);
+  assertApprox(theta, Math.PI / 2, 0.01, 'tangent for pure-x gradient');
+  assertApprox(sampleStructure(st.coherence, w, h, 4, 4), 1, 0.01, 'coherence');
+});
+
+test('generator respects alignToStructure (vertical stripes)', () => {
+  const w = 48, h = 48;
+  const px = makeLumImage(w, h, (x) => (x * 255) / (w - 1));
+  const analysis = analyzeImage(px, w, h);
+  const base = { style: 'pencil', strokeCount: 400, alignToGradient: true };
+
+  const dirCos = (settings) => {
+    const cands = generateCandidates(analysis, resolveSettings(settings), 12345);
+    const s = cands.filter(c => c.type === 'S');
+    if (s.length < 20) throw new Error(`too few S strokes: ${s.length}`);
+    let sum = 0;
+    for (const c of s) {
+      const dx = c.params[4] - c.params[0];
+      const dy = c.params[5] - c.params[1];
+      sum += Math.abs(Math.cos(Math.atan2(dy, dx)));
+    }
+    return sum / s.length;
+  };
+
+  const offCos = dirCos({ ...base, alignToStructure: false });
+  const onCos = dirCos({ ...base, alignToStructure: true });
+  if (!(offCos > 0.7)) throw new Error(`gradient mode should keep strokes near-horizontal, mean|cos|=${offCos}`);
+  if (!(onCos < 0.5)) throw new Error(`structure mode should rotate strokes to vertical, mean|cos|=${onCos}`);
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

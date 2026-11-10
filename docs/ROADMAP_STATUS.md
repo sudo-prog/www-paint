@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-10 · Agent: BE (ThinkPad)
+**Last updated:** 2026-11-10 · Agent: BE (ThinkPad) · Phase 1.2 done
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -28,14 +28,14 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 
 ## Phase 1 — Brush, Structure & Classical SBR Upgrades
 
-| ID | Task | Status |
-|---|---|---|
-| 1.1 | Harden p5.brush integration | todo |
-| 1.2 | Structure tensor + orientation/coherence maps | todo |
-| 1.3 | Multi-scale stroke generation + stable seeding | todo |
-| 1.4 | Better stroke init (CCL + PCA) + dual-stage refine | todo |
-| 1.5 | Lightweight smudge / blend + optional height buffer | todo |
-| 1.6 | Watercolor / ink parameter unification | todo |
+| ID | Task | Status | Evidence |
+|---|---|---|---|
+| 1.1 | Harden p5.brush integration | todo | partial today via `brush-stamp-engine.js` |
+| 1.2 | Structure tensor + orientation/coherence maps | **done** | `analyzer.js` `computeStructureTensor` + `sampleStructure` + `structureDebugRGBA`; `generator.js` `alignToStructure`; `tests/visual/structure-debug.html` → `docs/research/structure-debug.png`; 9 new tests (40/40), visual baselines 9/9. See `docs/checkpoints/P1.md` |
+| 1.3 | Multi-scale stroke generation + stable seeding | todo | — |
+| 1.4 | Better stroke initialization (CCL + PCA orientation/size) + dual-stage residual refine | todo | — |
+| 1.5 | Lightweight smudge / blend + optional height buffer | todo | — |
+| 1.6 | Watercolor / ink parameter unification | todo | — |
 
 ---
 
