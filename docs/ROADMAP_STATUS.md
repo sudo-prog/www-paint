@@ -77,3 +77,16 @@ engine of record; the faithful Code Painter port is reference-only.
 | R4 | Feature parity (outlines / region-fill / order / per-style shaping) | todo |
 | R5 | Exceed (per-layer styles, smudge, wet media, Style Profiles, AI) | todo |
 | R6 | Retire the port (app + baselines 100% clean-room) | todo |
+
+---
+
+## Harness — AI style-replication loop (see `docs/AI_STYLE_HARNESS.md`)
+
+| ID | Milestone | Status |
+|---|---|---|
+| H0 | Eval harness (`sim` + independent MAE + SSIM, N images) | **done** — 4 images, baseline recorded |
+| H1 | Parameter surface (`score(profile, image)` primitive) | todo |
+| H2 | Search proposer (random / CMA-ES) | todo |
+| H3 | LLM proposer (vision → profile, iterate) | todo |
+| H4 | Memory (feedback store + retrieval) | todo |
+| H5 | Tier B (agent-improved engine code, benchmark-gated) | todo |

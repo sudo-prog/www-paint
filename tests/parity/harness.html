@@ -85,9 +85,37 @@ function imgRings(size) {
   return c;
 }
 
+function imgSmooth(size) { // photo-like: soft overlapping colour fields
+  const c = document.createElement('canvas'); c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  const R = mulberry32(0x5EED);
+  for (let i = 0; i < 7; i++) {
+    const g = ctx.createRadialGradient(size * R(), size * R(), 1, size * R(), size * R(), size * 0.6);
+    g.addColorStop(0, `hsla(${(R() * 360) | 0}, ${(40 + R() * 40) | 0}%, ${(35 + R() * 40) | 0}%, 0.9)`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+  }
+  return c;
+}
+
+function imgNoise(size) { // high-detail stress case
+  const c = document.createElement('canvas'); c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  const R = mulberry32(0xBEEF);
+  const im = ctx.createImageData(size, size);
+  for (let i = 0; i < size * size; i++) {
+    const o = i * 4, v = R() * 255;
+    im.data[o] = v; im.data[o + 1] = (v * 1.7) & 255; im.data[o + 2] = (v * 0.4) & 255; im.data[o + 3] = 255;
+  }
+  ctx.putImageData(im, 0, 0);
+  return c;
+}
+
 const IMAGES = [
-  { name: 'blobs', build: imgBlobs },
-  { name: 'rings', build: imgRings },
+  { name: 'blobs',  build: imgBlobs },
+  { name: 'rings',  build: imgRings },
+  { name: 'smooth', build: imgSmooth },
+  { name: 'noise',  build: imgNoise },
 ];
 
 // ── drawing helpers ────────────────────────────────────────────────────────
@@ -119,8 +147,30 @@ function drawReference(ctx, s) {
   try { SHP.lib(ctx)[s.t](...SHP.args(s, 1)); } catch (e) { /* skip bad shape */ }
 }
 
-// ── metric: mean abs error of rendered canvas vs source ────────────────────
-function maeVsSource(ctx, size, srcPx) {
+// ── metrics: independent (not self-reported) vs source ─────────────────────
+// Block SSIM (8x8, standard constants) on luminance — an independent perceptual
+// score, deliberately different from either engine's own objective.
+function ssimLuma(a, b, w, h) {
+  const lum = (px) => { const L = new Float32Array(w * h); for (let i = 0; i < w * h; i++) { const o = i * 4; L[i] = 0.2126 * px[o] + 0.7152 * px[o + 1] + 0.0722 * px[o + 2]; } return L; };
+  const A = lum(a), B = lum(b);
+  const C1 = 6.5025, C2 = 58.5225; // (0.01*255)^2, (0.03*255)^2
+  let sum = 0, blocks = 0;
+  for (let by = 0; by + 8 <= h; by += 8) {
+    for (let bx = 0; bx + 8 <= w; bx += 8) {
+      let sa = 0, sb = 0;
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { const i = (by + y) * w + bx + x; sa += A[i]; sb += B[i]; }
+      const n = 64, ma = sa / n, mb = sb / n;
+      let va = 0, vb = 0, cov = 0;
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { const i = (by + y) * w + bx + x; const da = A[i] - ma, db = B[i] - mb; va += da * da; vb += db * db; cov += da * db; }
+      va /= n; vb /= n; cov /= n;
+      sum += ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2));
+      blocks++;
+    }
+  }
+  return blocks ? +(sum / blocks).toFixed(4) : 0;
+}
+
+function metricsVsSource(ctx, size, srcPx) {
   const d = ctx.getImageData(0, 0, size, size).data;
   const n = size * size;
   let s = 0;
@@ -129,7 +179,7 @@ function maeVsSource(ctx, size, srcPx) {
     s += Math.abs(d[o] - srcPx[o]) + Math.abs(d[o + 1] - srcPx[o + 1]) + Math.abs(d[o + 2] - srcPx[o + 2]);
   }
   const mae = s / (3 * n);
-  return { mae: +mae.toFixed(2), simMae: +(100 * (1 - mae / 255)).toFixed(2) };
+  return { mae: +mae.toFixed(2), simMae: +(100 * (1 - mae / 255)).toFixed(2), ssim: ssimLuma(d, srcPx, size, size) };
 }
 
 function avgColor(srcPx) {
@@ -144,7 +194,7 @@ async function runPort(srcPx, size, bg) {
     const c = document.createElement('canvas'); c.width = size; c.height = size;
     const ctx = c.getContext('2d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
     let done = false;
-    const fin = (sim) => { if (done) return; done = true; resolve({ sim, ...maeVsSource(ctx, size, srcPx), canvas: c }); };
+    const fin = (sim) => { if (done) return; done = true; resolve({ sim, ...metricsVsSource(ctx, size, srcPx), canvas: c }); };
     const painter = new Painter({
       width: size, height: size, imageData: new Uint8ClampedArray(srcPx),
       options: { style: STYLE, smart: false, maxShapes: SHAPES, seed: SEED,
@@ -164,7 +214,7 @@ async function runModular(srcPx, size, bg) {
   const cands = generateCandidates(analysis, settings, SEED, 10000);
   const sel = selectWithResidual(cands, analysis, SHAPES, { residualWeight: 0.6, minResidual: 0.02 });
   for (const s of sel) drawModular(ctx, s);
-  return { sim: null, strokes: sel.length, ...maeVsSource(ctx, size, srcPx), canvas: c };
+  return { sim: null, strokes: sel.length, ...metricsVsSource(ctx, size, srcPx), canvas: c };
 }
 
 async function runReference(srcPx, size, bg) {
@@ -172,7 +222,7 @@ async function runReference(srcPx, size, bg) {
     const c = document.createElement('canvas'); c.width = size; c.height = size;
     const ctx = c.getContext('2d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
     let done = false;
-    const fin = (sim) => { if (done) return; done = true; resolve({ sim, ...maeVsSource(ctx, size, srcPx), canvas: c }); };
+    const fin = (sim) => { if (done) return; done = true; resolve({ sim, ...metricsVsSource(ctx, size, srcPx), canvas: c }); };
     const blob = new Blob([window.CP_WORKER_SRC], { type: 'application/javascript' });
     const url = URL.createObjectURL(blob);
     const worker = new Worker(url);
@@ -206,9 +256,9 @@ window.runAll = async function runAll() {
     results.push({
       name: def.name,
       results: {
-        reference: { sim: reference.sim, simMae: reference.simMae, mae: reference.mae },
-        port: { sim: port.sim, simMae: port.simMae, mae: port.mae },
-        modular: { sim: modular.sim, simMae: modular.simMae, mae: modular.mae, strokes: modular.strokes },
+        reference: { sim: reference.sim, simMae: reference.simMae, mae: reference.mae, ssim: reference.ssim },
+        port: { sim: port.sim, simMae: port.simMae, mae: port.mae, ssim: port.ssim },
+        modular: { sim: modular.sim, simMae: modular.simMae, mae: modular.mae, ssim: modular.ssim, strokes: modular.strokes },
       },
       _canvases: { source: img, reference: reference.canvas, port: port.canvas, modular: modular.canvas },
     });

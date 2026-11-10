@@ -1,5 +1,5 @@
 {
-  "when": "2026-11-10T10:30:07.617Z",
+  "when": "2026-11-10T12:48:35.816Z",
   "engine": "www-paint parity R0",
   "seed": 12345,
   "shapes": 400,
@@ -10,17 +10,20 @@
         "reference": {
           "sim": 99.6136144890596,
           "simMae": 99.54,
-          "mae": 1.17
+          "mae": 1.17,
+          "ssim": 0.9882
         },
         "port": {
           "sim": 99.55411531593425,
           "simMae": 98.05,
-          "mae": 4.98
+          "mae": 4.98,
+          "ssim": 0.862
         },
         "modular": {
           "sim": null,
           "simMae": 87.81,
           "mae": 31.1,
+          "ssim": 0.4872,
           "strokes": 400
         }
       }
@@ -31,17 +34,68 @@
         "reference": {
           "sim": 99.59855543541096,
           "simMae": 99.52,
-          "mae": 1.24
+          "mae": 1.24,
+          "ssim": 0.9751
         },
         "port": {
           "sim": 99.60577428178229,
           "simMae": 97.82,
-          "mae": 5.56
+          "mae": 5.56,
+          "ssim": 0.8818
         },
         "modular": {
           "sim": null,
           "simMae": 89.2,
           "mae": 27.55,
+          "ssim": 0.4903,
+          "strokes": 400
+        }
+      }
+    },
+    {
+      "name": "smooth",
+      "results": {
+        "reference": {
+          "sim": 99.60203063780605,
+          "simMae": 99.67,
+          "mae": 0.84,
+          "ssim": 0.9883
+        },
+        "port": {
+          "sim": 99.58302945111795,
+          "simMae": 98.55,
+          "mae": 3.68,
+          "ssim": 0.8951
+        },
+        "modular": {
+          "sim": null,
+          "simMae": 94.36,
+          "mae": 14.39,
+          "ssim": 0.7157,
+          "strokes": 400
+        }
+      }
+    },
+    {
+      "name": "noise",
+      "results": {
+        "reference": {
+          "sim": 81.35991233187193,
+          "simMae": 81.17,
+          "mae": 48.01,
+          "ssim": 0.0645
+        },
+        "port": {
+          "sim": 81.36462040751711,
+          "simMae": 80.86,
+          "mae": 48.81,
+          "ssim": 0.0467
+        },
+        "modular": {
+          "sim": null,
+          "simMae": 80.65,
+          "mae": 49.35,
+          "ssim": 0.0184,
           "strokes": 400
         }
       }

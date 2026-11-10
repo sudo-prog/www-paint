@@ -94,17 +94,18 @@ async function main() {
     JSON.stringify({ when: new Date().toISOString(), engine: 'www-paint parity R0',
       seed: 12345, shapes: 400, images: results }, null, 2) + '\n');
 
-  console.log('\n=== PARITY BASELINE (R0)  seed=12345 shapes=400 ===');
-  console.log(pad('image', 10) + pad('engine', 24) + pad('sim(self)', 11) + pad('simMae', 9) + 'mae');
+  console.log('\n=== EVAL BASELINE (H0/R0)  seed=12345 shapes=400 ===');
+  console.log(pad('image', 10) + pad('engine', 24) + pad('sim(self)', 11) + pad('simMae', 9) + pad('ssim', 8) + 'mae');
   for (const r of results) {
     for (const k of ['reference', 'port', 'modular']) {
       const m = r.results[k];
       console.log(pad(r.name, 10) + pad(k, 24) +
         pad(m.sim === null || m.sim === undefined ? '—' : Number(m.sim).toFixed(2), 11) +
-        pad(m.simMae, 9) + m.mae);
+        pad(m.simMae, 9) + pad(m.ssim, 8) + m.mae);
     }
     const d = r.results.reference.simMae - r.results.modular.simMae;
-    console.log(`${' '.repeat(10)}→ reference − modular (simMae gap): ${d.toFixed(2)}`);
+    const ds = r.results.reference.ssim - r.results.modular.ssim;
+    console.log(`${' '.repeat(10)}-> reference - modular gap: simMae ${d.toFixed(2)}  ssim ${ds.toFixed(4)}`);
   }
   console.log('\nwrote docs/research/parity/baseline.json + baseline-comparison.png');
   if (pageErrors.length) console.log(`page errors: ${pageErrors.slice(0, 3).join(' | ')}`);
