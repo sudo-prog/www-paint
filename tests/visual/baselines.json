@@ -1,0 +1,89 @@
+{
+  "engine": "www-paint",
+  "schema": 1,
+  "browser": "chrome",
+  "cases": {
+    "pencil": {
+      "style": "pencil",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 107537,
+      "hash": "2ae46435a4badbb2e5b78f7762191b11c17e10c87e9d4f7c5b654330bc1bddc4"
+    },
+    "ink": {
+      "style": "ink",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 113616,
+      "hash": "1c58e8dcf3796cc1d8f4ac84538dc4de01d1fe7aa5bf1d5665d2e92c47299a6e"
+    },
+    "oil": {
+      "style": "oil",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 178666,
+      "hash": "dceb4bb52a4108c417c09f54808dec14d8f3c78e41a883defab2826d3d5be13a"
+    },
+    "charcoal": {
+      "style": "charcoal",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 104009,
+      "hash": "4aeaca66221dc861bffbcfde35c7c47e4c5e22010778854f0ae796c9dbf72db7"
+    },
+    "marker": {
+      "style": "marker",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 150285,
+      "hash": "e6fe280f3ae5a56d8349881472921669d41a5e2b23dbaad7b26aae40f47cce98"
+    },
+    "cross-hatch": {
+      "style": "cross-hatch",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 144960,
+      "hash": "c68ad7c94b5f7b911d029317d01e67946c29134c5829b4578bd451fa57e961ba"
+    },
+    "halftone": {
+      "style": "halftone",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 123478,
+      "hash": "eddcc68b8e05f6061db74221f8b3e74effa1c4a3d4ffa5aed3be2f28373a0efa"
+    },
+    "graphic": {
+      "style": "graphic",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 96239,
+      "hash": "35e647d947143867df89869a6e6f26b69180035604e6316d4ea8e79161301f0f"
+    },
+    "watercolor": {
+      "style": "watercolor",
+      "seed": 3047602159,
+      "count": 700,
+      "size": 256,
+      "strokes": 700,
+      "bytes": 151524,
+      "hash": "610f79e7f578c824e778a991d53a186f4ef75e54f4e544c65359da62655d53e2"
+    }
+  },
+  "updatedAt": "2026-11-09T16:17:48.761Z"
+}

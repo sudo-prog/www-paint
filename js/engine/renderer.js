@@ -264,6 +264,20 @@ export class Renderer {
     this.ctx = oldCtx;
     this.setSize(oldW, oldH);
     this.background = oldBg;
+
+    // Encode and return the blob. (This method is documented @returns
+    // {Promise<Blob>} but historically returned undefined, which silently
+    // broke engine.exportPNG()/exportJPG().)
+    // Normalise the MIME type: callers pass `image/${format}` where format is
+    // 'png' | 'jpg'; the canvas API expects 'image/jpeg', not 'image/jpg'.
+    let type = opts.type || 'image/png';
+    if (type === 'image/jpg') type = 'image/jpeg';
+    if (exportCanvas.convertToBlob) {
+      return exportCanvas.convertToBlob({ type, quality: opts.quality });
+    }
+    return new Promise(function (resolve) {
+      exportCanvas.toBlob(resolve, type, opts.quality);
+    });
   }
 
   /**
