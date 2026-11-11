@@ -147,6 +147,11 @@ QA / verification ............... MAC (M4)
 file-isolated FE streams (hand-in → M6b QA → M7 library UI → M8 export UI →
 M9 style polish → M10 a11y/responsive → M11 docs).
 
+**BE remaining work, split into streams (2026-11-12):** `HANDOFF-BE.md` — B1
+render-path closers (1.5+3.3), B2 layer-aware scoring (2.2), B3 harness AI loop
+(H3/H4/H5), B4 Track R4→R6, B5 Phase 6, B6 integration B/C, B7 hygiene; with a
+parallel/serial map (the `engine.js`/`renderer.js` single-writer lane).
+
 ## 9. Open risks — need a user decision
 
 1. **Syncthing mirrors the working tree — RESOLVED (2026-11-11, user decision):

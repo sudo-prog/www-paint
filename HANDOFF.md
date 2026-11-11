@@ -5,6 +5,7 @@
 **Date:** 2026-11-11
 **Baseline:** `sudo-prog/www-paint@main`, clean, remote == local.
 **Companion:** `docs/WORKSPLIT.md` (two-machine ownership map).
+**BE side:** `HANDOFF-BE.md` (the remaining engine work, split into streams B1–B7).
 
 You are being handed **four parallel workstreams**. The ThinkPad keeps the engine
 spine; you take the file-isolated work. Read this whole document before writing
