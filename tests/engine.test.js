@@ -50,6 +50,9 @@ import {
 import {
   KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile
 } from '../js/engine/score.js';
+import {
+  SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile
+} from '../js/engine/propose.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -1061,6 +1064,83 @@ test('score: scoreProfile measures a render and improves with more strokes', () 
   const c = scoreProfile(prof(300), image);
   assertApprox(c.simMae, b.simMae, 1e-9);
   assertApprox(c.ssim, b.ssim, 1e-9);
+});
+
+// ─── Search proposer — Harness H2 ─────────────────────────────────
+console.log('\nSearch proposer (Harness H2):');
+
+// A base profile + a structured 64² target, reused by the H2 tests.
+function h2Base(count) {
+  return {
+    schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0',
+    global: { style: 'painterly', strokeCount: count, detailLevel: 0.7, opacity: 0.9, smart: true, seed: 12345 },
+  };
+}
+function h2Target(S = 64) {
+  return {
+    pixels: makeRGBImage(S, S, (x, y) =>
+      Math.hypot(x - S / 2, y - S / 2) < S * 0.28 ? [220, 60, 60] : [30, 60, 150]),
+    width: S, height: S,
+  };
+}
+
+test('propose: searchableKnobs excludes strings, engine-only knobs and fixed ones', () => {
+  const names = searchableKnobs().map((k) => k.name);
+  if (names.includes('style') || names.includes('pathOrder')) throw new Error('string knobs must not be searched');
+  if (names.includes('multiLayer')) throw new Error('engine-only knobs the optimiser ignores must not be searched');
+  for (const k of searchableKnobs()) {
+    if (!k.target.startsWith('optimiser.')) throw new Error(`${k.name} is not an optimiser target`);
+  }
+  const fixed = searchableKnobs(['strokeCount', 'scales']).map((k) => k.name);
+  if (fixed.includes('strokeCount') || fixed.includes('scales')) throw new Error('fixed knobs must be excluded');
+  assertEqual(names.includes('coverage'), true);
+});
+
+test('propose: profileKnobValues reads the base profile; knobsToProfile does not mutate it', () => {
+  const base = h2Base(250);
+  const vals = profileKnobValues(base);
+  assertEqual(vals.strokeCount, 250);
+  assertEqual(vals.detailLevel, 0.7);
+  const next = knobsToProfile(base, { strokeCount: 10, detailLevel: 0.2 });
+  assertEqual(next.global.strokeCount, 10);
+  assertEqual(next.global.detailLevel, 0.2);
+  assertEqual(base.global.strokeCount, 250, 'the base profile must not be mutated');
+});
+
+test('propose: knobsToOptimiser extracts only the optimiser-option overrides', () => {
+  const o = knobsToOptimiser({ strokeCount: 200, coverage: 1.5, scales: 2, detailLevel: 0.3, style: 'ink' });
+  assertEqual(o.coverage, 1.5);
+  assertEqual(o.scales, 2);
+  assertEqual('count' in o, false, 'count rides on the profile, not the optimiser override');
+  assertEqual('style' in o, false);
+});
+
+test('propose: searchProfile beats the hand-set default at equal stroke count', () => {
+  const base = h2Base(120);
+  const r = searchProfile(base, h2Target(64), { method: 'cma', evaluations: 32, seed: 7 });
+  assertEqual(r.knobs.strokeCount, 120, 'strokeCount stays fixed at the base value');
+  assertEqual(r.evaluations, 32, 'the evaluation budget is respected');
+  assertEqual(r.history.length, 32, 'every attempt is recorded (wins and losses)');
+  if (!(r.score.simMae >= r.baseline.simMae)) throw new Error('the search must never return worse than the baseline');
+  if (!r.improved) throw new Error(`CMA search failed to beat the default: ${r.baseline.simMae} -> ${r.score.simMae}`);
+  assertEqual(r.profile.global.strokeCount, 120);
+});
+
+test('propose: searchProfile is deterministic for the same seed', () => {
+  const base = h2Base(100);
+  const a = searchProfile(base, h2Target(48), { method: 'cma', evaluations: 16, seed: 99 });
+  const b = searchProfile(base, h2Target(48), { method: 'cma', evaluations: 16, seed: 99 });
+  assertEqual(JSON.stringify(a.knobs), JSON.stringify(b.knobs));
+  assertEqual(a.score.simMae, b.score.simMae);
+});
+
+test('propose: a fixed knob is held constant, and random respects the budget', () => {
+  const base = h2Base(90);
+  const r = searchProfile(base, h2Target(48), { method: 'random', evaluations: 12, seed: 3, fixed: ['strokeCount', 'scales'] });
+  assertEqual(r.knobs.strokeCount, 90);
+  assertEqual(r.knobs.scales, getKnobDefaults().scales, 'a fixed knob keeps its base value');
+  assertEqual(r.evaluations, 12);
+  assertEqual(SEARCH_DEFAULTS.objective, 'simMae');
 });
 
 // ─── Layer styles — Phase 2.2 ─────────────────────────────────────
