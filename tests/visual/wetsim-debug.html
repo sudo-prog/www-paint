@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WWW_PAINT — Wet-media debug</title>
+<style>
+  html, body { margin: 0; background: #111; color: #ddd; font: 12px/1.4 monospace; }
+  #meta { padding: 8px; }
+  #wrap { display: flex; gap: 8px; padding: 8px; align-items: flex-start; }
+  .panel { display: flex; flex-direction: column; gap: 4px; }
+  .panel h4 { margin: 0; font-weight: normal; color: #888; }
+  canvas { image-rendering: pixelated; border: 1px solid #333; display: block; }
+</style>
+</head>
+<body>
+<div id="meta">wet-media debug — loading…</div>
+<div id="wrap"></div>
+<script type="module">
+// Phase 3 (wet media) debug visualization: paper height, wetness, and the
+// composited pigment after two deposits and a short dry. Node/screenshot
+// friendly: sets window.harnessReady and exposes window.summary.
+import { createWetSim } from '/js/engine/wetsim.js';
+
+const meta = document.getElementById('meta');
+const wrap = document.getElementById('wrap');
+const W = 256, H = 256;
+
+function panel(title, canvas) {
+  const d = document.createElement('div');
+  d.className = 'panel';
+  const h = document.createElement('h4');
+  h.textContent = title;
+  d.appendChild(h);
+  d.appendChild(canvas);
+  return d;
+}
+
+function show(field, title) {
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const rgba = new Uint8ClampedArray(W * H * 4);
+  let max = 0;
+  for (let i = 0; i < W * H; i++) max = Math.max(max, field[i]);
+  for (let i = 0; i < W * H; i++) {
+    const v = max > 0 ? field[i] / max : 0;
+    const o = i * 4;
+    rgba[o] = v * 255; rgba[o + 1] = v * 255; rgba[o + 2] = v * 255; rgba[o + 3] = 255;
+  }
+  ctx.putImageData(new ImageData(rgba, W, H), 0, 0);
+  wrap.appendChild(panel(title, c));
+}
+
+function main() {
+  const t0 = performance.now();
+  const sim = createWetSim(W, H, { seed: 4242, granulation: 0.25 });
+  sim.deposit(96, 96, 26, [210, 40, 30], { amount: 2.4, water: 1.4 });
+  sim.deposit(156, 148, 18, [30, 60, 200], { amount: 1.8, water: 1.1 });
+  sim.deposit(128, 128, 10, [20, 20, 20], { amount: 0.8, water: 0.5 });
+  sim.dry(0.4);
+  const ms = performance.now() - t0;
+
+  show(sim.paperHeight, 'paper height');
+  show(sim.wetness, 'wetness');
+
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  sim.compositeInto(ctx, { paper: [255, 255, 255], sheen: true });
+  wrap.appendChild(panel('pigment composite', c));
+
+  let wetSum = 0, wetMax = 0;
+  for (let i = 0; i < sim.wetness.length; i++) {
+    wetSum += sim.wetness[i];
+    if (sim.wetness[i] > wetMax) wetMax = sim.wetness[i];
+  }
+
+  meta.textContent =
+    `wet-media debug — ${W}x${H} · sim ${ms.toFixed(1)} ms · ` +
+    `wet sum ${wetSum.toFixed(1)} · wet max ${wetMax.toFixed(3)} · ` +
+    `mobile ${sim.mobileMass().toFixed(1)} · fixed ${sim.fixedMass().toFixed(1)} · ` +
+    `total ${sim.totalMass().toFixed(1)}`;
+
+  window.summary = {
+    width: W, height: H, ms,
+    wetSum, wetMax,
+    mobile: sim.mobileMass(), fixed: sim.fixedMass(), total: sim.totalMass(),
+  };
+  window.harnessReady = true;
+}
+
+try { main(); } catch (e) {
+  meta.textContent = 'ERROR ' + (e && e.message ? e.message : e);
+  window.harnessReady = true;
+}
+</script>
+</body>
+</html>
