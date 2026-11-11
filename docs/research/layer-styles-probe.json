@@ -1,0 +1,29 @@
+{
+  "before": {
+    "ink": 25564,
+    "hash": 2328077866
+  },
+  "after": {
+    "ink": 25600,
+    "hash": 1040284025
+  },
+  "after2": {
+    "ink": 25600,
+    "hash": 1040284025
+  },
+  "applied": true,
+  "afterStyle": [
+    "ink"
+  ],
+  "plumb": {
+    "mapped": [
+      "watercolor",
+      "ink"
+    ],
+    "resolvedString": "oil",
+    "preserved": [
+      false,
+      0.3
+    ]
+  }
+}

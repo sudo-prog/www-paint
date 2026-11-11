@@ -38,6 +38,9 @@ import {
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
 import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan } from '../js/engine/optimizer.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
+import {
+  resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
+} from '../js/engine/layer-styles.js';
 
 // Simple test runner
 let passed = 0;
@@ -692,6 +695,77 @@ test('optimiser: multi-scale is deterministic for the same seed', () => {
   const a = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
   const b = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
   assertEqual(a.shapes, b.shapes, 'multi-scale shape lists should be identical');
+});
+
+// ─── Layer styles — Phase 2.2 ─────────────────────────────────────
+console.log('\nLayer styles (Phase 2.2):');
+
+test('resolveLayerStyles: empty inputs are a null no-op', () => {
+  assertEqual(resolveLayerStyles(undefined), null);
+  assertEqual(resolveLayerStyles(null), null);
+  assertEqual(resolveLayerStyles(''), null);
+  assertEqual(resolveLayerStyles('   '), null);
+  assertEqual(resolveLayerStyles({}), null);
+});
+
+test('resolveLayerStyles: a single style string maps every tonal band', () => {
+  const r = resolveLayerStyles('ink');
+  for (const n of TONAL_LAYER_NAMES) assertEqual(r[n], 'ink', `${n} band`);
+});
+
+test('resolveLayerStyles: an object is filtered to non-empty string values', () => {
+  const r = resolveLayerStyles({ background: 'watercolor', midtone: 'ink', junk: 7, empty: '' });
+  assertEqual(r, { background: 'watercolor', midtone: 'ink' });
+});
+
+test('resolveLayerStyles: accepts a Map', () => {
+  const r = resolveLayerStyles(new Map([['shadows', 'charcoal']]));
+  assertEqual(r, { shadows: 'charcoal' });
+});
+
+test('applyLayerStyles: restamps each shape by its band', () => {
+  const shapes = [
+    { layerName: 'background', style: 'pencil' },
+    { layerName: 'midtone', style: 'pencil' },
+    { layerName: 'highlights', style: 'pencil' },
+  ];
+  const out = applyLayerStyles(shapes, { background: 'watercolor', midtone: 'ink' });
+  assertEqual(out === shapes, true, 'returns the same array');
+  assertEqual(shapes.map(s => s.style), ['watercolor', 'ink', 'pencil']);
+});
+
+test('applyLayerStyles: a null spec leaves every shape untouched', () => {
+  const shapes = [{ layerName: 'midtone', style: 'pencil' }, { layerName: 'background', style: 'oil' }];
+  applyLayerStyles(shapes, null);
+  assertEqual(shapes.map(s => s.style), ['pencil', 'oil']);
+});
+
+test('applyLayerStyles: falls back to the numeric layer index', () => {
+  const shapes = [{ layer: 1, style: 'pencil' }];
+  applyLayerStyles(shapes, { 1: 'ink' });
+  assertEqual(shapes[0].style, 'ink');
+});
+
+test('shapeLayerKey: prefers layerName, then stringifies layer', () => {
+  assertEqual(shapeLayerKey({ layerName: 'midtone', layer: 3 }), 'midtone');
+  assertEqual(shapeLayerKey({ layer: 0 }), '0');
+  assertEqual(shapeLayerKey({}), null);
+  assertEqual(shapeLayerKey(null), null);
+});
+
+test('preserveLayerProps: carries user props across a rebuild by _name', () => {
+  const prev = [{ _name: 'midtone', visible: false, opacity: 0.4, blendMode: 'multiply', style: 'ink', strokes: [1, 2] }];
+  const fresh = [{ _name: 'midtone', visible: true, opacity: 1, blendMode: 'normal', strokes: [] }];
+  preserveLayerProps(fresh, prev);
+  assertEqual([fresh[0].visible, fresh[0].opacity, fresh[0].blendMode, fresh[0].style],
+    [false, 0.4, 'multiply', 'ink']);
+  assertEqual(fresh[0].strokes, [], 'strokes must NOT be carried over');
+});
+
+test('preserveLayerProps: unmatched layers keep their defaults', () => {
+  const fresh = [{ name: 'Background', visible: true }];
+  preserveLayerProps(fresh, [{ name: 'Layer 1', visible: false }]);
+  assertEqual(fresh[0].visible, true);
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

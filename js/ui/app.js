@@ -239,14 +239,13 @@ export class App {
       }
     });
 
-    // Per-layer style: recorded on the layer, applied when that layer is
-    // regenerated. Strokes carry their own style (renderer draws
-    // `_styles[shape.style]`), so a plain repaint is a no-op — regenerate is
-    // what actually applies a new layer style.
+    // Per-layer style (Phase 2.2): applied immediately. The renderer draws
+    // `_styles[shape.style]`, so `setLayerStyle` restamps this layer's strokes
+    // and records the style on the layer (kept across a later regenerate).
     this.layers.root.addEventListener("layer-style-change", (e) => {
-      const layer = this.engine.getLayer(e.detail.layerId);
-      if (!layer) return;
-      layer.style = e.detail.style;
+      if (this.engine.setLayerStyle(e.detail.layerId, e.detail.style)) {
+        this.engine.render();
+      }
     });
 
     // Regenerate a single layer from the source image using its own style.

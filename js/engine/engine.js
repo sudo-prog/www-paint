@@ -33,6 +33,7 @@ import {
 } from './exporter.js';
 import { getAllStyles } from '../styles/index.js';
 import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
+import { applyLayerStyles, preserveLayerProps, resolveLayerStyles } from './layer-styles.js';
 
 // Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
 // The actual painting is done by Painter, but the settings object is still
@@ -193,7 +194,7 @@ export class PaintingEngine {
    * @returns {Array<object>}
    */
   _initMultiLayerLayers() {
-    const names = Engine.LAYER_NAMES;
+    const names = PaintingEngine.LAYER_NAMES;
     const labels = ['Background', 'Shadows', 'Outline', 'Midtone', 'Highlights'];
     return names.map((name, i) => ({
       id: i,
@@ -353,6 +354,14 @@ export class PaintingEngine {
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
     const seed = opts.seed !== undefined ? opts.seed : this._seed;
     const multiLayer = opts.multiLayer !== undefined ? opts.multiLayer : (this.settings.multiLayer || false);
+    // Phase 2.2 — per-layer styles: `opts.layerStyles` (or settings.layerStyles)
+    // maps a tonal band → style name; stamped onto each shape after generation so
+    // the renderer paints different bands with different styles in one pass.
+    // `null` (the default) is a no-op → output stays byte-identical.
+    const layerStyles = resolveLayerStyles(
+      opts.layerStyles !== undefined ? opts.layerStyles : this.settings.layerStyles
+    );
+    if (opts.layerStyles !== undefined) this.settings.layerStyles = opts.layerStyles;
 
     // Update settings
     if (opts.style) this.settings.style = style;
@@ -398,8 +407,10 @@ export class PaintingEngine {
         return s;
       });
 
+      applyLayerStyles(allShapes, layerStyles);
+
       if (multiLayer) {
-        const namedLayers = this._initMultiLayerLayers();
+        const namedLayers = preserveLayerProps(this._initMultiLayerLayers(), this.layers);
         const layerByName = {};
         for (const l of namedLayers) { layerByName[l._name] = l; }
         for (const s of allShapes) {
@@ -485,9 +496,11 @@ export class PaintingEngine {
 
     this._currentPainter = null;
 
+    applyLayerStyles(selected, layerStyles);
+
     if (multiLayer) {
       // Rebuild layers as named layer objects for multi-layer rendering
-      const namedLayers = this._initMultiLayerLayers();
+      const namedLayers = preserveLayerProps(this._initMultiLayerLayers(), this.layers);
       const layerByName = {};
       for (const l of namedLayers) { layerByName[l._name] = l; }
       for (const s of selected) {
@@ -826,6 +839,26 @@ export class PaintingEngine {
    */
   getLayer(index) {
     return this.layers.find(l => l.id === index);
+  }
+
+  /**
+   * Set a layer's render style and restamp its existing strokes (roadmap 2.2).
+   *
+   * The renderer dispatches on each shape's own `style` (`_styles[shape.style]`),
+   * so writing `layer.style` alone would be inert until the layer is regenerated.
+   * This applies the change immediately to the strokes already on the layer and
+   * records it on the layer so a later regenerate keeps it.
+   *
+   * @param {number} index  Layer id.
+   * @param {string} style  Style name (e.g. 'ink').
+   * @returns {boolean} true when a layer was found and updated.
+   */
+  setLayerStyle(index, style) {
+    const layer = this.getLayer(index);
+    if (!layer || !style) return false;
+    layer.style = style;
+    for (const stroke of (layer.strokes || [])) stroke.style = style;
+    return true;
   }
 
   /**

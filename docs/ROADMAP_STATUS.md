@@ -43,7 +43,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 
 | Phase | Status |
 |---|---|
-| 2 — Tonal layers & per-layer styles | **2.1 done** (tonal masks — `js/engine/masks.js`, Mac/M2) · **2.3 done** (layer panel: blend/style/regenerate controls, Mac/M2 + BE `app.js` wiring) · **2.2 layer-aware generation todo (BE, spine)** · Mac media-panel UI stream in flight |
+| 2 — Tonal layers & per-layer styles | **2.1 done** (tonal masks — `js/engine/masks.js`, Mac/M2) · **2.3 done** (layer panel: blend/style/regenerate controls, Mac/M2 + BE `app.js` wiring) · **2.2 PARTIAL (BE)** — per-layer style now applies live (`engine.setLayerStyle`) + `layerStyles`/`preserveLayerProps` plumbing landed & tested (engine 63/63); the multi-layer *render* composite is broken (only the first band renders — defect 0.8) so band-per-style awaits a renderer repair. See `docs/checkpoints/P2.2.md` · Mac media-panel UI stream in flight |
 | 3 — Wet media simulation | **3.1/3.2 done** (wetsim core — `js/engine/wetsim.js`, Mac/M1 @ `04ed927`) · **3.3 mediaModel integration todo (BE)** |
 | 4 — Style Profile system | **4.1 todo (BE, engine consumes full profile)** · **4.2 todo (save/load/library UI — Mac candidate)** |
 | 5 — AI style refinement loop | todo (BE, harness H1–H5) |
@@ -104,3 +104,5 @@ engine of record; the legacy auto-painter is reference-only.
 | 0.5 | `pencil.js:155` invalid brush tip `'pencil'` (vendor registers `cpencil`) | **fixed** — BE, brush tip now `cpencil`; baselines unmoved (harness has no WebGL2, §0.7) |
 | 0.6 | Dead p5.brush stamp path | **fixed** — Mac/M3 |
 | 0.7 | Visual-regression harness has no WebGL2 | noted — keep in mind on any re-baseline |
+| 0.8 | `renderer.renderAll` multi-layer branch renders only the FIRST layer canvas (later bands empty → per-layer visibility/opacity/blend inert) | **open** — BE; blocks the band-per-style half of Phase 2.2. Evidence: `docs/checkpoints/P2.2.md` §4 |
+| 0.9 | `_initMultiLayerLayers` referenced an undefined `Engine` (class is `PaintingEngine`) → `ReferenceError`; multi-layer generation had never run | **fixed** — BE, `PaintingEngine.LAYER_NAMES` |
