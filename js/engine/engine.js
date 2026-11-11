@@ -19,7 +19,7 @@
 
 import { analyzeImage } from './analyzer.js';
 import { Painter } from './painter.js';
-import { Renderer, createRenderer } from './renderer.js';
+import { Renderer, createRenderer, mediaModelToWetOpts } from './renderer.js';
 import {
   aliasStyle,
 } from './style-alias.js';
@@ -380,6 +380,17 @@ export class PaintingEngine {
       opts.layerStyles !== undefined ? opts.layerStyles : this.settings.layerStyles
     );
     if (opts.layerStyles !== undefined) this.settings.layerStyles = opts.layerStyles;
+
+    // Phase 3.3 — consume the media model: build the wet-media render pass.
+    // `opts.wetMedia` wins; otherwise the profile's `mediaModel` drives it. A dry
+    // (or absent) model leaves it off, so output stays byte-identical.
+    const wetOpts = opts.wetMedia !== undefined
+      ? opts.wetMedia
+      : mediaModelToWetOpts(this.settings.mediaModel, seed);
+    this.renderer.setWetMedia(wetOpts || null);
+
+    // Phase 1.5 — smudge/blend (opt-in; off by default).
+    if (opts.smudge !== undefined) this.renderer.setSmudge(opts.smudge);
 
     // Update settings
     if (opts.style) this.settings.style = style;
@@ -991,6 +1002,32 @@ export class PaintingEngine {
    */
   setOrder(order) {
     this._order = order || 'free';
+  }
+
+  /**
+   * Enable, replace or disable the wet-media pass (Phase 3.3).
+   * @param {object|null} opts `createWetSim` options, or null to disable.
+   * @returns {object|null}
+   */
+  setWetMedia(opts) {
+    return this.renderer.setWetMedia(opts || null);
+  }
+
+  /**
+   * Set the smudge/blend amount (Phase 1.5). 0 disables it (default).
+   * @param {number} amount 0..1
+   * @returns {number}
+   */
+  setSmudge(amount) {
+    return this.renderer.setSmudge(amount);
+  }
+
+  /**
+   * The wet sim's paper-height buffer (Phase 1.5), or null when wet media is off.
+   * @returns {Float32Array|null}
+   */
+  getHeightBuffer() {
+    return this.renderer.getHeightBuffer();
   }
 
   /**

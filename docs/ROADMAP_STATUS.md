@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · + B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · + B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -34,7 +34,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 | 1.2 | Structure tensor + orientation/coherence maps | **done** | `analyzer.js` `computeStructureTensor` + `sampleStructure` + `structureDebugRGBA`; `generator.js` `alignToStructure`; **UI: STRUCTURE section — Smart Mode + Edge Follow + Align Wobble sliders** (`controls.js`/`painter.js`/`engine.js`); `tests/visual/structure-debug.html` → `docs/research/structure-debug.png`; 10 new tests (41/41), visual baselines 9/9. See `docs/checkpoints/P1.md` + `docs/UI_CONTROLS.md` |
 | 1.3 | Multi-scale stroke generation + stable seeding | **done** | delivered in the modular engine as Track **R2** (coarse→fine, structure-guided; three scales, residual decreases across passes); app wiring at R6. See `docs/checkpoints/R2.md` |
 | 1.4 | Better stroke initialization (CCL + PCA orientation/size) + dual-stage residual refine | **done** | BE / Track **R3**: `js/engine/regions.js` (quantise → CCL → PCA) + `optimizer.regionInitPass` (elongated regions seeded along their principal axis). blobs +0.56 simMae/+0.023 SSIM, smooth +0.10/+0.002, rings/noise flat; 73/73 tests, 9/9 baselines. See `docs/checkpoints/R3.md` |
-| 1.5 | Lightweight smudge / blend + optional height buffer | todo | BE (renderer.js spine) |
+| 1.5 | Lightweight smudge / blend + optional height buffer | **done** | BE / B1: `renderer.setSmudge` / `_applySmudge` (deterministic 3×3 blend) + `getHeightBuffer()` (wet-sim `paperHeight`); opt-in, baselines 9/9 unmoved. See `docs/checkpoints/P1.5.md` |
 | 1.6 | Watercolor / ink parameter unification | **done** | Mac/M3: `js/engine/brush-media.js` (MEDIA_PARAMS + MEDIA_PRESETS + `resolveMedia`/`toStampOptions`/`isKnownBrushName`); shared bleed/grain/tideDarken/granulation across water/ink/dry media; 8 styles wired. See `docs/checkpoints/P1.6.md` |
 
 ---
@@ -44,7 +44,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 | Phase | Status |
 |---|---|
 | 2 — Tonal layers & per-layer styles | **2.1 done** (tonal masks — `js/engine/masks.js`, Mac/M2) · **2.3 done** (layer panel controls, Mac/M2 + BE `app.js` wiring) · **2.2 generation + paint order DONE (BE)** — per-layer style applies live (`engine.setLayerStyle`) + `layerStyles`/`preserveLayerProps`; multi-layer composite verified band-by-band (`scripts/layer-styles-probe.cjs`, engine 63/63). **Layer-aware scoring DONE (BE, B2)** — `metrics.maskedMetrics`/`weightedSsimLuma` + `score.scoreProfileLayers` (per-band simMae/SSIM + coverage-weighted composite over the IF-1 masks); engine 105/105, baselines 9/9. See `docs/checkpoints/P2.2.md`, `docs/checkpoints/P2.2b.md` · Mac media-panel UI stream in flight |
-| 3 — Wet media simulation | **3.1/3.2 done** (wetsim core — `js/engine/wetsim.js`, Mac/M1 @ `04ed927`) · **3.3 mediaModel integration todo (BE)** |
+| 3 — Wet media simulation | **3.1/3.2 done** (wetsim core — `js/engine/wetsim.js`, Mac/M1 @ `04ed927`) · **3.3 mediaModel integration DONE (BE, B1)** — `engine.generate` consumes `profile.mediaModel` → `renderer.setWetMedia`; per-stroke deposit + multiply-composited wash (deterministic, idempotent); browser probe PASS, engine 105/105, baselines 9/9. See `docs/checkpoints/P3.3.md` |
 | 4 — Style Profile system | **4.1 done (BE, engine consumes the full profile)** — `js/engine/profile.js` (validate / normalise / settings + layer-styles + layer-props + media-model + seed) + `engine.generate({profile})`; probe PASS, 84/84 tests. See `docs/checkpoints/P4.1.md` · **4.2 todo (save/load/library UI — Mac candidate)** |
 | 5 — AI style refinement loop | todo (BE, harness H1–H5) |
 | 6 — Polish, performance, export | todo |

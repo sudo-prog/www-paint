@@ -1,0 +1,51 @@
+{
+  "dry": {
+    "ink": 25462,
+    "hash": 1261476824,
+    "meanLum": 160.50481900780628
+  },
+  "dry2": {
+    "ink": 25462,
+    "hash": 1261476824,
+    "meanLum": 160.50481900780628
+  },
+  "heightDryIsNull": true,
+  "wet": {
+    "ink": 25600,
+    "hash": 3025950117,
+    "meanLum": 118.78674707812056
+  },
+  "wet2": {
+    "ink": 25600,
+    "hash": 3025950117,
+    "meanLum": 118.78674707812056
+  },
+  "wetActive": true,
+  "heightWetIsFloat": true,
+  "provenance": {
+    "changed": 25600,
+    "darker": 25600,
+    "lighter": 0
+  },
+  "viaProfile": {
+    "ink": 25600,
+    "hash": 3025950117,
+    "meanLum": 118.78674707812056
+  },
+  "cWetActive": true,
+  "noSmudge": {
+    "ink": 25462,
+    "hash": 1261476824,
+    "meanLum": 160.50481900780628
+  },
+  "smudge": {
+    "ink": 25496,
+    "hash": 744178672,
+    "meanLum": 160.51353886718036
+  },
+  "smudge2": {
+    "ink": 25496,
+    "hash": 744178672,
+    "meanLum": 160.51353886718036
+  }
+}

@@ -9,6 +9,44 @@
  */
 
 import { drawShape, getRuntimeSource } from './shapes.js';
+import { createWetSim } from './wetsim.js';
+
+/**
+ * An offscreen 2D canvas, or null where none can be created.
+ * @param {number} w
+ * @param {number} h
+ * @returns {OffscreenCanvas|HTMLCanvasElement|null}
+ */
+function makeCanvas(w, h) {
+  const c = typeof OffscreenCanvas !== 'undefined'
+    ? new OffscreenCanvas(w, h)
+    : (typeof document !== 'undefined' ? document.createElement('canvas') : null);
+  if (c) { c.width = w; c.height = h; }
+  return c;
+}
+
+/**
+ * Map a Style Profile `mediaModel` (Phase 4 / `docs/STYLE_PROFILE.md`) onto
+ * `createWetSim` options (Phase 3.3). `kind: 'dry'` (or a missing model) returns
+ * `null` → the wet pass stays off and output is byte-identical.
+ *
+ * @param {object} [m] profile media model
+ * @param {number} [seed]
+ * @returns {object|null} wetsim opts, or null
+ */
+export function mediaModelToWetOpts(m, seed) {
+  if (!m || typeof m !== 'object') return null;
+  const kind = m.kind || 'dry';
+  if (kind === 'dry') return null;
+  return {
+    seed: (Number(seed) >>> 0) || 12345,
+    maxWet: 0.6 + 1.4 * (typeof m.wetness === 'number' ? m.wetness : 0.5),
+    flowRate: Math.min(1, 0.15 + 0.8 * (typeof m.bleed === 'number' ? m.bleed : 0.4)),
+    dryRate: Math.max(0.05, typeof m.drying === 'number' ? m.drying : 1),
+    granulation: Math.min(1, Math.max(0, typeof m.granulation === 'number' ? m.granulation : 0)),
+    heightScale: 0.5 + 1.5 * (typeof m.height === 'number' ? m.height : 0.5),
+  };
+}
 
 /**
  * Create a renderer bound to a canvas context.
@@ -36,6 +74,129 @@ export class Renderer {
     this.multiLayer = false;
     /** Map of layer name to offscreen canvas for multi-layer rendering. */
     this._layerCanvases = new Map();
+    /** Optional wet-media pass (Phase 3.3): `{ sim, canvas, ctx, opts }` or null. */
+    this._wet = null;
+    /** Optional smudge/blend amount (Phase 1.5). 0 = off (byte-identical). */
+    this._smudge = 0;
+    // Opt-in: an explicit `wetMedia` wetsim-opts object, or a profile
+    // `mediaModel` mapped through mediaModelToWetOpts. Absent → no wet pass.
+    const wetOpts = opts.wetMedia !== undefined
+      ? opts.wetMedia
+      : mediaModelToWetOpts(opts.mediaModel, opts.seed);
+    if (wetOpts) this.setWetMedia(wetOpts);
+    if (opts.smudge) this._smudge = Math.min(1, Math.max(0, Number(opts.smudge) || 0));
+  }
+
+  /**
+   * Enable, replace or disable the wet-media pass (Phase 3.3).
+   * The sim and its offscreen canvas are sized to the render target, so they are
+   * rebuilt on every `setSize`.
+   *
+   * @param {object|null} opts - `createWetSim` options, or null/undefined to disable.
+   * @returns {object|null} the wet state, or null.
+   */
+  setWetMedia(opts) {
+    if (!opts) { this._wet = null; return null; }
+    const canvas = makeCanvas(this.width, this.height);
+    if (!canvas) { this._wet = null; return null; }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { this._wet = null; return null; }
+    const sim = createWetSim(this.width, this.height, opts);
+    this._wet = { sim, canvas, ctx, opts };
+    return this._wet;
+  }
+
+  /**
+   * Set the smudge/blend amount (Phase 1.5). 0 disables it (the default, so
+   * existing output is byte-identical).
+   * @param {number} amount 0..1
+   * @returns {number} the clamped amount
+   */
+  setSmudge(amount) {
+    const a = Number(amount) || 0;
+    this._smudge = a <= 0 ? 0 : Math.min(1, a);
+    return this._smudge;
+  }
+
+  /**
+   * The wet sim's paper-height field (the Phase 1.5 optional height buffer),
+   * or null when wet media is off.
+   * @returns {Float32Array|null}
+   */
+  getHeightBuffer() {
+    return this._wet ? this._wet.sim.paperHeight : null;
+  }
+
+  /**
+   * Deposit one stroke's pigment into the wet sim (Phase 3.3).
+   * @param {object} shape engine-format shape
+   * @private
+   */
+  _wetDeposit(shape) {
+    if (!shape || !this._wet) return;
+    const p = shape.params || [];
+    const cx = p[0], cy = p[1];
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return;
+    const rx = Math.abs(p[2]) || 1, ry = Math.abs(p[3]) || 1;
+    const alpha = shape.alpha !== undefined && shape.alpha !== null ? shape.alpha : 1;
+    if (alpha <= 0) return;
+    // Per-stroke pigment is deliberately small: `compositeInto` saturates
+    // (coverage 1−e^(−6m)) by m≈0.5, so a several-hundred-stroke wash must
+    // deposit a fraction of a normal stroke or it multiplies to solid black.
+    // 0.004 is calibrated so a ~400-stroke wash stays translucent and the
+    // painting reads through it (probe: mean luminance 160→119), not a film.
+    // See docs/checkpoints/P3.3.md.
+    this._wet.sim.deposit(cx, cy, Math.max(1, Math.max(rx, ry)), shape.color0 || [0, 0, 0], {
+      amount: alpha * 0.004,
+      water: 0.4 + 0.6 * alpha,
+    });
+  }
+
+  /**
+   * Dry the sim, composite the wash, and MULTIPLY it over the layer. White
+   * paper multiplies to identity and pigment darkens, so the wash adds
+   * absorption on top of the strokes already drawn instead of wiping them.
+   * @param {CanvasRenderingContext2D} ctx
+   * @private
+   */
+  _wetComposite(ctx) {
+    const wet = this._wet;
+    if (!wet) return;
+    if (wet.canvas.width !== this.width || wet.canvas.height !== this.height) return;
+    wet.sim.dry(1 / 60);
+    wet.sim.compositeInto(wet.ctx);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(wet.canvas, 0, 0);
+    ctx.restore();
+  }
+
+  /**
+   * A cheap, deterministic 3×3 blend pass (Phase 1.5 smudge). No RNG — the same
+   * input always yields the same output.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} w
+   * @param {number} h
+   * @param {number} amount 0..1
+   * @private
+   */
+  _applySmudge(ctx, w, h, amount) {
+    if (typeof ctx.getImageData !== 'function') return;
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+    const out = new Uint8ClampedArray(d);
+    const k = amount * 0.25;
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const i = (y * w + x) * 4;
+        for (let c = 0; c < 3; c++) {
+          const n = d[i - 4 + c] + d[i + 4 + c] + d[i - w * 4 + c] + d[i + w * 4 + c];
+          out[i + c] = d[i + c] * (1 - k) + (n / 4) * k;
+        }
+      }
+    }
+    ctx.putImageData(new ImageData(out, w, h), 0, 0);
   }
 
   /**
@@ -59,6 +220,8 @@ export class Renderer {
       this.ctx.canvas.width = w;
       this.ctx.canvas.height = h;
     }
+    // The wet sim grid must match the render target — rebuild it at the new size.
+    if (this._wet) this.setWetMedia(this._wet.opts);
   }
 
   /**
@@ -120,6 +283,11 @@ export class Renderer {
 
     if (doClear) this.clear();
 
+    // The wet sim accumulates pigment across deposits, so start every render
+    // pass from a fresh sheet — this keeps render() idempotent (same input →
+    // same output), which the deterministic contract requires.
+    if (this._wet && !this.multiLayer) this.setWetMedia(this._wet.opts);
+
     // Sort layers by index, render in order
     const sorted = [...(layers || [])].sort((a, b) => a.id - b.id);
 
@@ -161,6 +329,11 @@ export class Renderer {
       for (const layer of sorted) {
         this.renderLayer(layer, progress);
       }
+      // Phase 3.3 — wet-media wash, then Phase 1.5 — smudge, ONCE for the pass
+      // (multi-layer mode is skipped: the sim is a single shared grid, so
+      // per-layer wet rendering is a later refinement). Default state: neither.
+      if (this._wet) this._wetComposite(this.ctx);
+      if (this._smudge > 0) this._applySmudge(this.ctx, this.width, this.height, this._smudge);
     }
   }
 
@@ -191,6 +364,7 @@ export class Renderer {
     for (let i = 0; i < visibleCount; i++) {
       const shape = strokes[i];
       this.drawShapeAt(shape, 1);
+      if (this._wet && !this.multiLayer) this._wetDeposit(shape);
     }
 
     // Composite paint surface for this layer (freehand painting)
@@ -203,6 +377,10 @@ export class Renderer {
         ctx.setTransform(prevTransform);
       }
     }
+
+    // The wet wash and the smudge are composited ONCE per pass, in renderAll,
+    // after every layer's deposits — not here (that would composite once per
+    // layer). Both live in renderAll's single-layer path only.
 
     ctx.restore();
   }
