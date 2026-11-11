@@ -235,6 +235,20 @@ test('analyzeImage produces correct result', () => {
   }
 });
 
+test('analyzer: tiny image does not hang (k-means init)', () => {
+  // Regression guard: with fewer pixels than paletteSize the k-means init used
+  // to spin forever in a `do { } while (used.has(idx))` loop. If this ever
+  // hangs again, the suite hangs here.
+  const px = new Uint8ClampedArray(4);
+  px[0] = 10; px[1] = 20; px[2] = 30; px[3] = 255;
+  const a = analyzeImage(px, 1, 1);
+  assertEqual(a.width, 1);
+  assertEqual(a.height, 1);
+  if (!Array.isArray(a.palette) || a.palette.length < 1) {
+    throw new Error('tiny image should still yield at least one palette colour');
+  }
+});
+
 test('sampleLuminance', () => {
   const lum = new Uint8ClampedArray([0, 128, 255]);
   const val = sampleLuminance(lum, 3, 1, 1, 0);

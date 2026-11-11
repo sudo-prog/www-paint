@@ -179,15 +179,30 @@ function extractPalette(samples, k, seed = 12345) {
     data.push(s[0], s[1], s[2]);
   }
 
-  // K-means with fixed iterations
-  const clusters = k;
+  // K-means with fixed iterations.
+  // Clamp the cluster count to the number of available (sub)sampled colours:
+  // with fewer distinct samples than `k` the index pool is exhausted and the
+  // init loop below can never find an unused index — it spins forever. Small
+  // images therefore degrade to one cluster per available colour.
+  const sampleCount = Math.floor(data.length / 3);
+  const clusters = Math.max(1, Math.min(k, sampleCount));
   const centroids = new Array(clusters);
   // Initialize: pick spread-out samples (deterministically via seeded RNG)
   const used = new Set();
   for (let c = 0; c < clusters; c++) {
-    let idx;
-    do { idx = Math.floor(rnd() * (data.length / 3)) * 3; }
-    while (used.has(idx));
+    let idx = 0;
+    // Bounded probe (identical to the old loop for normal images, which never
+    // collide more than a handful of times).
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const cand = Math.floor(rnd() * sampleCount) * 3;
+      if (!used.has(cand)) { idx = cand; break; }
+    }
+    // Guarantee progress if random probing collided every time.
+    if (used.has(idx)) {
+      for (let i = 0; i < sampleCount; i++) {
+        if (!used.has(i * 3)) { idx = i * 3; break; }
+      }
+    }
     used.add(idx);
     centroids[c] = [data[idx], data[idx + 1], data[idx + 2]];
   }
