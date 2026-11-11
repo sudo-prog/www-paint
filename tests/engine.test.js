@@ -37,6 +37,9 @@ import {
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
 import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan } from '../js/engine/optimizer.js';
+import {
+  REGION_DEFAULTS, quantizeBins, labelComponents, pcaFromStats, buildRegions, fitEllipse
+} from '../js/engine/regions.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -695,6 +698,115 @@ test('optimiser: multi-scale is deterministic for the same seed', () => {
   const a = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
   const b = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
   assertEqual(a.shapes, b.shapes, 'multi-scale shape lists should be identical');
+});
+
+// ─── Regions — CCL + PCA (Track R3) ───────────────────────────────
+console.log('\nRegions — CCL + PCA (Track R3):');
+
+test('regions: quantizeBins groups near colours and separates distinct ones', () => {
+  const px = new Uint8ClampedArray(4 * 4); // 4 pixels
+  const set = (i, r, g, b) => { px[i * 4] = r; px[i * 4 + 1] = g; px[i * 4 + 2] = b; px[i * 4 + 3] = 255; };
+  set(0, 10, 10, 10); set(1, 12, 11, 9); set(2, 200, 10, 10); set(3, 205, 12, 11);
+  const bins = quantizeBins(px, 4, 1, 6);
+  assertEqual(bins[0], bins[1], 'near-identical colours should share a bin');
+  assertEqual(bins[2], bins[3], 'near-identical colours should share a bin');
+  if (bins[0] === bins[2]) throw new Error('distinct colours must land in different bins');
+});
+
+test('regions: labelComponents respects 4- vs 8-connectivity', () => {
+  // Two same-bin pixels touching only on a corner (2x2 map).
+  const diag = new Int32Array([1, 0, 0, 1]);
+  const c4 = labelComponents(diag, 2, 2, 4);
+  const c8 = labelComponents(diag, 2, 2, 8);
+  assertEqual(c4.stats[c4.labels[0] - 1].area, 1, 'corner-touching pixels stay split at 4-connectivity');
+  assertEqual(c8.stats[c8.labels[0] - 1].area, 2, 'corner-touching pixels join at 8-connectivity');
+  // A 3x3 plus of bin 1 is one 4-connected component spanning all 5 arms.
+  const plus = new Int32Array([0, 1, 0, 1, 1, 1, 0, 1, 0]);
+  const lab = labelComponents(plus, 3, 3, 4);
+  assertEqual(lab.stats[lab.labels[4] - 1].area, 5, 'the plus is one 4-connected component');
+});
+
+test('regions: pcaFromStats reads the principal axis of a uniform bar', () => {
+  const s = { area: 0, sumX: 0, sumY: 0, sumXX: 0, sumXY: 0, sumYY: 0, minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 30; x++) {
+    s.area++; s.sumX += x; s.sumY += y; s.sumXX += x * x; s.sumXY += x * y; s.sumYY += y * y;
+  }
+  const p = pcaFromStats(s);
+  assertApprox(p.angle, 0, 1e-9, 'a horizontal bar has a 0-radian major axis');
+  if (!(p.elong > 3)) throw new Error(`a 30x6 bar should be strongly elongated: ${p.elong}`);
+});
+
+test('regions: fitEllipse derives half-extents from the eigenvalue spread', () => {
+  const fit = fitEllipse({ l1: 300, l2: 3, angle: 0 });
+  assertApprox(fit.halfMajor, 0.5 * Math.sqrt(12 * 300), 1e-9);
+  assertApprox(fit.halfMinor, 0.5 * Math.sqrt(12 * 3), 1e-9);
+  assertEqual(fit.angle, 0);
+});
+
+test('regions: buildRegions fits a bar, drops the background, and is deterministic', () => {
+  const W = 96, H = 96;
+  const px = makeRGBImage(W, H, (x, y) =>
+    (x >= 18 && x < 78 && y >= 40 && y < 46) ? [230, 60, 60] : [40, 44, 54]);
+  const opts = { levels: 6, minArea: 12, maxAreaFrac: 0.3 };
+  const regions = buildRegions({ pixels: px, width: W, height: H }, opts);
+  const bar = regions.find((r) => r.elong >= 2.5);
+  if (!bar) throw new Error('expected an elongated bar region');
+  if (Math.abs(bar.angle) > 0.2) throw new Error(`horizontal bar should fit ~0 rad: ${bar.angle}`);
+  if (!(bar.elong > 3)) throw new Error(`60x6 bar should be strongly elongated: ${bar.elong}`);
+  for (const r of regions) {
+    if (r.area > 0.3 * W * H) throw new Error('the full-canvas background must be excluded');
+  }
+  const again = buildRegions({ pixels: px, width: W, height: H }, opts);
+  assertEqual(again.length, regions.length);
+  assertApprox(again[0].angle, regions[0].angle, 1e-12);
+});
+
+test('optimiser: region-init defaults track the region module', () => {
+  assertEqual(OPTIMISER_DEFAULTS.regionLevels, REGION_DEFAULTS.levels);
+  assertEqual(OPTIMISER_DEFAULTS.regionMinArea, REGION_DEFAULTS.minArea);
+  assertEqual(OPTIMISER_DEFAULTS.regionMaxAreaFrac, REGION_DEFAULTS.maxAreaFrac);
+});
+
+// ─── Optimiser region init (Track R3) ─────────────────────────────
+console.log('\nOptimiser region init (Track R3):');
+
+test('optimiser: regionInit off emits no region strokes', () => {
+  const px = makeRGBImage(96, 96, (x) => (x < 48 ? [200, 40, 40] : [30, 60, 150]));
+  const r = optimise(analyzeImage(px, 96, 96), { count: 120, seed: 5, regionInit: false });
+  assertEqual(r.stats.regions, 0);
+  assertEqual(r.shapes.filter((s) => s.id.startsWith('r3_')).length, 0);
+});
+
+test('optimiser: region init keeps the stroke budget exact and tags its strokes', () => {
+  const W = 96, H = 96;
+  const px = makeRGBImage(W, H, (x, y) =>
+    (x >= 18 && x < 78 && y >= 40 && y < 46) ? [230, 60, 60] : [40, 44, 54]);
+  const r = optimise(analyzeImage(px, W, H), { count: 120, seed: 31 });
+  assertEqual(r.shapes.length, 120, 'budget stays exact with an init pass');
+  if (!(r.stats.regions > 0)) throw new Error('an elongated target should seed region strokes');
+  assertEqual(r.shapes.filter((s) => s.id.startsWith('r3_')).length, r.stats.regions,
+    'the first `regions` strokes are the tagged init strokes');
+});
+
+test('optimiser: region init orients strokes along the principal axis', () => {
+  const W = 96, H = 96;
+  const px = makeRGBImage(W, H, (x, y) =>
+    (y >= 18 && y < 78 && x >= 40 && x < 46) ? [230, 60, 60] : [40, 44, 54]);
+  const r = optimise(analyzeImage(px, W, H), { count: 120, seed: 31 });
+  if (!(r.stats.regions > 0)) throw new Error('expected region strokes on a vertical bar');
+  const rot = r.shapes[0].params[4];
+  if (!(Math.abs(rot) > 1.2 && Math.abs(rot) < 1.95)) {
+    throw new Error(`a vertical bar should seed ~90° strokes, got ${rot}`);
+  }
+});
+
+test('optimiser: region init is deterministic for the same seed', () => {
+  const W = 64, H = 64;
+  const px = makeRGBImage(W, H, (x, y) =>
+    (x >= 10 && x < 54 && y >= 28 && y < 34) ? [230, 60, 60] : [40, 44, 54]);
+  const a = optimise(analyzeImage(px, W, H), { count: 80, seed: 7 });
+  const b = optimise(analyzeImage(px, W, H), { count: 80, seed: 7 });
+  assertEqual(a.shapes, b.shapes, 'region-init shape lists should be identical');
 });
 
 // ─── Layer styles — Phase 2.2 ─────────────────────────────────────

@@ -50,6 +50,7 @@ import { rng } from '../utils/rng.js';
 import { clamp, lerp } from '../utils/math.js';
 import { createShape, bounds } from './shapes.js';
 import { sampleEdge, sampleStructure } from './analyzer.js';
+import { buildRegions } from './regions.js';
 
 /**
  * Default options for {@link optimise}.
@@ -84,6 +85,23 @@ export const OPTIMISER_DEFAULTS = {
   coarseBlur: 0.6,     // coarsest reference blur, as a fraction of the base radius
   fineElongation: 1.6, // elongation weight at the finest scale (coarse is x0.5)
   weightBias: 2.0,     // coarse→fine budget weighting: pass k gets 1/(k + bias)
+
+  // ── R3 region init (CCL + PCA stroke initialisation) ─────────────────────
+  // Only *clearly elongated* regions (≥ regionMinElong) are axis-filled: those
+  // are the ones where one oriented, region-sized stroke beats several residual
+  // dabs. Compact/isotropic and ring-like components are left to the residual
+  // schedule, which handles them better — measurement showed patch-filling them
+  // costs fidelity, so there is no patch path. Defaults tuned on the parity
+  // bench (see docs/checkpoints/R3.md).
+  regionInit: true,      // seed strokes from connected-component principal axes
+  regionLevels: 6,       // colour-codebook bins per channel for the CCL pass
+  regionMinArea: 10,     // min component area (pixels) to consider
+  regionMaxAreaFrac: 0.30,// max component area, as a fraction of the image
+  regionMinElong: 2.5,   // elongation at/above which a region is "elongated"
+  regionShare: 0.08,     // fraction of the stroke budget for the init pass
+  regionMaxSegments: 3,  // max segments one elongated region may spend
+  regionMargin: 1.3,     // dab inflation over the fitted region extent
+  regionAlpha: 1.0,      // opacity of an init (fill) stroke
 };
 
 /**
@@ -369,6 +387,94 @@ export function optimise(analysis, options = {}) {
   let strokeIndex = 0;
 
   /**
+   * Composite a chosen dab into `paint`/`err`/`cov` and emit its shape. Shared
+   * by the region-init pass (R3) — the coarse→fine passes push inline so their
+   * original ordering/ids are untouched.
+   */
+  function commitShape(p) {
+    evaluate(p, windowOf(p, 1), true);
+    if (opts.onStroke) opts.onStroke(strokeIndex, meanErrorVs(target));
+    const cr = Math.round(clamp(p.r, 0, 255));
+    const cg = Math.round(clamp(p.g, 0, 255));
+    const cb = Math.round(clamp(p.b, 0, 255));
+    shapes.push(createShape({
+      id: `r3_${strokeIndex}_${((strokeIndex * 2654435761) >>> 0).toString(36)}`,
+      type: 'E',
+      params: [p.x, p.y, p.rx, p.ry, p.rot, p.rot, 0, 0],
+      color0: [cr, cg, cb],
+      color1: [cr, cg, cb],
+      alpha: p.alpha,
+      style: 'painterly',
+      layer: 0,
+      order: strokeIndex,
+      seed: strokeIndex,
+    }));
+    strokeIndex++;
+  }
+
+  /**
+   * R3 region-init pass — CCL + PCA stroke initialisation.
+   *
+   * Segment the target into connected components (by a coarse colour codebook),
+   * fit each component's principal axis, and seed strokes from the geometry of
+   * the region it belongs to. Only **clearly elongated** components (elongation
+   * ≥ `regionMinElong`) are seeded, each as a short chain of ellipse dabs laid
+   * along its principal axis and sized to the region's cross-section — the case
+   * where one oriented stroke does the work of several residual dabs.
+   * Compact/isotropic and ring-like components are skipped: the residual
+   * schedule fits them better (measured — a patch-fill path cost fidelity, so
+   * there is none), and skipping keeps the pass from blanketing the canvas
+   * (the R0 failure mode).
+   *
+   * Every dab takes the component's *mean* colour, so a flat region is
+   * initialised with one near-exact mark. Regions are visited largest-first and
+   * `budget` caps the spend, so a small share of the total is used. No
+   * randomness is used, so the pass is deterministic.
+   *
+   * @param {number} budget - Max strokes this pass may emit.
+   * @returns {number} Strokes actually emitted.
+   */
+  function regionInitPass(budget) {
+    if (budget <= 0) return 0;
+    levelTarget = target; // component means are local averages of the raw target
+    elongMul = 1;
+    const regions = buildRegions(analysis, {
+      levels: opts.regionLevels,
+      minArea: opts.regionMinArea,
+      maxAreaFrac: opts.regionMaxAreaFrac,
+    });
+    let emitted = 0;
+    for (let ri = 0; ri < regions.length && emitted < budget; ri++) {
+      const rg = regions[ri];
+      if (rg.elong < opts.regionMinElong) continue; // only clearly elongated regions
+      const r = clamp(rg.color[0], 0, 255);
+      const g = clamp(rg.color[1], 0, 255);
+      const b = clamp(rg.color[2], 0, 255);
+      const halfMajor = 0.5 * Math.sqrt(12 * rg.l1);
+      const halfMinor = 0.5 * Math.sqrt(12 * rg.l2);
+      const segs = clamp(Math.round(halfMajor / Math.max(1, halfMinor)), 1, opts.regionMaxSegments);
+      const segHalf = clamp(halfMajor / segs, opts.minSize / 2, opts.maxSize);
+      const ry = clamp(halfMinor * opts.regionMargin, opts.minSize / 2, opts.maxSize);
+      const ca = Math.cos(rg.angle);
+      const sa = Math.sin(rg.angle);
+      for (let k = 0; k < segs && emitted < budget; k++) {
+        const t = segs === 1 ? 0 : (k / (segs - 1)) * 2 - 1; // -1 … +1 along the axis
+        const off = t * Math.max(0, halfMajor - segHalf);
+        commitShape({
+          x: rg.cx + ca * off,
+          y: rg.cy + sa * off,
+          rx: clamp(segHalf * opts.regionMargin, opts.minSize / 2, opts.maxSize),
+          ry,
+          rot: rg.angle,
+          r, g, b, alpha: opts.regionAlpha,
+        });
+        emitted++;
+      }
+    }
+    return emitted;
+  }
+
+  /**
    * Paint one coarse→fine pass: place up to `budget` dabs of radius
    * `baseR·radiusMul` against `levelTarget`, refining each with the local
    * hill-climb, committing into the shared `paint` buffer.
@@ -487,9 +593,21 @@ export function optimise(analysis, options = {}) {
     return emitted;
   }
 
+  // ── R3 region init (CCL + PCA) ────────────────────────────────────────────
+  // Seed strokes from connected-component principal axes *before* the residual
+  // schedule, so elongated / flat regions start nearly right and the coarse→fine
+  // passes spend their budget on what the init did not already cover.
+  const regionBudget = opts.regionInit
+    ? Math.round(opts.count * clamp(opts.regionShare, 0, 1))
+    : 0;
+  const regionUsed = regionInitPass(regionBudget);
+
   // ── coarse → fine schedule ────────────────────────────────────────────────
   const plan = buildScalePlan(opts, baseR);
-  let remaining = opts.count;
+  let remaining = opts.count - regionUsed;
+  // The schedule's own total (what the init left) drives the budget split, so
+  // the pass weights still describe the schedule and the sum stays exact.
+  const scheduleTotal = Math.max(1, remaining);
 
   for (let k = 0; k < plan.length; k++) {
     if (remaining <= 0) break;
@@ -498,7 +616,7 @@ export function optimise(analysis, options = {}) {
     // This pass's share of the budget; the last pass takes whatever is left so
     // the total is exact. Any budget a coarse pass leaves unspent (because it
     // ran out of error) carries forward to the next, finer pass.
-    let budget = isLast ? remaining : Math.min(remaining, Math.round(opts.count * level.weight));
+    let budget = isLast ? remaining : Math.min(remaining, Math.round(scheduleTotal * level.weight));
     const passTarget = level.blurR >= 1 ? blurRGB(target, W, H, level.blurR) : target;
     // Reset the residual map to measure the running canvas against this scale's
     // (progressively sharper) reference.
@@ -519,6 +637,7 @@ export function optimise(analysis, options = {}) {
     stats: {
       count: shapes.length,
       scales: plan.length,
+      regions: regionUsed,
       initialError: +initialError.toFixed(4),
       finalError: +finalError.toFixed(4),
       mae: +finalError.toFixed(4),

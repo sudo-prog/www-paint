@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R2 done; Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R3 done (CCL + PCA stroke init, roadmap 1.4). Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -33,7 +33,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 | 1.1 | Harden p5.brush integration | **done** | Mac/M3: `js/engine/brush-stamp-engine.js` rewritten against the real WebGL2 p5.brush API; **10 styles on the enhanced stamp path** with a proven fallback. The old path was dead (`brush.h is not a function`). See `docs/checkpoints/P1.6.md`, `docs/research/brush-media-compare.png` |
 | 1.2 | Structure tensor + orientation/coherence maps | **done** | `analyzer.js` `computeStructureTensor` + `sampleStructure` + `structureDebugRGBA`; `generator.js` `alignToStructure`; **UI: STRUCTURE section — Smart Mode + Edge Follow + Align Wobble sliders** (`controls.js`/`painter.js`/`engine.js`); `tests/visual/structure-debug.html` → `docs/research/structure-debug.png`; 10 new tests (41/41), visual baselines 9/9. See `docs/checkpoints/P1.md` + `docs/UI_CONTROLS.md` |
 | 1.3 | Multi-scale stroke generation + stable seeding | **done** | delivered in the modular engine as Track **R2** (coarse→fine, structure-guided; three scales, residual decreases across passes); app wiring at R6. See `docs/checkpoints/R2.md` |
-| 1.4 | Better stroke initialization (CCL + PCA orientation/size) + dual-stage residual refine | todo | BE / Track **R3** (spine) — next spine item |
+| 1.4 | Better stroke initialization (CCL + PCA orientation/size) + dual-stage residual refine | **done** | BE / Track **R3**: `js/engine/regions.js` (quantise → CCL → PCA) + `optimizer.regionInitPass` (elongated regions seeded along their principal axis). blobs +0.56 simMae/+0.023 SSIM, smooth +0.10/+0.002, rings/noise flat; 73/73 tests, 9/9 baselines. See `docs/checkpoints/R3.md` |
 | 1.5 | Lightweight smudge / blend + optional height buffer | todo | BE (renderer.js spine) |
 | 1.6 | Watercolor / ink parameter unification | **done** | Mac/M3: `js/engine/brush-media.js` (MEDIA_PARAMS + MEDIA_PRESETS + `resolveMedia`/`toStampOptions`/`isKnownBrushName`); shared bleed/grain/tideDarken/granulation across water/ink/dry media; 8 styles wired. See `docs/checkpoints/P1.6.md` |
 
@@ -73,7 +73,7 @@ engine of record; the legacy auto-painter is reference-only.
 | R0 | Parity harness + baseline gap | **done** — gap recorded in `docs/research/parity/baseline.json` |
 | R1 | Optimiser core (residual placement + our own local refine) | **done** — `js/engine/optimizer.js`; beats R0 on all 4 images (blobs 87.8→93.2, rings 89.2→97.9, smooth 94.4→98.7 simMae; SSIM ~0.49→0.83+). See `docs/checkpoints/R1.md` |
 | R2 | Structure-guided multi-scale | **done** — coarse→fine pass schedule in `optimizer.js` (per-scale blurred reference, coarse-first budget split, scale-aware structure elongation). Both metrics up on every structured image: blobs 93.22→**97.52** simMae / 0.832→**0.867** SSIM, rings +0.08, smooth +0.12; `noise` (negative control) −0.08. See `docs/checkpoints/R2.md` |
-| R3 | CCL + PCA stroke init | todo (BE — next spine item) |
+| R3 | CCL + PCA stroke init | **done** — `js/engine/regions.js` + `regionInitPass`; beats R2 on the structured images (blobs 97.52→**98.08** simMae / 0.8671→**0.8902** SSIM, smooth 98.78→**98.88**), rings/noise flat. See `docs/checkpoints/R3.md` |
 | R4 | Feature parity (outlines / region-fill / order / per-style shaping) | todo |
 | R5 | Exceed (per-layer styles, smudge, wet media, Style Profiles, AI) | todo |
 | R6 | Retire the port (app + baselines 100% clean-room) | todo |

@@ -1,5 +1,5 @@
 {
-  "when": "2026-11-10T23:42:27.669Z",
+  "when": "2026-11-11T14:51:12.510Z",
   "engine": "www-paint parity (Track R)",
   "seed": 12345,
   "shapes": 400,
@@ -21,9 +21,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 97.52,
-          "mae": 6.32,
-          "ssim": 0.8671,
+          "simMae": 98.08,
+          "mae": 4.91,
+          "ssim": 0.8902,
           "strokes": 400
         }
       }
@@ -69,9 +69,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 98.78,
-          "mae": 3.11,
-          "ssim": 0.9317,
+          "simMae": 98.88,
+          "mae": 2.86,
+          "ssim": 0.9336,
           "strokes": 400
         }
       }
@@ -93,9 +93,9 @@
         },
         "modular": {
           "sim": null,
-          "simMae": 80.89,
-          "mae": 48.74,
-          "ssim": 0.0256,
+          "simMae": 80.88,
+          "mae": 48.75,
+          "ssim": 0.0257,
           "strokes": 400
         }
       }

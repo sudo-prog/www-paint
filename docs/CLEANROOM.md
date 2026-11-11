@@ -1,6 +1,6 @@
 # Clean-Room Engine — Decision & Track
 
-**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0 + R1 + R2 done**
+**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0 + R1 + R2 + R3 done**
 
 ---
 
@@ -80,8 +80,14 @@ hill-climb) beats the R0 baseline on all four bench images; rings already meets
 the R6 "within 2 points of reference" gate. **R2 ✔** — structure-guided
 multi-scale (coarse→fine pass schedule on the same optimiser) improves both
 simMae and SSIM on every *structured* bench image (blobs 93.22→97.52 simMae,
-0.832→0.867 SSIM); `noise` is the deliberate unfittable control. Evidence:
-`docs/checkpoints/R1.md`, `docs/checkpoints/R2.md`,
+0.832→0.867 SSIM); `noise` is the deliberate unfittable control. **R3 ✔** —
+connected-component labelling + principal-axis (CCL + PCA) stroke initialisation
+(`js/engine/regions.js` + `optimizer.regionInitPass`): elongated regions are
+seeded along their principal axis before the residual schedule. Beats R2 on the
+structured images (blobs 97.52→**98.08** simMae / 0.8671→**0.8902** SSIM —
+gap to reference 2.02→1.46; smooth 98.78→**98.88**); rings (rotationally
+symmetric — no principal axis) and `noise` are flat. Evidence:
+`docs/checkpoints/R1.md`, `docs/checkpoints/R2.md`, `docs/checkpoints/R3.md`,
 `docs/research/parity/baseline.json`.
 
 Ship-safety: the app stays runnable at every step. The legacy painter remains the default
