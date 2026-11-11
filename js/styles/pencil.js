@@ -152,7 +152,7 @@ export class PencilStyle {
       // Try p5.brain (p5.brush) first for authentic brush tip dynamics
       if (isBrushReady()) {
         const ok = stampStrokeSync(ctx, shape, {
-          brushName: 'pencil',
+          brushName: 'cpencil',
           color: shape.color0 || a[8] || [0, 0, 0],
           alpha: shape.alpha ?? a[a.length - 1] ?? 1,
           size: a[6],
