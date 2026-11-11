@@ -251,6 +251,10 @@ trust a summary. M4 makes **no source edits**; its output is evidence, not commi
 
 ## 5b. Next streams — issued 2026-11-11 by BE
 
+> **Updated 2026-11-12:** the live, ordered Mac task list is now
+> **`docs/MAC-TASKS.md`** (hand-in → M6b QA → M7–M11). This section is kept for
+> the stream definitions it introduced.
+
 M1–M4 are all **landed** (see `docs/ROADMAP_STATUS.md`). You have one in-flight
 stream (the **media panel** — `js/ui/media.js` + `media-host.js` +
 `scripts/media-panel-audit.js` + `maestro/www-paint-media-panel.yaml` +

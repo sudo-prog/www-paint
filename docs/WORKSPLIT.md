@@ -143,6 +143,10 @@ Track B/C integration ........... TP
 QA / verification ............... MAC (M4)
 ```
 
+**Live Mac task list (updated 2026-11-12):** `docs/MAC-TASKS.md` — the ordered,
+file-isolated FE streams (hand-in → M6b QA → M7 library UI → M8 export UI →
+M9 style polish → M10 a11y/responsive → M11 docs).
+
 ## 9. Open risks — need a user decision
 
 1. **Syncthing mirrors the working tree — RESOLVED (2026-11-11, user decision):
