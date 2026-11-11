@@ -34,6 +34,7 @@ import {
 import { getAllStyles } from '../styles/index.js';
 import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
 import { applyLayerStyles, preserveLayerProps, resolveLayerStyles } from './layer-styles.js';
+import { applyProfile } from './profile.js';
 
 // Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
 // The actual painting is done by Painter, but the settings object is still
@@ -349,10 +350,27 @@ export class PaintingEngine {
    * @returns {Promise<Array<object>>} Selected shape objects (in internal format).
    */
   async generate(opts = {}) {
+    // Phase 4.1 — consume a Style Profile. `opts.profile` (or settings.profile)
+    // expands into generator settings + per-layer styles + media model + seed.
+    // The profile is folded into `this.settings` *before* the lines below read
+    // them, so an explicit `opts.*` still wins over the profile. No profile
+    // present → no behavioural change (output stays byte-identical).
+    const profile = opts.profile !== undefined ? opts.profile : this.settings.profile;
+    let profileSeed = null;
+    if (profile) {
+      const r = applyProfile(profile);
+      this.settings = resolveSettings({ ...this.settings, ...r.settings });
+      if (r.layerStyles) this.settings.layerStyles = r.layerStyles;
+      if (r.mediaModel) this.settings.mediaModel = r.mediaModel;
+      this.settings.profile = profile;
+      profileSeed = r.seed;
+    }
+
     const style = opts.style || this.settings.style || 'pencil';
     const count = opts.count || this.settings.strokeCount || 1000;
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
-    const seed = opts.seed !== undefined ? opts.seed : this._seed;
+    const seed = opts.seed !== undefined ? opts.seed
+      : (profileSeed !== null ? profileSeed : this._seed);
     const multiLayer = opts.multiLayer !== undefined ? opts.multiLayer : (this.settings.multiLayer || false);
     // Phase 2.2 — per-layer styles: `opts.layerStyles` (or settings.layerStyles)
     // maps a tonal band → style name; stamped onto each shape after generation so

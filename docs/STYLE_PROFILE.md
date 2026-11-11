@@ -327,11 +327,13 @@ Tracks where a profile came from. `refs` holds the 1–4 style-reference images
 
 ## 5. Validation
 
-Phase 0 ships the schema as a document. Phase 0.2's harness and the eventual
-`js/engine/profile.js` will validate against it. The plan (Phase B of the
-integration strategy) is to **vendor LAYERS' browser-safe AJV schemas** and
-consume `packages/schema` once the repos share a workspace — no bespoke
-validator.
+Phase 0 shipped the schema as a document; **Phase 4.1** added the engine reader
+`js/engine/profile.js` (`validateProfile` / `normalizeProfile` / `applyProfile`,
+see `docs/checkpoints/P4.1.md`), whose `validateProfile` checks the v1 constraints
+as a dependency-free draft-07 **subset**. The plan (Phase B of the integration
+strategy) is to **vendor LAYERS' browser-safe AJV schemas** and consume
+`packages/schema` once the repos share a workspace — no bespoke validator — and
+`validateProfile`'s signature is designed to survive that swap unchanged.
 
 Until then, a profile may be validated with any draft-07 validator
 (`npx ajv-cli validate -s <schema> -d <profile>`).

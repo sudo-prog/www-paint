@@ -40,6 +40,10 @@ import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions
 import {
   REGION_DEFAULTS, quantizeBins, labelComponents, pcaFromStats, buildRegions, fitEllipse
 } from '../js/engine/regions.js';
+import {
+  PROFILE_SCHEMA_VERSION, PROFILE_ROLES, PROFILE_DEFAULTS, validateProfile, normalizeProfile,
+  profileToSettings, profileToLayerStyles, profileToLayerProps, applyProfile, profileFromSettings
+} from '../js/engine/profile.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -807,6 +811,146 @@ test('optimiser: region init is deterministic for the same seed', () => {
   const a = optimise(analyzeImage(px, W, H), { count: 80, seed: 7 });
   const b = optimise(analyzeImage(px, W, H), { count: 80, seed: 7 });
   assertEqual(a.shapes, b.shapes, 'region-init shape lists should be identical');
+});
+
+// ─── Style Profile consumer — Phase 4.1 ───────────────────────────
+console.log('\nStyle Profile consumer (Phase 4.1):');
+
+// The schema's own minimal example (docs/STYLE_PROFILE.md §4).
+function exampleProfile() {
+  return {
+    schemaVersion: 1,
+    id: '6f1c2b7e-3a4d-4e2b-9c11-0a7f5e9d1234',
+    name: 'Loose Watercolour Study',
+    version: '1.0.0',
+    engine: { name: 'www-paint', version: '0.1.0' },
+    global: {
+      style: 'watercolor', strokeCount: 1400,
+      strokeSize: { min: 2, max: 14, random: true },
+      detailLevel: 0.6, styleStrength: 0.75, opacity: 0.85,
+      pathOrder: 'free', colorMode: 'exact', multiLayer: true, seed: 324508639,
+    },
+    layers: [
+      { role: 'background', style: 'wash', opacity: 0.9, order: 0 },
+      { role: 'shadows', style: 'watercolor', opacity: 1.0, order: 1 },
+      { role: 'highlights', style: 'pastel', opacity: 0.5, order: 4 },
+    ],
+    effects: [
+      { core: 'paper-grain', params: { strength: 0.25 }, opacity: 0.4, blend: 'multiply', enabled: true },
+    ],
+    mediaModel: { kind: 'wet', wetness: 0.7, drying: 0.4, bleed: 0.5, granulation: 0.3, paper: 'coldpress-140' },
+    provenance: { source: 'ai', model: 'vision-proposal-v1', rating: 4 },
+  };
+}
+
+test('profile: validates the schema example and reports nothing', () => {
+  const r = validateProfile(exampleProfile());
+  assertEqual(r.ok, true, JSON.stringify(r.errors));
+  assertEqual(r.errors.length, 0);
+});
+
+test('profile: rejects a non-object and missing required fields', () => {
+  assertEqual(validateProfile(null).ok, false);
+  assertEqual(validateProfile('nope').ok, false);
+  const r = validateProfile({ schemaVersion: 1, global: {} });
+  assertEqual(r.ok, false);
+  const paths = r.errors.map((e) => e.path);
+  if (!paths.includes('id') || !paths.includes('name') || !paths.includes('version')) {
+    throw new Error(`expected missing id/name/version: ${paths.join(',')}`);
+  }
+});
+
+test('profile: flags bad enum, range and hex values', () => {
+  const p = exampleProfile();
+  p.global.pathOrder = 'sideways';
+  p.global.opacity = 1.5;
+  p.global.palette = ['#GGGGGG'];
+  p.layers[0].role = 'not-a-role';
+  p.mediaModel.kind = 'soggy';
+  const r = validateProfile(p);
+  assertEqual(r.ok, false);
+  const paths = r.errors.map((e) => e.path);
+  for (const want of ['global.pathOrder', 'global.opacity', 'global.palette', 'layers[0].role', 'mediaModel.kind']) {
+    if (!paths.includes(want)) throw new Error(`expected an error at ${want}: ${paths.join(',')}`);
+  }
+});
+
+test('profile: normalizeProfile applies schema defaults without mutating input', () => {
+  const p = { schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0', global: { style: 'ink' } };
+  const frozen = JSON.stringify(p);
+  const n = normalizeProfile(p);
+  assertEqual(n.global.pathOrder, PROFILE_DEFAULTS.pathOrder);
+  assertEqual(n.global.multiLayer, false);
+  assertEqual(n.global.strokeSize.min, PROFILE_DEFAULTS.strokeSize.min);
+  assertEqual(JSON.stringify(p), frozen, 'normalizeProfile must not mutate its input');
+});
+
+test('profile: normalizeProfile is idempotent (even with no mediaModel)', () => {
+  const p = { schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0', global: {} };
+  const once = normalizeProfile(p);
+  const twice = normalizeProfile(once);
+  assertEqual(JSON.stringify(twice), JSON.stringify(once), 're-normalising must be a fixed point');
+  assertEqual(once.mediaModel, null);
+  const withMedia = profileToSettings({ schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0', global: {}, mediaModel: { kind: 'wet' } });
+  assertEqual('style' in withMedia, false);
+});
+
+test('profile: profileToSettings maps the global block onto engine settings', () => {
+  const s = profileToSettings(exampleProfile());
+  assertEqual(s.style, 'watercolor');
+  assertEqual(s.strokeCount, 1400);
+  assertEqual(s.strokeSize.max, 14);
+  assertEqual(s.detailLevel, 0.6);
+  assertEqual(s.styleStrength, 0.75);
+  assertEqual(s.opacity, 0.85);
+  assertEqual(s.pathOrder, 'free');
+  assertEqual(s.multiLayer, true);
+  // a profile without a style must not force one
+  const noStyle = profileToSettings({ schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0', global: {} });
+  assertEqual('style' in noStyle, false);
+});
+
+test('profile: profileToLayerStyles keeps only enabled roles that set a style', () => {
+  const styles = profileToLayerStyles(exampleProfile());
+  assertEqual(styles.background, 'wash');
+  assertEqual(styles.highlights, 'pastel');
+  assertEqual('midtone' in styles, false, 'roles the profile does not mention inherit');
+  const p = exampleProfile();
+  p.layers = [{ role: 'shadows', enabled: false, style: 'ink' }];
+  assertEqual(profileToLayerStyles(p), null, 'a disabled override is a no-op');
+});
+
+test('profile: profileToLayerProps carries opacity/blend/order/visibility', () => {
+  const props = profileToLayerProps(exampleProfile());
+  assertEqual(props.background.opacity, 0.9);
+  assertEqual(props.background.order, 0);
+  assertEqual('shadows' in props, true);
+});
+
+test('profile: applyProfile expands the whole profile for generate()', () => {
+  const r = applyProfile(exampleProfile());
+  assertEqual(r.valid, true);
+  assertEqual(r.seed, 324508639);
+  assertEqual(r.multiLayer, true);
+  assertEqual(r.mediaModel.kind, 'wet');
+  assertEqual(r.settings.style, 'watercolor');
+  assertEqual(r.layerStyles.highlights, 'pastel');
+});
+
+test('profile: profileFromSettings round-trips back to a valid profile', () => {
+  const s = profileToSettings(exampleProfile());
+  const built = profileFromSettings(s, { name: 'Round Trip', provenance: { source: 'human' } });
+  assertEqual(built.schemaVersion, PROFILE_SCHEMA_VERSION);
+  const r = validateProfile(built);
+  assertEqual(r.ok, true, JSON.stringify(r.errors));
+  const back = profileToSettings(built);
+  assertEqual(back.style, s.style);
+  assertEqual(back.strokeCount, s.strokeCount);
+  assertEqual(back.detailLevel, s.detailLevel);
+});
+
+test('profile: PROFILE_ROLES match the engine named layers', () => {
+  assertEqual(PROFILE_ROLES.join(','), 'background,shadows,outline,midtone,highlights');
 });
 
 // ─── Layer styles — Phase 2.2 ─────────────────────────────────────

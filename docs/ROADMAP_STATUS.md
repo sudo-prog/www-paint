@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R3 done (CCL + PCA stroke init, roadmap 1.4). Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · Track R3 done (CCL + PCA stroke init, 1.4) + Phase 4.1 done (engine consumes Style Profile). Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -45,7 +45,7 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 |---|---|
 | 2 — Tonal layers & per-layer styles | **2.1 done** (tonal masks — `js/engine/masks.js`, Mac/M2) · **2.3 done** (layer panel controls, Mac/M2 + BE `app.js` wiring) · **2.2 generation + paint order DONE (BE)** — per-layer style applies live (`engine.setLayerStyle`) + `layerStyles`/`preserveLayerProps`; multi-layer composite verified band-by-band (`scripts/layer-styles-probe.cjs`, engine 63/63). Layer-aware *scoring* not addressed. See `docs/checkpoints/P2.2.md` · Mac media-panel UI stream in flight |
 | 3 — Wet media simulation | **3.1/3.2 done** (wetsim core — `js/engine/wetsim.js`, Mac/M1 @ `04ed927`) · **3.3 mediaModel integration todo (BE)** |
-| 4 — Style Profile system | **4.1 todo (BE, engine consumes full profile)** · **4.2 todo (save/load/library UI — Mac candidate)** |
+| 4 — Style Profile system | **4.1 done (BE, engine consumes the full profile)** — `js/engine/profile.js` (validate / normalise / settings + layer-styles + layer-props + media-model + seed) + `engine.generate({profile})`; probe PASS, 84/84 tests. See `docs/checkpoints/P4.1.md` · **4.2 todo (save/load/library UI — Mac candidate)** |
 | 5 — AI style refinement loop | todo (BE, harness H1–H5) |
 | 6 — Polish, performance, export | todo |
 | 7 — Stretch | todo |

@@ -1,0 +1,43 @@
+{
+  "valid": true,
+  "expanded": {
+    "seed": 1234,
+    "style": "watercolor",
+    "multiLayer": false
+  },
+  "styleUsed": "watercolor",
+  "stylesSeen": [
+    "watercolour"
+  ],
+  "r1": {
+    "ink": 25339,
+    "hash": 3152033597
+  },
+  "r2": {
+    "ink": 25339,
+    "hash": 3152033597
+  },
+  "r3": {
+    "ink": 25577,
+    "hash": 2116356823
+  },
+  "r4": {
+    "ink": 21048,
+    "hash": 265488801
+  },
+  "bandStyles": {
+    "background": [
+      "ink"
+    ],
+    "shadows": [
+      "watercolour"
+    ],
+    "outline": [],
+    "midtone": [
+      "watercolour"
+    ],
+    "highlights": [
+      "pastel"
+    ]
+  }
+}
