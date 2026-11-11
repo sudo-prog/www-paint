@@ -249,6 +249,54 @@ trust a summary. M4 makes **no source edits**; its output is evidence, not commi
 
 ---
 
+## 5b. Next streams — issued 2026-11-11 by BE
+
+M1–M4 are all **landed** (see `docs/ROADMAP_STATUS.md`). You have one in-flight
+stream (the **media panel** — `js/ui/media.js` + `media-host.js` +
+`scripts/media-panel-audit.js` + `maestro/www-paint-media-panel.yaml` +
+`css/style.css`/`index.html` deltas), which is sitting **uncommitted** in the
+ThinkPad's tree. **Finish it, then post your OPS_LOG line** so BE can verify and
+push. After that, take M5.
+
+### M5 — Phase 4.2: Style Profile library UI  *(new-file stream, zero spine contact)*
+
+**Goal:** save / load / apply a Style Profile in one click, deterministically
+re-bakeable with a seed. BE lands the engine side (4.1, profile → engine); you
+build the UI against the frozen schema.
+
+**Files you own (all NEW):**
+- `js/ui/style-library.js` (NEW) — panel: save current settings → profile, list
+  saved profiles, apply, delete, export / import JSON.
+- `js/ui/style-library-host.js` (NEW, optional) — same shim pattern as
+  `media-host.js`, so you never edit the ThinkPad-owned `app.js`.
+- `docs/checkpoints/P4.md`, `docs/research/*`, a Maestro flow if useful.
+
+**Frozen interface:** the Style Profile schema in `docs/STYLE_PROFILE.md`
+(draft-07). The **profile object is the contract**, not the storage — keep
+persistence (localStorage / IndexedDB) behind a small adapter.
+
+**Exit criteria**
+- [ ] Save writes a schema-valid profile; the list shows it.
+- [ ] Apply re-bakes identical output for the same `(profile, seed, image-hash)`
+      — prove it with two runs.
+- [ ] Export → import round-trips a profile byte-identically.
+- [ ] Each control provably changes output in a real headless browser (DOM
+      assertion **and** a behavioural check).
+- [ ] `docs/checkpoints/P4.md` written; OPS_LOG line posted.
+
+**⚠ Shared-file rule unchanged:** need a change in `app.js` / `controls.js`? Do
+**not** edit — raise it via OPS_LOG. The `media-host.js` shim is the sanctioned
+pattern.
+
+### M6 — media-panel QA pass *(standing M4 seat)*
+
+Once the media panel is announced, verify it independently — real headless
+Chromium: each of the three sections (Wet / Media / Tonal) provably changes
+output, plus a responsive check at 390 / 768 / 1024 / 1440 / 1920. Evidence →
+`docs/research/qa-media-panel.png`. No source edits.
+
+---
+
 ## 6. File ownership
 
 **ThinkPad-owned — never edit:**
