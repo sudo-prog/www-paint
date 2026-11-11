@@ -994,6 +994,22 @@ body {
 
 .layer-blend-select:focus { outline: 1px solid var(--accent); }
 
+.layer-tools-row {
+  display: flex; align-items: center; gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+.layer-tools-row .layer-blend-select { flex: 1 1 auto; min-width: 0; width: auto; }
+.layer-style-select {
+  flex: 1 1 auto; min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  font-family: var(--f-mono); font-size: 8px; color: var(--text-primary);
+  cursor: pointer;
+}
+.layer-style-select:focus { outline: 1px solid var(--accent); }
+.layer-regen-btn { flex: 0 0 auto; }
+
 .layer-row__actions { display: flex; gap: var(--space-1); }
 
 .layer-action-btn {
