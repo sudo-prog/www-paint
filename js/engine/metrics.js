@@ -184,6 +184,105 @@ export function metricsVsTarget(rendered, targetPixels, w, h) {
   return { mae, simMae: simMae(mae), ssim: ssimLuma(rendered, target, w, h) };
 }
 
+/**
+ * Mask-weighted block SSIM (8×8) on luminance (Phase 2.2, layer-aware scoring).
+ *
+ * Same block statistics as {@link ssimLuma}, but each block contributes to the
+ * mean in proportion to its **mean mask weight**. A band covering 22 % of the
+ * frame is therefore measured on its own pixels only and cannot be diluted by
+ * the other 78 %. Returns 0 when the mask covers nothing.
+ *
+ * @param {Float32Array} a interleaved RGB (rendered)
+ * @param {Float32Array} b interleaved RGB (target)
+ * @param {number} w
+ * @param {number} h
+ * @param {Float32Array} weight per-pixel 0..1
+ * @returns {number} weighted mean SSIM in [-1, 1]
+ */
+export function weightedSsimLuma(a, b, w, h, weight) {
+  const lum = (px) => {
+    const L = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      L[i] = 0.2126 * px[i * 3] + 0.7152 * px[i * 3 + 1] + 0.0722 * px[i * 3 + 2];
+    }
+    return L;
+  };
+  const A = lum(a), B = lum(b);
+  const C1 = 6.5025, C2 = 58.5225; // (0.01·255)², (0.03·255)²
+  let sum = 0, wsum = 0;
+  for (let by = 0; by + 8 <= h; by += 8) {
+    for (let bx = 0; bx + 8 <= w; bx += 8) {
+      let sa = 0, sb = 0, bw = 0;
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        const i = (by + y) * w + bx + x;
+        sa += A[i]; sb += B[i]; bw += weight[i];
+      }
+      bw /= 64; // block weight = mean mask over the block
+      if (bw <= 0) continue; // block entirely outside this band
+      const N = 64, ma = sa / N, mb = sb / N;
+      let va = 0, vb = 0, cov = 0;
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        const i = (by + y) * w + bx + x;
+        const da = A[i] - ma, db = B[i] - mb;
+        va += da * da; vb += db * db; cov += da * db;
+      }
+      va /= N; vb /= N; cov /= N;
+      sum += bw * ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2));
+      wsum += bw;
+    }
+  }
+  return wsum ? sum / wsum : 0;
+}
+
+/**
+ * Masked perceptual metrics (Phase 2.2, layer-aware scoring).
+ *
+ * Computes {@link meanAbsError} / {@link simMae} / {@link weightedSsimLuma}
+ * over **only the pixels a soft mask selects**, weighting each pixel by its mask
+ * value. A mask of all ones reproduces the whole-frame numbers exactly, so a
+ * band score is comparable with the frame score and with the other bands.
+ *
+ * @param {Float32Array} rendered interleaved RGB
+ * @param {Float32Array} target interleaved RGB
+ * @param {Float32Array} weight per-pixel 0..1 (a tonal mask)
+ * @param {number} w
+ * @param {number} h
+ * @returns {{mae: number, simMae: number, ssim: number, support: number}}
+ *   `support` = mean mask weight (0..1) — how much of the frame the band covers.
+ */
+export function maskedMetrics(rendered, target, weight, w, h) {
+  const n = w * h;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    const a = weight[i];
+    if (a <= 0) continue;
+    const o = i * 3;
+    num += a * (
+      Math.abs(rendered[o] - target[o]) +
+      Math.abs(rendered[o + 1] - target[o + 1]) +
+      Math.abs(rendered[o + 2] - target[o + 2])
+    );
+    den += a * 3;
+  }
+  const mae = den > 0 ? num / den : 0;
+  const ssim = weightedSsimLuma(rendered, target, w, h, weight);
+  return { mae, simMae: simMae(mae), ssim, support: den / (3 * n) };
+}
+
+/**
+ * Convenience wrapper: {@link maskedMetrics} taking RGBA target bytes.
+ * @param {Float32Array} rendered interleaved RGB
+ * @param {Uint8ClampedArray|Uint8Array} targetPixels RGBA
+ * @param {Float32Array} weight per-pixel 0..1
+ * @param {number} w
+ * @param {number} h
+ * @returns {{mae: number, simMae: number, ssim: number, support: number}}
+ */
+export function maskedMetricsVsTarget(rendered, targetPixels, weight, w, h) {
+  return maskedMetrics(rendered, toFloatRGB(targetPixels, w, h), weight, w, h);
+}
+
 export default {
   toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae, ssimLuma, metricsVsTarget,
+  weightedSsimLuma, maskedMetrics, maskedMetricsVsTarget,
 };

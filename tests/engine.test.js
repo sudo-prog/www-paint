@@ -45,10 +45,12 @@ import {
   profileToSettings, profileToLayerStyles, profileToLayerProps, applyProfile, profileFromSettings
 } from '../js/engine/profile.js';
 import {
-  toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae as simMaeFromMae, ssimLuma, metricsVsTarget
+  toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae as simMaeFromMae, ssimLuma, metricsVsTarget,
+  weightedSsimLuma, maskedMetrics, maskedMetricsVsTarget
 } from '../js/engine/metrics.js';
 import {
-  KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile
+  KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile,
+  TONAL_BANDS, scoreProfileLayers
 } from '../js/engine/score.js';
 import {
   SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile
@@ -1212,6 +1214,85 @@ test('preserveLayerProps: unmatched layers keep their defaults', () => {
   const fresh = [{ name: 'Background', visible: true }];
   preserveLayerProps(fresh, [{ name: 'Layer 1', visible: false }]);
   assertEqual(fresh[0].visible, true);
+});
+
+// ─── Layer-aware scoring — Phase 2.2 ──────────────────────────────
+console.log('\nLayer-aware scoring (Phase 2.2):');
+
+test('metrics: an all-ones mask reproduces the whole-frame numbers exactly', () => {
+  const S = 48;
+  const target = makeRGBImage(S, S, (x, y) => [(x * 3) % 255, (y * 5) % 255, (x + y) % 255]);
+  const rendered = new Float32Array(S * S * 3);
+  for (let i = 0; i < rendered.length; i++) rendered[i] = (i * 7) % 255;
+  const ones = new Float32Array(S * S).fill(1);
+  const full = meanAbsError(rendered, toFloatRGB(target, S, S));
+  const masked = maskedMetricsVsTarget(rendered, target, ones, S, S);
+  assertApprox(masked.mae, full, 1e-9);
+  assertApprox(masked.support, 1, 1e-9);
+});
+
+test('metrics: a zero mask selects nothing (mae 0, support 0, ssim 0)', () => {
+  const S = 32;
+  const target = makeRGBImage(S, S, () => [10, 20, 30]);
+  const rendered = new Float32Array(S * S * 3).fill(200);
+  const zero = new Float32Array(S * S);
+  const m = maskedMetricsVsTarget(rendered, target, zero, S, S);
+  assertEqual(m.mae, 0);
+  assertEqual(m.support, 0);
+  assertEqual(m.ssim, 0);
+});
+
+test('metrics: a half-covering mask reports that support fraction', () => {
+  const S = 32;
+  const target = makeRGBImage(S, S, () => [10, 20, 30]);
+  const rendered = new Float32Array(S * S * 3).fill(200);
+  const half = new Float32Array(S * S);
+  for (let y = 0; y < S / 2; y++) for (let x = 0; x < S; x++) half[y * S + x] = 1;
+  const m = maskedMetricsVsTarget(rendered, target, half, S, S);
+  assertApprox(m.support, 0.5, 1e-9);
+});
+
+test('metrics: weightedSsimLuma ignores pixels outside the mask', () => {
+  const S = 32;
+  // Left half identical, right half wildly different; a mask over the left half
+  // must score ~1, the same mask over the right half must score much lower.
+  const a = new Float32Array(S * S * 3);
+  const b = new Float32Array(S * S * 3);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const o = (y * S + x) * 3;
+    for (let c = 0; c < 3; c++) { a[o + c] = (x + y + c) % 256; b[o + c] = x < S / 2 ? a[o + c] : (255 - a[o + c]); }
+  }
+  const left = new Float32Array(S * S), right = new Float32Array(S * S);
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) (x < S / 2 ? left : right)[y * S + x] = 1;
+  const sLeft = weightedSsimLuma(a, b, S, S, left);
+  const sRight = weightedSsimLuma(a, b, S, S, right);
+  if (!(sLeft > sRight)) throw new Error(`mask did not isolate the band: left=${sLeft} right=${sRight}`);
+});
+
+test('score: scoreProfileLayers gives a deterministic per-band breakdown that aggregates', () => {
+  const base = h2Base(120);
+  const img = h2Target(64);
+  const a = scoreProfileLayers(base, img, { seed: 7 });
+  const b = scoreProfileLayers(base, img, { seed: 7 });
+  assertEqual(JSON.stringify(a.layers), JSON.stringify(b.layers), 'deterministic');
+  assertEqual(a.composite.simMae, b.composite.simMae);
+  for (const band of TONAL_BANDS) {
+    const L = a.layers[band];
+    if (!L) throw new Error(`missing band ${band}`);
+    if (!Number.isFinite(L.simMae) || !Number.isFinite(L.ssim)) throw new Error(`non-finite ${band}`);
+  }
+  const cov = TONAL_BANDS.reduce((s, k) => s + a.coverage[k], 0);
+  assertApprox(cov, 1, 0.02, 'tonal coverage is a partition of unity');
+  const cmae = TONAL_BANDS.reduce((s, k) => s + a.coverage[k] * a.layers[k].mae, 0) /
+               TONAL_BANDS.reduce((s, k) => s + a.coverage[k], 0);
+  assertApprox(a.composite.mae, cmae, 1e-9, 'composite is the coverage-weighted band MAE');
+  assertEqual(a.overall !== undefined, true, 'whole-frame metrics still reported');
+});
+
+test('score: scoreProfile is unchanged by the layer-aware addition', () => {
+  const r = scoreProfile(h2Base(200), h2Target(64));
+  if (!Number.isFinite(r.simMae) || !Number.isFinite(r.ssim)) throw new Error('scoreProfile broke');
+  assertEqual(r.strokes, 200);
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

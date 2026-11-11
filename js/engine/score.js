@@ -22,7 +22,8 @@ import { clamp } from '../utils/math.js';
 import { analyzeImage } from './analyzer.js';
 import { optimise, OPTIMISER_DEFAULTS } from './optimizer.js';
 import { normalizeProfile } from './profile.js';
-import { rasterizeShapes, averageColor, metricsVsTarget } from './metrics.js';
+import { rasterizeShapes, averageColor, metricsVsTarget, toFloatRGB, maskedMetrics, simMae } from './metrics.js';
+import { computeTonalMasks } from './masks.js';
 
 /**
  * The tunable action space, as a JSON-serialisable descriptor list.
@@ -128,6 +129,76 @@ export function scoreProfile(profile, image, options = {}) {
   };
 }
 
+/**
+ * The four tonal bands, in the order `masks.js` (IF-1) emits them.
+ * @type {string[]}
+ */
+export const TONAL_BANDS = ['background', 'shadows', 'midtones', 'highlights'];
+
+/**
+ * Layer-aware scoring (Phase 2.2 closer).
+ *
+ * `scoreProfile` measures the whole frame. This measures the engine of record
+ * **per tonal band**: it computes the same soft masks the layer system renders
+ * with (`masks.js`, IF-1), then scores the rendered image against the target
+ * *within each band* (weighted by the mask), and returns a coverage-weighted
+ * composite. A band that reproduces its tonal range badly can no longer hide
+ * behind three good ones — which is exactly what per-layer styles need to be
+ * optimised against.
+ *
+ * Honest scope: the headless engine of record emits a **single** shape list
+ * (multi-layer *rendering* is the canvas engine's job, Phase 2.3), so this
+ * decomposes the composite render by tonal band rather than scoring separately
+ * rasterised layers. Per-band *render* scoring arrives with the multi-layer
+ * headless path.
+ *
+ * @param {object} profile - a Style Profile.
+ * @param {{pixels: Uint8ClampedArray, width: number, height: number}} image
+ * @param {object} [options]
+ * @param {number} [options.seed=12345]
+ * @param {object} [options.optimiser] - engine-option overrides (wins over the profile).
+ * @param {number[]} [options.background] - fill; defaults to the image mean.
+ * @param {object} [options.masks] - overrides for `computeTonalMasks` (lo/hi/softness).
+ * @returns {{composite: {mae: number, simMae: number, ssim: number},
+ *   overall: {mae: number, simMae: number, ssim: number},
+ *   layers: Record<string, {mae: number, simMae: number, ssim: number, coverage: number}>,
+ *   coverage: Record<string, number>, strokes: number, options: object, stats: object}}
+ */
+export function scoreProfileLayers(profile, image, options = {}) {
+  const { pixels, width: w, height: h } = image;
+  const seed = options.seed !== undefined ? options.seed : 12345;
+  const analysis = analyzeImage(new Uint8ClampedArray(pixels), w, h);
+  const optOpts = profileToOptimiserOptions(profile, options.optimiser || {});
+  optOpts.seed = optOpts.seed !== undefined ? optOpts.seed : seed;
+  const { shapes, stats } = optimise(analysis, optOpts);
+  const bg = options.background || averageColor(pixels);
+  const rendered = rasterizeShapes(shapes, w, h, bg);
+  const target = toFloatRGB(pixels, w, h);
+  const tonal = computeTonalMasks(analysis, options.masks || {});
+
+  const layers = {};
+  let cNum = 0, cDen = 0;
+  for (const band of TONAL_BANDS) {
+    const m = maskedMetrics(rendered, target, tonal.masks[band], w, h);
+    layers[band] = { mae: m.mae, simMae: m.simMae, ssim: m.ssim, coverage: tonal.coverage[band], support: m.support };
+    cNum += tonal.coverage[band] * m.mae;
+    cDen += tonal.coverage[band];
+  }
+  const compositeMae = cDen > 0 ? cNum / cDen : 0;
+  const overall = metricsVsTarget(rendered, pixels, w, h);
+
+  return {
+    composite: { mae: compositeMae, simMae: simMae(compositeMae), ssim: overall.ssim },
+    overall,
+    layers,
+    coverage: tonal.coverage,
+    strokes: shapes.length,
+    options: optOpts,
+    stats,
+  };
+}
+
 export default {
   KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile,
+  TONAL_BANDS, scoreProfileLayers,
 };
