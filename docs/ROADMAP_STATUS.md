@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · Track R3 done (CCL + PCA stroke init, 1.4) + Phase 4.1 done (engine consumes Style Profile). Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -85,7 +85,7 @@ engine of record; the legacy auto-painter is reference-only.
 | ID | Milestone | Status |
 |---|---|---|
 | H0 | Eval harness (`sim` + independent MAE + SSIM, N images) | **done** — 4 images, baseline recorded |
-| H1 | Parameter surface (`score(profile, image)` primitive) | todo |
+| H1 | Parameter surface (`score(profile, image)` primitive) | **done** — `js/engine/score.js` (`KNOB_SET` + `clampKnobs` + `scoreProfile`) over `js/engine/metrics.js` (independent rasteriser + MAE + block-SSIM); headless, deterministic. See `docs/checkpoints/H1.md` |
 | H2 | Search proposer (random / CMA-ES) | todo |
 | H3 | LLM proposer (vision → profile, iterate) | todo |
 | H4 | Memory (feedback store + retrieval) | todo |

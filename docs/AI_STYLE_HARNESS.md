@@ -79,7 +79,7 @@ regressing other images.** Tier B additionally requires human approval.
 | ID | Milestone | Exit criteria |
 |---|---|---|
 | **H0** | Eval harness | `parity-bench.cjs` reports `sim` + independent MAE + **SSIM** over N images for every engine. **Baseline recorded.** |
-| **H1** | Parameter surface | Style Profile params exposed as a JSON knob-set + a headless `score(profile, image) -> metrics` primitive an AI can call. |
+| **H1** | Parameter surface | **DONE** — `js/engine/score.js` (`KNOB_SET` action space + `clampKnobs` + `scoreProfile(profile, image)`) over `js/engine/metrics.js` (independent rasteriser + MAE + SSIM). No browser. See `docs/checkpoints/H1.md`. |
 | **H2** | Search proposer | random / CMA-ES tunes a profile toward a target style (no LLM). Beats the hand-set default. |
 | **H3** | LLM proposer | vision -> profile from 1–4 refs; iterate on metrics + critique. ≥70% usable first proposals (roadmap 5.1). |
 | **H4** | Memory | feedback store + retrieval; similar refs produce closer proposals (5.3/5.4). |

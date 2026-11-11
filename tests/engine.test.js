@@ -44,6 +44,12 @@ import {
   PROFILE_SCHEMA_VERSION, PROFILE_ROLES, PROFILE_DEFAULTS, validateProfile, normalizeProfile,
   profileToSettings, profileToLayerStyles, profileToLayerProps, applyProfile, profileFromSettings
 } from '../js/engine/profile.js';
+import {
+  toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae as simMaeFromMae, ssimLuma, metricsVsTarget
+} from '../js/engine/metrics.js';
+import {
+  KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile
+} from '../js/engine/score.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -951,6 +957,110 @@ test('profile: profileFromSettings round-trips back to a valid profile', () => {
 
 test('profile: PROFILE_ROLES match the engine named layers', () => {
   assertEqual(PROFILE_ROLES.join(','), 'background,shadows,outline,midtone,highlights');
+});
+
+// ─── Metrics — Harness H1 ─────────────────────────────────────────
+console.log('\nMetrics (Harness H1):');
+
+test('metrics: toFloatRGB + meanAbsError are exact on identical / uniform input', () => {
+  const px = makeRGBImage(4, 4, () => [10, 20, 30]);
+  const f = toFloatRGB(px, 4, 4);
+  assertEqual(f.length, 4 * 4 * 3);
+  assertApprox(meanAbsError(f, f), 0, 1e-9);
+  const bright = makeRGBImage(4, 4, () => [20, 30, 40]); // every channel +10
+  const g = toFloatRGB(bright, 4, 4);
+  assertApprox(meanAbsError(f, g), 10, 1e-9, 'a uniform +10 per channel → MAE 10');
+});
+
+test('metrics: simMae maps MAE 0 -> 100 and 255 -> 0', () => {
+  assertApprox(simMaeFromMae(0), 100, 1e-9);
+  assertApprox(simMaeFromMae(255), 0, 1e-9);
+});
+
+test('metrics: ssimLuma is 1 for identical buffers and < 1 for different ones', () => {
+  const a = toFloatRGB(makeRGBImage(24, 24, (x) => [x * 8, x * 8, x * 8]), 24, 24);
+  const b = toFloatRGB(makeRGBImage(24, 24, (x) => [(23 - x) * 8, (23 - x) * 8, (23 - x) * 8]), 24, 24);
+  assertApprox(ssimLuma(a, a, 24, 24), 1, 1e-6);
+  if (!(ssimLuma(a, b, 24, 24) < 0.999)) throw new Error('different buffers must score below 1');
+});
+
+test('metrics: rasterizeShapes paints a dab at its centre and is deterministic', () => {
+  const shape = { type: 'E', params: [8, 8, 4, 4, 0, 0, 0, 0], color0: [200, 0, 0], color1: [200, 0, 0], alpha: 1 };
+  const buf = rasterizeShapes([shape], 16, 16, [0, 0, 0]);
+  assertEqual(buf.length, 16 * 16 * 3);
+  const c = (8 * 16 + 8) * 3;
+  assertApprox(buf[c], 200, 1e-6, 'centre takes the dab colour');
+  assertApprox(buf[0], 0, 1e-6, 'a far corner keeps the background');
+  const again = rasterizeShapes([shape], 16, 16, [0, 0, 0]);
+  assertEqual(Array.from(buf), Array.from(again));
+});
+
+// ─── Parameter surface + scoring — Harness H1 ─────────────────────
+console.log('\nParameter surface + scoring (Harness H1):');
+
+test('knobs: KNOB_SET is well-formed (unique names, valid ranges, defaults)', () => {
+  const names = new Set();
+  for (const k of KNOB_SET) {
+    if (!k.name || names.has(k.name)) throw new Error(`duplicate/invalid knob name: ${k.name}`);
+    names.add(k.name);
+    if (!k.type || !k.group || !k.target) throw new Error(`knob ${k.name} missing type/group/target`);
+    if (k.default === undefined) throw new Error(`knob ${k.name} has no default`);
+    if ((k.type === 'number' || k.type === 'integer') && !(k.min < k.max)) {
+      throw new Error(`knob ${k.name} needs min < max`);
+    }
+    if (k.type === 'integer' && !Number.isInteger(k.default)) throw new Error(`knob ${k.name} default must be an integer`);
+  }
+});
+
+test('knobs: getKnobDefaults matches KNOB_SET', () => {
+  const d = getKnobDefaults();
+  for (const k of KNOB_SET) assertEqual(d[k.name], k.default);
+  assertEqual(Object.keys(d).length, KNOB_SET.length);
+});
+
+test('knobs: clampKnobs bounds, rounds, coerces and drops unknown keys', () => {
+  const c = clampKnobs({ strokeCount: 999999, detailLevel: 5, opacity: -1, smart: 1, scales: 2.6, bogus: 7 });
+  assertEqual(c.strokeCount, 200000);
+  assertEqual(c.detailLevel, 1);
+  assertEqual(c.opacity, 0);
+  assertEqual(c.smart, true);
+  assertEqual(c.scales, 3, 'integers are rounded then clamped');
+  assertEqual('bogus' in c, false);
+});
+
+test('knobs: profileToOptimiserOptions maps the profile and lets overrides win', () => {
+  const p = { schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0', global: { strokeCount: 250, detailLevel: 0.4, opacity: 0.5, smart: true } };
+  const o = profileToOptimiserOptions(p);
+  assertEqual(o.count, 250);
+  assertEqual(o.detail, 0.4);
+  assertEqual(o.alpha, 0.5);
+  assertEqual(o.structureAlign, true);
+  const o2 = profileToOptimiserOptions(p, { count: 10, coverage: 1.5 });
+  assertEqual(o2.count, 10);
+  assertEqual(o2.coverage, 1.5);
+});
+
+test('score: scoreProfile measures a render and improves with more strokes', () => {
+  const S = 96;
+  const px = makeRGBImage(S, S, (x, y) =>
+    Math.hypot(x - S / 2, y - S / 2) < S * 0.27 ? [220, 60, 60] : [30, 60, 150]);
+  const image = { pixels: px, width: S, height: S };
+  const prof = (count) => ({
+    schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0',
+    global: { style: 'painterly', strokeCount: count, detailLevel: 0.6, opacity: 0.9, smart: true, seed: 12345 },
+  });
+  const a = scoreProfile(prof(80), image);
+  const b = scoreProfile(prof(300), image);
+  for (const m of [a, b]) {
+    if (!Number.isFinite(m.simMae) || !Number.isFinite(m.ssim)) throw new Error('non-finite metric');
+    if (!(m.simMae > 0 && m.simMae <= 100)) throw new Error(`simMae out of range: ${m.simMae}`);
+  }
+  if (!(b.simMae > a.simMae)) throw new Error(`more strokes should fit better: ${a.simMae} -> ${b.simMae}`);
+  assertEqual(b.strokes, 300);
+  // determinism
+  const c = scoreProfile(prof(300), image);
+  assertApprox(c.simMae, b.simMae, 1e-9);
+  assertApprox(c.ssim, b.ssim, 1e-9);
 });
 
 // ─── Layer styles — Phase 2.2 ─────────────────────────────────────
