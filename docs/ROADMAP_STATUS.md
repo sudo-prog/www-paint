@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R2 done
+**Last updated:** 2026-11-11 · Agent: BE (ThinkPad) · Track R2 done; Mac M1 (wetsim) + M2 (masks / layer panel) landed, BE-verified
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -43,8 +43,8 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 
 | Phase | Status |
 |---|---|
-| 2 — Tonal layers & per-layer styles | todo |
-| 3 — Wet media simulation | todo |
+| 2 — Tonal layers & per-layer styles | **2.1 done** (tonal masks — `js/engine/masks.js`, Mac/M2) · **2.3 done** (layer panel: blend/style/regenerate controls, Mac/M2 + BE `app.js` wiring) · 2.2 layer-aware generation todo (BE) |
+| 3 — Wet media simulation | **3.1/3.2 done** (wetsim core — `js/engine/wetsim.js`, Mac/M1 @ `04ed927`) · 3.3 mediaModel integration todo |
 | 4 — Style Profile system | todo |
 | 5 — AI style refinement loop | todo |
 | 6 — Polish, performance, export | todo |

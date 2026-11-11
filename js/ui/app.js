@@ -101,6 +101,13 @@ export class App {
       initialSettings: this.engine.settings,
     });
     this.layers = new LayersManager(this.layersRoot);
+    // Sync the panel with the engine's initial layers and style registry.
+    // Without this the panel opens empty (control events only re-sync after an
+    // add/delete/duplicate) and the per-layer style dropdown has no options.
+    this.layers.setStyleOptions(
+      this.engine._styleList.map((name) => ({ value: name, label: name })),
+    );
+    this.layers.setLayers(this.engine.layers);
     this.exportMgr = new ExportManager(this.exportRoot);
 
     // Create motion controller (playback controls for stroke animation)
@@ -230,6 +237,43 @@ export class App {
         layer.blendMode = e.detail.blendMode;
         this.engine.render();
       }
+    });
+
+    // Per-layer style: recorded on the layer, applied when that layer is
+    // regenerated. Strokes carry their own style (renderer draws
+    // `_styles[shape.style]`), so a plain repaint is a no-op — regenerate is
+    // what actually applies a new layer style.
+    this.layers.root.addEventListener("layer-style-change", (e) => {
+      const layer = this.engine.getLayer(e.detail.layerId);
+      if (!layer) return;
+      layer.style = e.detail.style;
+    });
+
+    // Regenerate a single layer from the source image using its own style.
+    this.layers.root.addEventListener("layer-regenerate", async (e) => {
+      const layer = this.engine.getLayer(e.detail.layerId);
+      if (!layer) return;
+      if (!this.engine._analysis) return; // no source image loaded yet
+      const style = layer.style || this.engine.settings.style || "pencil";
+      const seed = (this.engine._seed || 1) + layer.id;
+      // generate() writes opts.style back into the global settings; keep the
+      // layer's style local to this layer.
+      const prevStyle = this.engine.settings.style;
+      try {
+        await this.engine.generate({
+          style,
+          layer: layer.id,
+          seed,
+          count: this.engine.settings.strokeCount,
+        });
+      } catch (err) {
+        console.warn("[layers] regenerate failed:", err);
+        return;
+      } finally {
+        this.engine.settings.style = prevStyle;
+      }
+      this.engine.render();
+      this.layers.setLayers(this.engine.layers);
     });
 
     // Export → App
