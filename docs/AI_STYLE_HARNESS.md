@@ -82,7 +82,7 @@ regressing other images.** Tier B additionally requires human approval.
 | **H1** | Parameter surface | **DONE** — `js/engine/score.js` (`KNOB_SET` action space + `clampKnobs` + `scoreProfile(profile, image)`) over `js/engine/metrics.js` (independent rasteriser + MAE + SSIM). No browser. See `docs/checkpoints/H1.md`. |
 | **H2** | Search proposer | **DONE** — `js/engine/propose.js`: random + a compact (μ,λ) evolution strategy tuning a profile at **equal stroke count**; beats the hand-set default (+0.55 simMae, 32 evals, deterministic). See `docs/checkpoints/H2.md`. |
 | **H3** | LLM proposer | vision -> profile from 1–4 refs; iterate on metrics + critique. ≥70% usable first proposals (roadmap 5.1). |
-| **H4** | Memory | feedback store + retrieval; similar refs produce closer proposals (5.3/5.4). |
+| **H4** | Memory | **DONE** — `js/engine/memory.js`: bounded feedback store (`record`/`list`/`best`) + average-hash retrieval (`averageHash`/`hamming`) + `warmStart` seeding `searchProfile({ init })`; wins and losses kept, deterministic, JSON-serialisable. See `docs/checkpoints/H4.md`. |
 | **H5** | Tier B | agent proposes engine-code changes; benchmark gates; human approves; algorithm improves over sessions. |
 
 ---

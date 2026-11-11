@@ -55,6 +55,9 @@ import {
 import {
   SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile
 } from '../js/engine/propose.js';
+import {
+  MEMORY_VERSION, HASH_GRID, averageHash, hamming, profileSignature, createMemory
+} from '../js/engine/memory.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -1293,6 +1296,98 @@ test('score: scoreProfile is unchanged by the layer-aware addition', () => {
   const r = scoreProfile(h2Base(200), h2Target(64));
   if (!Number.isFinite(r.simMae) || !Number.isFinite(r.ssim)) throw new Error('scoreProfile broke');
   assertEqual(r.strokes, 200);
+});
+
+// ─── Memory — Harness H4 ──────────────────────────────────────────
+console.log('\nMemory (Harness H4):');
+
+test('memory: averageHash is deterministic, identical images collide, hamming is symmetric', () => {
+  const A = makeRGBImage(32, 32, (x, y) => [(x * 8) % 255, (y * 8) % 255, ((x + y) * 4) % 255]);
+  const B = makeRGBImage(32, 32, (x, y) => [(x * 8) % 255, (y * 8) % 255, ((x + y) * 4) % 255]);
+  const ha = averageHash(A, 32, 32), hb = averageHash(B, 32, 32);
+  assertEqual(ha, hb);
+  assertEqual(ha.length, 16);
+  assertEqual(hamming(ha, hb), 0);
+  assertEqual(hamming(ha, hb), hamming(hb, ha));
+});
+
+test('memory: averageHash separates very different images', () => {
+  const flat = makeRGBImage(32, 32, () => [0, 0, 0]);
+  const split = makeRGBImage(32, 32, (x) => (x < 16 ? [255, 255, 255] : [0, 0, 0]));
+  const d = hamming(averageHash(flat, 32, 32), averageHash(split, 32, 32));
+  if (!(d > 8)) throw new Error(`expected a large distance, got ${d}`);
+});
+
+test('memory: record / list / size / best, and ratings keep losses', () => {
+  const m = createMemory();
+  const img = makeRGBImage(24, 24, (x, y) => [(x * 10) % 255, (y * 10) % 255, 60]);
+  const h = averageHash(img, 24, 24);
+  m.record({ imageHash: h, knobs: { strokeCount: 120, coverage: 1.1 }, score: { simMae: 90 }, rating: 0 });
+  m.record({ imageHash: h, knobs: { strokeCount: 120, coverage: 1.4 }, score: { simMae: 97 }, rating: 1 });
+  m.record({ imageHash: 'ffffffffffffffff', knobs: { strokeCount: 120 }, score: { simMae: 99 }, rating: -1 });
+  assertEqual(m.size(), 3);
+  assertEqual(m.list({ rating: 1 }).length, 1);
+  assertEqual(m.list({ minScore: 95 }).length, 2);
+  assertEqual(m.list({ imageHash: h }).length, 2);
+  const b = m.best(h);
+  assertEqual(b.score.simMae, 97);
+  assertEqual(b.rating, 1);
+});
+
+test('memory: retrieve ranks by Hamming distance, ties broken by score, deterministically', () => {
+  const m = createMemory();
+  m.record({ imageHash: '0000000000000001', knobs: { a: 1 }, score: { simMae: 80 } });
+  m.record({ imageHash: '0000000000000002', knobs: { a: 2 }, score: { simMae: 99 } });
+  m.record({ imageHash: 'ffffffffffffffff', knobs: { a: 3 }, score: { simMae: 100 } });
+  const r = m.retrieve('0000000000000000', { limit: 5, maxDistance: 4 });
+  assertEqual(r.length, 2, 'only the two near entries are within distance 4');
+  assertEqual([r[0].distance, r[1].distance], [1, 1]);
+  assertEqual(r[0].entry.score.simMae, 99, 'a distance tie breaks by score');
+  assertEqual(JSON.stringify(m.retrieve('0000000000000000', { limit: 5, maxDistance: 4 })),
+    JSON.stringify(r), 'retrieval is deterministic');
+});
+
+test('memory: warmStart returns the nearest entry knobs; null when nothing is near', () => {
+  const m = createMemory();
+  m.record({ imageHash: '0000000000000001', knobs: { strokeCount: 120, coverage: 1.3 }, score: { simMae: 96 } });
+  const ws = m.warmStart('0000000000000000', { maxDistance: 4 });
+  assertEqual(ws.init.coverage, 1.3);
+  assertEqual(ws.distance, 1);
+  assertEqual(typeof ws.from, 'number');
+  assertEqual(m.warmStart('ffffffffffffffff', { maxDistance: 2 }), null);
+});
+
+test('memory: toJSON/load round-trips; a wrong version is refused and leaves the store intact', () => {
+  const m = createMemory();
+  m.record({ imageHash: '0000000000000001', knobs: { a: 1 }, score: { simMae: 90 } });
+  const snap = JSON.parse(JSON.stringify(m.toJSON()));
+  const m2 = createMemory();
+  assertEqual(m2.load(snap), true);
+  assertEqual(m2.size(), 1);
+  assertEqual(m2.best('0000000000000001').score.simMae, 90);
+  assertEqual(m2.load({ version: 999, entries: [] }), false);
+  assertEqual(m2.size(), 1, 'a refused load leaves the store intact');
+  assertEqual(m.toJSON().version, MEMORY_VERSION);
+});
+
+test('memory: the store is bounded (maxEntries evicts oldest)', () => {
+  const m = createMemory({ maxEntries: 3 });
+  for (let i = 0; i < 5; i++) m.record({ imageHash: '0000000000000000', knobs: { i }, score: { simMae: i } });
+  assertEqual(m.size(), 3);
+  assertEqual(m.best('0000000000000000').score.simMae, 4);
+});
+
+test('memory: profileSignature is order-independent; warm start seeds searchProfile', () => {
+  assertEqual(profileSignature({ b: 2, a: 1 }), 'a=1|b=2');
+  const base = { schemaVersion: 1, id: 'x', name: 'n', version: '1.0.0',
+    global: { style: 'painterly', strokeCount: 120, detailLevel: 0.7, opacity: 0.9, smart: true, seed: 12345 } };
+  const img = h2Target(48);
+  const h = averageHash(img.pixels, 48, 48);
+  const m = createMemory();
+  m.record({ imageHash: h, knobs: { coverage: 1.2, elongation: 1.5 }, score: { simMae: 90 } });
+  const ws = m.warmStart(h);
+  const r = searchProfile(base, img, { evaluations: 8, seed: 5, init: ws ? ws.init : undefined });
+  assertEqual(r.knobs.strokeCount, 120, 'the fixed knob is still held at the base value');
 });
 
 // ─── Summary ──────────────────────────────────────────────────────
