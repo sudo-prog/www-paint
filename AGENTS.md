@@ -12,7 +12,7 @@ nobody redoes it.
 
 ## 0. ⚠ Open issues needing ThinkPad (BE) action
 
-Raised by Mac/FE on 2026-11-11. **Five items — none are Mac-editable.**
+Raised by Mac/FE on 2026-11-11. **Seven items — none are Mac-editable.**
 
 ### 0.1 BLOCKER — `js/ui/app.js`: layer panel opens empty
 
@@ -99,7 +99,7 @@ half-deleted relative-line path; the adjacent `<line x1="17" y1="4" x2="23"
 y2="4">` already draws the horizontal stroke, so the polyline is likely
 redundant. **Not fixed by Mac** — index.html is not on the Mac-owned list.
 
-### 0.6 BUG — `js/styles/pencil.js:155`: invalid brush tip `'pencil'`
+### 0.5 BUG — `js/styles/pencil.js:155`: invalid brush tip `'pencil'`
 
 `pencil.js` passes `brushName: 'pencil'` to `stampStrokeSync`, but the vendored
 runtime registers **`cpencil`**, not `pencil`. Every pencil stroke therefore
@@ -112,9 +112,9 @@ custom renderer — pencil has never used the enhanced path.
 
 ⚠ Related and more important: **`pencil.js` and `charcoal.js` were the only two
 styles wired to the stamp path before M3, and the path itself was dead** — see
-§0.7. Both have been rendering through their fallbacks in production.
+§0.6. Both have been rendering through their fallbacks in production.
 
-### 0.7 BUG — the enhanced p5.brush stamp path never worked (FIXED by Mac)
+### 0.6 BUG — the enhanced p5.brush stamp path never worked (FIXED by Mac)
 
 `js/vendor/brush.esm.js` is the **modern p5.brush build**: WebGL2-only, public
 drawing API (`initStandaloneRuntime`, `load`, `set`, `add`, `beginStroke`,
@@ -139,7 +139,7 @@ Three traps worth remembering (all documented in the module):
 3. **`brush.clear()` paints the target opaque** (it is a canvas background, not
    a transparent wipe). Clear the GL backbuffer directly instead.
 
-### 0.8 NOTE — visual-regression harness has no WebGL2
+### 0.7 NOTE — visual-regression harness has no WebGL2
 
 `scripts/visual-regression.cjs` launches Chromium with `--disable-gpu`, so
 WebGL2 is unavailable and every style takes its canvas fallback. This is why
@@ -275,7 +275,7 @@ its Frameworks relative to the executable's real path and aborts otherwise.
 
 ---
 
-## 5. Session log — 2026-11-11 (Mac / AIR HERMES)
+## 5. Session logs — 2026-11-11 (Mac / AIR HERMES)
 
 ### Bootstrap
 
@@ -337,103 +337,17 @@ to the committed blobs. Nothing already in the repo was moved or overwritten.
 
 ### Next
 
-- **M2** — Phase 2.1 tonal masks + 2.3 layer panel UI — **Goal A shipped, Goal B partially blocked.**
-- **M3** — Phases 1.1 + 1.6 brush media and water/ink unification — **shipped locally** (not pushed; ThinkPad pushes).
-- **M4** — independent QA seat. Standing role; no source edits.
-- Awaiting ThinkPad review of PR #1 and PR #2.
+- **M1** — Phase 3 wet media — **landed** (PR #1, merged by BE as `a3bbfc0`).
+- **M2** — Phase 2.1 masks + 2.3 layer panel — **landed** (PR #2 merged as
+  `5c54a46`; Goal B wiring landed by BE as `da7d355`).
+- **M3** — Phases 1.1 + 1.6 brush media — **landed** (BE pushed as `dfce72c`).
+- **M4** — independent QA seat — **first pass done** (§5d). All ThinkPad claims
+  confirmed; one wording disagreement (see §0.4 / §5d).
+- No Mac streams remain open. Awaiting the next brief from BE.
 
 ---
 
-## 5c. Session log — 2026-11-11 (Mac / AIR HERMES, M3)
-
-**Process note:** per the user, Mac does **not** push — the ThinkPad pushes.
-Files land in the repo via Syncthing; AGENTS.md is updated after each round.
-
-### M3 — brush media + water/ink unification
-
-**The headline finding: the enhanced p5.brush stamp path had never worked.**
-
-The vendored `js/vendor/brush.esm.js` is the modern WebGL2-only p5.brush build
-(public drawing API: `initStandaloneRuntime`, `load`, `set`, `add`,
-`beginStroke`, `move`, `line`, `endStroke`, `render`, …). The shipped adapter
-called the **old internal API** (`brush.h(...)`, `brush.f(...)`, `brush.u =`,
-`brush.b =`), which does not exist in this build → `TypeError: brush.h is not a
-function` on every `initBrushEngine()`. `_ready` stayed false forever, so
-`pencil.js` and `charcoal.js` — the only two styles wired at the time — were
-silently rendering through their canvas fallbacks in production.
-
-**Delivered (all Mac-owned):**
-
-- `js/engine/brush-stamp-engine.js` — rewritten against the real API.
-  Dedicated WebGL2 canvas (never touched by `getContext('2d')`), correct
-  `beginStroke('curve'|'segments')`/`move`/`line`/`endStroke`/`render`
-  sequence, `drawImage` composite onto the caller's 2D canvas.
-- `js/engine/brush-media.js` (NEW, Phase 1.6) — `MEDIA_PARAMS` schema +
-  `MEDIA_PRESETS` + `resolveMedia()` / `toStampOptions()` /
-  `isKnownBrushName()`. Shared parameters for water/ink/dry media, so `bleed`,
-  `grain`, `tideDarken` mean the same thing across styles.
-- `js/styles/{ink,wash,sumi,pastel,gouache,pen,knife,linocut}.js` — wired to
-  the stamp path with a fallback guard.
-- `scripts/brush-media-debug.cjs` + `docs/research/brush-media-compare.png` +
-  `-summary.json` — before/after.
-- `docs/checkpoints/P1.6.md`.
-
-**Verification (my own runs):**
-
-```
-$ node tests/engine.test.js   -> Passed: 52  Failed: 0
-$ node tests/wetsim.test.js   -> Passed: 15  Failed: 0
-$ node tests/masks.test.js    -> Passed: 18  Failed: 0
-$ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
-```
-
-Enhanced path in real Chromium with WebGL2 (SwiftShader), 10 styles:
-
-```
-initOk: true | ready: true
-  ink 1752 · wash 2163 · sumi 2357 · pastel 15166 · gouache 15688
-  pen 15688 · knife 15688 · linocut 2684   (all stampErr=null)
-  pencil 3141 · charcoal 15166  (invalid 'pencil' tip -> fallback)
-```
-
-Fallback with `--disable-gpu`: every style still renders (ink 1934, wash
-11526, sumi 3587, gouache 2250, pen 2345, knife 2245, linocut 2773, pencil
-3223, charcoal 3733). Vision review of `brush-media-compare.png` confirms the
-stamp path shows real brush grain where the fallback is smooth.
-
-**Baselines not re-baselined** — the harness runs `--disable-gpu`, so WebGL2 is
-unavailable and `ink` takes its fallback; hash unchanged.
-
-### Bugs found during M3
-
-1. `brush.h is not a function` — the path was dead (fixed).
-2. `brush.add()` on an existing tip clobbers its param → every later stroke
-   throws. Never re-add a shipped tip.
-3. `brush.clear()` paints the target opaque → covers the caller's canvas.
-4. Presets named non-existent tips (`round`, `flat`, `pencil`).
-5. `opts.size` could be a `{min,max,default}` object → `NaN` weight.
-6. **Pre-existing, reported not fixed:** `pencil.js:155` passes `brushName:
-   'pencil'` (should be `cpencil`). ThinkPad-owned file.
-
-### Open items added to AGENTS.md §0
-
-- **0.6** `pencil.js:155` invalid brush tip.
-- **0.7** the dead stamp path (fixed by Mac; documented for the ThinkPad).
-- **0.8** the visual harness has no WebGL2 — baselines will not move until it
-  does.
-
-### PRs (unchanged — Mac does not push)
-
-| PR | Branch | Head | State |
-|---|---|---|---|
-| [#1](https://github.com/sudo-prog/www-paint/pull/1) | `machine/mac/wetsim` | `04ed927` | open, mergeable clean |
-| [#2](https://github.com/sudo-prog/www-paint/pull/2) | `machine/mac/masks` | `c2e30df` | open, mergeable clean |
-
-M3 work is **local only** — no branch pushed, no PR opened.
-
----
-
-## 5b. Session log — 2026-11-11 (Mac / AIR HERMES, M2)
+### 5b. M2 — tonal masks + layer panel
 
 ### Location correction
 
@@ -528,6 +442,141 @@ ThinkPad's 4 unpushed local commits in its history, which GitHub flagged
 `mergeable_state: dirty`. The rebase is content-identical for every file except
 `css/style.css`, where the only delta is the ThinkPad's `.control-hint` (already
 in `origin/main`).
+
+---
+
+### 5c. M3 — brush media + water/ink unification
+
+**Process note:** per the user, Mac does **not** push — the ThinkPad pushes.
+Files land in the repo via Syncthing; AGENTS.md is updated after each round.
+
+### M3 — brush media + water/ink unification
+
+**The headline finding: the enhanced p5.brush stamp path had never worked.**
+
+The vendored `js/vendor/brush.esm.js` is the modern WebGL2-only p5.brush build
+(public drawing API: `initStandaloneRuntime`, `load`, `set`, `add`,
+`beginStroke`, `move`, `line`, `endStroke`, `render`, …). The shipped adapter
+called the **old internal API** (`brush.h(...)`, `brush.f(...)`, `brush.u =`,
+`brush.b =`), which does not exist in this build → `TypeError: brush.h is not a
+function` on every `initBrushEngine()`. `_ready` stayed false forever, so
+`pencil.js` and `charcoal.js` — the only two styles wired at the time — were
+silently rendering through their canvas fallbacks in production.
+
+**Delivered (all Mac-owned):**
+
+- `js/engine/brush-stamp-engine.js` — rewritten against the real API.
+  Dedicated WebGL2 canvas (never touched by `getContext('2d')`), correct
+  `beginStroke('curve'|'segments')`/`move`/`line`/`endStroke`/`render`
+  sequence, `drawImage` composite onto the caller's 2D canvas.
+- `js/engine/brush-media.js` (NEW, Phase 1.6) — `MEDIA_PARAMS` schema +
+  `MEDIA_PRESETS` + `resolveMedia()` / `toStampOptions()` /
+  `isKnownBrushName()`. Shared parameters for water/ink/dry media, so `bleed`,
+  `grain`, `tideDarken` mean the same thing across styles.
+- `js/styles/{ink,wash,sumi,pastel,gouache,pen,knife,linocut}.js` — wired to
+  the stamp path with a fallback guard.
+- `scripts/brush-media-debug.cjs` + `docs/research/brush-media-compare.png` +
+  `-summary.json` — before/after.
+- `docs/checkpoints/P1.6.md`.
+
+**Verification (my own runs):**
+
+```
+$ node tests/engine.test.js   -> Passed: 52  Failed: 0
+$ node tests/wetsim.test.js   -> Passed: 15  Failed: 0
+$ node tests/masks.test.js    -> Passed: 18  Failed: 0
+$ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
+```
+
+Enhanced path in real Chromium with WebGL2 (SwiftShader), 10 styles:
+
+```
+initOk: true | ready: true
+  ink 1752 · wash 2163 · sumi 2357 · pastel 15166 · gouache 15688
+  pen 15688 · knife 15688 · linocut 2684   (all stampErr=null)
+  pencil 3141 · charcoal 15166  (invalid 'pencil' tip -> fallback)
+```
+
+Fallback with `--disable-gpu`: every style still renders (ink 1934, wash
+11526, sumi 3587, gouache 2250, pen 2345, knife 2245, linocut 2773, pencil
+3223, charcoal 3733). Vision review of `brush-media-compare.png` confirms the
+stamp path shows real brush grain where the fallback is smooth.
+
+**Baselines not re-baselined** — the harness runs `--disable-gpu`, so WebGL2 is
+unavailable and `ink` takes its fallback; hash unchanged.
+
+### Bugs found during M3
+
+1. `brush.h is not a function` — the path was dead (fixed).
+2. `brush.add()` on an existing tip clobbers its param → every later stroke
+   throws. Never re-add a shipped tip.
+3. `brush.clear()` paints the target opaque → covers the caller's canvas.
+4. Presets named non-existent tips (`round`, `flat`, `pencil`).
+5. `opts.size` could be a `{min,max,default}` object → `NaN` weight.
+6. **Pre-existing, reported not fixed:** `pencil.js:155` passes `brushName:
+   'pencil'` (should be `cpencil`). ThinkPad-owned file.
+
+### Open items added to AGENTS.md §0
+
+- **0.5** `pencil.js:155` invalid brush tip.
+- **0.6** the dead stamp path (fixed by Mac; documented for the ThinkPad).
+- **0.7** the visual harness has no WebGL2 — baselines will not move until it
+  does.
+
+### PRs (unchanged — Mac does not push)
+
+| PR | Branch | Head | State |
+|---|---|---|---|
+| [#1](https://github.com/sudo-prog/www-paint/pull/1) | `machine/mac/wetsim` | `04ed927` | open, mergeable clean |
+| [#2](https://github.com/sudo-prog/www-paint/pull/2) | `machine/mac/masks` | `c2e30df` | open, mergeable clean |
+
+M3 work is **local only** — no branch pushed, no PR opened.
+
+---
+
+### 5d. M4 — independent QA seat (verification only, no edits)
+
+Baseline under test: **clean `origin/main` @ `1b58cc5`** (a separate worktree,
+not the Syncthing mirror, so uncommitted work cannot mask anything).
+
+| Check | ThinkPad claim | My independent run | Verdict |
+|---|---|---|---|
+| `node tests/engine.test.js` | 52/52 | Passed: 52 Failed: 0 | ✅ agree |
+| `node tests/masks.test.js` | 18/18 | Passed: 18 Failed: 0 | ✅ agree |
+| `node tests/wetsim.test.js` | 15/15 | Passed: 15 Failed: 0 | ✅ agree |
+| `node scripts/visual-regression.cjs` | pass=9 fail=0 error=0 | pass=9 fail=0 error=0 total=9 | ✅ agree |
+| Parity bench (R2, `174df5e`) | blobs 97.52/0.8671 · rings 98.01/0.8522 · smooth 98.78/0.9317 · noise 80.89/0.0256 | **exact match** | ✅ agree |
+| Layer panel init (`da7d355`) | 2 rows, 51 style options | `{"rows":2,"styleOpts":51,"blendOpts":8}` | ✅ agree |
+| Layer handlers (`da7d355`) | style + regenerate fire | style records `ink`; regenerate produced 20 strokes | ✅ agree |
+| "0 page errors" (`da7d355`) | 0 | 2 console errors, both pre-existing | ⚠ disagree (wording) |
+
+**⚠ DISAGREE (wording, not a regression):** `da7d355` claims "0 page errors",
+but the page logs two messages, both predating that commit:
+
+1. `Error: <polyline> attribute points: Expected number, "17 4l4 4l0 0l0 0l0 0"`
+   — malformed SVG at `index.html:38` (and `index.maestro.html:38`). See §0.4.
+2. `Failed to load resource … 404` — the browser's default `/favicon.ico`
+   request; the repo ships no favicon.
+
+Neither comes from ThinkPad code. The claim should read "0 **new** page errors".
+
+**Two false alarms I hit (probe bugs, not product bugs) — worth remembering:**
+
+- My first regenerate probe reported `strokes: 0`. The handler correctly
+  early-returns when no source image is loaded (`!this.engine._analysis`); my
+  probe had not loaded one.
+- A second probe read `layer.strokes.length` before the async handler finished
+  and again reported failure.
+
+**Lesson:** for async UI handlers, establish the precondition *and* wait for
+the effect, or you report a defect that does not exist.
+
+**Unverified, not contradicted:** the `scales:1` collapse-to-R1 claim. The
+option exists and the R2 numbers reproduce, but the R1-vs-R2 A/B needs a long
+optimiser run that exceeded the command approval window.
+
+Evidence: `docs/checkpoints/M4.md` + `docs/research/qa-parity-r2.png`.
+**No source edits — M4 is evidence only.**
 
 ---
 
