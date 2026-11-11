@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WWW_PAINT — Tonal masks debug</title>
+<style>
+  html, body { margin: 0; background: #111; color: #ddd; font: 12px/1.4 monospace; }
+  #meta { padding: 8px; }
+  #wrap { display: flex; gap: 8px; padding: 8px; align-items: flex-start; }
+  .panel { display: flex; flex-direction: column; gap: 4px; }
+  .panel h4 { margin: 0; font-weight: normal; color: #888; }
+  canvas { image-rendering: pixelated; border: 1px solid #333; display: block; }
+</style>
+</head>
+<body>
+<div id="meta">tonal masks debug — loading…</div>
+<div id="wrap"></div>
+<script type="module">
+// Phase 2.1 debug visualization: the source image next to the four soft tonal
+// masks (background / shadows / midtones / highlights) and a colour composite.
+// Node/screenshot friendly: sets window.harnessReady and exposes window.summary.
+import { analyzeImage } from '/js/engine/analyzer.js';
+import { computeTonalMasks, maskToRGBA, masksCompositeRGBA } from '/js/engine/masks.js';
+
+const meta = document.getElementById('meta');
+const wrap = document.getElementById('wrap');
+const W = 300, H = 220;
+
+function panel(title, canvas) {
+  const d = document.createElement('div');
+  d.className = 'panel';
+  const h = document.createElement('h4');
+  h.textContent = title;
+  d.appendChild(h);
+  d.appendChild(canvas);
+  return d;
+}
+
+function blit(rgba) {
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  c.getContext('2d').putImageData(new ImageData(rgba, W, H), 0, 0);
+  return c;
+}
+
+// Synthetic test card: a value gradient with distinct dark/bright features so
+// every band has visible content.
+function testCard() {
+  const px = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4;
+      // Base: horizontal gradient 20..235
+      let v = 20 + Math.round((x / (W - 1)) * 215);
+      // A dark disc (background/shadow)
+      const d1 = Math.hypot(x - W * 0.22, y - H * 0.35);
+      if (d1 < 42) v = Math.round(v * 0.18);
+      // A bright disc (highlight)
+      const d2 = Math.hypot(x - W * 0.78, y - H * 0.62);
+      if (d2 < 36) v = Math.min(255, Math.round(v * 1.35 + 40));
+      // A mid-grey band
+      if (y > H * 0.78 && y < H * 0.9) v = 128;
+      px[o] = v; px[o + 1] = v; px[o + 2] = v; px[o + 3] = 255;
+    }
+  }
+  return px;
+}
+
+function main() {
+  const px = testCard();
+  const src = blit(new Uint8ClampedArray(px));
+
+  const t0 = performance.now();
+  const analysis = analyzeImage(new Uint8ClampedArray(px), W, H, { structure: false });
+  const r = computeTonalMasks(analysis);
+  const ms = performance.now() - t0;
+
+  wrap.appendChild(panel('source', src));
+  wrap.appendChild(panel('background', blit(maskToRGBA(r.masks.background, W, H))));
+  wrap.appendChild(panel('shadows', blit(maskToRGBA(r.masks.shadows, W, H))));
+  wrap.appendChild(panel('midtones', blit(maskToRGBA(r.masks.midtones, W, H))));
+  wrap.appendChild(panel('highlights', blit(maskToRGBA(r.masks.highlights, W, H))));
+  wrap.appendChild(panel('composite', blit(masksCompositeRGBA(r.masks, W, H))));
+
+  const cov = r.coverage;
+  const sum = cov.background + cov.shadows + cov.midtones + cov.highlights;
+  meta.textContent =
+    `tonal masks debug — ${W}x${H} · ${ms.toFixed(1)} ms · ` +
+    `coverage bg ${cov.background.toFixed(3)} / sh ${cov.shadows.toFixed(3)} / ` +
+    `md ${cov.midtones.toFixed(3)} / hl ${cov.highlights.toFixed(3)} · sum ${sum.toFixed(4)} · ` +
+    `threshold lo ${r.threshold.lo} hi ${r.threshold.hi}`;
+
+  window.summary = {
+    width: W, height: H, ms,
+    coverage: {
+      background: cov.background, shadows: cov.shadows,
+      midtones: cov.midtones, highlights: cov.highlights,
+    },
+    coverageSum: sum,
+    threshold: r.threshold,
+    partition: r._partition,
+  };
+  window.harnessReady = true;
+}
+
+try { main(); } catch (e) {
+  meta.textContent = 'ERROR ' + (e && e.message ? e.message : e);
+  window.harnessReady = true;
+}
+</script>
+</body>
+</html>

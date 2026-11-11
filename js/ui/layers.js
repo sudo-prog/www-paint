@@ -25,13 +25,22 @@ const BLEND_MODES = [
  * @param {HTMLElement} root — container element
  */
 export class LayersManager {
-  constructor(root) {
+  constructor(root, opts = {}) {
     if (!root) throw new Error("LayersManager requires a root element");
 
     /** @type {HTMLElement} */
     this.root = root;
     /** @type {Array<object>} */
     this.layers = [];
+    /**
+     * Style options for the per-layer style dropdown.
+     * Injected by the host (App) so this module never imports the style
+     * registry directly — that keeps layers.js UI-only and dependency-free.
+     * @type {Array<{value: string, label: string}>}
+     */
+    this._styleOptions = (opts.styleOptions && opts.styleOptions.length)
+      ? opts.styleOptions
+      : [{ value: "pencil", label: "Pencil" }];
 
     this._render();
     this._bindEvents();
@@ -188,7 +197,49 @@ export class LayersManager {
     opacityValue.textContent = `${Math.round((layer.opacity || 1) * 100)}%`;
     opacityRow.appendChild(opacityValue);
 
+    // Line 2: blend mode + style + regenerate (full width)
+    const toolsRow = document.createElement("div");
+    toolsRow.className = "layer-tools-row";
+
+    const blendSelect = document.createElement("select");
+    blendSelect.className = "layer-blend-select";
+    blendSelect.dataset.action = "blend-change";
+    blendSelect.title = "Blend mode";
+    blendSelect.setAttribute("aria-label", "Blend mode");
+    for (const mode of BLEND_MODES) {
+      const opt = document.createElement("option");
+      opt.value = mode.value;
+      opt.textContent = mode.label;
+      if ((layer.blendMode || "normal") === mode.value) opt.selected = true;
+      blendSelect.appendChild(opt);
+    }
+    toolsRow.appendChild(blendSelect);
+
+    const styleSelect = document.createElement("select");
+    styleSelect.className = "layer-style-select";
+    styleSelect.dataset.action = "style-change";
+    styleSelect.title = "Layer style";
+    styleSelect.setAttribute("aria-label", "Layer style");
+    for (const s of this._styleOptions) {
+      const opt = document.createElement("option");
+      opt.value = s.value;
+      opt.textContent = s.label;
+      if ((layer.style || "pencil") === s.value) opt.selected = true;
+      styleSelect.appendChild(opt);
+    }
+    toolsRow.appendChild(styleSelect);
+
+    const regenBtn = document.createElement("button");
+    regenBtn.type = "button";
+    regenBtn.className = "layer-action-btn layer-regen-btn";
+    regenBtn.dataset.action = "regenerate-layer";
+    regenBtn.title = "Regenerate this layer";
+    regenBtn.setAttribute("aria-label", "Regenerate layer");
+    regenBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
+    toolsRow.appendChild(regenBtn);
+
     row.appendChild(mainRow);
+    row.appendChild(toolsRow);
     row.appendChild(opacityRow);
 
     return row;
@@ -222,15 +273,22 @@ export class LayersManager {
         case "delete-layer":
           this._emit("layer-delete", { layerId });
           break;
+        case "regenerate-layer":
+          this._emit("layer-regenerate", { layerId });
+          break;
       }
     });
 
-    // Blend mode change
+    // Blend mode + style change
     list.addEventListener("change", (e) => {
+      const row = e.target.closest(".layer-row");
+      if (!row) return;
+      const layerId = parseInt(row.dataset.layerId, 10);
       if (e.target.classList.contains("layer-blend-select") || e.target.dataset.action === "blend-change") {
-        const row = e.target.closest(".layer-row");
-        const layerId = parseInt(row.dataset.layerId, 10);
         this._emit("layer-blend-change", { layerId, blendMode: e.target.value });
+      }
+      if (e.target.classList.contains("layer-style-select") || e.target.dataset.action === "style-change") {
+        this._emit("layer-style-change", { layerId, style: e.target.value });
       }
     });
 
@@ -266,6 +324,17 @@ export class LayersManager {
   }
 
   /* ─── Public API ────────────────────────────────────────────── */
+
+  /**
+   * Replace the style options and re-render the list.
+   * The host (App) calls this once it has the style registry; calling it is
+   * optional — the dropdown falls back to a single "Pencil" entry.
+   * @param {Array<{value: string, label: string}>} options
+   */
+  setStyleOptions(options) {
+    this._styleOptions = (options && options.length) ? options : [{ value: "pencil", label: "Pencil" }];
+    this._renderLayers();
+  }
 
   /**
    * Set the layers data and re-render.
