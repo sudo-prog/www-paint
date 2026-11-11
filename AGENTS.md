@@ -10,6 +10,145 @@ nobody redoes it.
 
 ---
 
+## 0. ⚠ Open issues needing ThinkPad (BE) action
+
+Raised by Mac/FE on 2026-11-11. **Five items — none are Mac-editable.**
+
+### 0.1 BLOCKER — `js/ui/app.js`: layer panel opens empty
+
+`LayersManager` is constructed (app.js:103) but `setLayers()` is never called
+at init, so the panel renders **zero rows** on a fresh page. The engine has two
+default layers; the manager's list stays empty until an add/delete/duplicate
+fires.
+
+**Fix** — after app.js:103:
+
+```js
+this.layers.setStyleOptions(
+  this.engine._styleList.map(n => ({ value: n, label: n }))
+);
+this.layers.setLayers(this.engine.layers);
+```
+
+`engine._styleList` is populated by `_registerAllStyles()` (app.js:96).
+
+### 0.2 BLOCKER — `js/ui/app.js`: two layer events unhandled
+
+`layers.js` now emits `layer-style-change` and `layer-regenerate`; there are no
+handlers, so both controls are inert.
+
+**Fix** — alongside the existing layer handlers:
+
+```js
+this.layers.root.addEventListener("layer-style-change", (e) => {
+  const layer = this.engine.getLayer(e.detail.layerId);
+  if (!layer) return;
+  layer.style = e.detail.style;
+  if (layer.strokes.length) this.engine.render();
+});
+
+this.layers.root.addEventListener("layer-regenerate", async (e) => {
+  const layer = this.engine.getLayer(e.detail.layerId);
+  if (!layer) return;
+  const style = layer.style || this.engine.settings.style || "pencil";
+  const seed = (this.engine._seed || 1) + layer.id;
+  const shapes = await this.engine.generate({
+    style, layer: layer.id, seed,
+    count: this.engine.settings.strokeCount,
+  });
+  layer.strokes = shapes;
+  this.engine.render();
+  this.layers.setLayers(this.engine.layers);
+});
+```
+
+`engine.generate()` already supports `{style, layer, seed, count}` — **no engine
+change needed.** Full diff in `docs/checkpoints/P2.md` §2.4.
+
+### 0.3 BUG — `js/engine/analyzer.js`: infinite hang on tiny images
+
+`extractPalette()` k-means init:
+
+```js
+for (let c = 0; c < clusters; c++) {
+  let idx;
+  do { idx = Math.floor(rnd() * (data.length / 3)) * 3; }
+  while (used.has(idx));      // ← never terminates
+  used.add(idx);
+}
+```
+
+With fewer than `paletteSize` (16) pixels there are not enough distinct
+indices, so the `do/while` spins forever. **Reproduced: `analyzeImage()` on a
+1×1 buffer hangs indefinitely** (verified by timeout, not inference).
+
+Minimal fix: bail out when `data.length / 3 < clusters`, e.g. fall back to
+`clusters = Math.min(k, Math.floor(data.length / 3))` or fill remaining
+centroids by clamping the index.
+
+### 0.4 BUG — `index.html:38`: malformed `<polyline>` (console error every load)
+
+```html
+<polyline points="17 4l4 4l0 0l0 0l0 0"></polyline>
+```
+
+`l4 4` is not valid in a `points` attribute → Chromium logs
+`Error: <polyline> attribute points: Expected number, "17 4l4 4l0 0l0 0l0 0"`
+on every page load. Same string in `index.maestro.html:38`. Looks like a
+half-deleted relative-line path; the adjacent `<line x1="17" y1="4" x2="23"
+y2="4">` already draws the horizontal stroke, so the polyline is likely
+redundant. **Not fixed by Mac** — index.html is not on the Mac-owned list.
+
+### 0.6 BUG — `js/styles/pencil.js:155`: invalid brush tip `'pencil'`
+
+`pencil.js` passes `brushName: 'pencil'` to `stampStrokeSync`, but the vendored
+runtime registers **`cpencil`**, not `pencil`. Every pencil stroke therefore
+throws `Brush "pencil" not found` inside the stamp engine and falls back to the
+custom renderer — pencil has never used the enhanced path.
+
+**Fix:** change `'pencil'` → `'cpencil'` at `js/styles/pencil.js:155`.
+
+`pencil.js` is on the ThinkPad dirty list, so Mac did **not** edit it.
+
+⚠ Related and more important: **`pencil.js` and `charcoal.js` were the only two
+styles wired to the stamp path before M3, and the path itself was dead** — see
+§0.7. Both have been rendering through their fallbacks in production.
+
+### 0.7 BUG — the enhanced p5.brush stamp path never worked (FIXED by Mac)
+
+`js/vendor/brush.esm.js` is the **modern p5.brush build**: WebGL2-only, public
+drawing API (`initStandaloneRuntime`, `load`, `set`, `add`, `beginStroke`,
+`move`, `line`, `endStroke`, `render`, `hatch`, `wash`, `fill`).
+
+The shipped adapter called the **old internal API** (`brush.h(...)`,
+`brush.f(...)`, `brush.u = {...}`, `brush.b = {...}`), which does not exist in
+this build → `TypeError: brush.h is not a function` on every init. The path was
+silently unusable from the day it was vendored.
+
+**Fixed by Mac in M3** (`js/engine/brush-stamp-engine.js` rewritten,
+`js/engine/brush-media.js` new). 10 styles now use the enhanced path with a
+working fallback. Details in `docs/checkpoints/P1.6.md`.
+
+Three traps worth remembering (all documented in the module):
+
+1. **`load(target)` needs a canvas that has never had `getContext('2d')`.** A
+   canvas hands out one context type; a 2D context permanently blocks WebGL2.
+2. **`brush.add(name, params)` on an existing tip overwrites its param object.**
+   A param without `type` makes every later stroke throw. The vendor exports no
+   brush list, so never re-add a shipped tip.
+3. **`brush.clear()` paints the target opaque** (it is a canvas background, not
+   a transparent wipe). Clear the GL backbuffer directly instead.
+
+### 0.8 NOTE — visual-regression harness has no WebGL2
+
+`scripts/visual-regression.cjs` launches Chromium with `--disable-gpu`, so
+WebGL2 is unavailable and every style takes its canvas fallback. This is why
+the M3 changes leave the 9 pinned baselines **unmoved** even though `ink` is
+one of them. If the harness ever gains WebGL2, `ink` (and any other wired
+baseline style) will need a deliberate re-baseline.
+
+---
+
 ## 1. Two machines, one repo
 
 | Machine | Agent | Role |
@@ -198,11 +337,197 @@ to the committed blobs. Nothing already in the repo was moved or overwritten.
 
 ### Next
 
-- **M2** — Phase 2.1 tonal masks + 2.3 layer panel UI (branch
-  `machine/mac/masks`). Not started.
-- **M3** — Phases 1.1 + 1.6 brush media and water/ink unification. Not started.
+- **M2** — Phase 2.1 tonal masks + 2.3 layer panel UI — **Goal A shipped, Goal B partially blocked.**
+- **M3** — Phases 1.1 + 1.6 brush media and water/ink unification — **shipped locally** (not pushed; ThinkPad pushes).
 - **M4** — independent QA seat. Standing role; no source edits.
-- Awaiting ThinkPad review of PR #1 before touching `renderer.js`.
+- Awaiting ThinkPad review of PR #1 and PR #2.
+
+---
+
+## 5c. Session log — 2026-11-11 (Mac / AIR HERMES, M3)
+
+**Process note:** per the user, Mac does **not** push — the ThinkPad pushes.
+Files land in the repo via Syncthing; AGENTS.md is updated after each round.
+
+### M3 — brush media + water/ink unification
+
+**The headline finding: the enhanced p5.brush stamp path had never worked.**
+
+The vendored `js/vendor/brush.esm.js` is the modern WebGL2-only p5.brush build
+(public drawing API: `initStandaloneRuntime`, `load`, `set`, `add`,
+`beginStroke`, `move`, `line`, `endStroke`, `render`, …). The shipped adapter
+called the **old internal API** (`brush.h(...)`, `brush.f(...)`, `brush.u =`,
+`brush.b =`), which does not exist in this build → `TypeError: brush.h is not a
+function` on every `initBrushEngine()`. `_ready` stayed false forever, so
+`pencil.js` and `charcoal.js` — the only two styles wired at the time — were
+silently rendering through their canvas fallbacks in production.
+
+**Delivered (all Mac-owned):**
+
+- `js/engine/brush-stamp-engine.js` — rewritten against the real API.
+  Dedicated WebGL2 canvas (never touched by `getContext('2d')`), correct
+  `beginStroke('curve'|'segments')`/`move`/`line`/`endStroke`/`render`
+  sequence, `drawImage` composite onto the caller's 2D canvas.
+- `js/engine/brush-media.js` (NEW, Phase 1.6) — `MEDIA_PARAMS` schema +
+  `MEDIA_PRESETS` + `resolveMedia()` / `toStampOptions()` /
+  `isKnownBrushName()`. Shared parameters for water/ink/dry media, so `bleed`,
+  `grain`, `tideDarken` mean the same thing across styles.
+- `js/styles/{ink,wash,sumi,pastel,gouache,pen,knife,linocut}.js` — wired to
+  the stamp path with a fallback guard.
+- `scripts/brush-media-debug.cjs` + `docs/research/brush-media-compare.png` +
+  `-summary.json` — before/after.
+- `docs/checkpoints/P1.6.md`.
+
+**Verification (my own runs):**
+
+```
+$ node tests/engine.test.js   -> Passed: 52  Failed: 0
+$ node tests/wetsim.test.js   -> Passed: 15  Failed: 0
+$ node tests/masks.test.js    -> Passed: 18  Failed: 0
+$ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
+```
+
+Enhanced path in real Chromium with WebGL2 (SwiftShader), 10 styles:
+
+```
+initOk: true | ready: true
+  ink 1752 · wash 2163 · sumi 2357 · pastel 15166 · gouache 15688
+  pen 15688 · knife 15688 · linocut 2684   (all stampErr=null)
+  pencil 3141 · charcoal 15166  (invalid 'pencil' tip -> fallback)
+```
+
+Fallback with `--disable-gpu`: every style still renders (ink 1934, wash
+11526, sumi 3587, gouache 2250, pen 2345, knife 2245, linocut 2773, pencil
+3223, charcoal 3733). Vision review of `brush-media-compare.png` confirms the
+stamp path shows real brush grain where the fallback is smooth.
+
+**Baselines not re-baselined** — the harness runs `--disable-gpu`, so WebGL2 is
+unavailable and `ink` takes its fallback; hash unchanged.
+
+### Bugs found during M3
+
+1. `brush.h is not a function` — the path was dead (fixed).
+2. `brush.add()` on an existing tip clobbers its param → every later stroke
+   throws. Never re-add a shipped tip.
+3. `brush.clear()` paints the target opaque → covers the caller's canvas.
+4. Presets named non-existent tips (`round`, `flat`, `pencil`).
+5. `opts.size` could be a `{min,max,default}` object → `NaN` weight.
+6. **Pre-existing, reported not fixed:** `pencil.js:155` passes `brushName:
+   'pencil'` (should be `cpencil`). ThinkPad-owned file.
+
+### Open items added to AGENTS.md §0
+
+- **0.6** `pencil.js:155` invalid brush tip.
+- **0.7** the dead stamp path (fixed by Mac; documented for the ThinkPad).
+- **0.8** the visual harness has no WebGL2 — baselines will not move until it
+  does.
+
+### PRs (unchanged — Mac does not push)
+
+| PR | Branch | Head | State |
+|---|---|---|---|
+| [#1](https://github.com/sudo-prog/www-paint/pull/1) | `machine/mac/wetsim` | `04ed927` | open, mergeable clean |
+| [#2](https://github.com/sudo-prog/www-paint/pull/2) | `machine/mac/masks` | `c2e30df` | open, mergeable clean |
+
+M3 work is **local only** — no branch pushed, no PR opened.
+
+---
+
+## 5b. Session log — 2026-11-11 (Mac / AIR HERMES, M2)
+
+### Location correction
+
+The user pointed out the canonical project path is
+`/Users/AIR2K/Data/20_Projects/20.36_WWW_PAINT`. M1's six files were copied
+there byte-identical (verified against the committed blobs) and `AGENTS.md` was
+created at the project root. The `~/code/www-paint` worktree was unlinked and
+`/Users/AIR2K/code` removed. **Nothing already in the repo was moved or
+overwritten** — the ThinkPad's 41 uncommitted entries were byte-identical
+before and after (`git status` diff empty).
+
+### M2 Goal A — tonal masks — **SHIPPED**
+
+- `js/engine/masks.js` (NEW) — soft background/shadows/midtones/highlights
+  separation from an existing `analyzeImage()` result. The four windows form a
+  **partition of unity**: they sum to exactly 1.0 at every pixel, so coverage
+  sums to ~1 and a downstream layer-aware generator can blend the bands with no
+  gaps or double-weighting.
+- `tests/masks.test.js` (NEW) — **18/18 pass**.
+- `docs/research/tonal-masks.png`, `scripts/tonal-masks-debug.cjs`,
+  `tests/visual/tonal-masks.html`.
+- `docs/checkpoints/P2.md`.
+
+Measured on a 64×64 gradient: coverage 0.0825 / 0.2534 / 0.3281 / 0.3359,
+sum **1.0000**, partition min/max **1.0000 / 1.0000**. Black → background 1,
+white → highlights 1, mid-grey → midtones > 0.9. Vision review of the debug PNG
+confirms clean band separation.
+
+**Design note:** `background` is a real band, not a residual — a residual after
+the three tonal windows is identically zero because they already tile the range.
+
+### M2 Goal B — layer panel — **partial, 2 criteria blocked**
+
+**Wiring verified:** `layers.js` *is* wired into `app.js` (add/delete/duplicate/
+visibility/opacity/blend all handled). Two defects found:
+
+1. `setLayers()` is **never called at init** — the panel opens with an empty
+   list (rows: 0).
+2. The **blend `<select>` was never rendered** — `layers.js` bound a `change`
+   handler for `.layer-blend-select` and `app.js` handles `layer-blend-change`,
+   but `_renderLayerRow()` never created the element. Dead code on both sides.
+
+**Delivered (Mac-owned only):**
+- `js/ui/layers.js` — row now renders blend (8 modes), style (51 styles, via
+  injected options + `setStyleOptions()`), and regenerate controls; emits
+  `layer-style-change` and `layer-regenerate`.
+- `css/style.css` — additive rules only (`.layer-tools-row`,
+  `.layer-style-select`, `.layer-regen-btn`). Staged with `git apply --cached`
+  so the ThinkPad's uncommitted `.control-hint` was not swept in.
+
+**Verification** — real headless Chromium 1440×900, DOM assertion **and**
+behavioural canvas check per control:
+
+```
+✓ rows render with all controls   {rowCount:2, blend/style/regen/opacity/vis: 2 each}
+✓ style dropdown has options      options=51
+✓ opacity slider changes canvas   pixelsChanged=786432
+✓ visibility toggle changes canvas pixelsChanged=21059
+✓ blend applied to engine layer   multiply
+✓ add/delete tracked engine layers
+✓ regenerate emits layer-regenerate
+✓ style emits layer-style-change  {layerId:1, style:"ink"}
+```
+
+**⚠ BLOCKED — needs ThinkPad action in `js/ui/app.js`** (exact diffs in
+`docs/checkpoints/P2.md` §2.4 and the OPS_LOG):
+
+1. Call `setStyleOptions(...)` + `setLayers(this.engine.layers)` after line 103.
+2. Handle `layer-style-change` and `layer-regenerate`
+   (`engine.generate()` already supports `{style, layer, seed, count}`).
+
+### Bugs found (both pre-existing, neither in a file this stream owns)
+
+1. **`analyzeImage()` hangs on tiny images.** The k-means init in
+   `extractPalette()` does `do { idx = ... } while (used.has(idx))` — with
+   fewer pixels than `paletteSize` there are not enough distinct indices, so it
+   spins forever. Reproduced with a 1×1 buffer. `js/engine/analyzer.js` is
+   ThinkPad-owned → **not edited**, raised via OPS_LOG; mask tests work around it.
+2. **Malformed `<polyline>` in `index.html:38`** — `points="17 4l4 4l0 0l0 0l0 0"`
+   is invalid SVG, logs a console error on every load. Pre-existing; not fixed
+   here (index.html is not on the Mac-owned list).
+
+### PRs
+
+| PR | Branch | Head | State |
+|---|---|---|---|
+| [#1](https://github.com/sudo-prog/www-paint/pull/1) | `machine/mac/wetsim` | `04ed927` | open, mergeable clean |
+| [#2](https://github.com/sudo-prog/www-paint/pull/2) | `machine/mac/masks` | `c2e30df` | open, mergeable clean |
+
+PR #2 was rebased onto `origin/main` before pushing: the first push carried the
+ThinkPad's 4 unpushed local commits in its history, which GitHub flagged
+`mergeable_state: dirty`. The rebase is content-identical for every file except
+`css/style.css`, where the only delta is the ThinkPad's `.control-hint` (already
+in `origin/main`).
 
 ---
 
