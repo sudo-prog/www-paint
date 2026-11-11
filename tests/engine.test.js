@@ -59,6 +59,7 @@ import {
   MEMORY_VERSION, HASH_GRID, averageHash, hamming, profileSignature, createMemory
 } from '../js/engine/memory.js';
 import { GATE_DEFAULTS, evaluateSet, gateChange, gateVariants } from '../js/engine/gate.js';
+import { buildProposalPrompt, parseProposal, VISION_PROPOSE_DEFAULTS } from '../js/engine/vision-propose.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -1444,6 +1445,29 @@ test('gate: gateVariants runs a real benchmark deterministically', () => {
   assertApprox(g1.meanDelta, g2.meanDelta, 1e-9);
   assertEqual(g1.deltas.length, 2);
   if (!['keep', 'revert', 'pending'].includes(g1.decision)) throw new Error(`bad decision ${g1.decision}`);
+});
+
+// ─── Vision proposer — Harness H3 (sync parts) ────────────────────
+console.log('\nVision proposer (Harness H3):');
+
+test('h3: buildProposalPrompt lists every knob and asks for JSON', () => {
+  const { system, user } = buildProposalPrompt();
+  assertEqual(/JSON/.test(system + user), true);
+  for (const k of KNOB_SET) if (!user.includes(k.name)) throw new Error(`prompt missing knob ${k.name}`);
+  assertEqual(VISION_PROPOSE_DEFAULTS.maxImages, 4);
+});
+
+test('h3: parseProposal handles bare / fenced / prose-wrapped JSON and clamps', () => {
+  const bare = parseProposal('{"knobs":{"coverage":1.2,"strokeCount":300}}');
+  assertEqual(bare.source, 'knobs');
+  assertEqual(bare.knobs.coverage, 1.2);
+  assertEqual(parseProposal('```json\n{"knobs":{"coverage":1.2}}\n```').knobs.coverage, 1.2);
+  assertEqual(parseProposal('Here you go: {"knobs":{"coverage":1.2},"extra":1} thanks').knobs.coverage, 1.2);
+  assertEqual(parseProposal('{"global":{"coverage":0.9}}').source, 'global');
+  assertEqual(parseProposal('{"knobs":{"coverage":999}}').knobs.coverage, 3, 'out-of-range clamps to the knob max');
+  assertEqual(parseProposal('sorry, I cannot help'), null);
+  assertEqual(parseProposal('{"nope":1}'), null);
+  assertEqual(parseProposal(null), null);
 });
 
 // ─── Summary ──────────────────────────────────────────────────────
