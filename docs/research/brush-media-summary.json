@@ -1,0 +1,53 @@
+{
+  "ready": true,
+  "rows": [
+    {
+      "name": "ink",
+      "stampCov": 1393,
+      "canvasCov": 1704,
+      "stampEngaged": true
+    },
+    {
+      "name": "wash",
+      "stampCov": 1873,
+      "canvasCov": 2005,
+      "stampEngaged": true
+    },
+    {
+      "name": "sumi",
+      "stampCov": 2050,
+      "canvasCov": 2121,
+      "stampEngaged": true
+    },
+    {
+      "name": "pastel",
+      "stampCov": 11812,
+      "canvasCov": 12268,
+      "stampEngaged": true
+    },
+    {
+      "name": "gouache",
+      "stampCov": 12268,
+      "canvasCov": 12268,
+      "stampEngaged": true
+    },
+    {
+      "name": "pen",
+      "stampCov": 12268,
+      "canvasCov": 12268,
+      "stampEngaged": true
+    },
+    {
+      "name": "knife",
+      "stampCov": 12268,
+      "canvasCov": 12268,
+      "stampEngaged": true
+    },
+    {
+      "name": "linocut",
+      "stampCov": 3635,
+      "canvasCov": 3635,
+      "stampEngaged": true
+    }
+  ]
+}

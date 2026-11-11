@@ -26,6 +26,15 @@ import {
   quadPts, normalAt, boxOf, shapePoly, outlinePath, raggedPath,
   gradOf, colsOf, rgbToHex
 } from './base.js';
+import { stampStrokeSync, isBrushReady } from '../engine/brush-stamp-engine.js';
+import { resolveMedia, toStampOptions, isKnownBrushName } from '../engine/brush-media.js';
+
+/** Resolve the stamp colour for a shape as an RGB array. */
+function stampColor(shape) {
+  const [c0] = resolveColors(shape);
+  const rgb = hexRgb(c0);
+  return Array.isArray(rgb) ? rgb : [0, 0, 0];
+}
 
 /**
  * Resolve colors from a shape, handling both formats:
@@ -127,6 +136,21 @@ export class InkStyle {
   render(ctx, shape, progress = 1) {
     const R = rngFor(shape.seed || shape.params.slice(0, 6));
     const [c0, c1, o] = resolveColors(shape);
+
+    // Enhanced path (Phase 1.1): real p5.brush tip dynamics when available.
+    // Falls through to the custom renderer when the brush is unavailable.
+    if (isBrushReady() && shape.type === 'S') {
+      const media = resolveMedia('ink');
+      if (isKnownBrushName(media.brushName)) {
+      const ok = stampStrokeSync(ctx, shape, toStampOptions(media, {
+        color: stampColor(shape),
+        alpha: o,
+        size: shape.params[6],
+        progress,
+      }));
+        if (ok) return;
+      }
+    }
 
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';

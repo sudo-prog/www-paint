@@ -17,10 +17,20 @@
  */
 
 import {
-  rngFor, gaussR, lerp, clamp01,
+  hexRgb, rngFor, gaussR, lerp, clamp01,
   quadPts, normalAt, boxOf, shapePoly, outlinePath,
   shade2, mixHex, rgbaOf, rgbToHex
 } from './base.js';
+import { stampStrokeSync, isBrushReady } from '../engine/brush-stamp-engine.js';
+import { resolveMedia, toStampOptions, isKnownBrushName } from '../engine/brush-media.js';
+
+/** Resolve the stamp colour for a shape as an RGB array. */
+function stampColor(shape) {
+  const [c0] = resolveColors(shape);
+  const rgb = typeof hexRgb === 'function' ? hexRgb(c0) : null;
+  return Array.isArray(rgb) ? rgb : [0, 0, 0];
+}
+
 
 /**
  * Resolve colors from a shape (supports both engine and style formats).
@@ -116,6 +126,21 @@ export class WashStyle {
     const [c0, c1, o] = resolveColors(shape);
     const a = shape.params;
     const R = rngFor(shape.seed || a.slice(0, 8));
+
+    // Enhanced path (Phase 1.1): real p5.brush tip dynamics when available.
+    // Falls through to the custom renderer when the brush is unavailable.
+    if (isBrushReady() && shape.type === 'S') {
+      const media = resolveMedia('wash');
+      if (isKnownBrushName(media.brushName)) {
+      const ok = stampStrokeSync(ctx, shape, toStampOptions(media, {
+        color: stampColor(shape),
+        alpha: o,
+        size: a[6],
+        progress,
+      }));
+        if (ok) return;
+      }
+    }
 
     if (shape.type === 'S') {
       this._renderStroke(ctx, shape, R, c0, c1, o, progress);
