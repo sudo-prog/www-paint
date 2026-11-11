@@ -58,6 +58,7 @@ import {
 import {
   MEMORY_VERSION, HASH_GRID, averageHash, hamming, profileSignature, createMemory
 } from '../js/engine/memory.js';
+import { GATE_DEFAULTS, evaluateSet, gateChange, gateVariants } from '../js/engine/gate.js';
 import { exportProject, importProject, packLayers, exportHTML } from '../js/engine/exporter.js';
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
@@ -1388,6 +1389,61 @@ test('memory: profileSignature is order-independent; warm start seeds searchProf
   const ws = m.warmStart(h);
   const r = searchProfile(base, img, { evaluations: 8, seed: 5, init: ws ? ws.init : undefined });
   assertEqual(r.knobs.strokeCount, 120, 'the fixed knob is still held at the base value');
+});
+
+// ─── Benchmark gate — Harness H5 ──────────────────────────────────
+console.log('\nBenchmark gate (Harness H5):');
+
+test('gate: evaluateSet aggregates the objective over a set', () => {
+  const imgs = [{ name: 'a' }, { name: 'b' }];
+  const r = evaluateSet((im) => ({ simMae: im.name === 'a' ? 90 : 80 }), imgs);
+  assertEqual(r.perImage.map(p => p.name), ['a', 'b']);
+  assertEqual(r.perImage.map(p => p.value), [90, 80]);
+  assertApprox(r.aggregate.mean, 85, 1e-9);
+  assertEqual(r.aggregate.min, 80);
+  assertEqual(r.objective, GATE_DEFAULTS.objective);
+});
+
+test('gate: improved needs approval — pending without it, keep with it, revert below minGain', () => {
+  const imgs = [{ name: 'a' }, { name: 'b' }];
+  const base = evaluateSet(() => ({ simMae: 90 }), imgs);
+  const cand = evaluateSet(() => ({ simMae: 93 }), imgs);
+  assertEqual(gateChange(base, cand).decision, 'pending');
+  assertEqual(gateChange(base, cand, { approve: true }).decision, 'keep');
+  assertEqual(gateChange(base, cand, { approve: true, minGain: 5 }).decision, 'revert');
+  assertEqual(gateChange(base, cand, { approve: true }).requiresApproval, true);
+});
+
+test('gate: a regression reverts even when the mean improves', () => {
+  const imgs = [{ name: 'a' }, { name: 'b' }];
+  const base = evaluateSet(() => ({ simMae: 90 }), imgs);
+  const cand = evaluateSet((im) => ({ simMae: im.name === 'a' ? 99 : 85 }), imgs);
+  const g = gateChange(base, cand, { approve: true });
+  assertEqual(g.improved, true);
+  assertEqual(g.decision, 'revert');
+  assertEqual(g.regressions.map(r => r.name), ['b']);
+});
+
+test('gate: a lost objective over the whole set reverts', () => {
+  const imgs = [{ name: 'a' }];
+  const base = evaluateSet(() => ({ simMae: 90 }), imgs);
+  const cand = evaluateSet(() => ({ simMae: 88 }), imgs);
+  const g = gateChange(base, cand, { approve: true });
+  assertEqual(g.improved, false);
+  assertEqual(g.decision, 'revert');
+});
+
+test('gate: gateVariants runs a real benchmark deterministically', () => {
+  const imgs = [{ name: 'a', ...h2Target(48) }, { name: 'b', ...h2Target(64) }];
+  const run = () => gateVariants(
+    (im) => scoreProfile(h2Base(80), im),
+    (im) => scoreProfile(h2Base(260), im),
+    imgs, { approve: true });
+  const g1 = run().gate, g2 = run().gate;
+  assertEqual(g1.decision, g2.decision);
+  assertApprox(g1.meanDelta, g2.meanDelta, 1e-9);
+  assertEqual(g1.deltas.length, 2);
+  if (!['keep', 'revert', 'pending'].includes(g1.decision)) throw new Error(`bad decision ${g1.decision}`);
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

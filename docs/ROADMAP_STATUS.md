@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · + Harness H4 memory (feedback store + aHash retrieval + warmStart) · B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · + Harness H5 benchmark gate + H4 memory (feedback store + aHash retrieval + warmStart) · B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream in flight (Syncthing, uncommitted). BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -89,7 +89,7 @@ engine of record; the legacy auto-painter is reference-only.
 | H2 | Search proposer (random / CMA-ES) | **done** — `js/engine/propose.js` (random + compact μ,λ ES over `clampKnobs`+`scoreProfile`); beats the hand-set default at equal stroke count (+0.55 simMae, 32 evals), deterministic. See `docs/checkpoints/H2.md` |
 | H3 | LLM proposer (vision → profile, iterate) | todo |
 | H4 | Memory (feedback store + retrieval) | **done** — `js/engine/memory.js` (`createMemory` + `averageHash`/`hamming` + `warmStart`); bounded store keeps wins and losses, deterministic, JSON-serialisable; 113/113. See `docs/checkpoints/H4.md` |
-| H5 | Tier B (agent-improved engine code, benchmark-gated) | todo |
+| H5 | Tier B (agent-improved engine code, benchmark-gated) | **done** — `js/engine/gate.js` (`evaluateSet` + `gateChange`/`gateVariants`): keep only on mean improvement with no image regression + explicit human approval; proposer-agnostic, deterministic; 118/118. See `docs/checkpoints/H5.md` |
 
 ---
 
