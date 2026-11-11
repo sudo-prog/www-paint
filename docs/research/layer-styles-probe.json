@@ -25,5 +25,37 @@
       false,
       0.3
     ]
+  },
+  "multilayer": {
+    "bandInk": {
+      "background": 25598,
+      "shadows": 25600,
+      "outline": 25600,
+      "midtone": 25592,
+      "highlights": 25599
+    },
+    "bandStyles": {
+      "background": [
+        "watercolor"
+      ],
+      "shadows": [
+        "watercolor"
+      ],
+      "outline": [],
+      "midtone": [
+        "watercolor"
+      ],
+      "highlights": [
+        "watercolor"
+      ]
+    },
+    "bandStrokeCounts": [
+      19,
+      6,
+      0,
+      303,
+      72
+    ],
+    "hideTopChangesHash": true
   }
 }

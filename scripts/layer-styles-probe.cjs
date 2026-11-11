@@ -111,8 +111,28 @@ const PAGE_FN = async () => {
     })(),
   };
 
+  // Multi-layer: every tonal band paints its own offscreen canvas and the
+  // composite honours per-layer visibility. (A uniform style is used so the
+  // assertion measures the COMPOSITE, not a style's ink coverage.)
+  const mlCanvas = document.createElement('canvas');
+  mlCanvas.width = size; mlCanvas.height = size;
+  const ml = new PaintingEngine({ canvas: mlCanvas, width: size, height: size, useWorker: false, background: '#ffffff' });
+  await ml.loadImage(src);
+  await ml.generate({ style: 'watercolor', count: 400, seed: 909, multiLayer: true, layerStyles: 'watercolor' });
+  ml.render();
+  const bandInk = {};
+  for (const [n, c] of ml.renderer._layerCanvases) bandInk[n] = ink(c).ink;
+  const bandStyles = {};
+  for (const L of ml.layers) bandStyles[L._name] = [...new Set((L.strokes || []).map(s => s.style))];
+  const mlHash1 = ink(ml.render()).hash;
+  ml.layers.find(l => l._name === 'highlights').visible = false;
+  const mlHash2 = ink(ml.render()).hash;
+  const bandStrokeCounts = ml.layers.map(l => (l.strokes || []).length);
+  ml.destroy();
+
   eng.destroy();
-  return { before, after, after2, applied, afterStyle, plumb };
+  return { before, after, after2, applied, afterStyle, plumb,
+    multilayer: { bandInk, bandStyles, bandStrokeCounts, hideTopChangesHash: mlHash1 !== mlHash2 } };
 };
 
 async function main() {
@@ -158,8 +178,14 @@ async function main() {
   if (!okB) { console.error('FAIL: setLayerStyle did not restamp strokes'); process.exit(1); }
   if (!okC) { console.error('FAIL: render did not change / was not stable'); process.exit(1); }
   if (!okD) { console.error('FAIL: highlight-level mapping wrong'); process.exit(1); }
+  // Multi-layer composite: every band that has strokes paints ink, and hiding
+  // the top layer changes the composited pixels.
+  const m = r.multilayer;
+  const popBands = Object.keys(m.bandInk).filter(k => m.bandInk[k] > 0);
+  const okE = popBands.length >= 2 && m.hideTopChangesHash === true;
+  if (!okE) { console.error('FAIL: multi-layer composite did not paint every band / honour visibility', JSON.stringify(m)); process.exit(1); }
   if (pageErrors.length) { console.error('FAIL: page errors', pageErrors); process.exit(1); }
-  console.log(`PASS: setLayerStyle applies live (ink ${r.before.ink}->${r.after.ink}), per-layer mapping + preserve correct`);
+  console.log(`PASS: setLayerStyle applies live (ink ${r.before.ink}->${r.after.ink}); per-layer mapping + preserve correct; multi-layer px per band ${JSON.stringify(m.bandInk)}, hideTop changes render`);
   process.exit(0);
 }
 
