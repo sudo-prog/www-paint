@@ -84,16 +84,24 @@ single call site in `renderer.js` after 1.5 lands.
 
 ---
 
-## 5. Branch & merge protocol
+## 5. Integration protocol — Syncthing hand-in; ThinkPad is the SOLE pusher
 
-- GitHub is the **only integration point**. Both machines keep their own clone;
-  Syncthing never carries `.git` (already excluded in `Data/20_Projects/.stignore`).
-- Branches: `machine/thinkpad/<stream>` and `machine/mac/<stream>`.
-- Flow: branch → commit (`feat(...)`) → push → PR → other machine reviews →
-  squash-merge to `main`.
-- Never `git add -A`. Add explicit paths only (a Syncthing-mirrored file from the
-  other machine must never be swept into your commit).
-- Before starting work: `git fetch origin && git checkout main && git pull`.
+- **One GitHub writer.** Only the **ThinkPad/BE** runs git and pushes. GitHub
+  `main` is the single history. The Mac **never** clones, branches, commits or
+  pushes — that is what prevents divergent histories and merge conflicts.
+- **The Mac works in the Syncthing mirror.** The `projects` folder syncs
+  `20_Projects` between the two machines (`.git` / `node_modules` excluded), so the
+  Mac edits files in its own copy of `20.36_WWW_PAINT`; those edits land in the
+  ThinkPad's working tree in near-real-time. There is **no `.git`** on the Mac
+  side — the Mac must not run git there.
+- **Flow:** Mac edits files → Syncthing delivers them to the ThinkPad → **BE
+  verifies** (unit tests + visual regression + parity bench against the delivered
+  files) → BE commits **explicit paths** (`feat(...)`) → BE pushes to `main`.
+- **Never `git add -A`**, and **never `git checkout -- .` / `git reset --hard`**
+  in the synced tree: the first sweeps the other machine's delivered files into
+  your commit, the second silently destroys them. Add explicit paths only.
+- Before starting work (ThinkPad only): `git fetch origin && git checkout main &&
+  git pull`.
 
 ## 6. Shared-file change control
 
@@ -119,7 +127,7 @@ State the stream, the commit, and the evidence command output.
 ```
 Phase 1.1 p5.brush hardening ..... MAC (M3)
 Phase 1.2 structure tensor ....... DONE (BE)
-Phase 1.3 multi-scale ........... TP  (R2)
+Phase 1.3 multi-scale ........... DONE (R2, BE)
 Phase 1.4 CCL+PCA init .......... TP  (R3)
 Phase 1.5 smudge + height ....... TP
 Phase 1.6 watercolor/ink unify ... MAC (M3)
@@ -130,18 +138,19 @@ Phase 3 wet media ............... MAC (M1)
 Phase 4 Style Profile .......... TP (4.1) / MAC (4.2 UI, later)
 Phase 5 AI loop ................. TP (H1-H5)
 Phase 6 polish / export ......... TP
-Track R2-R6 ..................... TP
+Track R3-R6 ..................... TP
 Track B/C integration ........... TP
 QA / verification ............... MAC (M4)
 ```
 
 ## 9. Open risks — need a user decision
 
-1. **Syncthing mirrors the working tree.** The `projects` folder syncs
-   `20_Projects` with `.git`/`node_modules` excluded, so each machine's *edited
-   files* appear in the other's checkout. §2/§5/§6 make that survivable, but the
-   clean fix is to add `20.36_WWW_PAINT` to `Data/20_Projects/.stignore` and
-   integrate purely through GitHub. **Decision needed.**
+1. **Syncthing mirrors the working tree — RESOLVED (2026-11-11, user decision):
+   keep the mirror; it is the integration channel.** The `projects` folder syncs
+   `20_Projects` with `.git`/`node_modules` excluded, so the Mac's edited files
+   appear in the ThinkPad's working tree. Mitigation is the ownership map (§2/§6,
+   one writer per file) plus the sole-pusher rule (§5): the Mac never runs git,
+   **BE verifies the delivered files and pushes**.
 2. **Mac QA environment.** The M4 seat needs `playwright-core` + Chromium on the
    Mac (the ThinkPad points `NODE_PATH` at its Hermes install). Verify before Mac
    claims a green regression.

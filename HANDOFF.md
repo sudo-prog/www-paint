@@ -16,9 +16,12 @@ any code, then read the in-repo docs it points to (§10).
 
 Do these in order. Do not skip step 1 — you cannot verify anything until it works.
 
-1. **Clone your own copy** (§4) and branch `machine/mac/<stream>`.
+1. **Do not clone, branch, commit or push.** Work in your **Syncthing-synced
+   copy** of the `projects` folder (§4). The ThinkPad is the **only** machine
+   that pushes to GitHub (§2). Your edits reach it via Syncthing; BE verifies
+   them and pushes.
 2. **Get the checks green on your machine**: `node tests/engine.test.js` →
-   `47/47`; `node scripts/visual-regression.cjs` → `pass=9 fail=0 error=0`.
+   `52/52`; `node scripts/visual-regression.cjs` → `pass=9 fail=0 error=0`.
    If these do not match, stop and report — do not start feature work on a
    broken baseline.
 3. **Read** `docs/ROADMAP_STATUS.md` (what is done) and `docs/CLEANROOM.md`.
@@ -61,6 +64,13 @@ Never translate another implementation and call it ours.
 
 ## 2. Hard rules (non-negotiable)
 
+> **⚠ Integration model (2026-11-11): the ThinkPad is the SOLE GitHub writer.**
+> Work only in your **Syncthing-synced** copy of the `projects` folder. **Never**
+> clone, `git init`, branch, commit or push — there is no `.git` on your side and
+> creating one makes a second, divergent history. Your edited files sync to the
+> ThinkPad automatically; **BE verifies them and pushes to `main`.** Full protocol:
+> `docs/WORKSPLIT.md` §5.
+
 1. **One writer per file.** Never edit a file listed as ThinkPad-owned in §6.
 2. **Never delete any file** without explicit per-instance approval from the human.
 3. **Do not touch the engine spine** — `optimizer.js`, `generator.js`,
@@ -87,28 +97,26 @@ Never translate another implementation and call it ours.
 | Phase 1.2 | Structure tensor (`analyzer.computeStructureTensor` / `sampleStructure` / `structureDebugRGBA`) + `generator.alignToStructure` + the UI STRUCTURE controls | `docs/checkpoints/P1.md`, `docs/UI_CONTROLS.md` |
 | Track R0 | Parity harness + recorded baseline gap | `scripts/parity-bench.cjs`, `docs/research/parity/baseline.json` |
 | Track R1 | Optimiser core (`js/engine/optimizer.js`) — beats R0 on all 4 bench images | `docs/checkpoints/R1.md` |
+| Track R2 | Structure-guided multi-scale (coarse→fine optimiser; `scales:3` default) — both metrics up on every structured image | `docs/checkpoints/R2.md` |
 | Harness H0 | Eval harness: 4 images, independent MAE + block-SSIM | `docs/AI_STYLE_HARNESS.md` |
 
-Current green state: **87 checks** = 47/47 unit + 9/9 visual regression +
-4 parity images. `docs/ROADMAP_STATUS.md` is the live source of truth.
+Current green state: **52/52** unit + **9/9** visual regression + 4 parity images.
+`docs/ROADMAP_STATUS.md` is the live source of truth.
 
 ---
 
 ## 4. Workspace and commands
 
-### Clone your own copy
+### Work in your Syncthing copy — no git
 
-The Syncthing `projects` folder mirrors the ThinkPad's working tree **without
-`.git`**. Do not run git there. Clone your own:
+The `projects` folder syncs the ThinkPad's working tree to you **without `.git`**.
+Edit `20.36_WWW_PAINT` **in place** there. Do **not** clone it and do **not** run
+git (there is no `.git`; a clone would create a second, conflicting copy). Your
+edits sync back to the ThinkPad automatically — BE verifies them and pushes to
+GitHub.
 
-```bash
-git clone git@github.com:sudo-prog/www-paint.git ~/code/www-paint
-cd ~/code/www-paint
-git checkout -b machine/mac/<stream>       # e.g. machine/mac/wetsim
-```
-
-Verify auth first: `gh auth status` (or `ssh -T git@github.com`). If auth is
-missing, ask the human — do not guess tokens.
+Before working, confirm Syncthing is running on your machine and the
+`20.36_WWW_PAINT` files are present:
 
 ### Commands (all from the repo root)
 
@@ -150,8 +158,10 @@ NODE_PATH=<...> node scripts/structure-debug.cjs
 
 ## 5. Your four streams
 
-One stream = one branch = one PR. Finish a stream before starting another, and do
-not run two streams that touch the same file.
+One stream = one set of files = one hand-in. Finish a stream before starting
+another, and do not run two streams that touch the same file. When a stream is
+done, leave the files in the Syncthing folder and post the OPS_LOG line (§9) — the
+ThinkPad picks up the synced files, verifies them, and pushes.
 
 ### M1 — Phase 3: wet-media simulation  *(new module, biggest win)*
 
@@ -259,7 +269,7 @@ js/engine/wetsim.js (new)     js/engine/masks.js (new)
 js/ui/layers.js               js/engine/brush-stamp-engine.js
 js/styles/*  (except what the ThinkPad is actively on)
 tests/wetsim.test.js (new)    docs/checkpoints/P2.md P3.md
-docs/research/* (your artefacts)   HANDOFF.md (this file)
+docs/research/* (your artefacts)
 ```
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
@@ -304,7 +314,8 @@ building against it.
 
 A stream is done only when **all** of these are true, and pasted as evidence:
 
-1. Branch pushed; PR opened against `main` with a plain summary.
+1. Files left in the Syncthing folder (they reach the ThinkPad automatically) and
+   an OPS_LOG line posted (§9). **No branch, no PR** — BE verifies and pushes.
 2. `node tests/engine.test.js` → raw pass/fail line.
 3. `node scripts/visual-regression.cjs` → raw `pass= fail= error=` line, with the
    re-baseline reason if you re-baselined.
@@ -327,7 +338,7 @@ Append **one dated line** to the shared operations ledger (Syncthing,
 near-real-time). It is a symlink — append with `>>`, never overwrite:
 
 ```bash
-printf '%s\n' "[$(date '+%Y-%m-%d %H:%M %Z')] MAC: WWW_PAINT M1 wetsim — <what shipped>. COMMIT <sha> on machine/mac/wetsim (PR #n). VERIFIED (my own runs): node tests/engine.test.js 47/47; node scripts/visual-regression.cjs pass=9 fail=0 error=0; tests/wetsim.test.js 6/6. Docs: docs/checkpoints/P3.md. NOTHING DELETED. [SIGNED: Hermes | <model>]" >> "$OPS_LOG"
+printf '%s\n' "[$(date '+%Y-%m-%d %H:%M %Z')] MAC: WWW_PAINT M1 wetsim — <what shipped>. FILES (delivered via Syncthing; BE to verify+push): js/engine/wetsim.js tests/wetsim.test.js docs/checkpoints/P3.md. VERIFIED (my own runs): node tests/engine.test.js 52/52; node scripts/visual-regression.cjs pass=9 fail=0 error=0; tests/wetsim.test.js 6/6. NOTHING DELETED. [SIGNED: Hermes | <model>]" >> "$OPS_LOG"
 ```
 
 Facts + evidence only; one line; state `NOTHING DELETED` explicitly; prefix
