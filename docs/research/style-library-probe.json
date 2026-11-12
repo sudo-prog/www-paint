@@ -1,0 +1,163 @@
+{
+  "steps": [
+    {
+      "name": "panelRootExists",
+      "value": true
+    },
+    {
+      "name": "panelMounted",
+      "value": true
+    },
+    {
+      "name": "panelHasList",
+      "value": true
+    },
+    {
+      "name": "panelHasSaveBtn",
+      "value": true
+    },
+    {
+      "name": "panelHasImportInput",
+      "value": true
+    },
+    {
+      "name": "controlsWithoutId",
+      "value": []
+    },
+    {
+      "name": "rowCountAfterSave",
+      "value": 1
+    },
+    {
+      "name": "rowName",
+      "value": "Probe Wash"
+    },
+    {
+      "name": "statusAfterSave",
+      "value": "Saved \"Probe Wash\"."
+    },
+    {
+      "name": "storedProfileValid",
+      "value": true
+    },
+    {
+      "name": "storedProfileKeys",
+      "value": [
+        "effects",
+        "engine",
+        "global",
+        "id",
+        "layers",
+        "mediaModel",
+        "name",
+        "provenance",
+        "schemaVersion",
+        "version"
+      ]
+    },
+    {
+      "name": "storedStyle",
+      "value": "pencil"
+    },
+    {
+      "name": "storedSeed",
+      "value": 3047602159
+    },
+    {
+      "name": "bakeDefault",
+      "value": {
+        "lum": 159.1,
+        "bytes": 26447,
+        "hash": 858025043
+      }
+    },
+    {
+      "name": "statusAfterApply",
+      "value": "Applied \"Probe Wash\" — pencil, seed 3047602159."
+    },
+    {
+      "name": "engineStyleAfterApply",
+      "value": "pencil"
+    },
+    {
+      "name": "engineSeedAfterApply",
+      "value": 322420463
+    },
+    {
+      "name": "bakeAfterApply",
+      "value": {
+        "lum": 167.49,
+        "bytes": 25682,
+        "hash": 1759206923
+      }
+    },
+    {
+      "name": "determinismRun1",
+      "value": {
+        "lum": 166.79,
+        "bytes": 25839,
+        "hash": 1675286432
+      }
+    },
+    {
+      "name": "determinismRun2",
+      "value": {
+        "lum": 166.79,
+        "bytes": 25839,
+        "hash": 1675286432
+      }
+    },
+    {
+      "name": "deterministic",
+      "value": true
+    },
+    {
+      "name": "differentSeed",
+      "value": {
+        "lum": 160.67,
+        "bytes": 24040,
+        "hash": 1056661533
+      }
+    },
+    {
+      "name": "seedChangesOutput",
+      "value": true
+    },
+    {
+      "name": "exportRoundTripIdentical",
+      "value": true
+    },
+    {
+      "name": "exportIsValid",
+      "value": true
+    },
+    {
+      "name": "rowCountAfterReimport",
+      "value": 1
+    },
+    {
+      "name": "statusAfterImport",
+      "value": "Imported 1 profile(s)."
+    },
+    {
+      "name": "rowCountBeforeDelete",
+      "value": 1
+    },
+    {
+      "name": "rowCountAfterDelete",
+      "value": 0
+    },
+    {
+      "name": "statusAfterDelete",
+      "value": "Deleted \"Probe Wash\"."
+    },
+    {
+      "name": "storageKeyUsed",
+      "value": true
+    },
+    {
+      "name": "pageErrors",
+      "value": []
+    }
+  ]
+}
