@@ -438,9 +438,16 @@ export class Renderer {
     this.clear();
     this.renderAll({ progress: 1, clear: false });
 
-    // Restore original context
+    // Restore the renderer's own geometry WITHOUT resizing the caller's canvas.
+    // `setSize()` writes `ctx.canvas.width/height`, and assigning those — even
+    // to the SAME value — resets the bitmap, so restoring through setSize() here
+    // wiped the live canvas: exporting a painting blanked the screen and left
+    // `canvas.toDataURL()` empty (which is why the visual harness's saved
+    // baseline PNGs never matched the hashes it pinned).
     this.ctx = oldCtx;
-    this.setSize(oldW, oldH);
+    this.width = oldW;
+    this.height = oldH;
+    if (this._wet) this.setWetMedia(this._wet.opts);
     this.background = oldBg;
 
     // Encode and return the blob. (This method is documented @returns

@@ -159,12 +159,91 @@ export async function initBrushEngine(width, height) {
       }
     }
 
+    // 4. Functional verification — a WebGL2 context EXISTING is not proof the
+    //    build can draw. Under a software rasteriser (headless Chromium's
+    //    SwiftShader/Vulkan ANGLE reports a perfectly valid `webgl2` context)
+    //    every call below returns normally while the target stays empty, so the
+    //    stamp path would "succeed" and every style that trusts it would paint
+    //    NOTHING — a silently blank canvas. Stamp a probe mark, composite it the
+    //    same way stampStrokeSync does, and require at least one pixel back.
+    if (!(await _verifyCanDraw(brush))) {
+      _ready = false;
+      if (!_lastError) _lastError = new Error('brush engine rendered no pixels (functional probe failed)');
+      return false;
+    }
+
     _ready = true;
     return true;
   } catch (e) {
     // Any failure means the enhanced path is unavailable — fall back.
     _ready = false;
     return false;
+  }
+}
+
+/**
+ * Functional probe: can the vendored build actually put pigment on the target?
+ *
+ * Draws one short segment with a shipped tip into the offscreen buffer, then
+ * composites it onto a throwaway 2D canvas exactly the way `stampStrokeSync`
+ * does (`drawImage(_offscreen, 0, 0)`) and requires a non-transparent pixel.
+ * Testing the composite — not `readPixels` on the GL backbuffer — is deliberate:
+ * the contract the styles depend on is "the caller's 2D canvas receives ink",
+ * and the build may render through an intermediate framebuffer.
+ *
+ * @param {object} brush - the loaded vendored module
+ * @returns {boolean} true when the probe mark reached a 2D canvas
+ * @private
+ */
+async function _verifyCanDraw(brush) {
+  if (!_offCtx || !_offscreen) return false;
+  const w = Math.max(16, Math.min(_width || 64, 256));
+  const h = Math.max(16, Math.min(_height || 64, 256));
+
+  let probe = null;
+  if (typeof document !== 'undefined') {
+    probe = document.createElement('canvas');
+    probe.width = w; probe.height = h;
+  } else if (typeof OffscreenCanvas !== 'undefined') {
+    probe = new OffscreenCanvas(w, h);
+  }
+  if (!probe) return false;
+  const pctx = probe.getContext('2d');
+  if (!pctx || typeof pctx.drawImage !== 'function') return false;
+
+  // A tip the styles themselves ask for, then a couple of common vendor tips, so
+  // one unregistered name cannot disable the path on a machine where it works.
+  const tips = ['cpencil', 'pen', 'HB'];
+  try {
+    for (const tip of tips) {
+      _clearTarget();
+      if (typeof brush.set === 'function') brush.set(tip, [0, 0, 0], Math.max(2, h * 0.15));
+      if (typeof brush.beginStroke === 'function') brush.beginStroke('segments', 0, 1);
+      if (typeof brush.move === 'function') brush.move(w * 0.2, h * 0.5);
+      if (typeof brush.line === 'function') brush.line(w * 0.8, h * 0.5);
+      if (typeof brush.endStroke === 'function') brush.endStroke();
+      if (typeof brush.render === 'function') brush.render();
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        pctx.clearRect(0, 0, w, h);
+        pctx.drawImage(_offscreen, 0, 0);
+        const d = pctx.getImageData(0, 0, w, h).data;
+        for (let i = 3; i < d.length; i += 4) {
+          if (d[i] !== 0) return true;
+        }
+        // The build may defer rasterisation by a frame — give it one, once.
+        if (attempt === 0 && typeof requestAnimationFrame === 'function') {
+          await new Promise((r) => requestAnimationFrame(() => r()));
+        }
+      }
+    }
+    return false;
+  } catch (e) {
+    _lastError = e;
+    return false;
+  } finally {
+    // Never let the probe mark leak into the first real stroke.
+    _clearTarget();
   }
 }
 
@@ -185,6 +264,24 @@ export function resizeBrushEngine(width, height) {
     _offCtx.clearRect(0, 0, width, height);
   }
   return initBrushEngine(width, height);
+}
+
+/**
+ * Wipe the offscreen target back to transparent.
+ *
+ * The target is a **WebGL2** context, so it exposes `clearColor`/`clear` — not
+ * the 2D `setTransform`/`clearRect` pair. Calling the 2D names threw and the
+ * error was swallowed, so the buffer was never actually cleared between strokes
+ * (a per-stroke deposit would accumulate instead of being recomposited).
+ */
+function _clearTarget() {
+  if (!_offCtx) return;
+  if (typeof _offCtx.clearColor === 'function' && typeof _offCtx.clear === 'function') {
+    _offCtx.clearColor(0, 0, 0, 0);
+    _offCtx.clear(_offCtx.COLOR_BUFFER_BIT);
+  } else if (typeof _offCtx.clearRect === 'function') {
+    _offCtx.clearRect(0, 0, _width, _height);
+  }
 }
 
 /** True when the enhanced p5.brush path is available. */
@@ -308,13 +405,7 @@ export function stampStrokeSync(mainCtx, shape, opts = {}) {
   //   whole target opaque (it is a canvas background, not a transparent wipe),
   //   which then covers the caller's canvas when we drawImage() it. Wiping the
   //   GL backbuffer directly keeps the target transparent.
-  try {
-    _offCtx.setTransform(1, 0, 0, 1, 0, 0);
-    _offCtx.clearColor(0, 0, 0, 0);
-    _offCtx.clear(_offCtx.COLOR_BUFFER_BIT);
-  } catch (e) {
-    try { _offCtx.clearRect(0, 0, _width, _height); } catch (e2) { /* best effort */ }
-  }
+  _clearTarget();
 
   try {
     // Select the tip + colour + weight. `set` is the modern API.
