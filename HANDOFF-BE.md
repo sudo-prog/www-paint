@@ -334,3 +334,32 @@ refs. Full detail: `docs/TRACK_S.md`. Mapping onto the streams:
 - **S6 = Mac M10** (Phase 4.2 library UI). **S7 = BE B5 + Mac M11** (Phase 6
   worker batch + export). **S8 = H3-validation** (above). **S9 / S10** — BE harness.
 - **Finish R4** (B4 + Mac M7–M9) stays as issued; run it when it does not block S1 / S2.
+
+---
+
+## 9. Round 3 — remaining BE board after S1 (issued 2026-11-12)
+
+**Baseline:** `main = 28e8933`, remote == local. Mac **M7/M8/M9 are landed and
+BE-pushed** (`28e8933`); Track-S **S1 is closed** (`js/engine/ref-analyze.js`,
+16/16 — `docs/checkpoints/S1.md`). The board now:
+
+| Stream | What | Hot files | Lane |
+|---|---|---|---|
+| **S2** | Style-Match Score — ref vs result: stroke-scale histogram distance + orientation/coherence match + layer-occupancy, into `scoreProfile` / `propose` / `gate` | `metrics.js` `score.js` `gate.js` | PARALLEL |
+| **S3** | Multi-reference fusion → one RefPacket on `profile.provenance` (per-ref weights, outlier down-weighting) | `ref-analyze.js` `profile.js` | PARALLEL |
+| **S4** | Explicit `passes[]` in the Style Profile mapped onto the R2 multi-scale machinery (absent = byte-identical) | `docs/STYLE_PROFILE.md` `profile.js` `optimizer.js` | SERIAL-LANE |
+| **S8** | H3 real-LLM validation (vision → profile, ≥ 70 % usable) | `vision-propose.js` | PARALLEL |
+| **S10** | Style-accuracy eval suite (content × ref-set matrix; a Style-Match regression fails) | `scripts/*.cjs` `tests/*` | PARALLEL |
+| **S9** | Active refinement — knob ↔ Style-Match correlation over the memory store | `memory.js` `propose.js` `gate.js` | PARALLEL |
+| **B4 finish** | Wire Mac M7/M8/M9 into `optimizer.js` (outlines-first pass, order modes, per-style shaping) + **reconcile the two `orderShapes`** (`generator.js` vs `order.js`, §0.9) → **R5** exceed → **R6** retire the painter | `optimizer.js` `generator.js` `analyzer.js` `engine.js` `painter.js` | SERIAL-LANE |
+| **B5** | Phase 6 engine — export hardening + 512² perf + worker batch apply (S7 engine half) | `exporter.js` `engine.js` `worker.js` | SERIAL-LANE |
+| **B6** | Integration Track B/C — vendor LAYERS AJV schemas + contract note + CI sample; mount | `schemas/` `.github/**` | PARALLEL |
+| **B7** | Hygiene — defect 0.7 (visual harness has no WebGL2); keep `ROADMAP_STATUS` true | docs | PARALLEL |
+
+**Live front:** S2 follows S1 (it consumes the RefPacket). S4/S3 also open now
+(S3 shares `ref-analyze.js` with S1 — serial with S2 only if both edit it).
+
+**Mac's round-3 streams** (M10–M16) are issued in `docs/MAC-TASKS.md` §"Round 3";
+Mac logs every turn in `AGENTS.md` §7 and never runs git (BE is sole pusher).
+
+Signed-off-by: Hermes / BE — ThinkPad

@@ -10,13 +10,17 @@ nobody redoes it.
 
 ---
 
-## ▶ ROUND 2 — START HERE (2026-11-12)
+## ▶ ROUND 3 — START HERE (2026-11-12)
 
-You are **Mac Hermes, round 2**. Read these in order, then start:
+**Status:** M7/M8/M9 are **landed and BE-pushed** (`28e8933`) — verified
+(engine 123/123, baselines 9/9 unmoved). BE also closed Track-S **S1**
+(`js/engine/ref-analyze.js`, 16/16). Your next stream is **M10**.
 
-1. **`docs/MAC-TASKS.md` §"Round 2"** — your task list (streams **M7–M15**), each
-   with a frozen interface + exit criteria + the files you own. **Do M7, M8, M9
-   first** — they unblock BE's Track **R4**.
+You are **Mac Hermes, round 3**. Read these in order, then start:
+
+1. **§8 below (authoritative list also in `docs/MAC-TASKS.md` §"Round 3")** — your
+   task list (**M10–M16**), each with a frozen interface + exit criteria + the
+   files you own. **M10 (Style library UI, Track-S S6) is the live front.**
 2. **`HANDOFF.md` §2 (hard rules) + §6 (file ownership)** — never edit a
    ThinkPad-owned file; if you need a change there, raise it in `OPS_LOG` and BE
    makes it.
@@ -25,12 +29,15 @@ You are **Mac Hermes, round 2**. Read these in order, then start:
 For **every** turn:
 
 - **Never run git** (§0.8). Edits reach the ThinkPad via **Syncthing**; **BE
-  verifies and pushes** (BE is the sole GitHub writer).
-- **Append one entry to §7** (round-2 progress log) each turn, and one `OPS_LOG`
-  line per finished stream.
+  verifies and pushes** (BE is the sole GitHub writer). If a `.git` exists on
+  your side, do not touch it.
+- **Append one entry to §7** (progress log) each turn, and one `OPS_LOG` line per
+  finished stream.
 
-**Baseline you must match:** `main = 0117ff6`, remote == local. Gates:
-engine **123/123** · wetsim **15/15** · masks **19/19** · visual regression **9/9**.
+**Baseline you must match:** `main = 28e8933`, remote == local. Gates:
+engine **123/123** · wetsim **15/15** · masks **19/19** · outlines **16/16** ·
+order **24/24** · shaping **18/18** · ref-analyze **16/16** · visual regression
+**9/9**.
 
 ---
 

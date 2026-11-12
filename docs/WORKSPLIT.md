@@ -143,9 +143,12 @@ Track B/C integration ........... TP
 QA / verification ............... MAC (M4)
 ```
 
-**Live Mac task list (updated 2026-11-12):** `docs/MAC-TASKS.md` — the ordered,
-file-isolated FE streams (hand-in → M6b QA → M7 library UI → M8 export UI →
-M9 style polish → M10 a11y/responsive → M11 docs).
+**Live Mac task list (updated 2026-11-12, round 3):** `docs/MAC-TASKS.md`
+§"Round 3" — the ordered, file-isolated FE streams. **M7 (outlines.js), M8
+(order.js), M9 (styles/shaping.js) are DONE and BE-pushed (`28e8933`).**
+Remaining: **M10** Style library UI (= Track-S S6) → **M11** export panel UI
+(= S7 UI half) → **M12** style polish → **M13** a11y/responsive → **M14** docs →
+**M15** standing QA seat → **M16** S5 primitives (Mac half).
 
 **BE remaining work, split into streams (2026-11-12):** `HANDOFF-BE.md` — B1
 render-path closers (1.5+3.3), B2 layer-aware scoring (2.2), B3 harness AI loop

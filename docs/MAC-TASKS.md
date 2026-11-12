@@ -289,3 +289,86 @@ streams already cover two of its items — **M10 = Track S S6** (library UI) and
 analysis-grid / Style-Match-Score work (S1–S2) is BE spine and does **not** touch
 your files; when it lands, the library UI may surface a profile's Style-Match
 score. No change to your exit criteria.
+
+---
+
+# Round 3 — remaining work, split (issued 2026-11-12 by BE)
+
+**Status:** **M7/M8/M9 are DONE and BE-pushed** (`28e8933`) — verified, baselines
+9/9 unmoved. BE also closed Track-S **S1** (`js/engine/ref-analyze.js`, 16/16).
+Everything below is the *next* tranche. **Start at M10.**
+
+**Baseline you must match:** `main = 28e8933`, remote == local. Gates: engine
+**123/123** · wetsim **15/15** · masks **19/19** · outlines **16/16** · order
+**24/24** · shaping **18/18** · ref-analyze **16/16** · visual **9/9**.
+
+## R3.1 Who does what
+
+| Side | Owns | Remaining streams |
+|---|---|---|
+| **BE (ThinkPad)** — spine · sole writer + pusher | `optimizer.js` `generator.js` `analyzer.js` `engine.js` `painter.js` `scorer.js` `renderer.js` `exporter.js` `regions.js` `metrics.js` `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js` `ref-analyze.js` `primitives.js` `js/ui/{app,controls}.js` `tests/engine.test.js` `.github/**` | **B4 finish** (wire M7–M9 + reconcile the two `orderShapes`), **R5**, **R6** · **S2**·**S3**·**S4**·**S8**·**S9**·**S10** · **B5** combined with the BE export surface · **B6** · **B7** |
+| **Mac (FE)** — new files / non-spine only | new modules, `js/styles/*`, **new** `js/ui/*`, `css/*`, `docs/research/*`, `docs/checkpoints/*`, `AGENTS.md` | **M10–M16** below |
+
+**Never edit a BE-owned file.** Need a change there → OPS_LOG note; BE makes it.
+
+## R3.2 Mac streams (in order)
+
+All frozen interfaces are what you code against; if you need a change to a
+BE-owned file, raise it in OPS_LOG.
+
+### M10 — Phase 4.2: Style Profile library UI *(Track-S S6 — the live front)*
+`js/ui/style-library.js` + `js/ui/style-library-host.js` (shim, `media-host.js`
+pattern). Save / load / apply / export / import.
+- **Consume (BE-owned):** `js/engine/profile.js` — `profileFromSettings(settings,
+  overrides)`, `validateProfile(profile)`, `normalizeProfile(profile)`; and
+  `engine.generate({ profile, seed })` (already live).
+- **Exit:** save writes a schema-valid profile; apply re-bakes **identical**
+  output for the same `(profile, seed, image-hash)` (prove with two runs);
+  export → import round-trips byte-identically; each control provably changes
+  output in a real headless browser; `docs/checkpoints/P4.md` + OPS_LOG line.
+
+### M11 — Phase 6: export & share panel UI *(Track-S S7 UI half)*
+`js/ui/export-panel.js` + `js/ui/export-host.js`, wrapping the BE-owned
+`js/engine/exporter.js` (`exportImage`, `exportProject`/`importProject`,
+`exportSVG`) and `engine.exportPNG(opts)` — **wrap, never edit**.
+- **Exit:** PNG + JPG at 3 sizes produce real non-empty blobs (assert dims);
+  determinism `(settings, seed)` → byte-identical PNG twice; keyboard +
+  screen-reader operable, 44px targets; checkpoint + OPS_LOG.
+
+### M12 — non-baseline style polish
+`js/styles/*` **except the 9 pinned**. ≥ 6 non-pinned styles measurably improved
+(state the metric); pinned baselines **9/9 unmoved** (prove it); before/after
+PNGs; checkpoint + OPS_LOG.
+
+### M13 — a11y + responsive sweep
+`css/*`, `scripts/a11y-sweep.cjs`, `docs/research/qa-a11y.png`. Keyboard +
+visible focus + ≥ 44px on every control; overlays `role=dialog`/`aria-modal`/
+Escape/focus-restore; `prefers-reduced-motion`; 390→1920 screenshots.
+
+### M14 — reference docs
+`docs/PANELS.md` (shell: controls / layers / media / library / export + the shim
+pattern + the ownership boundary, with a diagram), `docs/STROKE_FORMAT.md`. Real
+commands, real output. **Do not edit BE-owned docs** — raise mismatches via OPS_LOG.
+
+### M15 — standing QA seat *(M4-style)*
+After each BE push: run the gates + a behavioural probe against `main`; log in
+AGENTS.md §7 + one OPS_LOG line. **No source edits.** Disagreements logged as
+`MAC: [VERIFY] <claim> — DISAGREE: <evidence>`.
+
+### M16 — Track-S S5 (primitives) — Mac half
+BE writes `js/engine/primitives.js` (registry + default weights, inert until
+opted in). **Mac half:** wire primitives → media in the Mac-owned
+`js/engine/brush-media.js` once BE freezes the primitive list. **Blocked until
+BE issues the primitive list — do M10 first.**
+
+## R3.3 Protocol (unchanged)
+
+1. **Never run git** (`AGENTS.md` §0.8). Edits reach the ThinkPad via Syncthing;
+   **BE verifies and pushes** (BE is the sole GitHub writer).
+2. **After EVERY turn, append one entry to `AGENTS.md` §7** — `did / files /
+   verified (raw) / blocker / next`.
+3. One OPS_LOG line per completed stream (`MAC:` prefix, raw evidence,
+   `NOTHING DELETED`).
+4. Finish a stream before starting the next. **M10 first.**
+
+Signed-off-by: Hermes / BE — ThinkPad

@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · **+ Track S added (style accuracy / sref — `docs/TRACK_S.md`, S1–S10)** · + Track R4 region-fill (partial, opt-in) + Mac media-panel LANDED/verified (41286c1) · Harness H3 vision-proposer mechanism (injected LLM; real-LLM validation pending) + Harness H5 benchmark gate + H4 memory (feedback store + aHash retrieval + warmStart) · B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream LANDED + BE-verified (41286c1) — panel now drives the render path (wetSim/media → mediaModel bridge; dry until opt-in) + `masksCompositeRGBA` band fix. BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · **+ Track-S S1 DONE (`js/engine/ref-analyze.js`, 16/16, `docs/checkpoints/S1.md`) — Mac M7/M8/M9 pushed (`28e8933`)** · **+ Track S added (style accuracy / sref — `docs/TRACK_S.md`, S1–S10)** · + Track R4 region-fill (partial, opt-in) + Mac media-panel LANDED/verified (41286c1) · Harness H3 vision-proposer mechanism (injected LLM; real-LLM validation pending) + Harness H5 benchmark gate + H4 memory (feedback store + aHash retrieval + warmStart) · B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream LANDED + BE-verified (41286c1) — panel now drives the render path (wetSim/media → mediaModel bridge; dry until opt-in) + `masksCompositeRGBA` band fix. BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -102,7 +102,7 @@ sref goal (`docs/ROADMAP.md` §1/§7). Every item lands behind the existing gate
 
 | ID | Item | Owner | Status |
 |---|---|---|---|
-| S1 | Analysis grid + structured `RefPacket` (`js/engine/ref-analyze.js`) | BE | **todo (next)** |
+| S1 | Analysis grid + structured `RefPacket` (`js/engine/ref-analyze.js`) | BE | **done** (`analyzeReference()` → JSON-safe RefPacket: adaptive grid, per-cell orientation/coherence/density/contrast/strokeScale, `scaleHistogram`, `strokeScaleByBand`, `orientationField`, tonal coverage; 16/16 + debug PNG). See `docs/checkpoints/S1.md`. Next: S2 |
 | S2 | Style-Match Score (`metrics.js` / `score.js` / `gate.js`) | BE | **todo** |
 | S3 | Multi-reference fusion (RefPacket / styleDNA merge, per-ref weights) | BE | todo |
 | S4 | Explicit hierarchical passes (`passes[]` in the Style Profile) | BE | todo |
