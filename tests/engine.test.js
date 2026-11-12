@@ -1470,6 +1470,53 @@ test('h3: parseProposal handles bare / fenced / prose-wrapped JSON and clamps', 
   assertEqual(parseProposal(null), null);
 });
 
+// ─── Track R4 — region fill ───────────────────────────────────────
+console.log('\nRegion fill (Track R4):');
+
+function r4Target(S = 64) {
+  return makeRGBImage(S, S, (x, y) => {
+    if (Math.hypot(x - 20, y - 24) < 11) return [210, 70, 60];
+    if (Math.hypot(x - 44, y - 40) < 14) return [40, 80, 150];
+    return [235, 230, 215];
+  });
+}
+
+test('region-fill: default 0 adds no fill strokes and matches an explicit 0', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const def = optimise(an, { count: 200, seed: 7 });
+  const zero = optimise(an, { count: 200, seed: 7, regionFill: 0 });
+  assertEqual(def.stats.fill, 0);
+  assertEqual(def.shapes.length, 200);
+  assertEqual(JSON.stringify(def.shapes), JSON.stringify(zero.shapes), 'opt-out is byte-identical');
+});
+
+test('region-fill: >0 blocks in regions first, keeps the budget, is deterministic', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const a = optimise(an, { count: 200, seed: 7, regionFill: 0.3 });
+  const b = optimise(an, { count: 200, seed: 7, regionFill: 0.3 });
+  if (!(a.stats.fill > 0)) throw new Error('expected fill strokes on a structured target');
+  assertEqual(a.shapes.length, 200, 'the total budget is respected');
+  assertEqual(JSON.stringify(a.shapes), JSON.stringify(b.shapes), 'deterministic');
+  const first = a.shapes[0];
+  if (!(first.type === 'E' && Math.max(first.params[2], first.params[3]) >= 5)) {
+    throw new Error('the first emitted stroke should be a broad fill ellipse');
+  }
+});
+
+test('region-fill: resolveOptions passes regionFill through; 0 on a noisy target', () => {
+  assertEqual(resolveOptimiserOptions({ regionFill: 0.3 }).regionFill, 0.3);
+  const S = 48;
+  let seed = 12345;
+  const rnd = () => { seed = (1103515245 * seed + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const noise = makeRGBImage(S, S, () => [rnd() * 255 | 0, rnd() * 255 | 0, rnd() * 255 | 0]);
+  const an = analyzeImage(noise, S, S);
+  const r = optimise(an, { count: 120, seed: 7, regionFill: 0.3 });
+  assertEqual(r.shapes.length, 120);
+  assertEqual(r.stats.fill, 0, 'pure noise has no region large enough to block in');
+});
+
 // ─── Summary ──────────────────────────────────────────────────────
 console.log('\n=== Results ===');
 console.log(`Passed: ${passed}`);

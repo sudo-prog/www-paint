@@ -102,6 +102,18 @@ export const OPTIMISER_DEFAULTS = {
   regionMaxSegments: 3,  // max segments one elongated region may spend
   regionMargin: 1.3,     // dab inflation over the fitted region extent
   regionAlpha: 1.0,      // opacity of an init (fill) stroke
+
+  // ── R4 region fill (feature parity: block in the big flat areas first) ────
+  // Opt-in — default 0 → output is byte-identical to R3. When > 0, a fraction
+  // of the stroke budget lays ONE broad flat ellipse per connected component
+  // (largest first) at the component's mean colour, before the R3 init and the
+  // coarse→fine schedule refine it: the classical "wash in the large flat
+  // values before detail" step, re-derived (see docs/checkpoints/R4.md).
+  regionFill: 0,           // fraction of the stroke budget for the region-fill pass
+  regionFillMinArea: 24,   // min component area (pixels) to block in
+  regionFillMaxAreaFrac: 0.30, // max component area, as a fraction of the image
+  regionFillMargin: 1.05,  // dab inflation over the fitted region extent
+  regionFillAlpha: 1.0,    // opacity of a fill stroke
 };
 
 /**
@@ -475,6 +487,53 @@ export function optimise(analysis, options = {}) {
   }
 
   /**
+   * R4 region-fill pass — block in the big flat areas first.
+   *
+   * Feature parity with the legacy painter's region fill, re-derived:
+   * segment the target into connected components (the same CCL + PCA as the R3
+   * init), then lay ONE broad flat ellipse per component — sized and oriented
+   * to the component's principal axis and coloured with its mean — largest
+   * areas first. The classical "wash in the large flat values before detail"
+   * step; the R3 init and the coarse→fine schedule refine on top of it.
+   *
+   * Opt-in (`regionFill > 0`, default 0) so the R3 result is untouched otherwise.
+   * Deterministic — no RNG.
+   *
+   * @param {number} budget - Max strokes this pass may emit.
+   * @returns {number} Strokes actually emitted.
+   */
+  function regionFillPass(budget) {
+    if (budget <= 0) return 0;
+    levelTarget = target;
+    elongMul = 1;
+    const regions = buildRegions(analysis, {
+      levels: opts.regionLevels,
+      minArea: opts.regionFillMinArea,
+      maxAreaFrac: opts.regionFillMaxAreaFrac,
+    });
+    let emitted = 0;
+    for (let ri = 0; ri < regions.length && emitted < budget; ri++) {
+      const rg = regions[ri];
+      if (rg.area < opts.regionFillMinArea) continue;
+      const halfMajor = 0.5 * Math.sqrt(12 * rg.l1);
+      const halfMinor = 0.5 * Math.sqrt(12 * rg.l2);
+      commitShape({
+        x: rg.cx,
+        y: rg.cy,
+        rx: clamp(halfMajor * opts.regionFillMargin, opts.minSize / 2, opts.maxSize),
+        ry: clamp(halfMinor * opts.regionFillMargin, opts.minSize / 2, opts.maxSize),
+        rot: rg.angle,
+        r: clamp(rg.color[0], 0, 255),
+        g: clamp(rg.color[1], 0, 255),
+        b: clamp(rg.color[2], 0, 255),
+        alpha: opts.regionFillAlpha,
+      });
+      emitted++;
+    }
+    return emitted;
+  }
+
+  /**
    * Paint one coarse→fine pass: place up to `budget` dabs of radius
    * `baseR·radiusMul` against `levelTarget`, refining each with the local
    * hill-climb, committing into the shared `paint` buffer.
@@ -593,6 +652,12 @@ export function optimise(analysis, options = {}) {
     return emitted;
   }
 
+  // ── R4 region fill — block in the big flat areas first (opt-in) ───────────
+  const fillBudget = opts.regionFill > 0
+    ? Math.round(opts.count * clamp(opts.regionFill, 0, 1))
+    : 0;
+  const fillUsed = regionFillPass(fillBudget);
+
   // ── R3 region init (CCL + PCA) ────────────────────────────────────────────
   // Seed strokes from connected-component principal axes *before* the residual
   // schedule, so elongated / flat regions start nearly right and the coarse→fine
@@ -604,7 +669,7 @@ export function optimise(analysis, options = {}) {
 
   // ── coarse → fine schedule ────────────────────────────────────────────────
   const plan = buildScalePlan(opts, baseR);
-  let remaining = opts.count - regionUsed;
+  let remaining = opts.count - fillUsed - regionUsed;
   // The schedule's own total (what the init left) drives the budget split, so
   // the pass weights still describe the schedule and the sum stays exact.
   const scheduleTotal = Math.max(1, remaining);
@@ -637,6 +702,7 @@ export function optimise(analysis, options = {}) {
     stats: {
       count: shapes.length,
       scales: plan.length,
+      fill: fillUsed,
       regions: regionUsed,
       initialError: +initialError.toFixed(4),
       finalError: +finalError.toFixed(4),
