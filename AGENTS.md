@@ -12,9 +12,15 @@ nobody redoes it.
 
 ## 0. ⚠ Open issues needing ThinkPad (BE) action
 
-Raised by Mac/FE on 2026-11-11. **Seven items — none are Mac-editable.**
+Raised by Mac/FE on 2026-11-11. **All seven are now FIXED in `origin/main`**
+(verified 2026-11-12 against `2585cec` — see the per-item ✅ lines below). The
+items are kept for their detail, not as open work.
 
-### 0.1 BLOCKER — `js/ui/app.js`: layer panel opens empty
+**Still open on the Mac side:** defects 11–13 (media panel) are fixed in the
+worktree and handed in for BE to verify + push — see §5e and
+`docs/checkpoints/P2.5.md` §8–§9.
+
+### 0.1 ~~BLOCKER~~ ✅ FIXED — `js/ui/app.js`: layer panel opens empty
 
 `LayersManager` is constructed (app.js:103) but `setLayers()` is never called
 at init, so the panel renders **zero rows** on a fresh page. The engine has two
@@ -32,7 +38,7 @@ this.layers.setLayers(this.engine.layers);
 
 `engine._styleList` is populated by `_registerAllStyles()` (app.js:96).
 
-### 0.2 BLOCKER — `js/ui/app.js`: two layer events unhandled
+### 0.2 ~~BLOCKER~~ ✅ FIXED — `js/ui/app.js`: two layer events unhandled
 
 `layers.js` now emits `layer-style-change` and `layer-regenerate`; there are no
 handlers, so both controls are inert.
@@ -65,7 +71,7 @@ this.layers.root.addEventListener("layer-regenerate", async (e) => {
 `engine.generate()` already supports `{style, layer, seed, count}` — **no engine
 change needed.** Full diff in `docs/checkpoints/P2.md` §2.4.
 
-### 0.3 BUG — `js/engine/analyzer.js`: infinite hang on tiny images
+### 0.3 ~~BUG~~ ✅ FIXED — `js/engine/analyzer.js`: infinite hang on tiny images
 
 `extractPalette()` k-means init:
 
@@ -86,7 +92,7 @@ Minimal fix: bail out when `data.length / 3 < clusters`, e.g. fall back to
 `clusters = Math.min(k, Math.floor(data.length / 3))` or fill remaining
 centroids by clamping the index.
 
-### 0.4 BUG — `index.html:38`: malformed `<polyline>` (console error every load)
+### 0.4 ~~BUG~~ ✅ FIXED — `index.html:38`: malformed `<polyline>` (console error every load)
 
 ```html
 <polyline points="17 4l4 4l0 0l0 0l0 0"></polyline>
@@ -99,7 +105,7 @@ half-deleted relative-line path; the adjacent `<line x1="17" y1="4" x2="23"
 y2="4">` already draws the horizontal stroke, so the polyline is likely
 redundant. **Not fixed by Mac** — index.html is not on the Mac-owned list.
 
-### 0.5 BUG — `js/styles/pencil.js:155`: invalid brush tip `'pencil'`
+### 0.5 ~~BUG~~ ✅ FIXED — `js/styles/pencil.js:155`: invalid brush tip `'pencil'`
 
 `pencil.js` passes `brushName: 'pencil'` to `stampStrokeSync`, but the vendored
 runtime registers **`cpencil`**, not `pencil`. Every pencil stroke therefore
@@ -146,6 +152,24 @@ WebGL2 is unavailable and every style takes its canvas fallback. This is why
 the M3 changes leave the 9 pinned baselines **unmoved** even though `ink` is
 one of them. If the harness ever gains WebGL2, `ink` (and any other wired
 baseline style) will need a deliberate re-baseline.
+
+---
+
+### 0.8 PROCESS — Mac: never run git, and log every turn in §7
+
+Two standing rules for round 2 (requested by the human, 2026-11-12):
+
+1. **Never run git.** No clone / branch / commit / push / tag / `git add`. Your
+   edits reach the ThinkPad through **Syncthing**; **BE verifies and pushes** (BE
+   is the sole GitHub writer). If a `.git` exists on your side, do not use it —
+   and delete it only with the human's explicit approval.
+2. **Append to §7 "Round-2 progress log" after EVERY turn** — a dated entry with
+   what you did, the files you touched, the raw verification output, any blocker,
+   and what is next. That is how BE stays current with your progress. Report
+   blockers in §0 as well.
+
+Neither rule is optional: BE cannot verify what it cannot see, and a second git
+history breaks the single-push model.
 
 ---
 
@@ -203,15 +227,21 @@ blockers with `[MAC] BLOCKED:`.
 ## 3. Commands (from the repo root)
 
 ```bash
-# Unit tests — expect 52/52 on current main (47 before Track R2 landed)
+# Unit tests — CURRENT EXPECTED: 120/120 (was 52 at Track R2, 99 at B1/B2, 120 after B3/H4)
 node tests/engine.test.js
 
 # Wet-sim tests (Mac M1) — expect 15/15
 node tests/wetsim.test.js
 
+# Tonal-mask tests (Mac M2 + the band-flag guard) — expect 19/19
+node tests/masks.test.js
+
 # Visual regression — expect pass=9 fail=0 error=0
 NODE_PATH=<playwright-core parent dir> node scripts/visual-regression.cjs
 NODE_PATH=<...> node scripts/visual-regression.cjs --styles=watercolor,ink   # subset
+
+# Media-panel BEHAVIOURAL probe (does a control change output?) — 4 PASS lines
+NODE_PATH=<...> node scripts/media-panel-probe.cjs --size=128 --strokes=100
 
 # Parity bench (modular engine vs the app painter)
 NODE_PATH=<...> node scripts/parity-bench.cjs
@@ -220,6 +250,49 @@ NODE_PATH=<...> node scripts/parity-bench.cjs
 NODE_PATH=<...> node scripts/structure-debug.cjs
 NODE_PATH=<...> node scripts/wetsim-debug.cjs
 ```
+
+### Maestro (web UI verification)
+
+`JAVA_HOME` is **required** — Maestro's CLI and MCP server are JVM apps and the
+MCP never completes its stdio handshake without it:
+
+```bash
+export PATH="$HOME/.maestro/bin:$PATH"
+export JAVA_HOME="$(/usr/libexec/java_home)"
+
+# Serve the repo (bind 0.0.0.0 so Maestro's Chromium can reach it).
+# Check first: two servers may already be running from earlier sessions.
+lsof -nP -iTCP:8099 -sTCP:LISTEN
+python3 -m http.server 8099 --bind 0.0.0.0
+
+# ONE command per run — the web device does not persist across invocations.
+# `--screen-size` is honoured ONLY with `--headless`.
+maestro test --headless --screen-size 390x844  maestro/www-paint-media-panel.yaml
+maestro test --headless --screen-size 1440x900 maestro/www-paint-desktop-regression.yaml
+maestro test --headless --screen-size 1440x900 maestro/www-paint-media-behaviour.yaml
+```
+
+**No API key is needed for local flows.** `MAESTRO_CLOUD_API_KEY` is only
+required for Maestro Cloud (uploading runs) and for the AI commands
+(`assertWithAI`, `assertNoDefectsWithAI`, `extractTextWithAI`). All local
+`maestro test` runs work with no key set.
+
+### Maestro limitations found the hard way
+
+- **No `sliderInput` in web mode** — `Invalid Command: sliderInput`. Drive a
+  slider from the page with synthetic `input` + `change` events.
+- **`runScript` and `evalScript` have separate scopes.** Neither exposes
+  `window`; `globalThis` works in `evalScript`. A top-level `await` is rejected.
+- **`runScript` does not populate `output`** — use `evalScript` for that.
+- **It asserts the accessibility tree, not pixels.** "Did this control change
+  the rendered output?" is out of scope; use `scripts/media-panel-probe.cjs`.
+- **`maestro hierarchy` says "No running devices found"** even when
+  `list-devices` shows `Web / chromium`. Expected — use the single-command
+  `maestro test --headless --screen-size WxH <flow>` form.
+- **A flow is written for ONE viewport.** The media-panel flow's
+  `start: 41%, 70%` gesture lands inside a 320px panel at 390px but on the
+  **canvas** at 1440px (desktop rail is 260px) → false `TONAL MASKS` failure.
+  Run each flow at the width in its header comment.
 
 **`playwright-core` is not in the repo.** On macOS:
 
@@ -577,6 +650,90 @@ optimiser run that exceeded the command approval window.
 
 Evidence: `docs/checkpoints/M4.md` + `docs/research/qa-parity-r2.png`.
 **No source edits — M4 is evidence only.**
+
+---
+
+### 5e. M6b — media-panel re-verification + Maestro (2026-11-12, Mac / AIR HERMES)
+
+**Baseline under test:** the live worktree (not a clean worktree) at
+`origin/main = 2585cec`, plus the uncommitted Mac media-panel files.
+
+**Three defects found and fixed — all in Mac-owned files.**
+
+| # | Defect | Fix |
+|---|---|---|
+| 11 | The panel was an **inert settings shell**: `media-host.js` stored WET MEDIA at `engine.settings.wetSim`, but `engine.generate()` reads only `engine.settings.mediaModel` → **no** control changed output | `mediaModelFromPanel()` bridge in `media-host.js`, clamped to the frozen `$defs/mediaModel` ranges |
+| 12 | `masksCompositeRGBA()` ignored the band flags entirely → a band toggle changed nothing | optional `bands` arg (omitted = historical all-enabled) |
+| 13 | The four tonal-band toggles had **no `id` and no `aria-label`** — the only controls in the panel without one, so no id-based automation could target them | `media-masks-band-<key>` + `aria-label` in `media.js` |
+
+**Output-neutrality (HANDOFF §2 rule 5).** The panel's display defaults are
+`wetsim.js`'s defaults (`maxWet 1.5`), which describe a *working* wet sim. A
+naive map switched wet media on for every user who never touched a control. A
+non-UI `wetOptIn` flag (carried in `WET_SIM_KEYS`, deliberately kept out of
+`WET_SIM_PARAMS` so no slider renders) is set on the first wet move; while false
+the model is `{kind:"dry"}` → byte-identical output.
+
+**Behavioural proof** (`scripts/media-panel-probe.cjs`, real Chromium, hashes the
+exported PNG):
+
+```
+A defaults (100 strokes): {"lum":196.05,"bytes":13411,"kind":"dry"}
+B after wet ctrl        : {"lum":159.92,"bytes":21405,"kind":"wet"}
+C repeat                : {"lum":159.92,"bytes":21405,"kind":"wet"}   <- identical
+mask band toggle        : preview hash 894717379 -> 247072197
+```
+
+**Maestro (real Chromium, MCP loaded + CLI 2.11.0):**
+
+| Flow | Viewport | Result |
+|---|---|---|
+| `www-paint-media-panel.yaml` | 390×844 | 29/29 COMPLETED, 0 FAILED |
+| `www-paint-mobile-ui-audit.yaml` | 390×844 | 30/30 COMPLETED, 0 FAILED |
+| `www-paint-desktop-regression.yaml` | 1440×900 | 33/33 COMPLETED, 0 FAILED |
+| `www-paint-media-behaviour.yaml` (NEW) | 1440×900 | 35/35 COMPLETED, 0 FAILED |
+
+**No API key is needed for local Maestro flows** — `MAESTRO_CLOUD_API_KEY` is
+only for Maestro Cloud uploads and the AI commands. See §3.
+
+**Vision review:** one finding (strip chip "Wet · Ink · Tonal" allegedly clipped)
+was **disproved by measurement** — strip x=1..259, chip x=76..194,
+`scrollWidth == clientWidth`; a 3× element screenshot shows the final `l` fully
+rendered with margin. The 1× raster was the artefact.
+
+**Probe pitfall worth remembering:** the first probe image was a smooth gradient
+with **zero background coverage**, so toggling the background band was
+*correctly* a no-op and the probe reported a false "toggle does nothing". A band
+toggle can only be verified on an image that actually has that band.
+
+**Dev-server note:** two `python3 -m http.server 8099` processes were already
+running from the repo root; starting a third failed with
+`OSError: [Errno 48] Address already in use`. `http.server` reads from disk per
+request, so served bytes were hash-verified against disk (all MATCH).
+
+Gates: engine **120/120** · wetsim **15/15** · masks **19/19** · visual
+regression **pass=9 fail=0 error=0** (baselines unmoved).
+
+Evidence: `docs/checkpoints/P2.5.md` §8–§9. `js/ui/controls.js` and
+`js/ui/app.js` remain **never edited**.
+
+---
+
+## 7. Round-2 progress log — Mac appends after every turn
+
+**Append-only; newest at the bottom; exactly one entry per turn.** BE reads this
+to stay current with Mac progress and to know what to verify. Do not edit old
+entries. Keep it short — facts + raw evidence only.
+
+Format:
+
+```markdown
+### YYYY-MM-DD HH:MM — M<n> <name> — <one-line status>
+- did: <what>
+- files: <paths touched>
+- verified (raw): <command> → <output line>
+- blocker: none | <what + exact error>
+- next: <stream / step>
+```
 
 ---
 

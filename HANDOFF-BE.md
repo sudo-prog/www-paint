@@ -289,4 +289,30 @@ thrash.
 | `docs/REFERENCES.md` | papers/libraries ideas may come from |
 | `js/engine/wetsim.js` §"Integration contract" | the exact 3.3 call site |
 
+---
+
+## 7. Round 2 — remaining BE streams (issued 2026-11-12)
+
+Round-1 streams **B1** (1.5 + 3.3) and **B2** (2.2b layer-aware scoring) are
+**DONE**; **B3** is done except **H3's real-LLM validation**; Mac's **M6** media
+panel has landed and been BE-verified (`41286c1`). What remains on the BE side:
+
+- **B4 — finish Track R.** Integrate the Mac's new modules (M7 `outlines.js` IF-3,
+  M8 `order.js` IF-4, M9 `styles/shaping.js`) into `optimizer.js` — outlines-first
+  pass, order modes, per-style shaping — then **R5** consolidate and **R6** retire
+  the legacy painter (app + baselines 100 % on the modular engine).
+- **B5 — Phase 6 (engine).** Perf pass (512² frame budget) + `exporter.js`
+  hardening. The export *panel* is the Mac's M11.
+- **B6 — Integration.** Track **B**: vendor the LAYERS AJV schemas + a
+  contract-alignment doc + a CI-validatable sample; Track **C**: mount WWW_PAINT
+  into LAYERS.
+- **B7 — Hygiene.** Defect 0.7 (visual harness lacks WebGL2); keep the docs true
+  after every stream.
+- **H3-validation.** Run the vision proposer against a real backend when one is
+  configured (the ≥ 70 %-usable criterion).
+
+**Coordination:** the Mac logs **every turn** in `AGENTS.md` §7 (round-2 progress
+log) and never runs git; BE is the sole GitHub writer/pusher. The Mac's remaining
+streams are issued in `docs/MAC-TASKS.md` §"Round 2".
+
 Signed-off-by: Hermes / BE — ThinkPad

@@ -195,3 +195,85 @@ Finish a stream before starting the next; post one OPS_LOG line per stream.
 Report to the human after each stream, not in one lump at the end.
 
 Signed-off-by: Hermes / BE — ThinkPad
+
+---
+
+# Round 2 — remaining work, split (issued 2026-11-12 by BE)
+
+**Status:** **M6a + M6b are DONE** — the media panel landed and BE verified +
+pushed it (`41286c1`). Everything below is the *next* tranche.
+
+## R2.1 Who does what
+
+| Side | Owns | Remaining streams |
+|---|---|---|
+| **BE (ThinkPad)** — spine · sole writer **and pusher** | `optimizer.js` `generator.js` `analyzer.js` `engine.js` `painter.js` `scorer.js` `renderer.js` `exporter.js` `regions.js` `metrics.js` `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js` `js/ui/{app,controls}.js` `tests/engine.test.js` `.github/**` | **R4** (integrate the Mac modules below + per-style shaping) · **R5** consolidate · **R6** retire the legacy painter · **Phase 6** perf + export engine · **Track B** vendor LAYERS schemas · **Track C** mount · **B7** hygiene · **H3** real-LLM validation |
+| **Mac (FE)** — new files / non-spine only | new modules, `js/styles/*`, **new** `js/ui/*`, `css/*`, `docs/research/*`, `docs/checkpoints/*`, `AGENTS.md` | **M7–M15** below |
+
+**Never edit a BE-owned file.** Need a change there → OPS_LOG note; BE makes it.
+
+## R2.2 Mac streams (in order — the first three UNBLOCK R4)
+
+### M7 — `js/engine/outlines.js` (NEW) — IF-3
+Edge-following outline extraction so the optimiser can lay outline strokes first
+(R4 "outlines"). Pure, node-testable, no DOM.
+```js
+export function extractOutlines(analysis, opts = {}) -> {
+  width, height,
+  outlines: Array<{ points: Array<[x, y]>, strength: number }> // open polylines, largest first
+}
+```
+**Exit:** deterministic; a synthetic square/ring extracts ≥ 1 outline whose points
+hug the edge; node-only; a `docs/checkpoints/` note.
+
+### M8 — `js/engine/order.js` (NEW) — IF-4
+Paint-order modes over a shape list (R4 "path/order modes").
+```js
+export function orderShapes(shapes, mode, opts = {}) -> Array<shape> // NEW array, same shapes
+```
+Modes: `free` `down` `up` `left` `right` `diag` `spiral` `spiralin` `rings` `ringsin` `clock`.
+**Exit:** deterministic; `free` returns input order untouched; each mode is a
+stable sort by its own key; node-testable.
+
+### M9 — `js/styles/shaping.js` (NEW) — per-style shaping data
+A data table so the optimiser can shape strokes per style (R4 "per-style shaping").
+```js
+export function resolveShaping(styleName) -> { minSize, maxSize, elongation, order, regionFill }
+```
+**Exit:** every registry style resolves (unknown → documented defaults); data only;
+node-testable.
+
+### M10 — Phase 4.2: Style Profile library UI
+`js/ui/style-library.js` (+ host shim). Save / load / apply / export / import;
+apply re-bakes **identical** output for the same `(profile, seed, image-hash)`.
+
+### M11 — Phase 6: export panel UI
+`js/ui/export-panel.js` (+ host shim) wrapping the BE-owned `exporter.js`
+(PNG/JPG sizes + quality, profile JSON, copy-to-clipboard).
+
+### M12 — non-baseline style polish
+`js/styles/*` **except the 9 pinned styles**. ≥ 6 non-pinned styles measurably
+improved; pinned baselines **9/9 unmoved** (prove it).
+
+### M13 — a11y + responsive sweep
+`css/*`, `scripts/a11y-sweep.cjs`, `docs/research/qa-a11y.png`. Keyboard, focus,
+≥ 44 px, reduced-motion, 390 → 1920.
+
+### M14 — reference docs
+`docs/PANELS.md`, `docs/STROKE_FORMAT.md` — real commands, real output.
+
+### M15 — standing QA seat (M4-style)
+After each BE push: run the gates + a behavioural probe against `main`; log in
+AGENTS.md §7 + one OPS_LOG line. **No source edits.**
+
+## R2.3 Protocol (round 2)
+
+1. **Never run git** (`AGENTS.md` §0.8). Edits reach the ThinkPad via Syncthing;
+   **BE verifies and pushes** (BE is the sole GitHub writer).
+2. **After EVERY turn, append one entry to `AGENTS.md` §7** (round-2 progress
+   log) — `did / files / verified (raw) / blocker / next`.
+3. One OPS_LOG line per completed stream (`MAC:` prefix, raw evidence,
+   `NOTHING DELETED`).
+4. Finish a stream before starting the next. **M7/M8/M9 first** — they unblock R4.
+
+Signed-off-by: Hermes / BE — ThinkPad
