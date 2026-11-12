@@ -81,7 +81,7 @@ regressing other images.** Tier B additionally requires human approval.
 | **H0** | Eval harness | `parity-bench.cjs` reports `sim` + independent MAE + **SSIM** over N images for every engine. **Baseline recorded.** |
 | **H1** | Parameter surface | **DONE** — `js/engine/score.js` (`KNOB_SET` action space + `clampKnobs` + `scoreProfile(profile, image)`) over `js/engine/metrics.js` (independent rasteriser + MAE + SSIM). No browser. See `docs/checkpoints/H1.md`. |
 | **H2** | Search proposer | **DONE** — `js/engine/propose.js`: random + a compact (μ,λ) evolution strategy tuning a profile at **equal stroke count**; beats the hand-set default (+0.55 simMae, 32 evals, deterministic). See `docs/checkpoints/H2.md`. |
-| **H3** | LLM proposer | **MECHANISM DONE — real-LLM validation PENDING** — `js/engine/vision-propose.js`: injected LLM backend, prompt built from `KNOB_SET`, tolerant `parseProposal` (+`clampKnobs`), refine via the H2 search, record to H4 memory; `openAICompatibleBackend` adapter. Verified with a stub (`scripts/h3-propose-check.mjs`, 8 checks); the **≥70%-usable** criterion is unmeasured (no vision backend configured here). See `docs/checkpoints/H3.md`. |
+| **H3** | LLM proposer | **MECHANISM DONE — real-LLM validation PENDING** — `js/engine/vision-propose.js`: injected LLM backend, prompt built from `KNOB_SET`, tolerant `parseProposal` (+`clampKnobs`), refine via the H2 search, record to H4 memory; `openAICompatibleBackend` adapter. Verified with a stub (`scripts/h3-propose-check.mjs`, 8 checks); the **≥70%-usable** criterion is unmeasured here (= **Track S S8**, `docs/TRACK_S.md`). See `docs/checkpoints/H3.md`. |
 | **H4** | Memory | **DONE** — `js/engine/memory.js`: bounded feedback store (`record`/`list`/`best`) + average-hash retrieval (`averageHash`/`hamming`) + `warmStart` seeding `searchProfile({ init })`; wins and losses kept, deterministic, JSON-serialisable. See `docs/checkpoints/H4.md`. |
 | **H5** | Tier B | **DONE** — `js/engine/gate.js`: `evaluateSet` + `gateChange`/`gateVariants` — the benchmark gate (keep / revert / pending-approval): nothing is kept unless the mean objective improves **without regressing an image**, and a change additionally needs explicit human approval. Proposer-agnostic, deterministic, node-testable. See `docs/checkpoints/H5.md`. |
 
@@ -95,9 +95,28 @@ regressing other images.** Tier B additionally requires human approval.
 4. **Human in the loop for Tier B** — code changes are never auto-merged.
 5. **Every attempt is recorded** — wins *and* losses (losses are training signal).
 
-## 7. References
+## 7. Style accuracy — Track S (added 2026-11-12)
+
+The loop above measures **content reconstruction** (`sim` / MAE / SSIM). It does
+not yet measure **style match to the references** — the actual sref goal. That gap
+is **Track S** (`docs/TRACK_S.md`):
+
+- **S2 — Style-Match Score** extends H1's `metrics.js` / `score.js` (adds
+  stroke-scale histogram, orientation and layer-occupancy match to the refs) and
+  feeds the same H5 gate, so a change is kept only on a measured style-match gain.
+- **S1 / S3 — RefPacket + multi-reference fusion** give the H3 proposer structured
+  reference analysis (grid, scale, orientation) instead of raw image bytes alone.
+- **S8** is the outstanding **H3 real-LLM validation** (≥ 70 %-usable) run as a
+  Track S deliverable.
+- **S9 / S10** — knob ↔ style-match correlation and the style-accuracy eval suite —
+  are the H-loop's continuous-improvement end of Track S.
+
+---
+
+## 8. References
 
 - `docs/CLEANROOM.md` — engine of record + Track R (the thing being tuned).
 - `docs/ROADMAP.md` §5 — Phase 4 (Style Profile) + Phase 5 (AI refinement loop).
 - `docs/STYLE_PROFILE.md` — the parameter schema (the action space).
 - `scripts/parity-bench.cjs`, `tests/parity/harness.html` — H0 measurement.
+- `docs/TRACK_S.md` — style-accuracy track (S1–S10) extending this loop.

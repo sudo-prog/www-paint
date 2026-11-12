@@ -316,3 +316,21 @@ log) and never runs git; BE is the sole GitHub writer/pusher. The Mac's remainin
 streams are issued in `docs/MAC-TASKS.md` §"Round 2".
 
 Signed-off-by: Hermes / BE — ThinkPad
+
+---
+
+## 8. Track S — style accuracy (added 2026-11-12)
+
+Beyond the round-2 streams above, the sref goal needs a **measurement** track:
+today's harness scores content reconstruction (MAE/SSIM), not style match to the
+refs. Full detail: `docs/TRACK_S.md`. Mapping onto the streams:
+
+- **S1** (analysis grid + `RefPacket`, NEW `js/engine/ref-analyze.js`) and **S2**
+  (Style-Match Score in `metrics.js` / `score.js` / `gate.js`) are new BE spine
+  work — **the live front**, ahead of B4.
+- **S3** (multi-ref fusion, `ref-analyze.js` + `profile.js`) and **S4** (`passes[]`
+  in `docs/STYLE_PROFILE.md` + `optimizer.js` / `profile.js`) are new BE work.
+- **S5** (`js/engine/primitives.js`) — BE + Mac.
+- **S6 = Mac M10** (Phase 4.2 library UI). **S7 = BE B5 + Mac M11** (Phase 6
+  worker batch + export). **S8 = H3-validation** (above). **S9 / S10** — BE harness.
+- **Finish R4** (B4 + Mac M7–M9) stays as issued; run it when it does not block S1 / S2.

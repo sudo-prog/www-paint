@@ -128,4 +128,5 @@ the modular engine can carry the product.
 - `docs/ROADMAP.md` §0 (engine of record) and §3 (algorithms).
 - `docs/checkpoints/P1.md` — Phase 1.2 structure tensor (clean-room side).
 - `scripts/parity-bench.cjs`, `tests/parity/harness.html`.
+- `docs/TRACK_S.md` — **Track S** (style accuracy): the next axis beyond content reconstruction (style match to the references).
 - `RE_BREAKDOWN.md` — the reverse-engineering study (already on file).

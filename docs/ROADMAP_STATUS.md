@@ -3,7 +3,7 @@
 Living status file for `docs/ROADMAP.md`. Update after every completed
 sub-phase (roadmap §8, step 5). One line per sub-phase; keep it terse.
 
-**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · + Track R4 region-fill (partial, opt-in) + Mac media-panel LANDED/verified (41286c1) · Harness H3 vision-proposer mechanism (injected LLM; real-LLM validation pending) + Harness H5 benchmark gate + H4 memory (feedback store + aHash retrieval + warmStart) · B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream LANDED + BE-verified (41286c1) — panel now drives the render path (wetSim/media → mediaModel bridge; dry until opt-in) + `masksCompositeRGBA` band fix. BE: §0.5 pencil brush-tip fixed.
+**Last updated:** 2026-11-12 · Agent: BE (ThinkPad) · **+ Track S added (style accuracy / sref — `docs/TRACK_S.md`, S1–S10)** · + Track R4 region-fill (partial, opt-in) + Mac media-panel LANDED/verified (41286c1) · Harness H3 vision-proposer mechanism (injected LLM; real-LLM validation pending) + Harness H5 benchmark gate + H4 memory (feedback store + aHash retrieval + warmStart) · B1 render-path closers (1.5 smudge/height buffer + 3.3 mediaModel→wetsim integration) · B2 layer-aware scoring (2.2 closer: `scoreProfileLayers` over the IF-1 masks). Earlier: Track R3 (CCL + PCA stroke init, 1.4) + Phase 4.1 (engine consumes Style Profile) + Harness H1 (parameter surface + headless `score`) + H2 (search proposer) done. Mac M1 (wetsim) + M2 (masks / layer panel) + M3 (brush media 1.1/1.6) + M4 (QA) landed, BE-verified. Mac media-panel UI stream LANDED + BE-verified (41286c1) — panel now drives the render path (wetSim/media → mediaModel bridge; dry until opt-in) + `masksCompositeRGBA` band fix. BE: §0.5 pencil brush-tip fixed.
 
 Legend: `done` · `active` · `todo` · `blocked` · `n/a (stretch)`
 
@@ -45,9 +45,9 @@ two blocking defects fixed: `Renderer.exportImage` returned undefined, and
 |---|---|
 | 2 — Tonal layers & per-layer styles | **2.1 done** (tonal masks — `js/engine/masks.js`, Mac/M2) · **2.3 done** (layer panel controls, Mac/M2 + BE `app.js` wiring) · **2.2 generation + paint order DONE (BE)** — per-layer style applies live (`engine.setLayerStyle`) + `layerStyles`/`preserveLayerProps`; multi-layer composite verified band-by-band (`scripts/layer-styles-probe.cjs`, engine 63/63). **Layer-aware scoring DONE (BE, B2)** — `metrics.maskedMetrics`/`weightedSsimLuma` + `score.scoreProfileLayers` (per-band simMae/SSIM + coverage-weighted composite over the IF-1 masks); engine 105/105, baselines 9/9. See `docs/checkpoints/P2.2.md`, `docs/checkpoints/P2.2b.md` · Mac media-panel UI LANDED + BE-verified (`41286c1`) — panel drives `engine.settings.mediaModel` (dry until opt-in) + `masksCompositeRGBA` honours band flags; `scripts/media-panel-probe.cjs` PASS |
 | 3 — Wet media simulation | **3.1/3.2 done** (wetsim core — `js/engine/wetsim.js`, Mac/M1 @ `04ed927`) · **3.3 mediaModel integration DONE (BE, B1)** — `engine.generate` consumes `profile.mediaModel` → `renderer.setWetMedia`; per-stroke deposit + multiply-composited wash (deterministic, idempotent); browser probe PASS, engine 105/105, baselines 9/9. See `docs/checkpoints/P3.3.md` |
-| 4 — Style Profile system | **4.1 done (BE, engine consumes the full profile)** — `js/engine/profile.js` (validate / normalise / settings + layer-styles + layer-props + media-model + seed) + `engine.generate({profile})`; probe PASS, 84/84 tests. See `docs/checkpoints/P4.1.md` · **4.2 todo (save/load/library UI — Mac candidate)** |
-| 5 — AI style refinement loop | **harness H1/H2/H4/H5 done; H3 vision-proposer mechanism done (real-LLM validation pending)** — `score.js` + `propose.js` + `memory.js` + `gate.js` + `vision-propose.js`; engine 120/120. See the Harness table below |
-| 6 — Polish, performance, export | todo |
+| 4 — Style Profile system | **4.1 done (BE, engine consumes the full profile)** — `js/engine/profile.js` (validate / normalise / settings + layer-styles + layer-props + media-model + seed) + `engine.generate({profile})`; probe PASS, 84/84 tests. See `docs/checkpoints/P4.1.md` · **4.2 todo (save/load/library UI — Mac M10; = Track S S6)** |
+| 5 — AI style refinement loop | **harness H1/H2/H4/H5 done; H3 vision-proposer mechanism done (real-LLM validation pending)** — `score.js` + `propose.js` + `memory.js` + `gate.js` + `vision-propose.js`; engine 120/120 (real-LLM validation = Track S S8). See the Harness table below |
+| 6 — Polish, performance, export | todo — worker batch apply = Track S S7 |
 | 7 — Stretch | todo |
 
 ---
@@ -90,6 +90,32 @@ engine of record; the legacy auto-painter is reference-only.
 | H3 | LLM proposer (vision → profile, iterate) | **mechanism done; real-LLM validation pending** — `js/engine/vision-propose.js` (injected LLM, prompt from `KNOB_SET`, tolerant parse + clamp, H2 refine, H4 record; `openAICompatibleBackend` adapter); stub-verified via `scripts/h3-propose-check.mjs`, 120/120. ≥70%-usable criterion unmeasured (no vision backend here). See `docs/checkpoints/H3.md` |
 | H4 | Memory (feedback store + retrieval) | **done** — `js/engine/memory.js` (`createMemory` + `averageHash`/`hamming` + `warmStart`); bounded store keeps wins and losses, deterministic, JSON-serialisable; 113/113. See `docs/checkpoints/H4.md` |
 | H5 | Tier B (agent-improved engine code, benchmark-gated) | **done** — `js/engine/gate.js` (`evaluateSet` + `gateChange`/`gateVariants`): keep only on mean improvement with no image regression + explicit human approval; proposer-agnostic, deterministic; 118/118. See `docs/checkpoints/H5.md` |
+
+---
+
+## Track S — Style accuracy ("sref", see `docs/TRACK_S.md`)
+
+Added 2026-11-12 (full audit of the sref gap). Track R measures content
+reconstruction; Track S measures **style match to the references** — the actual
+sref goal (`docs/ROADMAP.md` §1/§7). Every item lands behind the existing gate
+(`gate.js`) / memory (`memory.js`) / regression harness, so each step is provable.
+
+| ID | Item | Owner | Status |
+|---|---|---|---|
+| S1 | Analysis grid + structured `RefPacket` (`js/engine/ref-analyze.js`) | BE | **todo (next)** |
+| S2 | Style-Match Score (`metrics.js` / `score.js` / `gate.js`) | BE | **todo** |
+| S3 | Multi-reference fusion (RefPacket / styleDNA merge, per-ref weights) | BE | todo |
+| S4 | Explicit hierarchical passes (`passes[]` in the Style Profile) | BE | todo |
+| S5 | Stroke-language primitives (`js/engine/primitives.js`) | BE + Mac | todo |
+| S6 | Profile library UI (**Phase 4.2**) | Mac | **issued (M10)** |
+| S7 | Worker automation path (**Phase 6**) | BE + Mac | **issued (B5 / M11)** |
+| S8 | H3 real-LLM validation (**Phase 5.1**, ≥ 70 %-usable) | BE | **issued (H3-validation)** |
+| S9 | Active algorithm refinement (knob ↔ style-match correlation) | BE | todo |
+| S10 | Style-accuracy eval suite (content × ref-set matrix) | BE | todo |
+| H-S1 | `scorer.js` (candidate selection) vs `score.js` (profile quality) — document the split | BE | todo (`docs/API.md`) |
+| H-S2 | Confidence / calibration when refs are weak or inconsistent | BE | todo |
+
+Exec order + "sref-ready" exit criteria: `docs/TRACK_S.md` §5–§6.
 
 ---
 

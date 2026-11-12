@@ -277,3 +277,15 @@ AGENTS.md §7 + one OPS_LOG line. **No source edits.**
 4. Finish a stream before starting the next. **M7/M8/M9 first** — they unblock R4.
 
 Signed-off-by: Hermes / BE — ThinkPad
+
+---
+
+## R2.4 Track S cross-reference (added 2026-11-12)
+
+The roadmap gained **Track S — style accuracy ("sref")** (`docs/TRACK_S.md`):
+measuring *style match to the references*, not only content reconstruction. Your
+streams already cover two of its items — **M10 = Track S S6** (library UI) and
+**M11 = Track S S7** (export / worker batch UI). Mac M12–M14 are unchanged. The
+analysis-grid / Style-Match-Score work (S1–S2) is BE spine and does **not** touch
+your files; when it lands, the library UI may surface a profile's Style-Match
+score. No change to your exit criteria.

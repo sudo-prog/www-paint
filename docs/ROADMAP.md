@@ -1,6 +1,6 @@
 # WWW_PAINT — Project Brief & Development Roadmap
 
-Version 1.2 · 2026-11-10
+Version 1.3 · 2026-11-12
 
 > **This is the living brief.** Update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 > Work strictly in order (see §8 Agent Protocol). Do not start Phase N+1 until Phase N exit criteria are checked.
@@ -40,14 +40,21 @@ Build a pure-web, stroke-based image-to-art engine that can:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Engine (analyzer, generator, scorer, renderer, worker) | Solid | Modular; residual-friendly |
+| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R R0–R3 done, R4 partial; the app still paints via the legacy `painter.js` until R6 |
 | Shape vocabulary (E/B/T/R/S) | Complete | Five primitives — ellipse, blob, triangle, rect, stroke |
-| Styles | 50+ registered | Quality varies; watercolor / oil / ink already advanced |
-| p5.brush integration | Partial | `js/engine/brush-stamp-engine.js` wraps standalone p5.brush |
-| Layers | Data model only | ARCHITECTURE.md sketches Layer objects; runtime limited |
-| AI / Style Profile / feedback | None | Primary new work |
+| Styles | 50+ registered | Quality varies; 10 on the enhanced p5.brush stamp path (WebGL2) with a working fallback |
+| p5.brush integration | Working (stamp path) | `js/engine/brush-stamp-engine.js` + `js/engine/brush-media.js`; harness has no WebGL2 → the 9 baselines stay put |
+| Layers / per-layer styles | Working | `masks.js` tonal bands + `layer-styles.js` + the layer panel; multi-layer composite verified |
+| Wet media | Working (opt-in) | `js/engine/wetsim.js` + `mediaModel` integration; dry default is byte-identical |
+| Style Profile | Engine consumes it (4.1 done; 4.2 library UI open) | `js/engine/profile.js` + `engine.generate({ profile })` |
+| AI style loop (harness) | H1/H2/H4/H5 done; H3 mechanism done (real-LLM validation pending) | `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js` |
+| Style-match metrics / ref analysis grid | **Not started** | **Track S** (S1–S10) — the sref accuracy gap |
 
-Key existing docs in repo: `ARCHITECTURE.md`, `RE_BREAKDOWN.md`.
+Key existing docs in repo: `ARCHITECTURE.md`, `RE_BREAKDOWN.md`, and the plan set
+`docs/CLEANROOM.md` (Track R), `docs/AI_STYLE_HARNESS.md` (Harness H),
+`docs/TRACK_S.md` (Track S). Earlier "data model only / AI: None" rows were stale
+(engine, layers, wet media, profiles and the AI harness all shipped) — corrected
+2026-11-12.
 
 ---
 
@@ -207,6 +214,34 @@ Goal: Maximum realism without full neural training.
 - Community style-pack format.
 - Automated quality metrics (edge alignment, histogram match to refs).
 
+### TRACK S — Style accuracy ("sref") — full detail in `docs/TRACK_S.md`
+
+Track R makes an image look like *itself* (content reconstruction). **Track S
+makes a result look like *the reference style*** — the actual sref goal (§1/§7).
+Today the harness scores `simMae` / MAE / SSIM only, which rewards *"looks like
+the photo"*, not *"the stroke language matches the refs."* Track S adds the
+missing pieces, each landing behind the existing gate / memory / regression
+harness:
+
+| ID | Item | Owner |
+|----|------|-------|
+| S1 | Analysis grid + structured `RefPacket` (per-cell orientation / coherence / density / stroke scale) | BE |
+| S2 | **Style-Match Score** (stroke-scale histogram + orientation + layer-occupancy match, optional CLIP/LPIPS) | BE |
+| S3 | Multi-reference fusion (merge RefPacket / styleDNA across 1–4 refs) | BE |
+| S4 | Explicit hierarchical passes (`passes[]`) in the Style Profile | BE |
+| S5 | Stroke-language primitives (dry-stamp / wet-wash / bristle / smudge / hatch / spatter) | BE + Mac |
+| S6 | Profile library UI (**Phase 4.2**) | Mac |
+| S7 | Worker automation path (**Phase 6**) | BE + Mac |
+| S8 | H3 real-LLM validation (**Phase 5.1**, ≥ 70 %-usable) | BE |
+| S9 | Active algorithm refinement (knob ↔ style-match correlation) | BE |
+| S10 | Style-accuracy eval suite (content × ref-set matrix) | BE |
+
+Exit for "sref-ready": 1–4 refs → proposed profile → layered preview → tweak →
+save; the saved profile applies in one click via a deterministic worker bake;
+Style-Match improves under the propose / memory loop; the eval suite is green with
+no Phase-0 regression. Order, files, owners and the full gap analysis:
+`docs/TRACK_S.md`.
+
 ---
 
 ## 6. Extra Enhancements (Recommended)
@@ -225,6 +260,7 @@ Goal: Maximum realism without full neural training.
 ## 7. Success Criteria
 
 - Core media (pencil, ink, watercolor, oil) clearly beat Phase 0 baselines in blind comparison.
+- **Style Match (Track S):** a result's stroke-scale / orientation / layer-occupancy match to the references improves under the propose → score → memory loop.
 - User can go from 1–4 refs → refined layered style → saved reusable profile in under ~10 minutes.
 - Saved styles apply in one click and re-bake deterministically.
 - Feedback improves subsequent proposals for similar references.
@@ -246,8 +282,9 @@ Goal: Maximum realism without full neural training.
 
 ## 9. Immediate Next Steps
 
-1. Complete Phase 0 (schema, regression harness, inventory, `REFERENCES.md` with every link above).
-2. Begin Phase 1.1 (p5.brush hardening) and 1.2 (structure tensor) in parallel if multiple agents are available.
-3. Keep this document as the living brief; update version and status file as phases complete.
+1. **Track S S1–S2** — the analysis grid (`js/engine/ref-analyze.js`) then the Style-Match Score — is the live front (`docs/TRACK_S.md`).
+2. **Track R R4 finish** (outlines / order / per-style shaping) runs in parallel on the BE spine + the Mac's M7–M9 modules.
+3. **Phase 4.2** (Profile library UI, Mac M10) and **Phase 6** (worker batch + export, BE B5 / Mac M11) are already issued.
+4. Keep this document as the living brief; update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 
 All major algorithms, libraries, and papers discussed are linked in §3 and should be copied into `docs/REFERENCES.md` during Phase 0. This roadmap is ready for Hermes / VS Code agents to execute checkpoint by checkpoint.
