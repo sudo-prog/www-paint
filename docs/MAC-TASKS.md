@@ -294,13 +294,35 @@ score. No change to your exit criteria.
 
 # Round 3 — remaining work, split (issued 2026-11-12 by BE)
 
-**Status:** **M7/M8/M9 are DONE and BE-pushed** (`28e8933`) — verified, baselines
-9/9 unmoved. BE also closed Track-S **S1** (`js/engine/ref-analyze.js`, 16/16).
-Everything below is the *next* tranche. **Start at M10.**
+**Status (updated 2026-11-13):** **M7/M8/M9, M10 and M11 are DONE and
+BE-pushed** — M10/M11 landed in `3b711fe` / `d4dbe34` after independent
+BE verification on the ThinkPad (style-library 50/50 + probe PASS, export-panel
+90/90 + probe PASS). Track-S **S1** closed too (`js/engine/ref-analyze.js`).
+**Do NOT redo M10 or M11 — both are on `main`.** Your next stream is **M12**
+(non-baseline style polish), then M13 → M16.
 
-**Baseline you must match:** `main = 28e8933`, remote == local. Gates: engine
+**Two engine defects were fixed by BE while verifying your M10 hand-in** — your
+own probe was green on your machine and red on the ThinkPad. Your headless
+Chromium has no usable WebGL2, so the p5.brush stamp path fell back and you got
+real pixels; the ThinkPad's SwiftShader supplies a *valid but non-rendering*
+WebGL2 context, so `isBrushReady()` went true, `stampStrokeSync()` returned true
+after compositing an EMPTY buffer, every stamp-path style skipped its 2D
+renderer, and the app painted nothing (`7e67d59`). Also: an export used to wipe
+the live canvas (`renderer.js`), and `--update` wrote the baseline PNG artefacts
+from the wiped canvas. Your M10 numbers now reproduce exactly on the ThinkPad
+(`bakeDefault` lum 159.10 / 26447 B). **Never trust a probe that only ran on
+your own machine — say which machine produced a number.**
+
+**Baseline you must match:** `main = d4dbe34`, remote == local. Gates: engine
 **123/123** · wetsim **15/15** · masks **19/19** · outlines **16/16** · order
-**24/24** · shaping **18/18** · ref-analyze **16/16** · visual **9/9**.
+**24/24** · shaping **18/18** · ref-analyze **16/16** · style-library **50/50** ·
+export-panel **90/90** · visual **9/9** (pins unmoved) · brushes/probes PASS.
+
+**Still open on your side when you resume:** M11 was landed without its
+checkpoint or a §7 entry (BE verified the code and says so in `OPS_LOG`), and the
+M11 exit criterion "44px targets" is **not** met — the panel's interactive
+targets measure 32px tall at 390/768/1440. M13 owns the a11y bar; either fix it
+there or say why 32px stands.
 
 ## R3.1 Who does what
 
