@@ -819,6 +819,47 @@ Format:
 - blocker: none
 - next: M10 Phase 4.2 — Style Profile library UI (`js/ui/style-library.js` + host shim)
 
+### 2026-11-12 20:35 — M10 style library UI (Phase 4.2) — SHIPPED, browser-verified
+- did: NEW `js/ui/style-library-core.js` — pure core (ProfileLibrary: save/list/get/apply/delete/export/import, `profileToExportText`/`profileFromExportText`, `defaultProfile`, `newProfileId`, `coerceProfileName`, `summarizeProfile`, `STORAGE_KEY`), no DOM. NEW `js/ui/style-library.js` — StyleLibraryPanel (renders rows, dispatches `style-profile-apply`, no engine imports). NEW `js/ui/style-library-host.js` — the media-host.js shim pattern; `app.js` never edited. NEW `tests/style-library.test.js` (50 tests, TDD: RED `ERR_MODULE_NOT_FOUND` first). NEW `scripts/style-library-probe.cjs` (behavioural browser probe). ADDITIVE deltas to shared `index.html` (1 nav button, 1 panel shell, shim import + toggle, 3 import-map entries) and `css/style.css` (+230 lines appended, new selectors only).
+- files: `js/ui/style-library-core.js`, `js/ui/style-library.js`, `js/ui/style-library-host.js`, `tests/style-library.test.js`, `scripts/style-library-probe.cjs`, `docs/checkpoints/M10.md`, `docs/research/style-library-{desktop,mobile}{,-panel}.png`, `docs/research/style-library-probe.json` + additive `index.html`, `css/style.css`
+- verified (raw):
+  ```
+  $ node tests/style-library.test.js -> Passed: 50  Failed: 0
+  $ node scripts/style-library-probe.cjs
+  PASS: panel mounts, save writes a schema-valid profile, apply changes the render,
+  same profile+seed re-bakes byte-identically, a different seed changes pixels,
+  export→import round-trips, re-import updates in place, delete removes the row,
+  every control has an id, 0 page errors
+  bakeDefault      lum 159.10  bytes 26447  hash 858025043
+  bakeAfterApply   lum 167.49  bytes 25682  hash 1759206923   <- apply CHANGED the render
+  determinismRun1  lum 166.79  bytes 25839  hash 1675286432
+  determinismRun2  lum 166.79  bytes 25839  hash 1675286432   <- identical
+  differentSeed    lum 160.67  bytes 24040  hash 1056661533   <- seed CHANGES the pixels
+  controlsWithoutId []   pageErrors []   rowCountAfterDelete 0
+  ```
+  Geometry (real DOM, panel rows): 1440px identity 224px / name clip 0 / meta clip 0 / buttons 72px; 390px identity 214px / clips 0 / buttons 69px / min height 32px; doc overflow 0 both.
+  ```
+  $ node tests/engine.test.js        -> Passed: 123  Failed: 0
+  $ node tests/wetsim.test.js        -> Passed: 15   Failed: 0
+  $ node tests/masks.test.js         -> Passed: 19   Failed: 0
+  $ node tests/outlines.test.js      -> Passed: 16   Failed: 0
+  $ node tests/order.test.js         -> Passed: 24   Failed: 0
+  $ node tests/shaping.test.js       -> Passed: 18   Failed: 0
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
+  ```
+- SIX DEFECTS caught, two by the browser probe (the node tests passed throughout):
+  1. `SyntaxError: Duplicate export of 'StyleLibraryPanel'` — the whole module failed to load.
+  2. **Save was silently dead.** The delegated click handler was gated on `[data-action]`, but Save/Import/Choose-file carry an **id**, not a data-action → the handler exited before the id checks. The panel was inert while every unit test passed.
+  3. **A minimal schema-valid profile could not be saved** — `normalizeProfile` writes `mediaModel:null` and the validator requires an object, though the schema permits omission.
+  4. **A profile with no `global.style` could not be saved** — same class; and the engine's `resolveSettings` would copy the null into the size sampler.
+  5. Re-import duplicated the row instead of updating.
+  6. **The row's identity was clipped** — three labelled buttons (144px) beside the identity in a 232px row squeezed it to 62px and clipped the meta by 68px; actions moved to a full-width row below the identity.
+  7. **Two 260px panels stacked in the same rail** — entering media mode while the library was open left both visible (`toggleMediaMode` is BE-owned and unaware of the library); the shim now wraps it once, re-entry guarded.
+- ⚠ FOR BE: (a) `profileToSettings` emits `style:null` for a style-less profile and `resolveSettings` copies it verbatim into `chooseSize` — the library drops the key, but any other direct caller needs the same guard; `generator.js` is BE-owned. (b) `normalizeProfile` writes `null` for an absent `mediaModel`, which its own validator rejects — consider omitting the key instead.
+- ⚠ NOT DONE: vision review of the panel screenshots — the vision backend returned HTTP 429 on four attempts over ~15 minutes. The geometry numbers above are real DOM measurements, not a visual pass. Run vision before calling M10 visually done.
+- blocker: none
+- next: M11 Phase 6 — export & share panel UI (`js/ui/export-panel.js` + host shim, wrapping the BE-owned `exporter.js`)
+
 ---
 
 ## 6. Reading list

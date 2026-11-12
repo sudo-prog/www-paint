@@ -1,0 +1,266 @@
+{
+  "steps": [
+    {
+      "name": "panelRootExists",
+      "value": true
+    },
+    {
+      "name": "panelMounted",
+      "value": true
+    },
+    {
+      "name": "panelIsHiddenAtStart",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-size",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-format",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-quality",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-download",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-copy-share",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-copy-profile",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-download-profile",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-summary",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-status",
+      "value": true
+    },
+    {
+      "name": "has_export-panel-close",
+      "value": true
+    },
+    {
+      "name": "controlsWithoutId",
+      "value": []
+    },
+    {
+      "name": "panelOpens",
+      "value": true
+    },
+    {
+      "name": "exports",
+      "value": {
+        "png_original": {
+          "width": 96,
+          "height": 96,
+          "bytes": 17678,
+          "type": "image/png",
+          "lum": 140.47,
+          "hash": 1475606585
+        },
+        "jpg_original": {
+          "width": 96,
+          "height": 96,
+          "bytes": 3170,
+          "type": "image/jpeg",
+          "lum": 140.48,
+          "hash": 4241636003
+        },
+        "png_2x": {
+          "width": 192,
+          "height": 192,
+          "bytes": 24638,
+          "type": "image/png",
+          "lum": 213.28,
+          "hash": 1269356052
+        },
+        "jpg_2x": {
+          "width": 192,
+          "height": 192,
+          "bytes": 4991,
+          "type": "image/jpeg",
+          "lum": 213.29,
+          "hash": 106298209
+        },
+        "png_4x": {
+          "width": 384,
+          "height": 384,
+          "bytes": 29146,
+          "type": "image/png",
+          "lum": 237.07,
+          "hash": 2277287572
+        },
+        "jpg_4x": {
+          "width": 384,
+          "height": 384,
+          "bytes": 5912,
+          "type": "image/jpeg",
+          "lum": 237.07,
+          "hash": 1366779745
+        }
+      }
+    },
+    {
+      "name": "determinismRun1",
+      "value": {
+        "width": 96,
+        "height": 96,
+        "bytes": 17175,
+        "type": "image/png",
+        "lum": 138.78,
+        "hash": 1222782657
+      }
+    },
+    {
+      "name": "determinismRun2",
+      "value": {
+        "width": 96,
+        "height": 96,
+        "bytes": 17175,
+        "type": "image/png",
+        "lum": 138.78,
+        "hash": 1222782657
+      }
+    },
+    {
+      "name": "deterministic",
+      "value": true
+    },
+    {
+      "name": "downloadFilename",
+      "value": "www-paint.png"
+    },
+    {
+      "name": "shareTextCopied",
+      "value": true
+    },
+    {
+      "name": "shareTextHead",
+      "value": "WWW_PAINT export"
+    },
+    {
+      "name": "shareTextHasDims",
+      "value": true
+    },
+    {
+      "name": "profileTextAccessible",
+      "value": true
+    },
+    {
+      "name": "panelCloses",
+      "value": true
+    },
+    {
+      "name": "pageErrors",
+      "value": []
+    }
+  ],
+  "geometry": {
+    "390": {
+      "docOverflow": 0,
+      "contentOverflow": 0,
+      "buttons": [
+        {
+          "id": "export-panel-close",
+          "w": 32,
+          "h": 32
+        },
+        {
+          "id": "export-panel-download",
+          "w": 333,
+          "h": 32
+        },
+        {
+          "id": "export-panel-copy-share",
+          "w": 333,
+          "h": 32
+        },
+        {
+          "id": "export-panel-copy-profile",
+          "w": 333,
+          "h": 32
+        },
+        {
+          "id": "export-panel-download-profile",
+          "w": 333,
+          "h": 32
+        }
+      ]
+    },
+    "768": {
+      "docOverflow": 0,
+      "contentOverflow": 0,
+      "buttons": [
+        {
+          "id": "export-panel-close",
+          "w": 32,
+          "h": 32
+        },
+        {
+          "id": "export-panel-download",
+          "w": 681,
+          "h": 32
+        },
+        {
+          "id": "export-panel-copy-share",
+          "w": 681,
+          "h": 32
+        },
+        {
+          "id": "export-panel-copy-profile",
+          "w": 681,
+          "h": 32
+        },
+        {
+          "id": "export-panel-download-profile",
+          "w": 681,
+          "h": 32
+        }
+      ]
+    },
+    "1440": {
+      "docOverflow": 0,
+      "contentOverflow": 0,
+      "buttons": [
+        {
+          "id": "export-panel-close",
+          "w": 32,
+          "h": 32
+        },
+        {
+          "id": "export-panel-download",
+          "w": 215,
+          "h": 32
+        },
+        {
+          "id": "export-panel-copy-share",
+          "w": 215,
+          "h": 32
+        },
+        {
+          "id": "export-panel-copy-profile",
+          "w": 215,
+          "h": 32
+        },
+        {
+          "id": "export-panel-download-profile",
+          "w": 215,
+          "h": 32
+        }
+      ]
+    }
+  }
+}

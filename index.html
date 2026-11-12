@@ -32,7 +32,11 @@
         <button type="button" class="nav-btn nav-btn--active" data-nav="controls" aria-label="Brush"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg></span><span class="btn-label">Brush</span></button>
         <button type="button" class="nav-btn" data-nav="layers" aria-label="Layers"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 12h16M4 6h16"/></svg></span><span class="btn-label">Layers</span></button>
         <button type="button" class="nav-btn" id="btn-media-mode" aria-label="Media controls" title="Toggle media panel"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4.2 6 7.2 6 10a6 6 0 1 1-12 0c0-2.8 2.5-5.8 6-10Z"/></svg></span><span class="btn-label">Media</span></button>
+        <button type="button" class="nav-btn" id="btn-library-mode" aria-label="Style library" title="Toggle style library"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19a2 2 0 0 0 2 2h13"/></svg></span><span class="btn-label">Library</span></button>
         <button type="button" class="nav-btn nav-btn-secondary" id="btn-paint-mode" aria-label="Paint mode" title="Toggle paint mode"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L13 16l-4 1 1-4Z"/></svg></span><span class="btn-label">Paint</span></button>
+        <!-- Export &amp; share (Mac-owned, Phase 6). A MODAL overlay, so it
+             carries aria-expanded rather than a rail-active class. -->
+        <button type="button" class="nav-btn nav-btn-secondary" id="btn-export-panel" aria-label="Export and share" title="Export &amp; share" aria-expanded="false" aria-controls="export-panel-root"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 10l5 5l5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span><span class="btn-label">Export</span></button>
       </nav>
 
       <div class="top-bar__right">
@@ -156,6 +160,37 @@
         <!-- Built by media.js -->
       </aside>
 
+      <!-- Style Library Panel — Mac-owned sibling surface (js/ui/style-library.js).
+           Houses the Style Profile library: save / apply / delete / export /
+           import the frozen v1 profile object. Kept separate from
+           #controls-root so the ThinkPad-owned controls panel is never edited
+           by this stream. -->
+      <aside class="panel panel--library" id="style-library-root" role="complementary" aria-label="Style library">
+        <div class="panel-strip">
+          <span class="strip-name">Library</span>
+          <span class="strip-sep" aria-hidden="true"></span>
+          <span class="strip-chip">Profiles</span>
+        </div>
+        <div class="panel-head">
+          <span class="panel-title">Library</span>
+          <span class="panel-head__actions">
+            <!-- Chevron points LEFT: this panel is docked on the left edge, so
+                 collapsing it retracts toward the left (same as #controls-root). -->
+            <button class="collapse-btn" data-rail="library" aria-expanded="true" aria-controls="style-library-root" aria-label="Collapse library panel" title="Collapse panel">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+              <span class="sr-only" aria-hidden="true"></span>
+            </button>
+          </span>
+        </div>
+        <div class="rail-icons">
+          <button class="rail-icon-btn is-active" aria-label="Profiles">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19a2 2 0 0 0 2 2h13"/></svg>
+            <span class="sr-only">Profiles</span>
+          </button>
+        </div>
+        <!-- Built by style-library.js -->
+      </aside>
+
       <!-- Canvas Area — the bright WINDOW, on top of the panels. -->
       <section class="canvas-wrapper" id="canvas-area" role="main">
         <!-- The canvas header — the top bar's metadata, inside the window. -->
@@ -219,9 +254,18 @@
     </footer>
   </div>
 
-  <!-- Export Dialog -->
+  <!-- Export Dialog (ThinkPad-owned, js/ui/export.js). Left untouched by the
+       Mac export-panel stream. -->
   <div class="modal" id="export-root" aria-hidden="true" aria-labelledby="export-title" role="dialog" aria-modal="true">
     <!-- Built by export.js -->
+  </div>
+
+  <!-- Export & Share Panel — Mac-owned sibling surface (js/ui/export-panel.js).
+       Phase 6 / Track-S S7. A MODAL overlay, not a rail panel: it wraps the
+       engine's own exporter (engine.exportPNG / exportJPG) and the M10 library's
+       profile JSON. #export-root above is never touched. -->
+  <div class="export-panel" id="export-panel-root" aria-hidden="true" aria-labelledby="export-panel-title" role="dialog" aria-modal="true">
+    <!-- Built by export-panel.js -->
   </div>
 
   <input type="file" id="image-file-input" accept="image/*" style="display: none;" aria-label="Select image file"/>
@@ -243,9 +287,15 @@
       "./js/styles/index.js": "./js/styles/index.js?v=20261030a",
       "./js/ui/canvas.js": "./js/ui/canvas.js?v=20261030a",
       "./js/ui/export.js": "./js/ui/export.js?v=20261030a",
+      "./js/ui/export-panel.js": "./js/ui/export-panel.js?v=20261030a",
+      "./js/ui/export-panel-core.js": "./js/ui/export-panel-core.js?v=20261030a",
+      "./js/ui/export-host.js": "./js/ui/export-host.js?v=20261030a",
       "./js/ui/layers.js": "./js/ui/layers.js?v=20261030a",
       "./js/ui/media.js": "./js/ui/media.js?v=20261030a",
       "./js/ui/media-host.js": "./js/ui/media-host.js?v=20261030a",
+      "./js/ui/style-library.js": "./js/ui/style-library.js?v=20261030a",
+      "./js/ui/style-library-core.js": "./js/ui/style-library-core.js?v=20261030a",
+      "./js/ui/style-library-host.js": "./js/ui/style-library-host.js?v=20261030a",
       "./js/engine/brush-media.js": "./js/engine/brush-media.js?v=20261030a",
       "./js/engine/masks.js": "./js/engine/masks.js?v=20261030a",
       "./js/engine/wetsim.js": "./js/engine/wetsim.js?v=20261030a",
@@ -263,6 +313,8 @@
     import './js/ui/settings.js?v=20261030a';
     import { initApp } from './js/ui/app.js?v=20261030a';
     import { attachMediaPanel } from './js/ui/media-host.js?v=20261030a';
+    import { attachStyleLibrary } from './js/ui/style-library-host.js?v=20261030a';
+    import { attachExportPanel } from './js/ui/export-host.js?v=20261030a';
 
     const app = initApp();
 
@@ -273,6 +325,14 @@
       // app.js so the ThinkPad-owned file stays untouched. The ThinkPad can fold
       // these calls into App._init() and drop js/ui/media-host.js later.
       attachMediaPanel(app);
+
+      // Style Profile library (Phase 4.2). Same shim pattern: Mac-owned, so
+      // app.js is never edited.
+      attachStyleLibrary(app);
+
+      // Export & share panel (Phase 6 / Track-S S7). Same shim pattern; wraps
+      // the engine's own exporter. app.js and export.js are never edited.
+      attachExportPanel(app);
 
       // Load image button
       const loadBtn = document.getElementById('btn-load-image');
@@ -306,6 +366,16 @@
         mediaToggle.addEventListener('click', () => {
           const app = window.__app;
           if (app && typeof app.toggleMediaMode === 'function') app.toggleMediaMode();
+        });
+      }
+
+      // Style library toggle — swaps the LEFT rail between the brush controls
+      // and the Style Profile library. Same shim pattern as media mode.
+      const libraryToggle = document.getElementById('btn-library-mode');
+      if (libraryToggle) {
+        libraryToggle.addEventListener('click', () => {
+          const app = window.__app;
+          if (app && typeof app.toggleLibraryMode === 'function') app.toggleLibraryMode();
         });
       }
 

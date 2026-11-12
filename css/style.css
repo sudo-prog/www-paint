@@ -2542,3 +2542,391 @@ body {
     max-height: 320px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Style Library Panel — Mac-owned sibling surface (js/ui/style-library.js).
+   Same control primitives as the media panel (sections, hints, sliders,
+   buttons) so the two panels read as one system. Additive only: no existing
+   rule is modified.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The library panel shares the left rail with the brush controls and the
+   media panel, so it carries the same width and hidden/collapsed contract. */
+.panel--library { left: 0; width: var(--sidebar-w); }
+.panel--library.panel--hidden { display: none; }
+@media (max-width: 768px) {
+  .panel--library.panel--hidden { display: flex; }
+}
+.panel--library.is-collapsed { width: var(--nav-w); }
+
+/* The collapsed rail must hide the library contents, exactly as it does for the
+   other left-rail panels. */
+.panel.is-collapsed .library-scroll,
+.panel.is-collapsed .panel-strip { display: none; }
+
+/* The library's own scroll host — same contract as .media-scroll. */
+.library-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.library-section .library-hint {
+  margin-bottom: var(--space-1);
+}
+
+.library-about,
+.library-save,
+.library-list-wrap,
+.library-import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.library-storage-note {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  word-break: break-word;
+}
+
+/* ── Save row ── */
+.library-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.library-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  color: var(--text-primary);
+}
+.library-name-input:focus { outline: 1px solid var(--accent); }
+.library-name-input::placeholder { color: var(--text-tertiary); }
+
+.library-action-btn { flex: 0 0 auto; }
+
+.library-status {
+  margin: 0;
+  min-height: 2.6em;
+  font-family: var(--f-mono);
+  font-size: 8px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+  word-break: break-word;
+}
+.library-status--error { color: var(--error); }
+
+/* ── Profile rows ── */
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.library-placeholder {
+  padding: var(--space-4) var(--space-2);
+  text-align: center;
+  color: var(--text-tertiary);
+  font-family: var(--f-mono);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.library-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  transition: var(--t-fast);
+}
+.library-row:hover { border-color: var(--text-primary); }
+.library-row--active { border-color: var(--accent); }
+
+.library-row__main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* The row is a flex item of the column; without this the row's own flex
+     children cannot shrink below their content width. */
+  min-width: 0;
+}
+
+/* The select is the row's identity: give it a real basis so the name/meta
+   column gets the space it needs instead of being squeezed to its min-content
+   width (62px at 390px, which clipped the meta by 68px). */
+.library-row__select {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+.library-row__select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.library-row__name {
+  font-family: var(--f-ui);
+  font-size: var(--text-xs-size);
+  font-weight: 600;
+  color: var(--text-primary);
+  /* No ellipsis on the name: it is the row's identity, and the profile is
+     selected/edited by it. The name wraps to two lines instead of being cut. */
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.library-row__meta {
+  font-family: var(--f-mono);
+  font-size: 8px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* The actions are a full-width row below the identity. */
+.library-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-width: 0;
+}
+
+/* Three buttons share the row; each grows to an equal share so the row is a
+   consistent three-column action bar rather than a ragged stack. */
+.library-row-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--space-1) var(--space-1);
+  min-height: var(--touch-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: var(--f-mono);
+  font-size: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  text-align: center;
+  white-space: nowrap;
+}
+.library-row-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border-color: var(--text-primary);
+}
+.library-row-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.library-row-btn--danger:hover { color: var(--error); border-color: var(--error); }
+
+/* ── Import ── */
+.library-import-input {
+  width: 100%;
+  min-height: 64px;
+  padding: var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--f-mono);
+  font-size: 8px;
+  line-height: 1.4;
+  color: var(--text-primary);
+  resize: vertical;
+}
+.library-import-input:focus { outline: 1px solid var(--accent); }
+.library-import-input::placeholder { color: var(--text-tertiary); }
+
+.library-import-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.library-preview {
+  margin: 0;
+  max-height: 160px;
+  overflow: auto;
+  padding: var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--f-mono);
+  font-size: 8px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  white-space: pre;
+}
+
+/* ── Mobile adjustments ── */
+@media (max-width: 768px) {
+  .library-scroll { padding: 0; }
+  .library-row-btn { min-height: var(--touch); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Export & Share Panel — Mac-owned (js/ui/export-panel.js, Phase 6 / Track-S S7).
+   A MODAL overlay, so it reuses the .modal tokens rather than the rail panel
+   rules. Additive only: no existing rule is modified.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.export-panel {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-normal);
+}
+
+.export-panel--open { opacity: 1; pointer-events: all; }
+
+/* Clicking the backdrop closes — the same affordance as #export-root. */
+.export-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.export-panel__content {
+  position: relative;
+  width: 480px;
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+}
+
+.export-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-raised);
+  flex-shrink: 0;
+}
+
+.export-panel__title {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.export-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  overflow-y: auto;
+}
+
+.export-panel__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* JPG-only row: dimmed rather than removed, so the layout does not jump. */
+.export-panel__row--disabled { opacity: 0.45; }
+.export-panel__row--disabled .form-range { cursor: not-allowed; }
+
+.export-panel__range-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.export-panel__range-wrap .form-range { flex: 1; }
+.export-panel__range-wrap .form-value { min-width: 34px; text-align: right; }
+
+.export-panel__summary {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-family: var(--f-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.export-panel__summary--error { color: var(--error); border-color: var(--error); }
+
+.export-panel__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Every action is a primary control: 44px floor, full width. */
+.export-panel__actions .btn {
+  flex: 1;
+  min-height: var(--touch);
+}
+
+.export-panel__actions--secondary .btn {
+  min-height: var(--touch);
+}
+
+.export-panel__status {
+  margin: 0;
+  min-height: 16px;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.export-panel__status--error { color: var(--error); }
+
+/* ── Focus ── */
+.export-panel__content :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .export-panel__content { width: 92vw; max-height: 86vh; }
+  .export-panel__body { padding: var(--space-3); }
+  /* Two stacked full-width buttons beat a cramped side-by-side pair at 390px. */
+  .export-panel__actions { flex-direction: column; }
+}
