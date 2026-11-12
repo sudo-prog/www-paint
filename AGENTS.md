@@ -10,6 +10,30 @@ nobody redoes it.
 
 ---
 
+## ▶ ROUND 2 — START HERE (2026-11-12)
+
+You are **Mac Hermes, round 2**. Read these in order, then start:
+
+1. **`docs/MAC-TASKS.md` §"Round 2"** — your task list (streams **M7–M15**), each
+   with a frozen interface + exit criteria + the files you own. **Do M7, M8, M9
+   first** — they unblock BE's Track **R4**.
+2. **`HANDOFF.md` §2 (hard rules) + §6 (file ownership)** — never edit a
+   ThinkPad-owned file; if you need a change there, raise it in `OPS_LOG` and BE
+   makes it.
+3. **`docs/ROADMAP_STATUS.md`** — what is already done; do **not** redo it.
+
+For **every** turn:
+
+- **Never run git** (§0.8). Edits reach the ThinkPad via **Syncthing**; **BE
+  verifies and pushes** (BE is the sole GitHub writer).
+- **Append one entry to §7** (round-2 progress log) each turn, and one `OPS_LOG`
+  line per finished stream.
+
+**Baseline you must match:** `main = 0117ff6`, remote == local. Gates:
+engine **123/123** · wetsim **15/15** · masks **19/19** · visual regression **9/9**.
+
+---
+
 ## 0. ⚠ Open issues needing ThinkPad (BE) action
 
 Raised by Mac/FE on 2026-11-11. **All seven are now FIXED in `origin/main`**
