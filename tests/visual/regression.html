@@ -150,7 +150,14 @@ async function _runCase({ style, seed = 0x1337BEEF, count = 600, size = IMG_SIZE
   const blob = await engine.exportPNG({ width: size, height: size });
   const buf = await blob.arrayBuffer();
   const hash = await sha256Hex(buf);
-  const dataURL = canvas.toDataURL('image/png');
+  // The saved artefact must be the very bytes that were HASHED. Taking it from
+  // `canvas.toDataURL()` re-encoded the live canvas — a different surface — so
+  // the pinned PNGs never matched the hashes they were pinned against.
+  const dataURL = await new Promise((resolve) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.readAsDataURL(blob);
+  });
 
   const strokes = engine.getTotalStrokes();
   engine.destroy();
