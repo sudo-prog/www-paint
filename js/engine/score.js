@@ -22,8 +22,12 @@ import { clamp } from '../utils/math.js';
 import { analyzeImage } from './analyzer.js';
 import { optimise, OPTIMISER_DEFAULTS } from './optimizer.js';
 import { normalizeProfile } from './profile.js';
-import { rasterizeShapes, averageColor, metricsVsTarget, toFloatRGB, maskedMetrics, simMae } from './metrics.js';
+import {
+  rasterizeShapes, averageColor, metricsVsTarget, toFloatRGB, maskedMetrics, simMae,
+  toRGBA, refPacketDistance, STYLE_MATCH_WEIGHTS,
+} from './metrics.js';
 import { computeTonalMasks } from './masks.js';
+import { analyzeReference } from './ref-analyze.js';
 
 /**
  * The tunable action space, as a JSON-serialisable descriptor list.
@@ -198,7 +202,99 @@ export function scoreProfileLayers(profile, image, options = {}) {
   };
 }
 
+/**
+ * Composite policy for {@link scoreProfileStyle}. `styleWeight` trades the style
+ * term against the reconstruction term; 1 = pure style, 0 = pure photo fidelity.
+ * @type {object}
+ */
+export const STYLE_PROFILE_DEFAULTS = Object.freeze({
+  styleWeight: 0.7,
+});
+
+/**
+ * Style-match scoring (Track-S S2).
+ *
+ * `scoreProfile` optimises **photo fidelity**: how much the render looks like
+ * the photo. That is the wrong objective for a style task — a "sref" request
+ * asks the render to look like the *reference's stroke language*, on content the
+ * reference does not share. This renders the profile on `image` and measures the
+ * render's stroke language against a reference **RefPacket** (Track-S S1) built
+ * from a reference image.
+ *
+ * Both sides go through the SAME analyser: the rendered frames are rasterised
+ * with the harness's own rasteriser and then analysed exactly as the reference
+ * image is. So the comparison never compares different feature definitions, and
+ * any improvement in `styleMatch` is an improvement under one fixed measure.
+ *
+ * `composite` mixes the two objectives (`options.styleWeight`, default 0.7):
+ * the style term dominates, but the reconstruction term stays in the loop so a
+ * profile cannot win by painting something unrelated.
+ *
+ * Deterministic and headless: no DOM, no canvas, no randomness beyond the seed.
+ *
+ * @param {object} profile - a Style Profile.
+ * @param {{pixels: Uint8ClampedArray, width: number, height: number}} image
+ *   the CONTENT to paint.
+ * @param {object} reference - a reference image `{pixels,width,height}` **or** an
+ *   already-built RefPacket (anything with `module === 'ref-analyze'`).
+ * @param {object} [options]
+ * @param {number} [options.seed=12345]
+ * @param {object} [options.optimiser] - engine-option overrides (win over the profile).
+ * @param {number[]} [options.background] - fill; defaults to the image mean.
+ * @param {number} [options.styleWeight] - style vs reconstruction (default 0.7).
+ * @param {object} [options.weights] - overrides for the packet term weights.
+ * @param {object} [options.refOptions] - `analyzeReference` options for the reference.
+ * @param {object} [options.packetOptions] - `analyzeReference` options for the render.
+ * @returns {{styleMatch: number, styleDistance: number, styleParts: object,
+ *   reconstruction: {mae: number, simMae: number, ssim: number},
+ *   composite: number, strokes: number, options: object, stats: object,
+ *   refPacket: object, resultPacket: object}}
+ */
+export function scoreProfileStyle(profile, image, reference, options = {}) {
+  const { pixels, width: w, height: h } = image;
+  const seed = options.seed !== undefined ? options.seed : 12345;
+  const styleWeight = options.styleWeight !== undefined
+    ? clamp(options.styleWeight, 0, 1)
+    : STYLE_PROFILE_DEFAULTS.styleWeight;
+
+  if (!reference) throw new Error('scoreProfileStyle: a reference image or RefPacket is required');
+
+  const analysis = analyzeImage(new Uint8ClampedArray(pixels), w, h);
+  const optOpts = profileToOptimiserOptions(profile, options.optimiser || {});
+  optOpts.seed = optOpts.seed !== undefined ? optOpts.seed : seed;
+  const { shapes, stats } = optimise(analysis, optOpts);
+  const bg = options.background || averageColor(pixels);
+  const rendered = rasterizeShapes(shapes, w, h, bg);
+
+  const refPacket = reference.module === 'ref-analyze'
+    ? reference
+    : analyzeReference(reference, options.refOptions || {});
+  const resultPacket = analyzeReference(
+    { pixels: toRGBA(rendered, w, h), width: w, height: h },
+    options.packetOptions || {},
+  );
+
+  const { distance, parts } = refPacketDistance(refPacket, resultPacket, options.weights || {});
+  const recon = metricsVsTarget(rendered, pixels, w, h);
+  const reconstruction = { mae: recon.mae, simMae: recon.simMae, ssim: recon.ssim };
+  const composite = styleWeight * (1 - distance) + (1 - styleWeight) * (recon.simMae / 100);
+
+  return {
+    styleMatch: 1 - distance,
+    styleDistance: distance,
+    styleParts: parts,
+    reconstruction,
+    composite,
+    strokes: shapes.length,
+    options: { ...optOpts, styleWeight },
+    stats,
+    refPacket,
+    resultPacket,
+  };
+}
+
 export default {
   KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile,
   TONAL_BANDS, scoreProfileLayers,
+  STYLE_PROFILE_DEFAULTS, STYLE_MATCH_WEIGHTS, scoreProfileStyle,
 };

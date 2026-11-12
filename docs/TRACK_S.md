@@ -1,6 +1,10 @@
 # WWW_PAINT — Track S: Style Accuracy ("sref")
 
-**Date:** 2026-11-12 · Agent: BE (ThinkPad) · **Status:** proposed — S1/S2 next
+**Date:** 2026-11-12 · Agent: BE (ThinkPad) · **Status:** active — **S1 done**
+(`js/engine/ref-analyze.js`, 16/16) and **S2 done as a mechanism**
+(`scoreProfileStyle` + `refPacketDistance` + gate guards, `docs/checkpoints/S2.md`) —
+but S2's magnitude is not yet meaningful (§6 there) and needs a stronger reference
+pair before any claim rests on it. **Next: S3 (multi-reference fusion)**.
 **Companion docs:** `docs/ROADMAP.md` (the brief) · `docs/AI_STYLE_HARNESS.md`
 (H0–H5 loop) · `docs/CLEANROOM.md` (Track R) · `docs/STYLE_PROFILE.md` (profile
 schema) · `docs/API.md`

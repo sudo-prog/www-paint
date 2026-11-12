@@ -282,7 +282,177 @@ export function maskedMetricsVsTarget(rendered, targetPixels, weight, w, h) {
   return maskedMetrics(rendered, toFloatRGB(targetPixels, w, h), weight, w, h);
 }
 
+/**
+ * Convert interleaved float RGB (the rasteriser's output) back to RGBA bytes,
+ * so a rendered frame can be handed to the same analyser the references use.
+ * @param {Float32Array} floatRGB interleaved RGB, 0..255
+ * @param {number} w
+ * @param {number} h
+ * @returns {Uint8ClampedArray} RGBA
+ */
+export function toRGBA(floatRGB, w, h) {
+  const n = w * h;
+  const out = new Uint8ClampedArray(n * 4);
+  for (let i = 0; i < n; i++) {
+    const o = i * 3, p = i * 4;
+    out[p] = floatRGB[o];
+    out[p + 1] = floatRGB[o + 1];
+    out[p + 2] = floatRGB[o + 2];
+    out[p + 3] = 255;
+  }
+  return out;
+}
+
+/* ─── Style-match metrics (Track-S S2) ──────────────────────────────────────
+ *
+ * Everything above measures **content reconstruction** — how much the render
+ * looks like the photo. These measure **style match** — whether the stroke
+ * language resembles the reference's. Both sides of a comparison are
+ * `RefPacket`s (`ref-analyze.js`, Track-S S1): one built from the reference
+ * image, one from a raster of the render, so the comparison is like-for-like
+ * and needs no second analysis pass.
+ *
+ * All pure, deterministic, node-testable; no DOM, no canvas.
+ */
+
+/**
+ * Normalise a bin array to a distribution (sums to 1). An empty or all-zero
+ * input becomes uniform — "no opinion" — rather than a distance spike.
+ * @param {Array<number>|Float64Array} bins
+ * @returns {number[]}
+ */
+function normaliseBins(bins) {
+  const n = bins ? bins.length : 0;
+  if (!n) return [];
+  let total = 0;
+  for (let i = 0; i < n; i++) total += bins[i] > 0 ? bins[i] : 0;
+  const out = new Array(n);
+  for (let i = 0; i < n; i++) out[i] = total > 0 ? (bins[i] > 0 ? bins[i] : 0) / total : 1 / n;
+  return out;
+}
+
+/**
+ * L1 distance between two histograms as distributions, halved so the range is
+ * 0 (identical shape) .. 1 (disjoint). Scale-invariant: raw counts and
+ * already-normalised frequencies give the same answer.
+ * @returns {number} 0..1
+ */
+export function histogramDistance(a, b) {
+  const A = normaliseBins(a), B = normaliseBins(b);
+  const n = Math.max(A.length, B.length);
+  if (!n) return 0;
+  let s = 0;
+  for (let i = 0; i < n; i++) s += Math.abs((A[i] || 0) - (B[i] || 0));
+  return Math.max(0, Math.min(1, s / 2));
+}
+
+/**
+ * Agreement between two orientation histograms, 1 = the same distribution.
+ *
+ * The packets' bins span **[0, PI)** — a tangent has no arrowhead, so θ and
+ * θ+PI are the same line — which makes `cos(2·Δθ)` the rotation-aware kernel to
+ * compare them with: identical directions score +1, a 45° difference is neutral
+ * (0), and a 90° difference is anti. Neighbouring bins across the wrap compare
+ * correctly for free (cosine is even and 2π-periodic).
+ *
+ * @param {Array<number>} aBins 0..1 frequencies (or raw weights)
+ * @param {Array<number>} bBins
+ * @returns {number} 0..1
+ */
+export function orientationMatch(aBins, bBins) {
+  const A = normaliseBins(aBins), B = normaliseBins(bBins);
+  const n = Math.max(A.length, B.length);
+  if (!n) return 0;
+  const step = Math.PI / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    const ai = A[i] || 0;
+    if (ai === 0) continue;
+    for (let j = 0; j < n; j++) {
+      const bj = B[j] || 0;
+      if (bj === 0) continue;
+      num += ai * bj * Math.cos(2 * (i - j) * step);
+      den += ai * bj;
+    }
+  }
+  const s = den > 0 ? num / den : 0;
+  return Math.max(0, Math.min(1, (1 + s) / 2));
+}
+
+/**
+ * Mean absolute difference between two `{name: 0..1}` maps (the packets'
+ * `strokeScaleByBand`). Missing keys count as 0, so a dropped band is a
+ * difference, not a free pass.
+ * @returns {number} 0..1
+ */
+export function valueMapDistance(a, b) {
+  const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+  if (!keys.size) return 0;
+  let s = 0;
+  for (const k of keys) s += Math.abs(((a && a[k]) || 0) - ((b && b[k]) || 0));
+  return Math.max(0, Math.min(1, s / keys.size));
+}
+
+/** Default weights for {@link refPacketDistance}. Sum to 1. */
+export const STYLE_MATCH_WEIGHTS = Object.freeze({
+  scale: 0.30,        // stroke-scale histogram (per-cell implied scale)
+  orientation: 0.25,  // orientation distribution
+  coverage: 0.20,     // tonal band occupancy
+  bandScale: 0.15,    // implied scale within each band
+  coherence: 0.10,    // mean anisotropy of the structure tensor
+});
+
+const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+
+/**
+ * Distance between two `RefPacket`s: 0 = the two images have the same stroke
+ * language, 1 = nothing in common. The per-term breakdown is returned too — a
+ * composite that only reports its total cannot be debugged.
+ *
+ * @param {object} a RefPacket (reference or result)
+ * @param {object} b RefPacket
+ * @param {object} [weights] overrides for {@link STYLE_MATCH_WEIGHTS}
+ * @returns {{distance: number, parts: object, weights: object}}
+ */
+export function refPacketDistance(a, b, weights = {}) {
+  if (!a || !b) throw new Error('refPacketDistance: two RefPackets are required');
+  const w = { ...STYLE_MATCH_WEIGHTS, ...weights };
+  const coverageKeys = (p) => {
+    const c = (p && p.coverage) || {};
+    return Object.keys(c).sort().map((k) => c[k]); // sorted → order-independent
+  };
+  const parts = {
+    scale: histogramDistance(a.scaleHistogram, b.scaleHistogram),
+    orientation: 1 - orientationMatch(
+      a.orientationField && a.orientationField.bins,
+      b.orientationField && b.orientationField.bins,
+    ),
+    coverage: histogramDistance(coverageKeys(a), coverageKeys(b)),
+    bandScale: valueMapDistance(a.strokeScaleByBand, b.strokeScaleByBand),
+    coherence: Math.min(1, Math.abs(
+      ((a.stats && a.stats.meanCoherence) || 0) - ((b.stats && b.stats.meanCoherence) || 0),
+    )),
+  };
+  let num = 0, den = 0;
+  for (const k of Object.keys(parts)) {
+    const wk = Math.abs(w[k] || 0);
+    num += wk * parts[k];
+    den += wk;
+  }
+  return { distance: clamp01(den > 0 ? num / den : 0), parts, weights: w };
+}
+
+/**
+ * Style-match score: `1 - distance`, so 1 is a perfect style match.
+ * @returns {number} 0..1
+ */
+export function refPacketMatch(a, b, weights = {}) {
+  return 1 - refPacketDistance(a, b, weights).distance;
+}
+
 export default {
   toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae, ssimLuma, metricsVsTarget,
   weightedSsimLuma, maskedMetrics, maskedMetricsVsTarget,
+  toRGBA, histogramDistance, orientationMatch, valueMapDistance,
+  STYLE_MATCH_WEIGHTS, refPacketDistance, refPacketMatch,
 };

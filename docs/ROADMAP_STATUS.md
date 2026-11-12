@@ -103,7 +103,7 @@ sref goal (`docs/ROADMAP.md` §1/§7). Every item lands behind the existing gate
 | ID | Item | Owner | Status |
 |---|---|---|---|
 | S1 | Analysis grid + structured `RefPacket` (`js/engine/ref-analyze.js`) | BE | **done** (`analyzeReference()` → JSON-safe RefPacket: adaptive grid, per-cell orientation/coherence/density/contrast/strokeScale, `scaleHistogram`, `strokeScaleByBand`, `orientationField`, tonal coverage; 16/16 + debug PNG). See `docs/checkpoints/S1.md`. Next: S2 |
-| S2 | Style-Match Score (`metrics.js` / `score.js` / `gate.js`) | BE | **todo** |
+| S2 | Style-Match Score (`metrics.js` / `score.js` / `gate.js`) | BE | **done (mechanism + direction)** — `refPacketDistance` / `refPacketMatch` (L1 histogram + `cos(2Δθ)` orientation kernel + band/coherence terms), `scoreProfileStyle` (style vs fidelity composite), gate `guards` (a style gain is reverted if fidelity drops); engine 131/131, `scripts/style-match-probe.cjs` PASS. **⚠ Magnitude NOT yet meaningful** — on two references that share content the margin is only +0.0027 and the orientation term reads ≈0.50 regardless of reference; needs a genuinely different reference pair (S3) before it can be called validated. `docs/checkpoints/S2.md` §6 |
 | S3 | Multi-reference fusion (RefPacket / styleDNA merge, per-ref weights) | BE | todo |
 | S4 | Explicit hierarchical passes (`passes[]` in the Style Profile) | BE | todo |
 | S5 | Stroke-language primitives (`js/engine/primitives.js`) | BE + Mac | todo |

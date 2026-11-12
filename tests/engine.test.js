@@ -46,11 +46,13 @@ import {
 } from '../js/engine/profile.js';
 import {
   toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae as simMaeFromMae, ssimLuma, metricsVsTarget,
-  weightedSsimLuma, maskedMetrics, maskedMetricsVsTarget
+  weightedSsimLuma, maskedMetrics, maskedMetricsVsTarget,
+  toRGBA, histogramDistance, orientationMatch, valueMapDistance,
+  STYLE_MATCH_WEIGHTS, refPacketDistance, refPacketMatch
 } from '../js/engine/metrics.js';
 import {
   KNOB_SET, getKnobDefaults, clampKnobs, profileToOptimiserOptions, scoreProfile,
-  TONAL_BANDS, scoreProfileLayers
+  TONAL_BANDS, scoreProfileLayers, STYLE_PROFILE_DEFAULTS, scoreProfileStyle
 } from '../js/engine/score.js';
 import {
   SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile
@@ -1515,6 +1517,184 @@ test('region-fill: resolveOptions passes regionFill through; 0 on a noisy target
   const r = optimise(an, { count: 120, seed: 7, regionFill: 0.3 });
   assertEqual(r.shapes.length, 120);
   assertEqual(r.stats.fill, 0, 'pure noise has no region large enough to block in');
+});
+
+// ─── Style match (Track-S S2) ─────────────────────────────────────
+console.log('\n  Style match (Track-S S2)');
+
+/** A minimal hand-built RefPacket, so these tests exercise the comparison and
+ *  not the analyser (S1's tests already cover that). */
+function makePacket(over = {}) {
+  return {
+    module: 'ref-analyze',
+    scaleHistogram: [8, 0, 0, 0, 0, 0, 0, 0],
+    strokeScaleByBand: { background: 0.5, shadows: 0.5, midtones: 0.5, highlights: 0.5 },
+    orientationField: { binCount: 12, bins: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dominant: 0, strength: 0.5 },
+    coverage: { background: 0.25, shadows: 0.25, midtones: 0.25, highlights: 0.25 },
+    stats: { meanCoherence: 0.4 },
+    ...over,
+  };
+}
+
+test('histogramDistance: identical 0, disjoint 1, scale-invariant, symmetric', () => {
+  assertEqual(histogramDistance([1, 2, 3, 4], [1, 2, 3, 4]), 0, 'identical');
+  assertApprox(histogramDistance([1, 0, 0, 0], [0, 0, 0, 1]), 1, 1e-12, 'disjoint');
+  assertApprox(histogramDistance([10, 20, 30, 40], [1, 2, 3, 4]), 0, 1e-12,
+    'raw counts and frequencies must agree');
+  assertApprox(histogramDistance([2, 0, 0, 0], [1, 1, 0, 0]), 0.5, 1e-12, 'half mass moved');
+  const a = [3, 1, 4, 1, 5], b = [2, 7, 1, 8, 2];
+  assertApprox(histogramDistance(a, b), histogramDistance(b, a), 1e-12, 'symmetric');
+  // an all-zero histogram is "no opinion" (uniform), not a spike
+  assertApprox(histogramDistance([0, 0, 0, 0], [1, 1, 1, 1]), 0, 1e-12);
+});
+
+test('orientationMatch: identical 1, 90° is anti, PI-periodic, wrap-aware', () => {
+  const b = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  assertApprox(orientationMatch(b, b), 1, 1e-9, 'identical');
+  // 12 bins span [0,PI): six bins is a 90° turn → cos(2·90°) = −1 → 0
+  assertApprox(orientationMatch(b, [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]), 0, 1e-9, '90°');
+  // one bin = 15°: neutral-ish, cos(30°)
+  const expected15 = (1 + Math.cos(Math.PI / 6)) / 2;
+  assertApprox(orientationMatch(b, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), expected15, 1e-9, '15°');
+  // bin 11 is −15°: the same amount of disagreement ACROSS the wrap
+  assertApprox(orientationMatch(b, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]), expected15, 1e-9, 'wrap');
+  assertApprox(orientationMatch(b, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    orientationMatch([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], b), 1e-12, 'symmetric');
+});
+
+test('valueMapDistance: mean absolute difference, missing key counts as 0', () => {
+  assertEqual(valueMapDistance({ a: 0.5, b: 0.5 }, { a: 0.5, b: 0.5 }), 0);
+  // mean over the union of keys: (|0.5-0.9| + 0) / 2
+  assertApprox(valueMapDistance({ a: 0.5, b: 0.5 }, { a: 0.9, b: 0.5 }), 0.2, 1e-12);
+  // a dropped band is a difference, not a free pass: |1-0| / 2 keys
+  assertApprox(valueMapDistance({ a: 1, b: 1 }, { a: 1 }), 0.5, 1e-12);
+  assertApprox(valueMapDistance({ a: 1, b: 1, c: 1, d: 1 }, { a: 1, b: 1, c: 1 }), 0.25, 1e-12);
+});
+
+test('refPacketDistance: a packet against itself is 0 in EVERY term', () => {
+  const A = makePacket();
+  const d = refPacketDistance(A, A);
+  assertEqual(d.distance, 0);
+  for (const k of Object.keys(d.parts)) assertApprox(d.parts[k], 0, 1e-12, 'part ' + k);
+  assertApprox(refPacketMatch(A, A), 1, 1e-12);
+  assertEqual(Object.keys(d.parts).sort(), ['bandScale', 'coherence', 'coverage', 'orientation', 'scale']);
+  assertEqual(Object.keys(STYLE_MATCH_WEIGHTS).sort(), ['bandScale', 'coherence', 'coverage', 'orientation', 'scale']);
+});
+
+test('refPacketDistance: each term moves the composite by its own weight', () => {
+  const A = makePacket();
+  // Orientation turned 90°: the orientation term saturates, nothing else moves.
+  const rot = makePacket({ orientationField: { binCount: 12, bins: [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dominant: 0, strength: 0.5 } });
+  const dr = refPacketDistance(A, rot);
+  assertApprox(dr.parts.orientation, 1, 1e-9);
+  assertApprox(dr.parts.scale, 0, 1e-12);
+  assertApprox(dr.distance, STYLE_MATCH_WEIGHTS.orientation, 1e-9);
+  // Half the scale mass moved one bin.
+  const sc = makePacket({ scaleHistogram: [4, 4, 0, 0, 0, 0, 0, 0] });
+  assertApprox(refPacketDistance(A, sc).parts.scale, 0.5, 1e-12);
+  assertApprox(refPacketDistance(A, sc).distance, 0.3 * 0.5, 1e-12);
+  // Band occupancy: half the midtone mass moved to highlights.
+  const cov = makePacket({ coverage: { background: 0.25, shadows: 0.25, midtones: 0.25, highlights: 0.25 } });
+  const cov2 = makePacket({ coverage: { background: 0.25, shadows: 0.25, midtones: 0.0, highlights: 0.5 } });
+  assertApprox(refPacketDistance(cov, cov2).distance, STYLE_MATCH_WEIGHTS.coverage * 0.25, 1e-12);
+  // Distance never decreases as one term moves further away.
+  const near = makePacket({ strokeScaleByBand: { background: 0.5, shadows: 0.5, midtones: 0.5, highlights: 0.6 } });
+  const far = makePacket({ strokeScaleByBand: { background: 0.5, shadows: 0.5, midtones: 0.5, highlights: 1.0 } });
+  const dNear = refPacketDistance(A, near).distance;
+  const dFar = refPacketDistance(A, far).distance;
+  if (!(dFar > dNear)) throw new Error(`distance must grow with the gap (${dNear} -> ${dFar})`);
+});
+
+test('refPacketDistance: symmetric, deterministic, bounded, weightable', () => {
+  const A = makePacket();
+  const B = makePacket({ scaleHistogram: [0, 8, 0, 0, 0, 0, 0, 0], stats: { meanCoherence: 0.9 } });
+  const ab = refPacketDistance(A, B), ba = refPacketDistance(B, A);
+  assertApprox(ab.distance, ba.distance, 1e-12, 'symmetric');
+  assertApprox(refPacketDistance(A, B).distance, ab.distance, 0, 'deterministic');
+  if (!(ab.distance >= 0 && ab.distance <= 1)) throw new Error('distance out of range');
+  // Only the scale term: the distance becomes that term alone.
+  const onlyScale = refPacketDistance(A, B, { scale: 1, orientation: 0, coverage: 0, bandScale: 0, coherence: 0 });
+  assertApprox(onlyScale.distance, onlyScale.parts.scale, 1e-12);
+  let threw = false;
+  try { refPacketDistance(A, null); } catch (e) { threw = true; }
+  assertEqual(threw, true, 'a missing packet must throw, not silently score 0');
+});
+
+test('scoreProfileStyle: deterministic, bounded, and the composite mix is exact', () => {
+  const S = 48;
+  const px = new Uint8ClampedArray(S * S * 4);
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const d = Math.hypot(x - S / 2, y - S / 2);
+      const v = d < S / 4 ? [200, 60, 60] : [40, 46, 58];
+      const i = (y * S + x) * 4;
+      px[i] = v[0]; px[i + 1] = v[1]; px[i + 2] = v[2]; px[i + 3] = 255;
+    }
+  }
+  const image = { pixels: px, width: S, height: S };
+  const profile = { global: { style: 'pencil', strokeCount: 40, detailLevel: 0.6 } };
+
+  const r1 = scoreProfileStyle(profile, image, makePacket(), { seed: 7 });
+  const r2 = scoreProfileStyle(profile, image, makePacket(), { seed: 7 });
+  assertEqual(r1.styleMatch, r2.styleMatch, 'deterministic styleMatch');
+  assertEqual(r1.styleDistance, r2.styleDistance, 'deterministic styleDistance');
+  assertEqual(r1.strokes, 40, 'the stroke budget is honoured');
+  if (!(r1.styleMatch >= 0 && r1.styleMatch <= 1)) throw new Error('styleMatch out of range: ' + r1.styleMatch);
+  if (!(r1.composite >= 0 && r1.composite <= 1)) throw new Error('composite out of range: ' + r1.composite);
+  assertEqual(r1.resultPacket.module, 'ref-analyze', 'the render is analysed like a reference');
+
+  // The composite is exactly the weighted mix (style term, reconstruction term).
+  const pureStyle = scoreProfileStyle(profile, image, makePacket(), { seed: 7, styleWeight: 1 });
+  assertApprox(pureStyle.composite, pureStyle.styleMatch, 1e-12, 'styleWeight 1 = pure style');
+  const pureRecon = scoreProfileStyle(profile, image, makePacket(), { seed: 7, styleWeight: 0 });
+  assertApprox(pureRecon.composite, pureRecon.reconstruction.simMae / 100, 1e-12, 'styleWeight 0 = pure fidelity');
+  assertApprox(pureStyle.styleMatch, pureRecon.styleMatch, 1e-12, 'the weight must not change the measurement');
+
+  // The measurement is a comparison, not a constant: a different reference moves it.
+  const other = makePacket({ scaleHistogram: [0, 0, 8, 0, 0, 0, 0, 0] });
+  const r3 = scoreProfileStyle(profile, image, other, { seed: 7 });
+  if (!(r3.styleMatch !== r1.styleMatch)) throw new Error('the reference must affect the score');
+
+  let threw = false;
+  try { scoreProfileStyle(profile, image, null, {}); } catch (e) { threw = true; }
+  assertEqual(threw, true, 'no reference must throw');
+  assertEqual(STYLE_PROFILE_DEFAULTS.styleWeight, 0.7);
+});
+
+test('gateChange guards: a style gain bought with a fidelity drop is reverted', () => {
+  const images = [
+    { name: 'a', styleMatch: 0.50, simMae: 90 },
+    { name: 'b', styleMatch: 0.60, simMae: 80 },
+  ];
+  const baseline = evaluateSet((i) => i, images, { objective: 'styleMatch' });
+  const better = images.map((i) => ({ ...i, styleMatch: i.styleMatch + 0.05 }));
+  const candidate = evaluateSet((i) => i, better, { objective: 'styleMatch' });
+
+  // Style improved, fidelity untouched → pending approval (never auto-kept).
+  const clean = gateChange(baseline, candidate, { objective: 'styleMatch' });
+  assertEqual(clean.decision, 'pending');
+  assertEqual(clean.guardDrops, []);
+
+  // Same style gain, but fidelity dropped on both images → revert.
+  const worse = better.map((i) => ({ ...i, simMae: i.simMae - 5 }));
+  const cand2 = evaluateSet((i) => i, worse, { objective: 'styleMatch' });
+  const guarded = gateChange(baseline, cand2, {
+    objective: 'styleMatch', guards: [{ metric: 'simMae', maxDrop: 0 }],
+  });
+  assertEqual(guarded.decision, 'revert');
+  assertEqual(guarded.guardDrops.length, 2);
+  assertEqual(guarded.improved, true, 'the objective DID improve — the guard is what reverts it');
+
+  // A tolerated drop passes the guard.
+  const tolerated = gateChange(baseline, cand2, {
+    objective: 'styleMatch', guards: [{ metric: 'simMae', maxDrop: 6 }],
+  });
+  assertEqual(tolerated.decision, 'pending');
+
+  // Guards default to none: the previous behaviour is unchanged.
+  assertEqual(GATE_DEFAULTS.guards, []);
+  const noGuards = gateChange(baseline, cand2, { objective: 'styleMatch' });
+  assertEqual(noGuards.decision, 'pending');
 });
 
 // ─── Summary ──────────────────────────────────────────────────────
