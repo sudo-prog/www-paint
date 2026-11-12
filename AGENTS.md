@@ -759,6 +759,59 @@ Format:
 - next: <stream / step>
 ```
 
+### 2026-11-12 15:40 — M7 outlines.js (IF-3) — SHIPPED, 16/16
+- did: NEW `js/engine/outlines.js` — edge-following outline extraction over an `analyzeImage()` result; threshold the Sobel edge map (keeping magnitudes), seed only from contour pixels, walk to the strongest unvisited edge neighbour, de-duplicate, filter by length+strength, largest first. NEW `tests/outlines.test.js` (16 tests). NEW `scripts/outlines-debug.cjs` + `docs/research/outlines-debug.png`. TDD: RED first (`ERR_MODULE_NOT_FOUND`), then GREEN.
+- files: `js/engine/outlines.js`, `tests/outlines.test.js`, `scripts/outlines-debug.cjs`, `docs/research/outlines-debug.png`, `docs/checkpoints/M7.md`
+- verified (raw):
+  ```
+  $ node tests/outlines.test.js   -> Passed: 16  Failed: 0
+  boundary pixels covered: 276 / 276  100.0%
+  duplicate pairs: 0
+  ```
+- TWO DEFECTS the tests caught, both fixed: (1) all walks shared one global visited set, so the second walk died at its first step and the square's LEFT EDGE went untraced — vision review of the debug PNG caught this, not the assertions; each walk now has a private visited set, claimed into the shared mask afterwards. (2) after fix 1, every seed re-walked the same closed loop → 64 near-identical outlines; now de-duplicated (>=80% shared pixels).
+- blocker: none
+- next: M8 `js/engine/order.js` (IF-4)
+
+### 2026-11-12 15:55 — M8 order.js (IF-4) — SHIPPED, 24/24
+- did: NEW `js/engine/order.js` — the eleven paint-order modes as stable numeric sort keys (`free down up left right diag spiral spiralin rings ringsin clock`). Returns a NEW array of the SAME shape objects; sets `order` per index. Ordering centre resolves from explicit cx/cy → analysis width/height → the shapes' own bounding-box centre. NEW `tests/order.test.js` (24 tests). TDD: RED first, then GREEN.
+- files: `js/engine/order.js`, `tests/order.test.js`, `docs/checkpoints/M8.md`
+- verified (raw):
+  ```
+  $ node tests/order.test.js -> Passed: 24  Failed: 0
+  ```
+- DEFECT caught: `clock` ran COUNTER-clockwise — `atan2(dx,-dy)` measures CCW from north, so ascending sort put NW last. Fixed to `atan2(-(x-cx), -(y-cy))`. Second finding: the radial modes silently sorted about (0,0) until the bounding-box centre fallback was added.
+- ⚠ FOR BE: `generator.js` already has `orderShapes(shapes, settings, analysis)` with `free|top-bottom|spiral|one-line|edges-first`, and its `spiral` is `angle + radius*0.1` — DIFFERENT semantics from this module's radius-ordered `spiral`. The two must be reconciled deliberately; do not leave both live under the same name. Full note in `docs/checkpoints/M8.md` §7.
+- blocker: none
+- next: M9 `js/styles/shaping.js`
+
+### 2026-11-12 16:05 — M9 styles/shaping.js — SHIPPED, 18/18
+- did: NEW `js/styles/shaping.js` — per-style shaping DATA table (`minSize maxSize elongation order regionFill`) covering all 51 registered styles + `SHAPING_DEFAULTS` + `STYLE_CATEGORIES` + `unshapedStyles()`. Data only (no functions/DOM in the table); returns a fresh copy; unknown name → documented defaults. NEW `tests/shaping.test.js` (18 tests). TDD: RED first, then GREEN.
+- files: `js/styles/shaping.js`, `tests/shaping.test.js`, `docs/checkpoints/M9.md`
+- verified (raw):
+  ```
+  $ node tests/shaping.test.js -> Passed: 18  Failed: 0
+  ```
+- DEFECTS caught: (1) `SyntaxError: Unexpected token '-'` — `cross-hatch:` unquoted as an object key, fixed to `'cross-hatch':`; (2) a test bug asserting `order` was a number.
+- ⚠ FOR BE: the nine pinned styles ARE in the shaping table. That only describes preferred geometry — it does not touch their rendering, so no re-baseline is needed.
+- blocker: none
+- next: full gate re-run, then M10 (Phase 4.2 style library UI)
+
+### 2026-11-12 16:20 — M7/M8/M9 gate re-run — ALL GREEN, baselines unmoved
+- did: re-ran every gate after the three new modules landed.
+- verified (raw):
+  ```
+  $ node tests/engine.test.js    -> Passed: 123  Failed: 0
+  $ node tests/wetsim.test.js    -> Passed: 15   Failed: 0
+  $ node tests/masks.test.js     -> Passed: 19   Failed: 0
+  $ node tests/outlines.test.js  -> Passed: 16   Failed: 0
+  $ node tests/order.test.js     -> Passed: 24   Failed: 0
+  $ node tests/shaping.test.js   -> Passed: 18   Failed: 0
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
+  ```
+- The 9 pinned visual baselines are UNMOVED (the new modules are inert until BE wires them).
+- blocker: none
+- next: M10 Phase 4.2 — Style Profile library UI (`js/ui/style-library.js` + host shim)
+
 ---
 
 ## 6. Reading list
