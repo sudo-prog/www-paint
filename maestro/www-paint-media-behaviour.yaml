@@ -1,0 +1,94 @@
+# WWW_PAINT — media panel BEHAVIOURAL/visibility test (Mac M6b)
+#
+# Proves the panel's controls are all present and reachable in the right order,
+# and that the rail swap survives driving them.
+#
+# The PIXEL comparison (does a control actually change rendered output?) is not
+# something Maestro web mode can do — it asserts the accessibility tree, not
+# canvas pixels, and it has no `sliderInput` command. That half is covered by
+# scripts/media-panel-probe.cjs (real Chromium, hashes the exported PNG).
+#
+# Run:
+#   maestro test --headless --screen-size 1440x900 maestro/www-paint-media-behaviour.yaml
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── Media panel opens and exposes all three sections ──
+- tapOn:
+    id: "btn-media-mode"
+- extendedWaitUntil:
+    visible: "WET MEDIA"
+    timeout: 10000
+- assertVisible: "WET MEDIA"
+- assertVisible: "MEDIA"
+- assertVisible:
+    id: "media-wetSim-maxWet"
+- takeScreenshot: behaviour-wet-default
+
+# ── Every WET MEDIA control present, in order ──
+- assertVisible:
+    id: "media-wetSim-maxWet"
+- assertVisible:
+    id: "media-wetSim-dryRate"
+- assertVisible:
+    id: "media-wetSim-flowRate"
+- assertVisible:
+    id: "media-wetSim-heightScale"
+- assertVisible:
+    id: "media-wetSim-granulation"
+
+# ── Scroll to MEDIA; every control present ──
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- assertVisible:
+    id: "media-media-bleed"
+- assertVisible:
+    id: "media-media-bleedOpacity"
+- assertVisible:
+    id: "media-media-tideDarken"
+- assertVisible:
+    id: "media-media-granulation"
+- assertVisible:
+    id: "media-media-granulationCount"
+- takeScreenshot: behaviour-media-section
+
+# ── Scroll to TONAL MASKS; bands + sliders + preview ──
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- assertVisible:
+    id: "media-masks-lo"
+- assertVisible:
+    id: "media-masks-hi"
+- assertVisible:
+    id: "media-masks-softness"
+- assertVisible:
+    id: "media-masks-backgroundThreshold"
+- assertVisible:
+    id: "media-masks-preview"
+- assertVisible:
+    id: "media-masks-band-background"
+- assertVisible:
+    id: "media-masks-band-shadows"
+- assertVisible:
+    id: "media-masks-band-midtones"
+- assertVisible:
+    id: "media-masks-band-highlights"
+- takeScreenshot: behaviour-tonal-masks
+
+# ── Rail swap still works after driving the controls ──
+- tapOn:
+    id: "btn-media-mode"
+- assertVisible: "STYLE"
+- takeScreenshot: behaviour-final

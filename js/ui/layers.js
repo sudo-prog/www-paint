@@ -158,6 +158,7 @@ export class LayersManager {
     dupBtn.className = "layer-action-btn";
     dupBtn.dataset.action = "duplicate-layer";
     dupBtn.title = "Duplicate";
+    dupBtn.setAttribute("aria-label", "Duplicate layer");
     dupBtn.textContent = "";
     dupBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5v14M5 12h14"/></svg>';
     actions.appendChild(dupBtn);
@@ -167,6 +168,7 @@ export class LayersManager {
     delBtn.className = "layer-action-btn layer-action-btn--danger";
     delBtn.dataset.action = "delete-layer";
     delBtn.title = "Delete";
+    delBtn.setAttribute("aria-label", "Delete layer");
     delBtn.textContent = "";
     delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     actions.appendChild(delBtn);

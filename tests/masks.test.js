@@ -230,6 +230,47 @@ test('masksCompositeRGBA is node-safe and opaque', () => {
   }
 });
 
+test('masksCompositeRGBA honours the per-band enable flags', () => {
+  // Regression guard: the composite used to ignore the band toggles entirely,
+  // so turning a band off in the media panel changed nothing visible.
+  const W = 16, H = 16;
+  const a = analyzeImage(gradientImage(W, H), W, H, { structure: false });
+  const r = computeTonalMasks(a);
+
+  const all = masksCompositeRGBA(r.masks, W, H);
+  const noShadows = masksCompositeRGBA(r.masks, W, H, {
+    background: true, shadows: false, midtones: true, highlights: true,
+  });
+  const none = masksCompositeRGBA(r.masks, W, H, {
+    background: false, shadows: false, midtones: false, highlights: false,
+  });
+
+  assert(noShadows.length === all.length, 'length changed');
+  // Green carries the shadows contribution, so disabling it must change pixels
+  // whenever the shadows band is non-empty.
+  let shadowPixels = 0;
+  for (let i = 0; i < r.masks.shadows.length; i++) if (r.masks.shadows[i] > 0) shadowPixels++;
+  assert(shadowPixels > 0, 'test image has no shadows band — pick another fixture');
+
+  let changed = 0;
+  for (let i = 0; i < all.length; i += 4) {
+    if (all[i] !== noShadows[i] || all[i + 1] !== noShadows[i + 1] || all[i + 2] !== noShadows[i + 2]) changed++;
+  }
+  assert(changed > 0, 'disabling shadows changed no pixels');
+
+  // Every band off -> the composite is fully black (alpha still opaque).
+  for (let i = 0; i < none.length; i += 4) {
+    assert(none[i] === 0 && none[i + 1] === 0 && none[i + 2] === 0, 'band-off composite not black');
+    assert(none[i + 3] === 255, 'band-off composite not opaque');
+  }
+
+  // Omitted bands arg keeps the historical behaviour (all enabled).
+  const explicitAll = masksCompositeRGBA(r.masks, W, H, {
+    background: true, shadows: true, midtones: true, highlights: true,
+  });
+  assert(Buffer.from(explicitAll.buffer).equals(Buffer.from(all.buffer)), 'omitted bands != all enabled');
+});
+
 test('degenerate 1x1 image works', () => {
   // NB: analyzeImage() itself hangs on a 1x1 input — its k-means palette init
   // loops forever when there are fewer samples than paletteSize (a pre-existing

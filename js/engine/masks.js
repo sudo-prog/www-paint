@@ -200,21 +200,27 @@ export function maskToRGBA(mask, width, height) {
  * @param {object} masks - The `masks` field from computeTonalMasks.
  * @param {number} width
  * @param {number} height
+ * @param {object} [bands] - Optional per-band enable flags
+ *   (`{background, shadows, midtones, highlights}`). A band set to `false`
+ *   contributes nothing, so the composite reflects exactly the bands the UI
+ *   shows as on. Omitted / undefined -> every band enabled (the historical
+ *   behaviour, so existing callers are unaffected).
  * @returns {Uint8ClampedArray} RGBA buffer.
  */
-export function masksCompositeRGBA(masks, width, height) {
+export function masksCompositeRGBA(masks, width, height, bands = undefined) {
   const n = width * height;
+  const on = (name) => (bands === undefined ? true : bands[name] !== false);
   const out = new Uint8ClampedArray(n * 4);
-  const bg = masks.background;
-  const sh = masks.shadows;
-  const md = masks.midtones;
-  const hl = masks.highlights;
+  const bg = on("background") ? masks.background : null;
+  const sh = on("shadows") ? masks.shadows : null;
+  const md = on("midtones") ? masks.midtones : null;
+  const hl = on("highlights") ? masks.highlights : null;
   for (let i = 0; i < n; i++) {
     const o = i * 4;
     // Additive-ish colour mix: each band contributes its own channel weight.
-    out[o] = Math.min(255, bg[i] * 255 + hl[i] * 200);
-    out[o + 1] = Math.min(255, sh[i] * 255 + hl[i] * 160);
-    out[o + 2] = Math.min(255, md[i] * 255 + hl[i] * 40);
+    out[o] = Math.min(255, (bg ? bg[i] * 255 : 0) + (hl ? hl[i] * 200 : 0));
+    out[o + 1] = Math.min(255, (sh ? sh[i] * 255 : 0) + (hl ? hl[i] * 160 : 0));
+    out[o + 2] = Math.min(255, (md ? md[i] * 255 : 0) + (hl ? hl[i] * 40 : 0));
     out[o + 3] = 255;
   }
   return out;

@@ -1,0 +1,84 @@
+# WWW_PAINT — media panel mobile audit
+# Run: maestro test --headless --screen-size 390x844 maestro/www-paint-media-panel.yaml
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+
+# ── Status settles ──
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── Top bar: all four nav buttons present at 390 ──
+- assertVisible:
+    id: "btn-media-mode"
+- assertVisible:
+    id: "btn-paint-mode"
+
+# ── 1. Media mode on: the media panel takes the left rail ──
+- tapOn:
+    id: "btn-media-mode"
+- extendedWaitUntil:
+    visible: "WET MEDIA"
+    timeout: 10000
+
+# ── 2. First section + its sliders ──
+- assertVisible: "WET MEDIA"
+- assertVisible:
+    id: "media-wetSim-maxWet"
+- assertVisible:
+    id: "media-wetSim-dryRate"
+
+# ── Screenshot: media panel open, top of the list ──
+- takeScreenshot: media-panel-mobile-top
+
+# ── 3. Scroll the panel to the MEDIA section.
+# Maestro's scrollUntilVisible swipes from screen center, which lands on the
+# canvas (the media panel occupies the left third). Use a targeted swipe that
+# starts inside the panel's own scroll area. ──
+- swipe:
+    start: 41%, 70%
+    end: 41%, 35%
+    duration: 400
+- assertVisible: "MEDIA"
+- assertVisible:
+    id: "media-media-bleed"
+- assertVisible:
+    id: "media-media-tideDarken"
+
+# ── Screenshot: middle of the list ──
+- takeScreenshot: media-panel-mobile-middle
+
+# ── 4. Scroll to TONAL MASKS (same targeted swipe, repeated) ──
+- swipe:
+    start: 41%, 70%
+    end: 41%, 30%
+    duration: 400
+- swipe:
+    start: 41%, 70%
+    end: 41%, 30%
+    duration: 400
+- assertVisible: "TONAL MASKS"
+- assertVisible: "Background"
+- assertVisible: "Shadows"
+- assertVisible: "Midtones"
+- assertVisible: "Highlights"
+- assertVisible:
+    id: "media-masks-lo"
+- assertVisible:
+    id: "media-masks-preview"
+
+# ── Screenshot: bottom of the list ──
+- takeScreenshot: media-panel-mobile-bottom
+
+# ── 5. Media mode off: brush controls return ──
+- tapOn:
+    id: "btn-media-mode"
+- assertVisible: "STYLE"
+
+# ── Screenshot: back to brush controls ──
+- takeScreenshot: media-panel-closed

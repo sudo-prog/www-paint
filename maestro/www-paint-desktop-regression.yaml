@@ -1,0 +1,84 @@
+# WWW_PAINT — desktop UI regression (1440x900)
+# Verifies the media panel did not disturb the existing desktop layout.
+# Run: maestro test --headless --screen-size 1440x900 maestro/www-paint-desktop-regression.yaml
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── 1. Shell intact ──
+- assertVisible: "Brush"
+- assertVisible: "Layers"
+- assertVisible: "Media"
+- assertVisible: "Paint"
+- assertVisible: "Open"
+- assertVisible: "Drop an image to begin"
+
+# ── 2. Brush controls own the left rail by default ──
+- assertVisible: "STYLE"
+- assertVisible: "BRUSH"
+- assertVisible: "STRUCTURE"
+
+# ── 3. Layers panel intact on the right ──
+- assertVisible: "Layers"
+
+# ── 4. Media mode on: the rail swaps, no layout break ──
+- tapOn:
+    id: "btn-media-mode"
+- extendedWaitUntil:
+    visible: "WET MEDIA"
+    timeout: 10000
+- assertVisible: "MEDIA"
+# The desktop rail is 260px, so the third section is below the fold. Scroll
+# the panel itself (scrollUntilVisible swipes from screen center = canvas).
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- assertVisible:
+    id: "media-masks-lo"
+- assertVisible:
+    id: "media-masks-preview"
+
+# ── Screenshot: desktop media panel open ──
+- takeScreenshot: desktop-media-open
+
+# ── 5. Media mode off: brush controls return ──
+- tapOn:
+    id: "btn-media-mode"
+- assertVisible: "STYLE"
+
+# ── 6. Paint mode still works ──
+- tapOn:
+    id: "btn-paint-mode"
+- assertVisible:
+    id: "paint-preset"
+- assertVisible:
+    id: "paint-color"
+- assertVisible:
+    id: "paint-weight"
+- tapOn:
+    id: "btn-paint-mode"
+
+# ── 7. Settings modal still opens ──
+- tapOn:
+    id: "btn-ui-settings"
+- extendedWaitUntil:
+    visible: "UI SETTINGS"
+    timeout: 10000
+- assertVisible: "Background"
+- tapOn:
+    id: "settings-close"
+
+# ── Screenshot: clean desktop state ──
+- takeScreenshot: desktop-final

@@ -31,6 +31,7 @@
       <nav class="top-bar__center" aria-label="Main navigation">
         <button type="button" class="nav-btn nav-btn--active" data-nav="controls" aria-label="Brush"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/></svg></span><span class="btn-label">Brush</span></button>
         <button type="button" class="nav-btn" data-nav="layers" aria-label="Layers"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M4 12h16M4 6h16"/></svg></span><span class="btn-label">Layers</span></button>
+        <button type="button" class="nav-btn" id="btn-media-mode" aria-label="Media controls" title="Toggle media panel"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4.2 6 7.2 6 10a6 6 0 1 1-12 0c0-2.8 2.5-5.8 6-10Z"/></svg></span><span class="btn-label">Media</span></button>
         <button type="button" class="nav-btn nav-btn-secondary" id="btn-paint-mode" aria-label="Paint mode" title="Toggle paint mode"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L13 16l-4 1 1-4Z"/></svg></span><span class="btn-label">Paint</span></button>
       </nav>
 
@@ -115,6 +116,44 @@
             Clear Layer
           </button>
         </div>
+      </aside>
+
+      <!-- Media Panel — Mac-owned sibling surface (js/ui/media.js).
+           Houses the front door for the wet-sim, brush-media and tonal-mask
+           engine parameters. Kept separate from #controls-root so the
+           ThinkPad-owned controls panel is never edited by this stream. -->
+      <aside class="panel panel--media" id="media-root" role="complementary" aria-label="Media, wet and tonal controls">
+        <div class="panel-strip">
+          <span class="strip-name">Media</span>
+          <span class="strip-sep" aria-hidden="true"></span>
+          <span class="strip-chip">Wet · Ink · Tonal</span>
+        </div>
+        <div class="panel-head">
+          <span class="panel-title">Media</span>
+          <span class="panel-head__actions">
+            <!-- Chevron points LEFT: this panel is docked on the left edge, so
+                 collapsing it retracts toward the left (same as #controls-root).
+                 A right-pointing chevron would route it to the right rail. -->
+            <button class="collapse-btn" data-rail="media" aria-expanded="true" aria-controls="media-root" aria-label="Collapse media panel" title="Collapse panel">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+              <!-- aria-label, not an sr-only text node: an sr-only span still
+                   occupies layout and gets cut mid-glyph by overflow:hidden,
+                   which shows up as scrollWidth - clientWidth = 127. -->
+              <span class="sr-only" aria-hidden="true"></span>
+            </button>
+          </span>
+        </div>
+        <div class="rail-icons">
+          <button class="rail-icon-btn is-active" aria-label="Wet media">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4.2 6 7.2 6 10a6 6 0 1 1-12 0c0-2.8 2.5-5.8 6-10Z"/></svg>
+            <span class="sr-only">Wet media</span>
+          </button>
+          <button class="rail-icon-btn" aria-label="Tonal masks">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
+            <span class="sr-only">Tonal masks</span>
+          </button>
+        </div>
+        <!-- Built by media.js -->
       </aside>
 
       <!-- Canvas Area — the bright WINDOW, on top of the panels. -->
@@ -205,6 +244,11 @@
       "./js/ui/canvas.js": "./js/ui/canvas.js?v=20261030a",
       "./js/ui/export.js": "./js/ui/export.js?v=20261030a",
       "./js/ui/layers.js": "./js/ui/layers.js?v=20261030a",
+      "./js/ui/media.js": "./js/ui/media.js?v=20261030a",
+      "./js/ui/media-host.js": "./js/ui/media-host.js?v=20261030a",
+      "./js/engine/brush-media.js": "./js/engine/brush-media.js?v=20261030a",
+      "./js/engine/masks.js": "./js/engine/masks.js?v=20261030a",
+      "./js/engine/wetsim.js": "./js/engine/wetsim.js?v=20261030a",
       "./js/ui/motion.js": "./js/ui/motion.js?v=20261030a",
       "./js/engine/paint-brush.js": "./js/engine/paint-brush.js?v=20261030a",
       "./js/vendor/brush.esm.js": "./js/vendor/brush.esm.js?v=20261030a"
@@ -218,11 +262,17 @@
     import './js/ui/debug.js?v=20261030a';
     import './js/ui/settings.js?v=20261030a';
     import { initApp } from './js/ui/app.js?v=20261030a';
+    import { attachMediaPanel } from './js/ui/media-host.js?v=20261030a';
 
     const app = initApp();
 
     if (app) {
       window._wwwPaint = app;
+
+      // Media panel (wet / ink / tonal). Mac-owned; hosted here rather than in
+      // app.js so the ThinkPad-owned file stays untouched. The ThinkPad can fold
+      // these calls into App._init() and drop js/ui/media-host.js later.
+      attachMediaPanel(app);
 
       // Load image button
       const loadBtn = document.getElementById('btn-load-image');
@@ -247,6 +297,17 @@
 
       // Generate button (round, top bar)
       document.getElementById('btn-gener')?.addEventListener('click', () => app.generate());
+
+      // Media mode toggle — swaps the LEFT rail between the brush controls and
+      // the media panel (wet / ink / tonal). Both are sibling surfaces; this
+      // button only toggles which one occupies the rail.
+      const mediaToggle = document.getElementById('btn-media-mode');
+      if (mediaToggle) {
+        mediaToggle.addEventListener('click', () => {
+          const app = window.__app;
+          if (app && typeof app.toggleMediaMode === 'function') app.toggleMediaMode();
+        });
+      }
 
       // Paint mode weight slider value display
       const weightSlider = document.getElementById('paint-weight');
@@ -296,9 +357,14 @@
       }
 
       toggleControls?.addEventListener('click', () => {
-        if (!controlsPanel) return;
-        const closed = controlsPanel.classList.contains('panel--mobile-closed') || controlsPanel.classList.contains('is-collapsed');
-        app._setPanelCollapsed(controlsPanel, !closed);
+        // While media mode is on, the left rail belongs to the media panel, so
+        // the floating toggle drives that panel instead of the brush controls.
+        const target = window.__app?._mediaMode
+          ? document.getElementById('media-root')
+          : controlsPanel;
+        if (!target) return;
+        const closed = target.classList.contains('panel--mobile-closed') || target.classList.contains('is-collapsed');
+        app._setPanelCollapsed(target, !closed);
       });
 
       toggleLayers?.addEventListener('click', () => {
