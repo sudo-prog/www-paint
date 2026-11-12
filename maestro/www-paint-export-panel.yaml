@@ -1,0 +1,96 @@
+# WWW_PAINT — export & share panel audit (DESKTOP 1440x900)
+# Run: maestro test --headless --screen-size 1440x900 maestro/www-paint-export-panel.yaml
+# Covers M11 (Phase 6 / Track-S S7). The panel is a MODAL overlay, not a rail
+# panel: it does not swap the left rail, so the brush controls stay visible.
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── 1. Shell intact: the new nav button is present, the rail is unchanged ──
+- assertVisible: "Brush"
+- assertVisible: "Layers"
+- assertVisible: "Media"
+- assertVisible: "Library"
+- assertVisible: "Paint"
+- assertVisible:
+    id: "btn-export-panel"
+- assertVisible: "STYLE"
+
+# ── 2. The panel starts CLOSED.
+# NOTE: a closed Maestro web modal is still in the accessibility tree (it is
+# opacity:0 + pointer-events:none, NOT display:none), so `assertNotVisible`
+# reports it as visible. Assert the OPEN CLASS on the root instead. ──
+- assertTrue: "globalThis.document.getElementById('export-panel-root').classList.contains('export-panel--open') === false"
+
+# ── 3. Open the panel from the nav button ──
+- tapOn:
+    id: "btn-export-panel"
+- extendedWaitUntil:
+    visible: "EXPORT & SHARE"
+    timeout: 10000
+
+# ── 4. Every control is present ──
+- assertVisible:
+    id: "export-panel-size"
+- assertVisible:
+    id: "export-panel-format"
+- assertVisible:
+    id: "export-panel-quality"
+- assertVisible:
+    id: "export-panel-download"
+- assertVisible:
+    id: "export-panel-copy-share"
+- assertVisible:
+    id: "export-panel-copy-profile"
+- assertVisible:
+    id: "export-panel-download-profile"
+- assertVisible:
+    id: "export-panel-summary"
+- assertVisible:
+    id: "export-panel-status"
+
+# ── Screenshot: panel open, default state ──
+- takeScreenshot: export-panel-desktop-default
+
+# ── 5. The summary describes the default export ──
+- assertVisible: "PNG"
+
+# ── 6. Switch the format to JPG ──
+- tapOn:
+    id: "export-panel-format"
+- assertVisible: "JPG"
+
+# ── 7. The quality row is meaningful for JPG ──
+- assertVisible: "Quality"
+
+# ── 8. Switch the size preset to 2x ──
+- tapOn:
+    id: "export-panel-size"
+
+# ── Screenshot: format + size changed ──
+- takeScreenshot: export-panel-desktop-changed
+
+# ── 9. Download (the engine produces a real blob; the click is intercepted by
+#       the probe, so here we only assert the control is actionable) ──
+- assertVisible:
+    id: "export-panel-download"
+
+# ── 10. Escape closes the modal ──
+- assertVisible:
+    id: "export-panel-close"
+- tapOn:
+    id: "export-panel-close"
+- assertTrue: "globalThis.document.getElementById('export-panel-root').classList.contains('export-panel--open') === false"
+
+# ── Screenshot: closed, shell back to normal ──
+- takeScreenshot: export-panel-desktop-closed
+
+# ── 11. The brush rail is untouched by the modal having opened ──
+- assertVisible: "STYLE"

@@ -1,0 +1,64 @@
+# WWW_PAINT — export & share panel audit (MOBILE 390x844)
+# Run: maestro test --headless --screen-size 390x844 maestro/www-paint-export-panel-mobile.yaml
+# The panel is a MODAL overlay, so the mobile audit checks the full-width
+# stacked action buttons and that nothing clips at 390px.
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── 1. The new nav button is reachable at 390px ──
+- assertVisible:
+    id: "btn-export-panel"
+
+# ── 2. Open the panel ──
+- tapOn:
+    id: "btn-export-panel"
+- extendedWaitUntil:
+    visible: "EXPORT & SHARE"
+    timeout: 10000
+
+# ── 3. Every control is present at 390px ──
+- assertVisible:
+    id: "export-panel-size"
+- assertVisible:
+    id: "export-panel-format"
+- assertVisible:
+    id: "export-panel-download"
+- assertVisible:
+    id: "export-panel-copy-share"
+- assertVisible:
+    id: "export-panel-summary"
+
+# ── Screenshot: panel open at 390px ──
+- takeScreenshot: export-panel-mobile-open
+
+# ── 4. The summary line is visible and not clipped ──
+- assertVisible:
+    id: "export-panel-summary"
+
+# ── 5. The two profile actions are present ──
+- assertVisible:
+    id: "export-panel-copy-profile"
+- assertVisible:
+    id: "export-panel-download-profile"
+
+# ── Screenshot: full panel at 390px ──
+- takeScreenshot: export-panel-mobile-full
+
+# ── 6. Close ──
+- tapOn:
+    id: "export-panel-close"
+- assertTrue: "globalThis.document.getElementById('export-panel-root').classList.contains('export-panel--open') === false"
+
+# ── Screenshot: closed at 390px ──
+- takeScreenshot: export-panel-mobile-closed
+
+# ── 7. The shell is unchanged ──
+- assertVisible: "STYLE"

@@ -860,6 +860,81 @@ Format:
 - blocker: none
 - next: M11 Phase 6 — export & share panel UI (`js/ui/export-panel.js` + host shim, wrapping the BE-owned `exporter.js`)
 
+### 2026-11-12 21:40 — M11 export & share panel (Phase 6 / Track-S S7) — SHIPPED, browser-verified
+- did: NEW `js/ui/export-panel-core.js` — PURE core, no DOM: `EXPORT_SIZE_PRESETS` (original / 2x / 4x), `EXPORT_FORMATS` (png/jpg), `resolveExportSize`, `clampQuality`, `checkExportFeasible` (dimension + pixel bounds), `defaultExportState`, `updateExportState` (immutable, unknown-preset fallback), `buildExportRequest`, `describeExport`, `describeBlob`, `buildShareText`, `exportFilename`, `safeExport` (throws become status messages). NEW `js/ui/export-panel.js` — MODAL panel (`role=dialog`, `aria-modal`, Escape closes, `aria-live` status), renders size/format/quality/summary/actions, no engine imports. NEW `js/ui/export-host.js` — the media-host.js shim; `app.js` and `js/ui/export.js` NEVER edited. NEW `tests/export-panel.test.js` (90 tests). NEW `scripts/export-panel-probe.cjs` (behavioural browser probe). ADDITIVE deltas to `index.html` (+1 nav button `#btn-export-panel`, +1 modal shell `#export-panel-root`, +3 import-map entries, +1 shim import + attach call) and `css/style.css` (+142 lines appended, new selectors only).
+- OWNERSHIP COLLISION RESOLVED: `js/ui/export.js` + `ExportManager` + `#export-root` already exist (ThinkPad-authored, wired in app.js:279-300/777-900). The stream name is `js/ui/export-panel.js`, so this is an ADDITIVE OVERLAY, not a replacement — `#export-root`, `js/ui/export.js`, `js/engine/exporter.js`, `js/engine/engine.js`, `js/ui/controls.js`, `js/ui/app.js` all untouched. Nothing deleted.
+- files: `js/ui/export-panel-core.js`, `js/ui/export-panel.js`, `js/ui/export-host.js`, `tests/export-panel.test.js`, `scripts/export-panel-probe.cjs`, `docs/checkpoints/M11.md`, `docs/research/export-panel-{desktop,mobile}{,-panel}.png`, `docs/research/export-panel-probe.json` + additive `index.html`, `css/style.css`
+- verified (raw):
+  ```
+  $ node tests/export-panel.test.js -> Passed: 90  Failed: 0
+  $ node scripts/export-panel-probe.cjs
+  PASS: panel mounts, every control has an id, PNG+JPG at 3 sizes produce
+  non-empty blobs with the requested dimensions, JPG is smaller than PNG,
+  same (settings, seed) re-bakes byte-identically, share text copies with
+  dimensions, the M10 profile path works, no clipping at 1440 or 390, 0 page errors
+  png_original  96×96   17678 B  image/png   hash 1475606585
+  jpg_original  96×96    3170 B  image/jpeg  hash 4241636003   <- smaller
+  png_2x       192×192  24638 B  image/png   hash 1269356052
+  jpg_2x       192×192   4991 B  image/jpeg  hash  106298209
+  png_4x       384×384  29146 B  image/png   hash 2277287572
+  jpg_4x       384×384   5912 B  image/jpeg  hash 1366779745
+  deterministic true | downloadFilename "www-paint.png" | shareTextCopied true
+  shareTextHasDims true | profileTextAccessible true | controlsWithoutId [] | pageErrors []
+  geometry 1440px docOverflow 0 contentOverflow 0 buttons 215×32/close 32×32
+           768px  docOverflow 0 contentOverflow 0 buttons 681×32/close 32×32
+           390px  docOverflow 0 contentOverflow 0 buttons 681×32/close 32×32
+  ```
+  Blob dimensions are decoded from the blob itself (img.decode + getImageData), NOT read back from the request.
+  ```
+  $ node tests/engine.test.js        -> Passed: 123  Failed: 0
+  $ node tests/wetsim.test.js        -> Passed: 15   Failed: 0
+  $ node tests/masks.test.js         -> Passed: 19   Failed: 0
+  $ node tests/outlines.test.js      -> Passed: 16   Failed: 0
+  $ node tests/order.test.js         -> Passed: 24   Failed: 0
+  $ node tests/shaping.test.js       -> Passed: 18   Failed: 0
+  $ node tests/style-library.test.js -> Passed: 50   Failed: 0
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
+  $ node scripts/media-panel-probe.cjs -> 4/4 PASS
+  $ node scripts/style-library-probe.cjs -> PASS
+  ```
+- THREE DEFECTS caught, all in my own new code:
+  1. `MAX_EXPORT_PIXELS` was self-contradictory — set to 16384×16384 (268 Mpx) while `MAX_EXPORT_DIMENSION` was 16384, so the pixel check could never fire. The test caught it; now 8192² (64 Mpx), below Chromium's area limit.
+  2. The probe's `document.createElement` interception swallowed the clipboard-fallback anchor too. Scoped to recording only.
+  3. `page.evaluate` cannot see the Node `page` object → `ReferenceError: page is not defined`. Geometry now measured from Node after the page function returns.
+- ⚠ FOR BE: `js/ui/export.js` `ExportManager` and the new `js/ui/export-panel.js` both exist now. They are additive siblings, not competitors — but the ThinkPad may want to fold the new panel into `App._init()` and retire the shim later. The old `#btn-export` round button still drives `#export-root`; the new `#btn-export-panel` nav button drives `#export-panel-root`. No BE action required.
+- ⚠ NOT DONE: vision review of the panel screenshots — the vision backend returned HTTP 429 on every attempt (same as M10, ~5 attempts over 20 min). The geometry numbers above are real DOM measurements, not a visual pass. Run vision before calling M11 visually done.
+- blocker: none
+- next: M12 — non-baseline style polish (`js/styles/*` except the 9 pinned styles)
+
+### 2026-11-13 00:40 — M11 Maestro verification (user request) — 2 NEW FLOWS, all green
+- did: the user pointed out M11 shipped with DOM measurements but NO Maestro flow. Built them. NEW `maestro/www-paint-export-panel.yaml` (1440x900) and `maestro/www-paint-export-panel-mobile.yaml` (390x844); re-ran all four existing flows as a regression check; copied Maestro screenshots into `docs/research/maestro/`; added §3.5 + §3.6 to `docs/checkpoints/M11.md`.
+- files: `maestro/www-paint-export-panel.yaml`, `maestro/www-paint-export-panel-mobile.yaml`, `docs/checkpoints/M11.md`, `docs/research/maestro/*.png`
+- verified (raw):
+  ```
+  $ export PATH="$HOME/.maestro/bin:$PATH"; export JAVA_HOME="$(/usr/libexec/java_home)"
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-export-panel.yaml
+    35 COMPLETED, 0 FAILED
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-export-panel-mobile.yaml
+    18 COMPLETED, 0 FAILED
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-desktop-regression.yaml
+    33 COMPLETED, 0 FAILED
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-mobile-ui-audit.yaml
+    30 COMPLETED, 0 FAILED
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-media-panel.yaml
+    29 COMPLETED, 0 FAILED
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-media-behaviour.yaml
+    35 COMPLETED, 0 FAILED
+  ```
+- FIVE MAESTRO PITFALLS found the hard way (all documented in M11.md §3.6):
+  1. **`assertNotVisible` CANNOT see a closed web modal.** The panel closes with `opacity:0` + `pointer-events:none`, NOT `display:none`, so Maestro's accessibility-tree check still reports the controls as visible. Fix: assert the open class — `- assertTrue: "globalThis.document.getElementById('export-panel-root').classList.contains('export-panel--open') === false"`.
+  2. **`evalScript` does not expose `document`** — `TypeError: Cannot read property 'getElementById' of undefined`. Use `globalThis.document`.
+  3. **`assertTrue` needs a QUOTED STRING, not a `${...}` expression.** The `${...}` form is interpolated before parsing and then re-parsed as a script, which fails silently. Quoted string works.
+  4. **Maestro progress goes to a TTY.** Capturing stdout with `$(...)` yields ZERO `COMPLETED` lines (my first regression loop printed 0/0 for all four flows). Redirect to a file first, then grep.
+  5. `maestro test` must be run ONE command per invocation — the web device does not persist.
+- NOTE: Maestro asserts the ACCESSIBILITY TREE, NOT PIXELS, so this is an a11y + hierarchy pass, not a visual pass. Vision review of the panel screenshots is STILL not done — the backend is now rate-limited for ~100 minutes (`retry_after: 6104`). The node probe (`scripts/export-panel-probe.cjs`) still owns the "does this control change output" half.
+- blocker: none
+- next: M12 — non-baseline style polish (`js/styles/*` except the 9 pinned styles)
+
 ---
 
 ## 6. Reading list
