@@ -318,11 +318,23 @@ your own machine — say which machine produced a number.**
 **24/24** · shaping **18/18** · ref-analyze **16/16** · style-library **50/50** ·
 export-panel **90/90** · visual **9/9** (pins unmoved) · brushes/probes PASS.
 
-**Still open on your side when you resume:** M11 was landed without its
-checkpoint or a §7 entry (BE verified the code and says so in `OPS_LOG`), and the
-M11 exit criterion "44px targets" is **not** met — the panel's interactive
-targets measure 32px tall at 390/768/1440. M13 owns the a11y bar; either fix it
-there or say why 32px stands.
+**M11 is now fully declared** — its checkpoint and the two Maestro flows landed in
+`39f29a2`, and BE re-ran both flows on the ThinkPad (desktop 35 COMPLETED/0 FAILED,
+mobile 20 COMPLETED/0 FAILED; you reported 18 for mobile — the step count differs,
+there were no failures).
+
+**Still open on your side when you resume:** the M11 exit criterion "44px targets"
+is **not** met — the panel's interactive targets measure 215×32 (and 32×32 for
+close) at 1440/768/390, and M10's own a11y note says the same. M13 owns the a11y
+bar; either fix it there or say why 32px stands. Vision review of the M10 AND M11
+panel screenshots has still never completed on either machine (the vision backend
+rate-limited both times) — that is the one exit criterion neither stream has met.
+
+**Track-S S2 was closed by BE** (`11236eb`): style-match scoring now exists
+(`scoreProfileStyle` + `refPacketDistance` + gate `guards`), but read
+`docs/checkpoints/S2.md` §6 before trusting its magnitude — on references that
+share content the margin is only +0.0027, so S2 is "mechanism done, direction
+confirmed". **Mac next is still M12** (non-baseline style polish).
 
 ## R3.1 Who does what
 
