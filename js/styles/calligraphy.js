@@ -65,6 +65,13 @@ export class CalligraphyStyle {
     endBlotScale: 0.32,   // ink pool radius as fraction of nib width
     endBlotOpacity: 0.35, // opacity of the ink pooled at stroke ends
     bandStrokeWidth: 0.06, // outline of the band as fraction of nib width
+    // M12: a broad-nib stroke has a darker wet centre and a lighter, drier
+    // edge where the ink thins — a flat gradient band reads as a ribbon of
+    // plastic. These add the centre-darkening and edge-dry texture.
+    coreDarken: 0.14,     // darkening along the stroke centreline
+    coreWidth: 0.34,      // core width as fraction of nib width
+    dryEdgeAlpha: 0.10,   // opacity of the lighter dry edge
+    dryEdgeWidth: 0.16,   // dry edge width as fraction of nib width
     minRegionArea: 200
   };
 
@@ -183,6 +190,38 @@ export class CalligraphyStyle {
     ctx.globalAlpha = o;
     ctx.fillStyle = G;
     ctx.fill(band);
+
+    // --- M12: darker wet core + lighter dry edge ---
+    // A broad-nib stroke carries most ink down the middle and thins at the
+    // shoulders; a single flat gradient makes it read as a plastic ribbon.
+    ctx.save();
+    ctx.clip(band);
+
+    // Wet centre — darker ink along the centreline.
+    ctx.globalAlpha = o * this.defaults.coreDarken * 2;
+    ctx.strokeStyle = shade2(c0, -this.defaults.coreDarken);
+    ctx.lineWidth = Math.max(0.5, w * this.defaults.coreWidth);
+    ctx.beginPath();
+    ctx.moveTo(P[0][0], P[0][1]);
+    for (let i = 1; i < n; i++) ctx.lineTo(P[i][0], P[i][1]);
+    ctx.stroke();
+
+    // Dry shoulders — a lighter, thinner line just inside each nib edge.
+    ctx.globalAlpha = o * this.defaults.dryEdgeAlpha;
+    ctx.strokeStyle = shade2(c0, 0.22);
+    ctx.lineWidth = Math.max(0.4, w * this.defaults.dryEdgeWidth * 0.5);
+    for (const side of [0.86, -0.86]) {
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        // Offset along the local normal, in the nib's own frame.
+        const [nx, ny] = normalAt(P, i);
+        const px = P[i][0] + nx * (cx * side);
+        const py = P[i][1] + ny * (cy * side);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
 
     // Band outline — dark ink along the edges
     ctx.globalAlpha = o;

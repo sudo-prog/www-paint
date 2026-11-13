@@ -50,6 +50,12 @@ export class TapeStyle {
     sheenWidth: 0.18,     // sheen stripe width as fraction of tape width
     sheenSide: 0.3,       // sheen position (0.3 = 30% from left edge)
     endCapWidth: 0.9,     // end cap width as fraction of tape width
+    // M12: washi tape is fibrous — a slight per-strip tonal band and a fine
+    // longitudinal fibre grain, so strips are not one flat colour.
+    fibreCount: 26,       // longitudinal fibre lines per strip
+    fibreAlpha: 0.07,     // opacity of each fibre line
+    bandCount: 3,         // soft tonal bands across the tape width
+    bandAlpha: 0.05,      // opacity of each tonal band
     minRegionArea: 100
   };
 
@@ -146,6 +152,46 @@ export class TapeStyle {
     }
     band.closePath();
     ctx.fill(band);
+
+    // --- M12: tonal bands across the width + longitudinal fibre grain ---
+    // Clipped to the tape so neither leaks onto the canvas.
+    ctx.save();
+    ctx.clip(band);
+
+    // Soft tonal bands (the tape is not one uniform colour).
+    const bandCols = [shade2(c0, 0.06), shade2(c0, -0.05)];
+    for (let bIdx = 0; bIdx < this.defaults.bandCount; bIdx++) {
+      const t = (bIdx + 1) / (this.defaults.bandCount + 1);
+      const off = (t - 0.5) * w;
+      ctx.globalAlpha = o * this.defaults.bandAlpha;
+      ctx.strokeStyle = bandCols[bIdx % bandCols.length];
+      ctx.lineWidth = w * 0.16;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const [nx, ny] = normalAt(P, i);
+        const px = P[i][0] + nx * off;
+        const py = P[i][1] + ny * off;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    // Fine longitudinal fibres — seeded, so the same strip always looks the same.
+    ctx.globalAlpha = o * this.defaults.fibreAlpha;
+    ctx.strokeStyle = shade2(c0, 0.12);
+    ctx.lineWidth = Math.max(0.4, w * 0.02);
+    for (let fIdx = 0; fIdx < this.defaults.fibreCount; fIdx++) {
+      const off = (R() - 0.5) * w * 0.92;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const [nx, ny] = normalAt(P, i);
+        const px = P[i][0] + nx * off;
+        const py = P[i][1] + ny * off;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
 
     // --- Sheen highlight (thin stripe along one edge of the tape) ---
     ctx.globalAlpha = o * 0.6;

@@ -59,6 +59,10 @@ export class ConfettiStyle {
     colorJitter: 0.18,        // colour variation (fraction c0↔c1)
     sizeJitter: 0.25,         // random size variation
     spinJitter: 0.2,          // randomness in rotation
+    // M12: paper pieces catch light — a lit top edge and a shaded underside
+    // make them read as cut paper rather than flat squares.
+    edgeLighten: 0.22,        // brightness of the lit edge
+    edgeDarken: 0.18,         // darkness of the shaded edge
     minRegionArea: 50
   };
 
@@ -244,12 +248,34 @@ export class ConfettiStyle {
           ctx.lineTo(-pieceSize * 0.75, pieceSize * 0.433);
           ctx.closePath();
           ctx.fill();
+          // M12: lit apex / shaded base so the piece has a fold
+          ctx.globalAlpha = o * this.defaults.edgeLighten;
+          ctx.strokeStyle = shade2(col, this.defaults.edgeLighten);
+          ctx.lineWidth = Math.max(0.4, pieceSize * 0.12);
+          ctx.beginPath();
+          ctx.moveTo(0, -pieceSize * 0.866);
+          ctx.lineTo(pieceSize * 0.75, pieceSize * 0.433);
+          ctx.stroke();
           ctx.restore();
         } else {
           ctx.save();
           ctx.translate(px, py);
           ctx.rotate(rot);
           ctx.fillRect(-pieceSize / 2, -pieceSize / 2, pieceSize, pieceSize);
+          // M12: a lit top edge and a shaded bottom edge give the piece thickness.
+          ctx.globalAlpha = o * this.defaults.edgeLighten;
+          ctx.strokeStyle = shade2(col, this.defaults.edgeLighten);
+          ctx.lineWidth = Math.max(0.4, pieceSize * 0.14);
+          ctx.beginPath();
+          ctx.moveTo(-pieceSize / 2, -pieceSize / 2);
+          ctx.lineTo(pieceSize / 2, -pieceSize / 2);
+          ctx.stroke();
+          ctx.globalAlpha = o * this.defaults.edgeDarken;
+          ctx.strokeStyle = shade2(col, -this.defaults.edgeDarken);
+          ctx.beginPath();
+          ctx.moveTo(-pieceSize / 2, pieceSize / 2);
+          ctx.lineTo(pieceSize / 2, pieceSize / 2);
+          ctx.stroke();
           ctx.restore();
         }
       }

@@ -67,6 +67,12 @@ export class WashStyle {
     feather: 0.3,           // edge feathering as fraction of width
     passes: 4,              // overlapping passes for buildup
     passAlpha: 0.22,        // alpha per pass (cumulative = heavier overlaps)
+    // M12: real wash pools unevenly — pigment granulates, and a wet edge
+    // darkens as it dries. Both were missing, so a wash read as flat colour.
+    granulation: 0.22,      // speckle strength (0 = off)
+    granulationCount: 90,   // speckles per stroke
+    tideDarken: 0.18,       // rim darkening at the drying edge
+    tideWidth: 0.12,        // rim width as fraction of stroke width
     minRegionArea: 200
   };
 
@@ -173,6 +179,21 @@ export class WashStyle {
     ctx.save();
     ctx.lineCap = ctx.lineJoin = 'round';
 
+    // The full-width ribbon, reused for the tide line / granulation clip below.
+    // (The pass loop builds its own per-pass offset bands.)
+    const hw = w / 2;
+    const band = new Path2D();
+    for (let i = 0; i < n; i++) {
+      const [nx, ny] = normalAt(P, i);
+      if (i === 0) band.moveTo(P[i][0] + nx * hw, P[i][1] + ny * hw);
+      else band.lineTo(P[i][0] + nx * hw, P[i][1] + ny * hw);
+    }
+    for (let i = n - 1; i >= 0; i--) {
+      const [nx, ny] = normalAt(P, i);
+      band.lineTo(P[i][0] - nx * hw, P[i][1] - ny * hw);
+    }
+    band.closePath();
+
     // Multiple soft-edged passes — offset for natural wash buildup
     const passes = this.defaults.passes;
     for (let p = 0; p < passes; p++) {
@@ -212,6 +233,47 @@ export class WashStyle {
       Math.max(...P.map(p => p[1])) - Math.min(...P.map(p => p[1])) + feather * 2
     );
     ctx.filter = 'none';
+
+    // --- M12: tide line + granulation ---
+    // A drying wash leaves a darker rim where the pigment collected, and
+    // speckles where it granulated. Clip to the same ribbon so neither leaks.
+    ctx.save();
+    ctx.clip(band);
+
+    // Tide line: a darker stroke just inside the outer edge.
+    // NOTE: this must NOT be scaled by `opacity` — a wash stroke runs at
+    // opacity 0.15, so an alpha of opacity*tideDarken*2 (~0.05) is invisible.
+    // Scale it off the base alpha so the rim actually reads.
+    ctx.globalAlpha = Math.min(1, o * (0.35 + this.defaults.tideDarken * 2));
+    ctx.strokeStyle = shade2(c0, -this.defaults.tideDarken);
+    ctx.lineWidth = Math.max(0.5, w * this.defaults.tideWidth);
+    for (const side of [0.72, -0.72]) {
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const [nx, ny] = normalAt(P, i);
+        const px = P[i][0] + nx * (hw * side);
+        const py = P[i][1] + ny * (hw * side);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    // Granulation: seeded speckles, denser toward the middle of the stroke.
+    ctx.globalAlpha = Math.min(1, o * (0.4 + this.defaults.granulation));
+    ctx.fillStyle = shade2(c0, -0.22);
+    const speckles = Math.round(this.defaults.granulationCount * (w / 20));
+    for (let gIdx = 0; gIdx < speckles; gIdx++) {
+      const gi = Math.floor(R() * (n - 1));
+      const [nx, ny] = normalAt(P, gi);
+      const off = gaussR(R) * hw * 0.6;
+      const gx = P[gi][0] + nx * off;
+      const gy = P[gi][1] + ny * off;
+      const gr = Math.max(0.3, w * 0.012 * (0.5 + R()));
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr, 0, 7);
+      ctx.fill();
+    }
+    ctx.restore();
 
     ctx.restore();
   }

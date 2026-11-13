@@ -188,6 +188,12 @@ export class PastelStyle {
 
       const d = t * L;
       while (j < n - 2 && cum[j] < d) j++;
+      // BUGFIX (M12): j was also incremented at the END of the body, so after a
+      // few iterations it could reach P.length and `P[j]` was undefined —
+      // `TypeError: Cannot read properties of undefined (reading '0')` at this
+      // line, killing every few hundred strokes. Clamp to the last segment.
+      if (j > n - 2) j = n - 2;
+      if (j < 1) j = 1;
       const seg = cum[j] - cum[j - 1] || 1;
       const f = (d - cum[j - 1]) / seg;
       const px = P[j - 1][0] + (P[j][0] - P[j - 1][0]) * f;
@@ -219,8 +225,6 @@ export class PastelStyle {
       ctx.beginPath();
       ctx.arc(sx, sy, rad, 0, 7);
       ctx.fill();
-
-      j++;
     }
 
     ctx.restore();

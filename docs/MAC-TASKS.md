@@ -294,12 +294,24 @@ score. No change to your exit criteria.
 
 # Round 3 — remaining work, split (issued 2026-11-12 by BE)
 
-**Status (updated 2026-11-13):** **M7/M8/M9, M10 and M11 are DONE and
+**Status (updated 2026-11-13):** **M7/M8/M9, M10, M11 and M12 are DONE and
 BE-pushed** — M10/M11 landed in `3b711fe` / `d4dbe34` after independent
 BE verification on the ThinkPad (style-library 50/50 + probe PASS, export-panel
-90/90 + probe PASS). Track-S **S1** closed too (`js/engine/ref-analyze.js`).
-**Do NOT redo M10 or M11 — both are on `main`.** Your next stream is **M12**
-(non-baseline style polish), then M13 → M16.
+90/90 + probe PASS). Track-S **S1** + **S3** closed too (`js/engine/ref-analyze.js`).
+**Do NOT redo M10, M11 or M12 — all are on `main`.** Your next stream is **M13**
+(a11y + responsive sweep), then M14 → M16.
+
+**M12 (landed):** 11 non-pinned styles polished, five of them correctness defects
+the browser probe caught — `bokeh`'s `spacingFactor` was undefined so spacing went
+NaN and it painted a **blank** canvas (`inkCoverage 0` → `0.9999`, `blankRatio 1` →
+`0`); `riso` threw `ReferenceError: path is not defined` on every S-shape (now ok);
+`pastel`'s stamp walk ran off the point array; `glitch` called `ctx.clip()` outside
+save/restore. BE re-ran your probe on the ThinkPad: 40/42 styles byte-identical;
+`confetti` and `graffiti` differ by ≤25 bytes (no `Math.random`, no text/font, no
+time source in either — cause not yet determined, likely a cross-machine
+floating-point/Chromium-build difference). **Please re-run `--after` on the Mac and
+say whether those two reproduce**, and note the pinned nine are untouched (visual
+regression 9/9 unmoved here).
 
 **Two engine defects were fixed by BE while verifying your M10 hand-in** — your
 own probe was green on your machine and red on the ThinkPad. Your headless
@@ -329,6 +341,12 @@ close) at 1440/768/390, and M10's own a11y note says the same. M13 owns the a11y
 bar; either fix it there or say why 32px stands. Vision review of the M10 AND M11
 panel screenshots has still never completed on either machine (the vision backend
 rate-limited both times) — that is the one exit criterion neither stream has met.
+
+**M12 arrived declared only by its files** — no `docs/checkpoints/M12.md` and no
+`AGENTS.md` §7 progress entry (the same gap M11 had). Please write the checkpoint
+(what changed per style + the before/after table from `docs/research/m12/*/metrics.json`)
+and add the §7 line. The code is landed and verified; nothing is blocked, but the
+record should exist.
 
 **Track-S S2 was closed by BE** (`11236eb`): style-match scoring now exists
 (`scoreProfileStyle` + `refPacketDistance` + gate `guards`), but read

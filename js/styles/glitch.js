@@ -208,9 +208,11 @@ export class GlitchStyle {
     }
 
     ctx.restore();
-    ctx.clip(); // re-establish clip for slices
 
-    // --- Horizontal displacement slices ---
+    // BUGFIX (M12): this used to be a bare `ctx.clip()` after ctx.restore(),
+    // which clipped the WHOLE canvas against whatever path was current and was
+    // never restored — glitch renders came out ~10% covered (a hard edge band).
+    // Re-establish the clip inside a save/restore instead.
     ctx.save();
     outlinePath(ctx, shape);
     ctx.clip();

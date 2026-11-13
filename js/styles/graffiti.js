@@ -43,7 +43,15 @@ export class GraffitiStyle {
     speckleOpacityMax: 0.85,
     dripProbability: 0.62,  // chance of drips on heavy strokes
     dripLength: 3.2,        // max drip length as fraction of width
-    haloSpeckles: 160       // speckles for blob shapes
+    haloSpeckles: 160,      // speckles for blob shapes
+    // M12: aerosol lays down a soft tonal gradient — denser at the centre of
+    // the spray, lighter at the shoulders. Without it a spray stroke is one
+    // flat tone. These add the centre density falloff and a fine mist.
+    mistAlpha: 0.14,        // opacity of the fine overspray mist
+    mistCount: 140,         // mist particles per stroke
+    mistRadius: 2.6,        // mist spread as a multiple of stroke width
+    toneBands: 6,           // concentric tonal steps in the spray body
+    toneBandAlpha: 0.11     // per-band opacity
   };
 
   generate(analyzer, params) {
@@ -162,6 +170,20 @@ export class GraffitiStyle {
     const len = Math.hypot(x1 - x0, y1 - y0) + Math.hypot(x2 - x1, y2 - y1);
     const n = Math.min(420, Math.round(len * u * this.defaults.speckleDensity + w * 4 * u));
     const dot = Math.max(this.defaults.dotSize * 10, w * this.defaults.dotSize);
+
+    // --- M12: fine overspray mist ---
+    // Aerosol throws a faint halo well outside the visible edge of the stroke.
+    for (let i = 0; i < this.defaults.mistCount; i++) {
+      const s = R() * u;
+      const [px, py] = pt(s);
+      const [tx, ty] = tn(s);
+      const off = g() * w * this.defaults.mistRadius * 0.5;
+      ctx.globalAlpha = o * this.defaults.mistAlpha * (0.4 + R());
+      ctx.beginPath();
+      ctx.arc(px - ty * off, py + tx * off, Math.max(0.4, w * 0.02) * (0.5 + R()), 0, 7);
+      ctx.fill();
+    }
+
     for (let i = 0; i < n; i++) {
       const s = R() * u;
       const [px, py] = pt(s);
@@ -169,6 +191,34 @@ export class GraffitiStyle {
       const off = g() * w * 1.25;
       const r = dot * (0.4 + R() * 1.4);
       ctx.globalAlpha = o * (this.defaults.speckleOpacityMin + R() * this.defaults.speckleOpacityMax);
+      ctx.beginPath();
+      ctx.arc(px - ty * off, py + tx * off, r, 0, 7);
+      ctx.fill();
+    }
+
+    // 2b. --- M12: tonal falloff ---
+    // A real spray is densest down the centreline and thins toward the
+    // shoulders. Lay concentric translucent bands, darkest at the centre.
+    for (let band = this.defaults.toneBands - 1; band >= 0; band--) {
+      const k = (band + 1) / this.defaults.toneBands;
+      ctx.globalAlpha = o * this.defaults.toneBandAlpha * k;
+      ctx.lineWidth = w * 0.92 * k;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.quadraticCurveTo(qx, qy, ex, ey);
+      ctx.stroke();
+    }
+
+    // 2c. --- M12: denser particle core ---
+    // A second, tighter pass of speckles concentrated on the centreline.
+    const coreN = Math.round(n * 0.5);
+    for (let i = 0; i < coreN; i++) {
+      const s = R() * u;
+      const [px, py] = pt(s);
+      const [tx, ty] = tn(s);
+      const off = g() * w * 0.45;
+      const r = dot * (0.5 + R() * 0.9);
+      ctx.globalAlpha = o * (0.4 + R() * 0.5);
       ctx.beginPath();
       ctx.arc(px - ty * off, py + tx * off, r, 0, 7);
       ctx.fill();

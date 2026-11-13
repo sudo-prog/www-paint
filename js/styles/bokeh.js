@@ -188,7 +188,10 @@ export class BokehStyle {
     const size = Math.max(b.w, b.h, 4);
 
     const colSize = lerp(this.defaults.circleSizeMin, this.defaults.circleSizeMax, clamp01(size / 100));
-    const spacing = colSize * this.spacingFactor * 4;
+    // BUGFIX (M12): was `this.spacingFactor` — undefined on the instance, so
+    // spacing was NaN, cols/rows were NaN, and the loop body NEVER ran: bokeh
+    // rendered a blank canvas for every shape. Must read the defaults object.
+    const spacing = colSize * this.defaults.spacingFactor * 4;
     const cols = Math.ceil(b.w / spacing) + 2;
     const rows = Math.ceil(b.h / spacing) + 2;
 

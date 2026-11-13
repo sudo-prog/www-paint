@@ -57,6 +57,10 @@ export class DotsStyle {
     spacingMax: 12,           // maximum spacing (px)
     radiusJitter: 0.25,       // random radius variation (±fraction)
     colorJitter: 0.08,        // subtle colour variation
+    // M12: a printed dot is not a flat disc — it has a denser core and a
+    // slightly ragged rim (Ben-Day screen on paper).
+    coreDarken: 0.16,         // the ink pools toward the centre
+    rimAlpha: 0.28,           // opacity of the softer outer ring
     minRegionArea: 50
   };
 
@@ -228,10 +232,20 @@ export class DotsStyle {
         const jit = (R() - 0.5) * this.defaults.colorJitter;
         const col = shade2(mixHex(c0, c1, t), jit);
 
+        // M12: draw as a soft-rimmed disc with a denser core rather than a
+        // single flat fill — the dot reads as printed ink, not a flat circle.
+        const coreCol = shade2(col, -this.defaults.coreDarken);
         ctx.fillStyle = col;
         ctx.beginPath();
         ctx.arc(px, py, rad, 0, 7);
         ctx.fill();
+
+        ctx.globalAlpha = o * this.defaults.rimAlpha;
+        ctx.fillStyle = coreCol;
+        ctx.beginPath();
+        ctx.arc(px, py, rad * 0.62, 0, 7);
+        ctx.fill();
+        ctx.globalAlpha = o;
       }
     }
 

@@ -63,6 +63,12 @@ export class GouacheStyle {
     opacity: 0.95,         // gouache is opaque, but not perfectly so
     edgeDarken: 0.18,        // darken the perimeter edge
     edgeWidth: 0.12,         // edge width as fraction of stroke width
+    // M12: gouache is matte and slightly uneven — a faint dry-brush streak
+    // and a few lighter flecks keep the body from reading as one flat fill.
+    dryBrushAlpha: 0.10,     // opacity of the lighter drag streaks
+    dryBrushCount: 14,       // streaks per stroke
+    fleckAlpha: 0.08,        // opacity of the lighter pigment flecks
+    fleckCount: 40,          // flecks per stroke
     minRegionArea: 200
   };
 
@@ -182,6 +188,41 @@ export class GouacheStyle {
     ctx.globalAlpha = o * this.defaults.opacity;
     ctx.fillStyle = c0;
     ctx.fill(band);
+
+    // --- M12: dry-brush drag + pigment flecks ---
+    // Clipped to the ribbon so neither escapes the stroke.
+    ctx.save();
+    ctx.clip(band);
+
+    // Dry-brush streaks: lighter drag lines along the stroke direction.
+    ctx.globalAlpha = o * this.defaults.dryBrushAlpha;
+    ctx.strokeStyle = shade2(c0, 0.16);
+    ctx.lineWidth = Math.max(0.4, w * 0.05);
+    for (let sIdx = 0; sIdx < this.defaults.dryBrushCount; sIdx++) {
+      const off = (R() - 0.5) * w * 0.8;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const [nx, ny] = normalAt(P, i);
+        const px = P[i][0] + nx * off;
+        const py = P[i][1] + ny * off;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+
+    // Pigment flecks: tiny lighter specks where the paint sat thicker.
+    ctx.globalAlpha = o * this.defaults.fleckAlpha;
+    ctx.fillStyle = shade2(c0, 0.2);
+    for (let fIdx = 0; fIdx < this.defaults.fleckCount; fIdx++) {
+      const gi = Math.floor(R() * n);
+      const [nx, ny] = normalAt(P, gi);
+      const off = gaussR(R) * hw * 0.7;
+      const fr = Math.max(0.3, w * 0.014 * (0.5 + R()));
+      ctx.beginPath();
+      ctx.arc(P[gi][0] + nx * off, P[gi][1] + ny * off, fr, 0, 7);
+      ctx.fill();
+    }
+    ctx.restore();
 
     // Darker edge — a slightly narrower ribbon in a darker shade
     const col = shade2(c0, -this.defaults.edgeDarken);

@@ -166,13 +166,20 @@ export class RisoStyle {
     }
 
     // --- Grain texture overlay ---
+    // BUGFIX (M12): this used `path`, which was never declared in this method
+    // (it exists only in _renderArea). Every S-type shape threw
+    // `ReferenceError: path is not defined`, so riso strokes never rendered.
+    // Draw the grain as short strokes along the centreline instead.
     ctx.globalAlpha = o * this.defaults.grainAmount;
     ctx.strokeStyle = '#000000';
     const grainStep = this.defaults.grainFreq * 2 + 1;
     for (let i = 0; i < n; i += Math.max(1, Math.floor(grainStep))) {
       const g = gaussR(R) * w * 0.15;
-      ctx.lineWidth = Math.max(0.3, g);
-      ctx.stroke(path); // simplified — grain dots along path
+      ctx.lineWidth = Math.max(0.3, Math.abs(g));
+      ctx.beginPath();
+      ctx.moveTo(P[i][0], P[i][1]);
+      ctx.lineTo(P[Math.min(n - 1, i + 1)][0], P[Math.min(n - 1, i + 1)][1]);
+      ctx.stroke();
     }
 
     ctx.restore();
