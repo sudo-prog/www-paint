@@ -292,6 +292,11 @@ const PAGE_AUDIT = () => {
       tag: el.tagName.toLowerCase(),
       id: el.id || '',
       cls: (el.className || '').toString().slice(0, 60),
+      // Retained so a scoped audit can filter by containment (see
+      // PAGE_AUDIT_LAYERS). A DOM node does not survive Playwright's
+      // serialization, so the scoped pass re-derives the subset from the
+      // selector list in PAGE_AUDIT_LAYERS instead of shipping this across.
+      el,
       type: el.getAttribute('type') || '',
       name: name.name,
       nameVia: name.via,
@@ -498,6 +503,117 @@ async function PAGE_AUDIT_RAIL(page, buttonId) {
   return audit;
 }
 
+/** Audit the LAYERS rail in its own open state.
+ *
+ *  `toggle-layers` is a DESKTOP-ONLY collapse toggle (js/ui/app.js:449 calls
+ *  `_setPanelCollapsed`, which sets `is-collapsed` above 768px and
+ *  `panel--mobile-closed` below it). So on desktop the `allOpen` pass COLLAPSES
+ *  the layers rail and every layer control measures 0x0 — a check that filters
+ *  out zero-area elements then passes vacuously. That is how the first M13 run
+ *  recorded `underMin 0` while the real rows were 32x32. This pass opens the
+ *  rail by the mechanism that matches the viewport and asserts it is really
+ *  open before measuring.
+ *
+ *  Scoped to `.panel--layers`: PAGE_AUDIT walks the whole document, and the
+ *  controls panel is still on screen in this state, so an unscoped pass reports
+ *  the brush sliders (whose row is deliberately 10px — see section 14) as
+ *  under-minimum layer defects. */
+async function PAGE_AUDIT_LAYERS(page, width) {
+  // Establish a KNOWN state first. On mobile the panel starts closed and
+  // `toggle-layers` opens it; on desktop the panel starts expanded and
+  // `toggle-layers` COLLAPSES it. Reading the class before acting means this
+  // works no matter what the previous pass left behind.
+  await page.evaluate(() => {
+    const panel = document.querySelector('.panel--layers');
+    if (!panel) return;
+    const mobile = matchMedia('(max-width: 768px)').matches;
+    if (mobile) {
+      const closed = panel.classList.contains('panel--mobile-closed');
+      if (closed) document.getElementById('toggle-layers')?.click();
+    } else {
+      panel.classList.remove('is-collapsed');
+    }
+  });
+  await new Promise((r) => setTimeout(r, 300));
+  const state = await page.evaluate(() => {
+    const panel = document.querySelector('.panel--layers');
+    const body = panel && panel.querySelector('.layers-body');
+    return {
+      panelCls: panel ? panel.className : '',
+      bodyDisplay: body ? getComputedStyle(body).display : null,
+      rowWidth: (panel && panel.querySelector('.layer-row'))
+        ? panel.querySelector('.layer-row').getBoundingClientRect().width : 0,
+    };
+  });
+  const full = await page.evaluate(PAGE_AUDIT);
+  // Re-derive the layers subset inside the page. A DOM node cannot cross the
+  // Playwright boundary, so the scoped query runs where the elements live.
+  const interactive = await page.evaluate(() => {
+    const panel = document.querySelector('.panel--layers');
+    if (!panel) return [];
+    const sel = 'button, input, select, textarea, a[href]';
+    return [...panel.querySelectorAll(sel)].filter((el) => {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+      return r.width > 0 && r.height > 0;
+    }).map((el) => {
+      const r = el.getBoundingClientRect();
+      const nameEl = el;
+      const al = (nameEl.getAttribute('aria-label') || '').trim();
+      const lab = nameEl.getAttribute('aria-labelledby');
+      let name = al;
+      if (!name && lab) {
+        name = lab.split(/\s+/).map((id) => document.getElementById(id)).filter(Boolean)
+          .map((n) => (n.textContent || '').trim()).join(' ');
+      }
+      if (!name && nameEl.labels && nameEl.labels.length) {
+        name = [...nameEl.labels].map((l) => (l.textContent || '').trim()).filter(Boolean).join(' ');
+      }
+      if (!name && nameEl instanceof HTMLButtonElement) name = (nameEl.textContent || '').trim();
+      if (!name) name = (nameEl.getAttribute('title') || '').trim();
+      // Slider target: the row band, not the track.
+      let slider = null;
+      if (el instanceof HTMLInputElement && el.type === 'range') {
+        const row = el.closest('.layer-opacity-row, .layer-tools-row, .slider-row, .paint-toolbar__row');
+        const rr = row ? row.getBoundingClientRect() : null;
+        slider = {
+          row: rr ? { w: +rr.width.toFixed(1), h: +rr.height.toFixed(1), cls: (row.className || '').toString().slice(0, 30) } : null,
+          effectiveH: rr ? +rr.height.toFixed(1) : 0,
+          underMinRow: rr ? rr.height < 44 : true,
+        };
+      }
+      return {
+        tag: el.tagName.toLowerCase(),
+        id: el.id || '',
+        cls: (el.className || '').toString().slice(0, 60),
+        name,
+        rect: { w: +r.width.toFixed(1), h: +r.height.toFixed(1) },
+        underMinW: r.width < 43.5,
+        underMinH: r.height < 43.5,
+        sliderTarget: slider,
+        underMinSlider: slider ? slider.underMinRow : false,
+        offViewport: r.right > innerWidth + 0.5 || r.left < -0.5,
+      };
+    });
+  });
+  const audit = { ...full, interactive };
+  audit.railOpenState = state;
+  // Restore the viewport's own default for this rail: mobile starts CLOSED,
+  // desktop starts EXPANDED.
+  await page.evaluate(() => {
+    const panel = document.querySelector('.panel--layers');
+    if (!panel) return;
+    if (matchMedia('(max-width: 768px)').matches) {
+      panel.classList.add('panel--mobile-closed');
+    } else {
+      panel.classList.remove('is-collapsed');
+    }
+  });
+  await new Promise((r) => setTimeout(r, 200));
+  return audit;
+}
+
 async function main() {
   fs.mkdirSync(path.dirname(JSON_OUT), { recursive: true });
   fs.mkdirSync(SHOT_DIR, { recursive: true });
@@ -547,6 +663,9 @@ async function main() {
     for (const id of ['btn-media-mode', 'btn-library-mode']) {
       rail[id] = await PAGE_AUDIT_RAIL(page, id);
     }
+    // The layers rail needs its own pass: `toggle-layers` COLLAPSES it on
+    // desktop, so the allOpen pass measures it shut (see PAGE_AUDIT_LAYERS).
+    rail['layers-rail'] = await PAGE_AUDIT_LAYERS(page, width);
 
     const shot = path.join(SHOT_DIR, `a11y-${width}.png`);
     await page.screenshot({ path: shot, fullPage: false });
@@ -579,6 +698,15 @@ async function main() {
     const railUnder = railAudits.flatMap((a) => (a.interactive || []).filter((c) => c.underMinW || c.underMinH || c.underMinSlider));
     const railNoName = railAudits.flatMap((a) => (a.interactive || []).filter((c) => !c.name));
 
+    // The layers rail must be measured OPEN. If it was closed when audited,
+    // every control reports 0x0 and the pass is vacuous — record that instead
+    // of silently counting it as clean.
+    const layersAudit = data.rail && data.rail['layers-rail'];
+    const layersOpen = !!(layersAudit && layersAudit.railOpenState && layersAudit.railOpenState.rowWidth > 0);
+    const layersUnder = layersAudit
+      ? (layersAudit.interactive || []).filter((c) => c.underMinW || c.underMinH || c.underMinSlider)
+      : [];
+
     const controls = data.allOpen.interactive || [];
     const overlays = data.allOpen.overlays || [];
     const live = data.allOpen.liveRegions || [];
@@ -593,6 +721,12 @@ async function main() {
     const clipped = controls.filter((c) => c.clippedByOverflow);
 
     allControls.push(...controls.map((c) => ({ ...c, width: w })));
+    // The layers rail's own open-state pass — the allOpen pass measures it
+    // shut on desktop, so without this the layer controls never appear in the
+    // global findings at all.
+    if (layersAudit) {
+      allControls.push(...(layersAudit.interactive || []).map((c) => ({ ...c, width: w })));
+    }
     allOverlays.push(...overlays.map((o) => ({ ...o, width: w })));
     allLive.push(...live.map((l) => ({ ...l, width: w })));
 
@@ -614,6 +748,14 @@ async function main() {
       railOffViewportList: railOff.slice(0, 10).map((c) => ({ tag: c.tag, id: c.id, cls: c.cls.slice(0, 30) })),
       railUnderMin: railUnder.length,
       railNoName: railNoName.length,
+      // The layers rail, which the allOpen pass measures SHUT on desktop.
+      layersRailOpen: layersOpen,
+      layersRailRowWidth: layersAudit && layersAudit.railOpenState
+        ? layersAudit.railOpenState.rowWidth : null,
+      layersUnderMin: layersUnder.length,
+      layersUnderMinList: layersUnder.slice(0, 20).map((c) => ({
+        tag: c.tag, cls: c.cls.slice(0, 30), w: c.rect.w, h: c.rect.h, name: (c.name || '').slice(0, 24),
+      })),
       clipped: clipped.length,
       docOverflowX: doc.docOverflowX || 0,
       scrollContainers: (doc.scrollContainers || []).length,
@@ -650,6 +792,25 @@ async function main() {
   summary.uniqueLive = byKey(allLive, (l) => `${l.id || l.cls}|${l.ariaLive}|${l.role}`);
 
   report.summary = summary;
+  // `el` is a live DOM node kept on each control record for scoped audits; it
+  // cannot be serialised and is not evidence. Strip it before writing.
+  const strip = (c) => { const { el, ...rest } = c; return rest; };
+  for (const data of Object.values(report.widths)) {
+    for (const pass of ['asFound', 'allOpen']) {
+      if (data[pass] && Array.isArray(data[pass].interactive)) {
+        data[pass].interactive = data[pass].interactive.map(strip);
+      }
+    }
+    for (const [k, pass] of Object.entries(data.rail || {})) {
+      if (pass && Array.isArray(pass.interactive)) {
+        data.rail[k].interactive = pass.interactive.map(strip);
+      }
+    }
+  }
+  summary.uniqueControls = summary.uniqueControls.map(strip);
+  summary.uniqueUnderMin = summary.uniqueUnderMin.map(strip);
+  summary.uniqueNoName = summary.uniqueNoName.map(strip);
+  summary.uniqueNoFocus = summary.uniqueNoFocus.map(strip);
   fs.writeFileSync(JSON_OUT, JSON.stringify(report, null, 2));
 
   /* ── Console ───────────────────────────────────────────────────────── */
@@ -660,6 +821,12 @@ async function main() {
   line('');
   for (const [w, s] of Object.entries(summary.perWidth)) {
     line(`@ ${w}px  controls ${s.controlCount}  underMin ${s.underMinTarget}  noName ${s.noAccessibleName}  noFocusRule ${s.noFocusVisibleRule}  focusRemoved ${s.removedFocusWithoutReplacement}  offViewport ${s.offViewport} (rail ${s.railOffViewport})  clipped ${s.clipped}  docOverflowX ${s.docOverflowX}  scrollContainers ${s.scrollContainers}  overlays ${s.overlayCount}  live ${s.liveRegionCount}  anims ${s.animationNames}  reducedRules ${s.reducedMotionRules}  errors ${s.errors.length}`);
+    line(`        layersRail open=${s.layersRailOpen} rowW=${s.layersRailRowWidth} underMin=${s.layersUnderMin}`);
+    if (s.layersUnderMinList && s.layersUnderMinList.length) {
+      for (const c of s.layersUnderMinList) {
+        line(`          ${c.tag}.${c.cls}  ${c.w}x${c.h}  "${c.name}"`);
+      }
+    }
   }
   line('');
   line(`UNIQUE under-min-target controls (across all widths): ${summary.uniqueUnderMin.length}`);

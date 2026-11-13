@@ -40,6 +40,38 @@ url: http://127.0.0.1:8099/index.html
     globalThis.__underMin = under;
 - assertTrue: "globalThis.__underMin.length === 0"
 
+# ── C2. The LAYERS rail's own controls >= 44px ─────────────────────────
+# Mobile starts with the layers rail CLOSED, so the C. check above never sees
+# these controls. Open it the way a user does, then measure. (The first M13 run
+# missed this entirely and recorded `underMin 0` while they were 32x32.)
+- evalScript: |
+    const panel = globalThis.document.querySelector('.panel--layers');
+    if (panel && panel.classList.contains('panel--mobile-closed')) {
+      globalThis.document.getElementById('toggle-layers').click();
+    }
+    globalThis.__layersOpened = true;
+- assertTrue: "globalThis.__layersOpened === true"
+- evalScript: |
+    const panel = globalThis.document.querySelector('.panel--layers');
+    const rows = panel ? panel.querySelectorAll('.layer-row') : [];
+    const under = [];
+    for (const row of rows) {
+      const br = row.getBoundingClientRect();
+      if (br.width === 0) { under.push('ROW-WIDTH-0'); continue; }
+      for (const el of row.querySelectorAll('button, input, select')) {
+        const r = el.getBoundingClientRect();
+        const cs = globalThis.getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        if (r.width < 43.5 || r.height < 43.5) {
+          under.push(el.tagName + '.' + (el.className || '') + ' ' + r.width.toFixed(0) + 'x' + r.height.toFixed(0));
+        }
+      }
+    }
+    globalThis.__layerUnderMin = under;
+    globalThis.__layerRowCount = rows.length;
+- assertTrue: "globalThis.__layerRowCount > 0"
+- assertTrue: "globalThis.__layerUnderMin.length === 0"
+
 # ── H. No horizontal document overflow at 390px ───────────────────────
 - evalScript: |
     const de = globalThis.document.documentElement;

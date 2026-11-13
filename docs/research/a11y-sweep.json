@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-13T17:07:18.790Z",
-  "url": "http://127.0.0.1:45713/index.html",
+  "generatedAt": "2026-11-13T21:11:14.504Z",
+  "url": "http://127.0.0.1:46723/index.html",
   "minTarget": 44,
   "widths": {
     "390": {
@@ -9190,6 +9190,575 @@
             }
           ],
           "probeNote": "controls include panels opened by the probe"
+        },
+        "layers-rail": {
+          "widths": 390,
+          "interactive": [
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "collapse-btn",
+              "name": "Collapse layers panel",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "btn btn--icon btn--sm",
+              "name": "Add layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            }
+          ],
+          "overlays": [
+            {
+              "id": "export-root",
+              "cls": "modal export-dialog",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-title",
+              "ariaLabel": "",
+              "labelledByName": "Export",
+              "hasFocusable": 14,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "export-panel-root",
+              "cls": "export-panel",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-panel-title",
+              "ariaLabel": "",
+              "labelledByName": "Export & share",
+              "hasFocusable": 8,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "settings-overlay",
+              "cls": "settings-overlay settings-overlay--open",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "false",
+              "ariaLabelledby": "settings-title",
+              "ariaLabel": "",
+              "labelledByName": "UI SETTINGS",
+              "hasFocusable": 10,
+              "isOpenClass": [
+                "settings-overlay--open"
+              ],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": false
+            }
+          ],
+          "liveRegions": [
+            {
+              "id": "library-status",
+              "cls": "library-status",
+              "tag": "p",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "",
+              "parentOfControls": 0
+            },
+            {
+              "id": "canvas-placeholder",
+              "cls": "canvas-placeholder",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Drop an image to begin\n            Or click Open above",
+              "parentOfControls": 1
+            },
+            {
+              "id": "status-bar",
+              "cls": "status-footer",
+              "tag": "footer",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": true,
+              "text": "StylepencilStrokes0Layers2/2Brush controls",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-summary",
+              "cls": "export-panel__summary",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "PNG · 1024 × 768",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-status",
+              "cls": "export-panel__status",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Ready to export.",
+              "parentOfControls": 0
+            }
+          ],
+          "motion": {
+            "matchesNow": false,
+            "rules": [
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 1
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 4
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "html",
+                "cssText": "scroll-behavior: auto !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".status__msg.loading::before",
+                "cssText": "animation: auto ease 0s 1 normal none running none !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".motion-progress-fill",
+                "cssText": "transition: none !important;"
+              }
+            ],
+            "animations": [
+              "dropdownEnter"
+            ]
+          },
+          "document": {
+            "innerWidth": 390,
+            "innerHeight": 900,
+            "scrollWidth": 390,
+            "clientWidth": 390,
+            "docOverflowX": 0,
+            "scrollHeight": 900,
+            "clientHeight": 900,
+            "docOverflowY": 0,
+            "scrollContainers": []
+          },
+          "landmarks": [
+            {
+              "tag": "header",
+              "role": "banner",
+              "id": "",
+              "cls": "top-bar",
+              "ariaLabel": "",
+              "rect": {
+                "x": -21,
+                "y": 0,
+                "w": 390,
+                "h": 111
+              }
+            },
+            {
+              "tag": "nav",
+              "role": "",
+              "id": "",
+              "cls": "top-bar__center",
+              "ariaLabel": "Main navigation",
+              "rect": {
+                "x": 71,
+                "y": 4,
+                "w": 294,
+                "h": 54
+              }
+            },
+            {
+              "tag": "main",
+              "role": "",
+              "id": "",
+              "cls": "main",
+              "ariaLabel": "",
+              "rect": {
+                "x": -21,
+                "y": 111,
+                "w": 390,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "controls-root",
+              "cls": "panel panel--controls controls-panel",
+              "ariaLabel": "Brush controls",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "paint-toolbar",
+              "cls": "panel paint-toolbar paint-toolbar--activ",
+              "ariaLabel": "Paint toolbar",
+              "rect": {
+                "x": -21,
+                "y": 111,
+                "w": 390,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "media-root",
+              "cls": "panel panel--media media-panel panel--mo",
+              "ariaLabel": "Media, wet and tonal controls",
+              "rect": {
+                "x": -340,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "style-library-root",
+              "cls": "panel panel--library style-library-panel",
+              "ariaLabel": "Style library",
+              "rect": {
+                "x": -21,
+                "y": 111,
+                "w": 250,
+                "h": 757
+              }
+            },
+            {
+              "tag": "section",
+              "role": "main",
+              "id": "canvas-area",
+              "cls": "canvas-wrapper",
+              "ariaLabel": "",
+              "rect": {
+                "x": -21,
+                "y": 111,
+                "w": 390,
+                "h": 757
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "motion-controls",
+              "cls": "motion-controls-root motion-controls",
+              "ariaLabel": "Playback controls",
+              "rect": {
+                "x": -5,
+                "y": 802,
+                "w": 358,
+                "h": 54
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "",
+              "cls": "motion-bar",
+              "ariaLabel": "Painting playback controls",
+              "rect": {
+                "x": 4,
+                "y": 807,
+                "w": 340,
+                "h": 44
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "layers-root",
+              "cls": "panel panel--layers layers-panel",
+              "ariaLabel": "Layers",
+              "rect": {
+                "x": 70,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "footer",
+              "role": "status",
+              "id": "status-bar",
+              "cls": "status-footer",
+              "ariaLabel": "",
+              "rect": {
+                "x": -21,
+                "y": 868,
+                "w": 390,
+                "h": 32
+              }
+            }
+          ],
+          "duplicates": [
+            {
+              "role": "main",
+              "count": 2
+            },
+            {
+              "role": "complementary",
+              "count": 5
+            },
+            {
+              "role": "region",
+              "count": 2
+            }
+          ],
+          "probeNote": "controls include panels opened by the probe",
+          "railOpenState": {
+            "panelCls": "panel panel--layers layers-panel",
+            "bodyDisplay": "block",
+            "rowWidth": 302
+          }
         }
       },
       "opened": [
@@ -18391,6 +18960,575 @@
             }
           ],
           "probeNote": "controls include panels opened by the probe"
+        },
+        "layers-rail": {
+          "widths": 500,
+          "interactive": [
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "collapse-btn",
+              "name": "Collapse layers panel",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "btn btn--icon btn--sm",
+              "name": "Add layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            }
+          ],
+          "overlays": [
+            {
+              "id": "export-root",
+              "cls": "modal export-dialog",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-title",
+              "ariaLabel": "",
+              "labelledByName": "Export",
+              "hasFocusable": 14,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "export-panel-root",
+              "cls": "export-panel",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-panel-title",
+              "ariaLabel": "",
+              "labelledByName": "Export & share",
+              "hasFocusable": 8,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "settings-overlay",
+              "cls": "settings-overlay settings-overlay--open",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "false",
+              "ariaLabelledby": "settings-title",
+              "ariaLabel": "",
+              "labelledByName": "UI SETTINGS",
+              "hasFocusable": 10,
+              "isOpenClass": [
+                "settings-overlay--open"
+              ],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": false
+            }
+          ],
+          "liveRegions": [
+            {
+              "id": "library-status",
+              "cls": "library-status",
+              "tag": "p",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "",
+              "parentOfControls": 0
+            },
+            {
+              "id": "canvas-placeholder",
+              "cls": "canvas-placeholder",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Drop an image to begin\n            Or click Open above",
+              "parentOfControls": 1
+            },
+            {
+              "id": "status-bar",
+              "cls": "status-footer",
+              "tag": "footer",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": true,
+              "text": "StylepencilStrokes0Layers2/2Brush controls",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-summary",
+              "cls": "export-panel__summary",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "PNG · 1024 × 768",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-status",
+              "cls": "export-panel__status",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Ready to export.",
+              "parentOfControls": 0
+            }
+          ],
+          "motion": {
+            "matchesNow": false,
+            "rules": [
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 1
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 4
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "html",
+                "cssText": "scroll-behavior: auto !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".status__msg.loading::before",
+                "cssText": "animation: auto ease 0s 1 normal none running none !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".motion-progress-fill",
+                "cssText": "transition: none !important;"
+              }
+            ],
+            "animations": [
+              "dropdownEnter"
+            ]
+          },
+          "document": {
+            "innerWidth": 500,
+            "innerHeight": 900,
+            "scrollWidth": 500,
+            "clientWidth": 500,
+            "docOverflowX": 0,
+            "scrollHeight": 900,
+            "clientHeight": 900,
+            "docOverflowY": 0,
+            "scrollContainers": []
+          },
+          "landmarks": [
+            {
+              "tag": "header",
+              "role": "banner",
+              "id": "",
+              "cls": "top-bar",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 500,
+                "h": 111
+              }
+            },
+            {
+              "tag": "nav",
+              "role": "",
+              "id": "",
+              "cls": "top-bar__center",
+              "ariaLabel": "Main navigation",
+              "rect": {
+                "x": 202,
+                "y": 4,
+                "w": 294,
+                "h": 54
+              }
+            },
+            {
+              "tag": "main",
+              "role": "",
+              "id": "",
+              "cls": "main",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 500,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "controls-root",
+              "cls": "panel panel--controls controls-panel",
+              "ariaLabel": "Brush controls",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "paint-toolbar",
+              "cls": "panel paint-toolbar paint-toolbar--activ",
+              "ariaLabel": "Paint toolbar",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 500,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "media-root",
+              "cls": "panel panel--media media-panel panel--mo",
+              "ariaLabel": "Media, wet and tonal controls",
+              "rect": {
+                "x": -340,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "style-library-root",
+              "cls": "panel panel--library style-library-panel",
+              "ariaLabel": "Style library",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 250,
+                "h": 757
+              }
+            },
+            {
+              "tag": "section",
+              "role": "main",
+              "id": "canvas-area",
+              "cls": "canvas-wrapper",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 500,
+                "h": 757
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "motion-controls",
+              "cls": "motion-controls-root motion-controls",
+              "ariaLabel": "Playback controls",
+              "rect": {
+                "x": 48,
+                "y": 802,
+                "w": 404,
+                "h": 54
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "",
+              "cls": "motion-bar",
+              "ariaLabel": "Painting playback controls",
+              "rect": {
+                "x": 57,
+                "y": 807,
+                "w": 386,
+                "h": 44
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "layers-root",
+              "cls": "panel panel--layers layers-panel",
+              "ariaLabel": "Layers",
+              "rect": {
+                "x": 180,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "footer",
+              "role": "status",
+              "id": "status-bar",
+              "cls": "status-footer",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 868,
+                "w": 500,
+                "h": 32
+              }
+            }
+          ],
+          "duplicates": [
+            {
+              "role": "main",
+              "count": 2
+            },
+            {
+              "role": "complementary",
+              "count": 5
+            },
+            {
+              "role": "region",
+              "count": 2
+            }
+          ],
+          "probeNote": "controls include panels opened by the probe",
+          "railOpenState": {
+            "panelCls": "panel panel--layers layers-panel",
+            "bodyDisplay": "block",
+            "rowWidth": 302
+          }
         }
       },
       "opened": [
@@ -27590,6 +28728,575 @@
             }
           ],
           "probeNote": "controls include panels opened by the probe"
+        },
+        "layers-rail": {
+          "widths": 768,
+          "interactive": [
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "collapse-btn",
+              "name": "Collapse layers panel",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "btn btn--icon btn--sm",
+              "name": "Add layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            }
+          ],
+          "overlays": [
+            {
+              "id": "export-root",
+              "cls": "modal export-dialog",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-title",
+              "ariaLabel": "",
+              "labelledByName": "Export",
+              "hasFocusable": 14,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "export-panel-root",
+              "cls": "export-panel",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-panel-title",
+              "ariaLabel": "",
+              "labelledByName": "Export & share",
+              "hasFocusable": 8,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "settings-overlay",
+              "cls": "settings-overlay settings-overlay--open",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "false",
+              "ariaLabelledby": "settings-title",
+              "ariaLabel": "",
+              "labelledByName": "UI SETTINGS",
+              "hasFocusable": 10,
+              "isOpenClass": [
+                "settings-overlay--open"
+              ],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": false
+            }
+          ],
+          "liveRegions": [
+            {
+              "id": "library-status",
+              "cls": "library-status",
+              "tag": "p",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "",
+              "parentOfControls": 0
+            },
+            {
+              "id": "canvas-placeholder",
+              "cls": "canvas-placeholder",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Drop an image to begin\n            Or click Open above",
+              "parentOfControls": 1
+            },
+            {
+              "id": "status-bar",
+              "cls": "status-footer",
+              "tag": "footer",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": true,
+              "text": "StylepencilStrokes0Layers2/2Brush controls",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-summary",
+              "cls": "export-panel__summary",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "PNG · 1024 × 768",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-status",
+              "cls": "export-panel__status",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Ready to export.",
+              "parentOfControls": 0
+            }
+          ],
+          "motion": {
+            "matchesNow": false,
+            "rules": [
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 1
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 4
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "html",
+                "cssText": "scroll-behavior: auto !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".status__msg.loading::before",
+                "cssText": "animation: auto ease 0s 1 normal none running none !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".motion-progress-fill",
+                "cssText": "transition: none !important;"
+              }
+            ],
+            "animations": [
+              "dropdownEnter"
+            ]
+          },
+          "document": {
+            "innerWidth": 768,
+            "innerHeight": 900,
+            "scrollWidth": 768,
+            "clientWidth": 768,
+            "docOverflowX": 0,
+            "scrollHeight": 900,
+            "clientHeight": 900,
+            "docOverflowY": 0,
+            "scrollContainers": []
+          },
+          "landmarks": [
+            {
+              "tag": "header",
+              "role": "banner",
+              "id": "",
+              "cls": "top-bar",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 768,
+                "h": 111
+              }
+            },
+            {
+              "tag": "nav",
+              "role": "",
+              "id": "",
+              "cls": "top-bar__center",
+              "ariaLabel": "Main navigation",
+              "rect": {
+                "x": 108,
+                "y": 28,
+                "w": 294,
+                "h": 54
+              }
+            },
+            {
+              "tag": "main",
+              "role": "",
+              "id": "",
+              "cls": "main",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 768,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "controls-root",
+              "cls": "panel panel--controls controls-panel",
+              "ariaLabel": "Brush controls",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "paint-toolbar",
+              "cls": "panel paint-toolbar paint-toolbar--activ",
+              "ariaLabel": "Paint toolbar",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 768,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "media-root",
+              "cls": "panel panel--media media-panel panel--mo",
+              "ariaLabel": "Media, wet and tonal controls",
+              "rect": {
+                "x": -340,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "style-library-root",
+              "cls": "panel panel--library style-library-panel",
+              "ariaLabel": "Style library",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 250,
+                "h": 757
+              }
+            },
+            {
+              "tag": "section",
+              "role": "main",
+              "id": "canvas-area",
+              "cls": "canvas-wrapper",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 111,
+                "w": 768,
+                "h": 757
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "motion-controls",
+              "cls": "motion-controls-root motion-controls",
+              "ariaLabel": "Playback controls",
+              "rect": {
+                "x": 182,
+                "y": 802,
+                "w": 404,
+                "h": 54
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "",
+              "cls": "motion-bar",
+              "ariaLabel": "Painting playback controls",
+              "rect": {
+                "x": 191,
+                "y": 807,
+                "w": 386,
+                "h": 44
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "layers-root",
+              "cls": "panel panel--layers layers-panel",
+              "ariaLabel": "Layers",
+              "rect": {
+                "x": 448,
+                "y": 111,
+                "w": 320,
+                "h": 757
+              }
+            },
+            {
+              "tag": "footer",
+              "role": "status",
+              "id": "status-bar",
+              "cls": "status-footer",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 868,
+                "w": 768,
+                "h": 32
+              }
+            }
+          ],
+          "duplicates": [
+            {
+              "role": "main",
+              "count": 2
+            },
+            {
+              "role": "complementary",
+              "count": 5
+            },
+            {
+              "role": "region",
+              "count": 2
+            }
+          ],
+          "probeNote": "controls include panels opened by the probe",
+          "railOpenState": {
+            "panelCls": "panel panel--layers layers-panel",
+            "bodyDisplay": "block",
+            "rowWidth": 302
+          }
         }
       },
       "opened": [
@@ -36771,6 +38478,582 @@
             }
           ],
           "probeNote": "controls include panels opened by the probe"
+        },
+        "layers-rail": {
+          "widths": 1024,
+          "interactive": [
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "collapse-btn",
+              "name": "Collapse layers panel",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "btn btn--icon btn--sm",
+              "name": "Add layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            }
+          ],
+          "overlays": [
+            {
+              "id": "export-root",
+              "cls": "modal export-dialog",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-title",
+              "ariaLabel": "",
+              "labelledByName": "Export",
+              "hasFocusable": 14,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "export-panel-root",
+              "cls": "export-panel",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-panel-title",
+              "ariaLabel": "",
+              "labelledByName": "Export & share",
+              "hasFocusable": 8,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "settings-overlay",
+              "cls": "settings-overlay settings-overlay--open",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "false",
+              "ariaLabelledby": "settings-title",
+              "ariaLabel": "",
+              "labelledByName": "UI SETTINGS",
+              "hasFocusable": 10,
+              "isOpenClass": [
+                "settings-overlay--open"
+              ],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": false
+            }
+          ],
+          "liveRegions": [
+            {
+              "id": "library-status",
+              "cls": "library-status",
+              "tag": "p",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "",
+              "parentOfControls": 0
+            },
+            {
+              "id": "canvas-placeholder",
+              "cls": "canvas-placeholder",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Drop an image to begin\n            Or click Open above",
+              "parentOfControls": 1
+            },
+            {
+              "id": "status-bar",
+              "cls": "status-footer",
+              "tag": "footer",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": true,
+              "text": "StylepencilStrokes0Layers2/2Brush controls",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-summary",
+              "cls": "export-panel__summary",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "PNG · 1024 × 768",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-status",
+              "cls": "export-panel__status",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Ready to export.",
+              "parentOfControls": 0
+            }
+          ],
+          "motion": {
+            "matchesNow": false,
+            "rules": [
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 1
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 4
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "html",
+                "cssText": "scroll-behavior: auto !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".status__msg.loading::before",
+                "cssText": "animation: auto ease 0s 1 normal none running none !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".motion-progress-fill",
+                "cssText": "transition: none !important;"
+              }
+            ],
+            "animations": [
+              "dropdownEnter"
+            ]
+          },
+          "document": {
+            "innerWidth": 1024,
+            "innerHeight": 900,
+            "scrollWidth": 1024,
+            "clientWidth": 1024,
+            "docOverflowX": 0,
+            "scrollHeight": 900,
+            "clientHeight": 900,
+            "docOverflowY": 0,
+            "scrollContainers": [
+              {
+                "sel": "controls-root",
+                "scrollW": 99,
+                "clientW": 54,
+                "over": 45
+              }
+            ]
+          },
+          "landmarks": [
+            {
+              "tag": "header",
+              "role": "banner",
+              "id": "",
+              "cls": "top-bar",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1024,
+                "h": 63
+              }
+            },
+            {
+              "tag": "nav",
+              "role": "",
+              "id": "",
+              "cls": "top-bar__center",
+              "ariaLabel": "Main navigation",
+              "rect": {
+                "x": 187,
+                "y": 4,
+                "w": 538,
+                "h": 54
+              }
+            },
+            {
+              "tag": "main",
+              "role": "",
+              "id": "",
+              "cls": "main",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 1024,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "controls-root",
+              "cls": "panel panel--controls controls-panel is-",
+              "ariaLabel": "Brush controls",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 56,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "paint-toolbar",
+              "cls": "panel paint-toolbar paint-toolbar--activ",
+              "ariaLabel": "Paint toolbar",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 1024,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "media-root",
+              "cls": "panel panel--media media-panel panel--hi",
+              "ariaLabel": "Media, wet and tonal controls",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 0,
+                "h": 0
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "style-library-root",
+              "cls": "panel panel--library style-library-panel",
+              "ariaLabel": "Style library",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 0,
+                "h": 0
+              }
+            },
+            {
+              "tag": "section",
+              "role": "main",
+              "id": "canvas-area",
+              "cls": "canvas-wrapper nav-left nav-right",
+              "ariaLabel": "",
+              "rect": {
+                "x": 68,
+                "y": 75,
+                "w": 888,
+                "h": 777
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "motion-controls",
+              "cls": "motion-controls-root motion-controls",
+              "ariaLabel": "Playback controls",
+              "rect": {
+                "x": 256,
+                "y": 790,
+                "w": 512,
+                "h": 62
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "",
+              "cls": "motion-bar",
+              "ariaLabel": "Painting playback controls",
+              "rect": {
+                "x": 269,
+                "y": 799,
+                "w": 486,
+                "h": 44
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "layers-root",
+              "cls": "panel panel--layers layers-panel",
+              "ariaLabel": "Layers",
+              "rect": {
+                "x": 774,
+                "y": 63,
+                "w": 250,
+                "h": 801
+              }
+            },
+            {
+              "tag": "footer",
+              "role": "status",
+              "id": "status-bar",
+              "cls": "status-footer",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 864,
+                "w": 1024,
+                "h": 36
+              }
+            }
+          ],
+          "duplicates": [
+            {
+              "role": "main",
+              "count": 2
+            },
+            {
+              "role": "complementary",
+              "count": 5
+            },
+            {
+              "role": "region",
+              "count": 2
+            }
+          ],
+          "probeNote": "controls include panels opened by the probe",
+          "railOpenState": {
+            "panelCls": "panel panel--layers layers-panel",
+            "bodyDisplay": "block",
+            "rowWidth": 232
+          }
         }
       },
       "opened": [
@@ -45952,6 +48235,582 @@
             }
           ],
           "probeNote": "controls include panels opened by the probe"
+        },
+        "layers-rail": {
+          "widths": 1440,
+          "interactive": [
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "collapse-btn",
+              "name": "Collapse layers panel",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "btn btn--icon btn--sm",
+              "name": "Add layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            }
+          ],
+          "overlays": [
+            {
+              "id": "export-root",
+              "cls": "modal export-dialog",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-title",
+              "ariaLabel": "",
+              "labelledByName": "Export",
+              "hasFocusable": 14,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "export-panel-root",
+              "cls": "export-panel",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-panel-title",
+              "ariaLabel": "",
+              "labelledByName": "Export & share",
+              "hasFocusable": 8,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "settings-overlay",
+              "cls": "settings-overlay settings-overlay--open",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "false",
+              "ariaLabelledby": "settings-title",
+              "ariaLabel": "",
+              "labelledByName": "UI SETTINGS",
+              "hasFocusable": 10,
+              "isOpenClass": [
+                "settings-overlay--open"
+              ],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": false
+            }
+          ],
+          "liveRegions": [
+            {
+              "id": "library-status",
+              "cls": "library-status",
+              "tag": "p",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "",
+              "parentOfControls": 0
+            },
+            {
+              "id": "canvas-placeholder",
+              "cls": "canvas-placeholder",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Drop an image to begin\n            Or click Open above",
+              "parentOfControls": 1
+            },
+            {
+              "id": "status-bar",
+              "cls": "status-footer",
+              "tag": "footer",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": true,
+              "text": "StylepencilStrokes0Layers2/2Brush controls",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-summary",
+              "cls": "export-panel__summary",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "PNG · 1024 × 768",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-status",
+              "cls": "export-panel__status",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Ready to export.",
+              "parentOfControls": 0
+            }
+          ],
+          "motion": {
+            "matchesNow": false,
+            "rules": [
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 1
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 4
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "html",
+                "cssText": "scroll-behavior: auto !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".status__msg.loading::before",
+                "cssText": "animation: auto ease 0s 1 normal none running none !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".motion-progress-fill",
+                "cssText": "transition: none !important;"
+              }
+            ],
+            "animations": [
+              "dropdownEnter"
+            ]
+          },
+          "document": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "scrollWidth": 1440,
+            "clientWidth": 1440,
+            "docOverflowX": 0,
+            "scrollHeight": 900,
+            "clientHeight": 900,
+            "docOverflowY": 0,
+            "scrollContainers": [
+              {
+                "sel": "controls-root",
+                "scrollW": 99,
+                "clientW": 54,
+                "over": 45
+              }
+            ]
+          },
+          "landmarks": [
+            {
+              "tag": "header",
+              "role": "banner",
+              "id": "",
+              "cls": "top-bar",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1440,
+                "h": 63
+              }
+            },
+            {
+              "tag": "nav",
+              "role": "",
+              "id": "",
+              "cls": "top-bar__center",
+              "ariaLabel": "Main navigation",
+              "rect": {
+                "x": 395,
+                "y": 4,
+                "w": 538,
+                "h": 54
+              }
+            },
+            {
+              "tag": "main",
+              "role": "",
+              "id": "",
+              "cls": "main",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 1440,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "controls-root",
+              "cls": "panel panel--controls controls-panel is-",
+              "ariaLabel": "Brush controls",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 56,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "paint-toolbar",
+              "cls": "panel paint-toolbar paint-toolbar--activ",
+              "ariaLabel": "Paint toolbar",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 1440,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "media-root",
+              "cls": "panel panel--media media-panel panel--hi",
+              "ariaLabel": "Media, wet and tonal controls",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 0,
+                "h": 0
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "style-library-root",
+              "cls": "panel panel--library style-library-panel",
+              "ariaLabel": "Style library",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 0,
+                "h": 0
+              }
+            },
+            {
+              "tag": "section",
+              "role": "main",
+              "id": "canvas-area",
+              "cls": "canvas-wrapper nav-left nav-right",
+              "ariaLabel": "",
+              "rect": {
+                "x": 68,
+                "y": 75,
+                "w": 1304,
+                "h": 777
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "motion-controls",
+              "cls": "motion-controls-root motion-controls",
+              "ariaLabel": "Playback controls",
+              "rect": {
+                "x": 440,
+                "y": 790,
+                "w": 561,
+                "h": 62
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "",
+              "cls": "motion-bar",
+              "ariaLabel": "Painting playback controls",
+              "rect": {
+                "x": 453,
+                "y": 799,
+                "w": 535,
+                "h": 44
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "layers-root",
+              "cls": "panel panel--layers layers-panel",
+              "ariaLabel": "Layers",
+              "rect": {
+                "x": 1180,
+                "y": 63,
+                "w": 260,
+                "h": 801
+              }
+            },
+            {
+              "tag": "footer",
+              "role": "status",
+              "id": "status-bar",
+              "cls": "status-footer",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 864,
+                "w": 1440,
+                "h": 36
+              }
+            }
+          ],
+          "duplicates": [
+            {
+              "role": "main",
+              "count": 2
+            },
+            {
+              "role": "complementary",
+              "count": 5
+            },
+            {
+              "role": "region",
+              "count": 2
+            }
+          ],
+          "probeNote": "controls include panels opened by the probe",
+          "railOpenState": {
+            "panelCls": "panel panel--layers layers-panel",
+            "bodyDisplay": "block",
+            "rowWidth": 242
+          }
         }
       },
       "opened": [
@@ -55133,6 +57992,582 @@
             }
           ],
           "probeNote": "controls include panels opened by the probe"
+        },
+        "layers-rail": {
+          "widths": 1920,
+          "interactive": [
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "collapse-btn",
+              "name": "Collapse layers panel",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "btn btn--icon btn--sm",
+              "name": "Add layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-visibility-btn",
+              "name": "Hide",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn",
+              "name": "Duplicate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-action-btn--danger",
+              "name": "Delete layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "select",
+              "id": "",
+              "cls": "layer-style-select",
+              "name": "Layer style",
+              "rect": {
+                "w": 91,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "button",
+              "id": "",
+              "cls": "layer-action-btn layer-regen-btn",
+              "name": "Regenerate layer",
+              "rect": {
+                "w": 44,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": null,
+              "underMinSlider": false,
+              "offViewport": false
+            },
+            {
+              "tag": "input",
+              "id": "",
+              "cls": "layer-opacity-input",
+              "name": "Layer opacity",
+              "rect": {
+                "w": 129,
+                "h": 44
+              },
+              "underMinW": false,
+              "underMinH": false,
+              "sliderTarget": {
+                "row": {
+                  "w": 192.7,
+                  "h": 44,
+                  "cls": "layer-opacity-row"
+                },
+                "effectiveH": 44,
+                "underMinRow": false
+              },
+              "underMinSlider": false,
+              "offViewport": false
+            }
+          ],
+          "overlays": [
+            {
+              "id": "export-root",
+              "cls": "modal export-dialog",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-title",
+              "ariaLabel": "",
+              "labelledByName": "Export",
+              "hasFocusable": 14,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "export-panel-root",
+              "cls": "export-panel",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "true",
+              "ariaLabelledby": "export-panel-title",
+              "ariaLabel": "",
+              "labelledByName": "Export & share",
+              "hasFocusable": 8,
+              "isOpenClass": [],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": true
+            },
+            {
+              "id": "settings-overlay",
+              "cls": "settings-overlay settings-overlay--open",
+              "role": "dialog",
+              "ariaModal": "true",
+              "ariaHidden": "false",
+              "ariaLabelledby": "settings-title",
+              "ariaLabel": "",
+              "labelledByName": "UI SETTINGS",
+              "hasFocusable": 10,
+              "isOpenClass": [
+                "settings-overlay--open"
+              ],
+              "hiddenByDisplay": false,
+              "hiddenByOpacity": false
+            }
+          ],
+          "liveRegions": [
+            {
+              "id": "library-status",
+              "cls": "library-status",
+              "tag": "p",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "",
+              "parentOfControls": 0
+            },
+            {
+              "id": "canvas-placeholder",
+              "cls": "canvas-placeholder",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Drop an image to begin\n            Or click Open above",
+              "parentOfControls": 1
+            },
+            {
+              "id": "status-bar",
+              "cls": "status-footer",
+              "tag": "footer",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": true,
+              "text": "StylepencilStrokes0Layers2/2Brush controls",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-summary",
+              "cls": "export-panel__summary",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "PNG · 1024 × 768",
+              "parentOfControls": 0
+            },
+            {
+              "id": "export-panel-status",
+              "cls": "export-panel__status",
+              "tag": "div",
+              "role": "status",
+              "ariaLive": "polite",
+              "atomic": "",
+              "relevant": "",
+              "visible": false,
+              "text": "Ready to export.",
+              "parentOfControls": 0
+            }
+          ],
+          "motion": {
+            "matchesNow": false,
+            "rules": [
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 1
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "inner": 4
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "html",
+                "cssText": "scroll-behavior: auto !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": "*, ::before, ::after",
+                "cssText": "animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".status__msg.loading::before",
+                "cssText": "animation: auto ease 0s 1 normal none running none !important;"
+              },
+              {
+                "condition": "(prefers-reduced-motion: reduce)",
+                "selector": ".motion-progress-fill",
+                "cssText": "transition: none !important;"
+              }
+            ],
+            "animations": [
+              "dropdownEnter"
+            ]
+          },
+          "document": {
+            "innerWidth": 1920,
+            "innerHeight": 900,
+            "scrollWidth": 1920,
+            "clientWidth": 1920,
+            "docOverflowX": 0,
+            "scrollHeight": 900,
+            "clientHeight": 900,
+            "docOverflowY": 0,
+            "scrollContainers": [
+              {
+                "sel": "controls-root",
+                "scrollW": 99,
+                "clientW": 54,
+                "over": 45
+              }
+            ]
+          },
+          "landmarks": [
+            {
+              "tag": "header",
+              "role": "banner",
+              "id": "",
+              "cls": "top-bar",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 1920,
+                "h": 63
+              }
+            },
+            {
+              "tag": "nav",
+              "role": "",
+              "id": "",
+              "cls": "top-bar__center",
+              "ariaLabel": "Main navigation",
+              "rect": {
+                "x": 635,
+                "y": 4,
+                "w": 538,
+                "h": 54
+              }
+            },
+            {
+              "tag": "main",
+              "role": "",
+              "id": "",
+              "cls": "main",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 1920,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "controls-root",
+              "cls": "panel panel--controls controls-panel is-",
+              "ariaLabel": "Brush controls",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 56,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "paint-toolbar",
+              "cls": "panel paint-toolbar paint-toolbar--activ",
+              "ariaLabel": "Paint toolbar",
+              "rect": {
+                "x": 0,
+                "y": 63,
+                "w": 1920,
+                "h": 801
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "media-root",
+              "cls": "panel panel--media media-panel panel--hi",
+              "ariaLabel": "Media, wet and tonal controls",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 0,
+                "h": 0
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "style-library-root",
+              "cls": "panel panel--library style-library-panel",
+              "ariaLabel": "Style library",
+              "rect": {
+                "x": 0,
+                "y": 0,
+                "w": 0,
+                "h": 0
+              }
+            },
+            {
+              "tag": "section",
+              "role": "main",
+              "id": "canvas-area",
+              "cls": "canvas-wrapper nav-left nav-right",
+              "ariaLabel": "",
+              "rect": {
+                "x": 68,
+                "y": 75,
+                "w": 1784,
+                "h": 777
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "motion-controls",
+              "cls": "motion-controls-root motion-controls",
+              "ariaLabel": "Playback controls",
+              "rect": {
+                "x": 680,
+                "y": 790,
+                "w": 561,
+                "h": 62
+              }
+            },
+            {
+              "tag": "div",
+              "role": "region",
+              "id": "",
+              "cls": "motion-bar",
+              "ariaLabel": "Painting playback controls",
+              "rect": {
+                "x": 693,
+                "y": 799,
+                "w": 535,
+                "h": 44
+              }
+            },
+            {
+              "tag": "aside",
+              "role": "complementary",
+              "id": "layers-root",
+              "cls": "panel panel--layers layers-panel",
+              "ariaLabel": "Layers",
+              "rect": {
+                "x": 1660,
+                "y": 63,
+                "w": 260,
+                "h": 801
+              }
+            },
+            {
+              "tag": "footer",
+              "role": "status",
+              "id": "status-bar",
+              "cls": "status-footer",
+              "ariaLabel": "",
+              "rect": {
+                "x": 0,
+                "y": 864,
+                "w": 1920,
+                "h": 36
+              }
+            }
+          ],
+          "duplicates": [
+            {
+              "role": "main",
+              "count": 2
+            },
+            {
+              "role": "complementary",
+              "count": 5
+            },
+            {
+              "role": "region",
+              "count": 2
+            }
+          ],
+          "probeNote": "controls include panels opened by the probe",
+          "railOpenState": {
+            "panelCls": "panel panel--layers layers-panel",
+            "bodyDisplay": "block",
+            "rowWidth": 242
+          }
         }
       },
       "opened": [
@@ -55306,6 +58741,10 @@
         ],
         "railUnderMin": 14,
         "railNoName": 0,
+        "layersRailOpen": true,
+        "layersRailRowWidth": 302,
+        "layersUnderMin": 0,
+        "layersUnderMinList": [],
         "clipped": 0,
         "docOverflowX": 0,
         "scrollContainers": 0,
@@ -55453,6 +58892,10 @@
         "railOffViewportList": [],
         "railUnderMin": 14,
         "railNoName": 0,
+        "layersRailOpen": true,
+        "layersRailRowWidth": 302,
+        "layersUnderMin": 0,
+        "layersUnderMinList": [],
         "clipped": 0,
         "docOverflowX": 0,
         "scrollContainers": 0,
@@ -55598,6 +59041,10 @@
         "railOffViewportList": [],
         "railUnderMin": 14,
         "railNoName": 0,
+        "layersRailOpen": true,
+        "layersRailRowWidth": 302,
+        "layersUnderMin": 0,
+        "layersUnderMinList": [],
         "clipped": 0,
         "docOverflowX": 0,
         "scrollContainers": 0,
@@ -55719,6 +59166,10 @@
         "railOffViewportList": [],
         "railUnderMin": 14,
         "railNoName": 0,
+        "layersRailOpen": true,
+        "layersRailRowWidth": 232,
+        "layersUnderMin": 0,
+        "layersUnderMinList": [],
         "clipped": 0,
         "docOverflowX": 0,
         "scrollContainers": 1,
@@ -55840,6 +59291,10 @@
         "railOffViewportList": [],
         "railUnderMin": 14,
         "railNoName": 0,
+        "layersRailOpen": true,
+        "layersRailRowWidth": 242,
+        "layersUnderMin": 0,
+        "layersUnderMinList": [],
         "clipped": 0,
         "docOverflowX": 0,
         "scrollContainers": 1,
@@ -55961,6 +59416,10 @@
         "railOffViewportList": [],
         "railUnderMin": 14,
         "railNoName": 0,
+        "layersRailOpen": true,
+        "layersRailRowWidth": 242,
+        "layersUnderMin": 0,
+        "layersUnderMinList": [],
         "clipped": 0,
         "docOverflowX": 0,
         "scrollContainers": 1,
@@ -57244,8 +60703,14 @@
         "width": "390",
         "widths": [
           "390",
+          "390",
           "500",
-          "768"
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1440",
+          "1920"
         ]
       },
       {
@@ -57299,8 +60764,14 @@
         "width": "390",
         "widths": [
           "390",
+          "390",
           "500",
-          "768"
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1440",
+          "1920"
         ]
       },
       {
@@ -57347,10 +60818,22 @@
         "widths": [
           "390",
           "390",
+          "390",
+          "390",
+          "500",
+          "500",
           "500",
           "500",
           "768",
-          "768"
+          "768",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
         ]
       },
       {
@@ -57397,10 +60880,22 @@
         "widths": [
           "390",
           "390",
+          "390",
+          "390",
+          "500",
+          "500",
           "500",
           "500",
           "768",
-          "768"
+          "768",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
         ]
       },
       {
@@ -57447,10 +60942,22 @@
         "widths": [
           "390",
           "390",
+          "390",
+          "390",
+          "500",
+          "500",
           "500",
           "500",
           "768",
-          "768"
+          "768",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
         ]
       },
       {
@@ -57497,10 +61004,22 @@
         "widths": [
           "390",
           "390",
+          "390",
+          "390",
+          "500",
+          "500",
           "500",
           "500",
           "768",
-          "768"
+          "768",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
         ]
       },
       {
@@ -57547,10 +61066,22 @@
         "widths": [
           "390",
           "390",
+          "390",
+          "390",
+          "500",
+          "500",
           "500",
           "500",
           "768",
-          "768"
+          "768",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
         ]
       },
       {
@@ -57609,10 +61140,22 @@
         "widths": [
           "390",
           "390",
+          "390",
+          "390",
+          "500",
+          "500",
           "500",
           "500",
           "768",
-          "768"
+          "768",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
         ]
       },
       {
@@ -59190,6 +62733,242 @@
           "768",
           "1024",
           "1440",
+          "1920"
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "",
+        "cls": "collapse-btn",
+        "name": "Collapse layers panel",
+        "rect": {
+          "w": 44,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "500",
+          "768",
+          "1024",
+          "1440",
+          "1920"
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "",
+        "cls": "btn btn--icon btn--sm",
+        "name": "Add layer",
+        "rect": {
+          "w": 44,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "500",
+          "768",
+          "1024",
+          "1440",
+          "1920"
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "",
+        "cls": "layer-visibility-btn",
+        "name": "Hide",
+        "rect": {
+          "w": 44,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "390",
+          "500",
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "",
+        "cls": "layer-action-btn",
+        "name": "Duplicate layer",
+        "rect": {
+          "w": 44,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "390",
+          "500",
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "",
+        "cls": "layer-action-btn layer-action-btn--danger",
+        "name": "Delete layer",
+        "rect": {
+          "w": 44,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "390",
+          "500",
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
+        ]
+      },
+      {
+        "tag": "select",
+        "id": "",
+        "cls": "layer-style-select",
+        "name": "Layer style",
+        "rect": {
+          "w": 91,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "390",
+          "500",
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "",
+        "cls": "layer-action-btn layer-regen-btn",
+        "name": "Regenerate layer",
+        "rect": {
+          "w": 44,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": null,
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "390",
+          "500",
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
+          "1920"
+        ]
+      },
+      {
+        "tag": "input",
+        "id": "",
+        "cls": "layer-opacity-input",
+        "name": "Layer opacity",
+        "rect": {
+          "w": 129,
+          "h": 44
+        },
+        "underMinW": false,
+        "underMinH": false,
+        "sliderTarget": {
+          "row": {
+            "w": 192.7,
+            "h": 44,
+            "cls": "layer-opacity-row"
+          },
+          "effectiveH": 44,
+          "underMinRow": false
+        },
+        "underMinSlider": false,
+        "offViewport": false,
+        "width": "390",
+        "widths": [
+          "390",
+          "390",
+          "500",
+          "500",
+          "768",
+          "768",
+          "1024",
+          "1024",
+          "1440",
+          "1440",
+          "1920",
           "1920"
         ]
       }

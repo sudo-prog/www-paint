@@ -271,6 +271,11 @@ node tests/masks.test.js
 NODE_PATH=<playwright-core parent dir> node scripts/visual-regression.cjs
 NODE_PATH=<...> node scripts/visual-regression.cjs --styles=watercolor,ink   # subset
 
+# A11y + responsive sweep (Mac M13) — expect underMin 0 / noName 0 at every width,
+# plus a `layersRail open=true rowW=…` line per width (rowW=0 means the pass was
+# vacuous — the rail was collapsed, see docs/checkpoints/M13.md §2b)
+NODE_PATH=<...> node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+
 # Media-panel BEHAVIOURAL probe (does a control change output?) — 4 PASS lines
 NODE_PATH=<...> node scripts/media-panel-probe.cjs --size=128 --strokes=100
 
@@ -1040,6 +1045,41 @@ Format:
   3. **`evalScript` accepts a multi-line `|` block; the `${...}` shorthand does not accept a statement block.**
 - ⚠ FOR BE: (a) `index.html` has three unassociated `<label class="paint-toolbar__label">` elements (~lines 101/110/114) with no `for`. The runtime aria-label covers the a11y tree; a proper `for` would be better. Raised, not edited, per the ownership rule. (b) `css/style.css` is now 3350 lines; the M13 block is the last 410 and is banner-delimited, ready to split into `css/a11y.css`. (c) `scripts/a11y-sweep.cjs` is a third probe harness alongside `visual-regression.cjs` and `style-polish.cjs` — recommended wiring: add it to AGENTS.md §3. (d) `js/ui/a11y-hardening.js` is additive and safe to fold into `app.js` when the shim pattern is retired.
 - ⚠ NOT DONE: **vision review of the a11y screenshots** — the vision backend has rate-limited every attempt since M10 (HTTP 429, `retry_after` up to 6104s). The geometry numbers and Maestro a11y-tree assertions above are real measurements, not a visual pass. `docs/research/a11y/*.png` are captured and ready.
+- blocker: none
+- next: M14 — reference docs (`docs/PANELS.md`, `docs/STROKE_FORMAT.md`)
+
+### 2026-11-14 02:30 — M13 verification loop — CLOSED, one real defect found and fixed
+- did: Re-ran the full a11y sweep + both M13 flows against the FINAL stylesheet (the previous green run predated the slider-row corrections). The sweep found a real defect the earlier run could not see, fixed it, and the probe itself was repaired so it can no longer pass vacuously.
+- files: `css/style.css` (§13 layers block — Mac version written first, then OVERWRITTEN at 04:16 by the ThinkPad's Syncthing copy with an equivalent BE version; both measure identically, current file is BE's, verified by re-run), `scripts/a11y-sweep.cjs` (NEW `PAGE_AUDIT_LAYERS` pass + `layersRailOpen`/`layersRailRowWidth` in the summary + `el` stripped before JSON write), `maestro/www-paint-a11y-sweep.yaml` (+5 steps, now 55), `maestro/www-paint-a11y-sweep-mobile.yaml` (+5 steps, now 39), `docs/checkpoints/M13.md` (§2b, §2c, §3.7, §4.1, §4.2, §6, §9 corrected), `AGENTS.md` §3 (sweep wired in), `docs/research/a11y-sweep.json`, `docs/research/a11y/*.png`
+- verified (raw):
+  ```
+  $ NODE_PATH=<playwright-core> node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+  @ 390px  controls 46  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0   layersRail open=true rowW=302 underMin=0
+  @ 500px  controls 46  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0   layersRail open=true rowW=302 underMin=0
+  @ 768px  controls 46  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0   layersRail open=true rowW=302 underMin=0
+  @ 1024px controls 30  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0   layersRail open=true rowW=231 underMin=0
+  @ 1440px controls 30  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0   layersRail open=true rowW=242 underMin=0
+  @ 1920px controls 30  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0   layersRail open=true rowW=242 underMin=0
+  UNIQUE under-min-target controls (across all widths): 0
+  UNIQUE controls with no accessible name: 0
+
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-a11y-sweep.yaml
+    55 COMPLETED, 0 FAILED (exit 0)
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-a11y-sweep-mobile.yaml
+    39 COMPLETED, 0 FAILED (exit 0)
+
+  $ six regression flows at their AUTHORED sizes
+    desktop-regression 1440x900  33/0 · mobile-ui-audit 390x844 30/0 · media-panel 390x844 29/0
+    media-behaviour 1440x900 35/0 · export-panel 1440x900 35/0 · export-panel-mobile 390x844 20/0
+
+  $ node tests/{engine,wetsim,masks,outlines,order,shaping,ref-analyze,style-library,export-panel,style-polish}.test.js -> Failed: 0
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9
+  ```
+- THE DEFECT: **the layers rail's six controls were 32x32 on the final CSS** (`layer-visibility-btn`, `layer-action-btn` ×3, `layer-style-select`, `layer-opacity-input` = 12 instances per width at 390/500/768). The M13 §2/§4.1 `underMin 0` was a **probe artifact, not a measurement**: the sweep's `allOpen` pass clicks `toggle-layers`, which is a DESKTOP-ONLY collapse toggle (`js/ui/app.js:449` → `_setPanelCollapsed`), so on desktop it COLLAPSED the rail, every layer control measured `0x0`, and the zero-area filter skipped them. Fixed in `css/style.css` §13: every row control gets a real 44px box and `.layer-row__main` WRAPS (4×44 + 3×4 = 188 of a 231/242px row, so they cannot share one line); the name keeps its 74px floor so "Layer 1" is never truncated; the opacity slider keeps its 3px track drawn inside the 44px box (same technique as §14).
+- THE PROBE FIX: `PAGE_AUDIT_LAYERS` opens the rail by the viewport's OWN mechanism (`toggle-layers` on mobile, `is-collapsed` removal on desktop), asserts `rowWidth > 0` BEFORE measuring, and reports `layersRail open=… rowW=…` per width. The layers subset is re-derived inside the page (a DOM node cannot cross the Playwright boundary) and scoped to `.panel--layers`, so the brush panel's deliberately-10px slider rows are not misreported as layer defects. Both Maestro flows gained the same assertion.
+- TWO TRAPS: (1) `el` on a control record does not survive Playwright serialization — the scoped query must run in-page, and the field is stripped before `writeJSON`. (2) `www-paint-media-panel.yaml` is authored for **390x844**; run at 1440 it fails `assertVisible: "TONAL MASKS"` (the documented false failure, not a regression). Its header and swipe coordinates both assume a 320px panel on a 390px screen.
+- ⚠ FOR BE: the M13 §8 note says the ThinkPad raised the row controls to 44px — that fix IS in this file and re-verifies. But the Mac's `underMin 0` in §2/§4.1 was never measuring them. Do not treat the pre-2026-11-14 sweep JSON as evidence for the layers rail.
+- ⚠ NOT DONE: **vision review** — the vision backend returned HTTP 429 (`retry_after` 88s) on every attempt this session, same as M10/M11. Geometry + Maestro a11y-tree assertions are real; the visual pass is still outstanding. `docs/research/a11y/*.png` and `layer-row-{390,1440}.png` are captured and ready.
 - blocker: none
 - next: M14 — reference docs (`docs/PANELS.md`, `docs/STROKE_FORMAT.md`)
 

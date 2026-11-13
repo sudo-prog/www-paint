@@ -60,6 +60,43 @@ url: http://127.0.0.1:8099/index.html
     globalThis.__underMin = under;
 - assertTrue: "globalThis.__underMin.length === 0"
 
+# ── C2. The LAYERS rail's own controls >= 44px ─────────────────────────
+# The first M13 run recorded `underMin 0` while these were 32x32: the sweep's
+# "open everything" pass clicks `toggle-layers`, which on DESKTOP COLLAPSES the
+# rail, so every layer control measured 0x0 and was skipped. This assertion
+# opens the rail by the viewport's own mechanism first and then measures.
+- evalScript: |
+    const panel = globalThis.document.querySelector('.panel--layers');
+    if (panel && matchMedia('(max-width: 768px)').matches) {
+      if (panel.classList.contains('panel--mobile-closed')) {
+        globalThis.document.getElementById('toggle-layers').click();
+      }
+    } else if (panel) {
+      panel.classList.remove('is-collapsed');
+    }
+    globalThis.__layersOpened = true;
+- assertTrue: "globalThis.__layersOpened === true"
+- evalScript: |
+    const panel = globalThis.document.querySelector('.panel--layers');
+    const rows = panel ? panel.querySelectorAll('.layer-row') : [];
+    const under = [];
+    for (const row of rows) {
+      const br = row.getBoundingClientRect();
+      if (br.width === 0) { under.push('ROW-WIDTH-0'); continue; }
+      for (const el of row.querySelectorAll('button, input, select')) {
+        const r = el.getBoundingClientRect();
+        const cs = globalThis.getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        if (r.width < 43.5 || r.height < 43.5) {
+          under.push(el.tagName + '.' + (el.className || '') + ' ' + r.width.toFixed(0) + 'x' + r.height.toFixed(0));
+        }
+      }
+    }
+    globalThis.__layerUnderMin = under;
+    globalThis.__layerRowCount = rows.length;
+- assertTrue: "globalThis.__layerRowCount > 0"
+- assertTrue: "globalThis.__layerUnderMin.length === 0"
+
 # ── E. Overlays: dialog semantics ─────────────────────────────────────
 - assertTrue: "globalThis.document.getElementById('export-panel-root').getAttribute('role') === 'dialog'"
 - assertTrue: "globalThis.document.getElementById('export-panel-root').getAttribute('aria-modal') === 'true'"
