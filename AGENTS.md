@@ -935,6 +935,55 @@ Format:
 - blocker: none
 - next: M12 — non-baseline style polish (`js/styles/*` except the 9 pinned styles)
 
+### 2026-11-13 10:45 — M12 non-baseline style polish — SHIPPED, measured
+- did: NEW `scripts/style-polish.cjs` (a SECOND visual harness, alongside visual-regression.cjs — measures per-style inkCoverage / edgeDensity / localContrast / blankRatio / colourSpread on the SAME deterministic test image + seed + engine path). NEW `tests/style-polish.test.js` (11 tests, no DOM). NEW `tests/visual/style-grid.html` (per-style render fixture). Edited 11 Mac-owned `js/styles/*` files: `bokeh riso pastel glitch wash gouache confetti tape calligraphy dots graffiti`. NEW `docs/checkpoints/M12.md` + `docs/research/m12/{before,after}/*.png` + `metrics.json`.
+- files: `js/styles/{bokeh,riso,pastel,glitch,wash,gouache,confetti,tape,calligraphy,dots,graffiti}.js`, `scripts/style-polish.cjs`, `tests/style-polish.test.js`, `tests/visual/style-grid.html`, `docs/checkpoints/M12.md`, `docs/research/m12/**`
+- verified (raw):
+  ```
+  $ node scripts/style-polish.cjs --before   # 42 non-pinned styles
+  $ node scripts/style-polish.cjs --after    # same 42, same seed/count/size
+  METRIC = local contrast (mean 8x8-block luminance stddev of the exported PNG)
+
+  style        before -> after   delta     note
+  glitch         3.61 -> 19.42  +15.81    clip bug fixed; coverage 10.8% -> 100%
+  wash           5.39 -> 12.76   +7.37    tide line + granulation
+  bokeh          0.00 ->  4.66   +4.66    NaN-spacing bug fixed; blank -> 100%
+  confetti       4.98 ->  6.25   +1.27    lit/shaded piece edges
+  tape           9.36 -> 10.12   +0.76    tonal bands + fibre grain
+  calligraphy    7.75 ->  8.41   +0.66    wet core + dry shoulders
+  gouache        9.19 ->  9.71   +0.52    dry-brush drag + flecks
+  riso            CRASH ->  9.65   (was 0 strokes)  `path is not defined`
+  pastel          CRASH -> 28.02   (was 0 strokes)  index-walk overrun
+  dots           9.24 ->  9.10   -0.14    recorded honestly, sub-threshold
+  => 9 styles measurably improved (brief asked for >= 6)
+
+  $ node scripts/visual-regression.cjs
+  pass=9 fail=0 error=0 total=9        <- the 9 PINNED baselines UNMOVED
+  $ node tests/engine.test.js        -> Passed: 131 Failed: 0
+  $ node tests/wetsim.test.js        -> Passed: 15   Failed: 0
+  $ node tests/masks.test.js         -> Passed: 19   Failed: 0
+  $ node tests/outlines.test.js      -> Passed: 16   Failed: 0
+  $ node tests/order.test.js         -> Passed: 24   Failed: 0
+  $ node tests/shaping.test.js       -> Passed: 18   Failed: 0
+  $ node tests/ref-analyze.test.js   -> Passed: 16   Failed: 0
+  $ node tests/style-library.test.js -> Passed: 50   Failed: 0
+  $ node tests/export-panel.test.js  -> Passed: 90   Failed: 0
+  $ node tests/style-polish.test.js  -> Passed: 11   Failed: 0
+  ```
+- FOUR DEFECTS found by the probe, all reproduced in isolation before fixing:
+  1. **bokeh rendered a BLANK CANVAS for every shape.** `_renderArea` read `this.spacingFactor` — which does not exist; the value is at `this.defaults.spacingFactor`. So `spacing = colSize * undefined * 4 = NaN`, `cols = Math.ceil(120/NaN)+2 = NaN`, and `for (let i = 0; i < NaN; i++)` never ran. `inkCoverage 0.0000`. Instrumenting `_drawBokehCircle` showed 0 calls despite 49 valid centres.
+  2. **riso threw `ReferenceError: path is not defined` on EVERY S-type shape.** `_renderStroke`'s grain loop called `ctx.stroke(path)`, but `path` is declared only in `_renderArea`. Riso strokes never rendered at all.
+  3. **pastel threw `TypeError: Cannot read properties of undefined (reading '0')` roughly every 15 strokes.** `_renderStroke` advanced the index `j` in two places (the `while (j < n-2)` guard AND a `j++` at the end of the body), so `j` reached `P.length`.
+  4. **glitch clipped the whole canvas and never restored it.** A bare `ctx.clip()` after `ctx.restore()` (no matching `save()`) clipped every later shape into a shrinking region — `inkCoverage 0.1083` and a hard edge band.
+- ONE MEASUREMENT LESSON (documented in the wash source): the first tide-line version scaled its alpha by `opacity`, and a wash runs at `opacity: 0.15` — so the rim alpha was ~0.05 and invisible (contrast moved only 5.39 → 5.75). Alpha must scale off the BASE alpha, not `opacity`.
+- INDEPENDENT PIXEL CHECK: metrics cross-verified with a separate Python PNG decoder (pure zlib + unfilter, no shared code) — both agree (bokeh nonWhite 0.0000 → 0.9999; glitch 0.1083 → 0.9998, chromatic 0.6331 = the RGB split is actually visible; wash contrast 5.39 → 12.76).
+- VISION REVIEW: backend HTTP 429 for most of the session (same as M10/M11). 4 reviews completed when the limit lifted, each on the real exported PNG — wash: "definitely not flat colour… highly active with texture"; bokeh: "the circles strongly evoke the appearance of bokeh… a subtle rim light effect"; glitch: "clearly reads as glitch/data-corruption artwork"; riso: "strongly evokes the aesthetic of Risograph printing". NOT reviewed: pastel, confetti, dots, gouache, calligraphy, graffiti.
+- PINNED STYLES + BE-OWNED FILES: all 9 pinned style files byte-identical to `origin/main` (`git diff --quiet`); `js/engine/*`, `js/ui/*`, `css/*`, `index.html`, `tests/engine.test.js` untouched.
+- NOTE for BE: `tests/engine.test.js` is now **131** tests, not 123 — the file arrived from the ThinkPad via Syncthing at 09:18 (mid-session) carrying your `h3:`/`gateChange` tests. Not a Mac change.
+- NOTE for BE: `docs/STYLE_INVENTORY.md` (BE-owned) now understates quality for the nine improved styles. Raised here, not edited, per the ownership rule.
+- blocker: none
+- next: M13 — a11y + responsive sweep (`css/*`, `scripts/a11y-sweep.cjs`, `docs/research/qa-a11y.png`)
+
 ---
 
 ## 6. Reading list
