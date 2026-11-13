@@ -304,17 +304,35 @@ BE verification on the ThinkPad (style-library 50/50 + probe PASS, export-panel
 the a11y-sweep re-ran identically). Your next stream is **M14** (reference
 docs), then **M15** (standing QA seat) → M16.
 
-**Open on M13:** the brief's "≥ 44×44 on every control" is **NOT met in the
-layers panel at ≤ 768px** — 8 controls sit at 32×32 (`.collapse-btn`,
-`.layer-visibility-btn`, the four `.layer-action-btn`s, `.layer-style-select`,
-`.layer-opacity-input`). `css/style.css` §13 documents the reason (the 250px
-rail cannot fit four 44px buttons plus the row selects) and notes 32px ≥
-WCAG 2.2 SC 2.5.8 AA's 24px minimum — but 44px is the stricter bar the brief
-asked for. Decide: accept the deviation with the §13 rationale, or restructure
-the row (the M10 fix moved the library row's actions to a second line — the
-same move may fit the layer row). Also still missing: `docs/checkpoints/M13.md`,
-an `AGENTS.md` §7 entry and the OPS_LOG line — **M13 arrived declared only by
-its files** (the same gap M11/M12 had).
+**M13 RESOLVED (BE, 2026-11-14, `8cedbc4`):** the brief's "≥ 44×44 on every
+control" is now **MET**. The layer row's own controls (`.layer-visibility-btn`,
+the `.layer-action-btn`s, `.layer-style-select`, `.layer-opacity-input`) are back
+at the **44px floor** — they had been reverted to 32px in your second §14
+revision, which arrived in the Syncthing tree AFTER `7f5cd07` and re-capped the
+criterion (probe: `underMin 12` at ≤768px). The row now **wraps** (`flex-wrap`
+on `.layer-row__main` / `.layer-tools-row` + a 74px name floor), so 44px fits the
+250px rail without overflow — measured children 9px inside the row's right edge
+at 1024/1440, `underMin 0` at 390–1920. The 32px floor is recorded in
+`css/style.css` §13 as the **rejected alternative** (32px ≥ SC 2.5.8 AA's 24px,
+but below the brief's 44px bar). Cost: a layer row is ~218px tall vs ~130px at
+32px, inside a panel that is already a scrolling column.
+**ALSO FIXED by BE:** `7f5cd07`'s §14 slider change fixed the CONTROLS panel
+(STRUCTURE in view) but left the MEDIA panel tall enough to push
+`media-masks-preview` off-screen, so the Maestro `www-paint-desktop-regression`
+flow FAILED — and the a11y sweep does not measure layout height, so it shipped
+unseen. Your §14 slider-height rules (`.slider-row` `min-height:0` +
+`height:var(--touch-xs,10px)`) complete section 14 for the media panel and are
+**KEPT**. Flows re-run green here: desktop-regression 33/33, a11y-sweep 50/50,
+a11y-sweep-mobile 34/34; visual regression 9/9 pinned baselines unmoved.
+(Checkpoint + AGENTS §7 + Maestro flows landed earlier in `6d0f3c8`.)
+
+**Mac action items (M13, updated):** (a) make `scripts/a11y-sweep.cjs`'s
+off-viewport check **pass-isolated AND stable** — the `rail` number flips between
+runs (0 vs 3). The 3 flagged controls are in the LIBRARY panel and sit at the
+SAME `left:-21` offset under BOTH css versions (measured directly), so that is
+pre-existing and NOT a 44px artifact. (b) still open from §7: give the three
+`index.html` paint-toolbar `<label>`s a `for` attribute (runtime `aria-label`
+covers the a11y tree but not the visual label association).
 
 **M12 (landed):** 11 non-pinned styles polished, five of them correctness defects
 the browser probe caught — `bokeh`'s `spacingFactor` was undefined so spacing went
