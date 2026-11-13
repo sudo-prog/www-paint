@@ -984,6 +984,65 @@ Format:
 - blocker: none
 - next: M13 — a11y + responsive sweep (`css/*`, `scripts/a11y-sweep.cjs`, `docs/research/qa-a11y.png`)
 
+### 2026-11-13 16:20 — M13 a11y + responsive sweep — SHIPPED, measured
+- did: NEW `scripts/a11y-sweep.cjs` — a DOM + real-geometry audit (no axe-core): every control focusable / focus ring / >=44x44 / accessible name / dialog semantics / Escape / focus restore / live regions / reduced-motion / no doc overflow / no off-viewport or clipped control. Three passes per width: as-found, every-overlay-open, and each left-rail panel in its OWN open state (the rail is exclusive — a panel measured while a sibling occupies it reports a false off-viewport failure). NEW `js/ui/a11y-hardening.js` — runtime a11y fixes that touch no ThinkPad-owned file: aria-labels for the 4 unnamed controls, modal focus restore (Escape + close button + focus-in), focus traps, aria-hidden sync. NEW `maestro/www-paint-a11y-sweep.yaml` (1440x900) + `maestro/www-paint-a11y-sweep-mobile.yaml` (390x844). NEW `docs/checkpoints/M13.md` + `docs/research/a11y-sweep.json` + `docs/research/a11y/<width>.png`.
+- files: `scripts/a11y-sweep.cjs`, `js/ui/a11y-hardening.js`, `maestro/www-paint-a11y-sweep.yaml`, `maestro/www-paint-a11y-sweep-mobile.yaml`, `docs/checkpoints/M13.md`, `docs/research/a11y-sweep.json`, `docs/research/a11y/*.png`, additive `css/style.css` (+410 lines appended at EOF, banner-delimited), additive `index.html` (+1 import-map entry, +1 import, +1 `initA11yHardening()` call), `js/ui/layers.js` (+1 aria-label)
+- verified (raw):
+  ```
+  $ NODE_PATH=<playwright-core> node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+  @ 390px  controls 46  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0
+  @ 500px  controls 46  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0
+  @ 768px  controls 46  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0
+  @ 1024px controls 30  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0
+  @ 1440px controls 30  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0
+  @ 1920px controls 30  underMin 0  noName 0  focusRemoved 0  offViewport 0  docOverflowX 0
+  UNIQUE under-min-target controls: 0     UNIQUE controls with no accessible name: 0
+  (was: 88 unique under-minimum, 4 unnamed, before this stream)
+
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-a11y-sweep.yaml
+    50 COMPLETED, 0 FAILED (exit 0)
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-a11y-sweep-mobile.yaml
+    34 COMPLETED, 0 FAILED (exit 0)
+
+  $ node tests/engine.test.js        -> Failed: 0
+  $ node tests/wetsim.test.js        -> Failed: 0
+  $ node tests/masks.test.js         -> Failed: 0
+  $ node tests/outlines.test.js      -> Failed: 0
+  $ node tests/order.test.js         -> Failed: 0
+  $ node tests/shaping.test.js       -> Failed: 0
+  $ node tests/ref-analyze.test.js   -> Failed: 0
+  $ node tests/style-library.test.js -> Passed: 50  Failed: 0
+  $ node tests/export-panel.test.js  -> Passed: 90  Failed: 0
+  $ node tests/style-polish.test.js  -> Passed: 11  Failed: 0
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9   (pins UNMOVED)
+
+  $ node <focus-restore probe>   (real Chromium)
+  exportPanel closed true restored true | settings closed true restored true | export closed true restored true
+  $ node <reduced-motion probe>  (reducedMotion:'reduce' context)
+  reducedMotionMatches true | nav-btn transition 1e-05s | spinner animation 1e-05s
+  ```
+- EIGHT DEFECTS found by the probe, each reproduced in isolation before fixing:
+  1. **Four controls had no accessible name** — the paint toolbar's `<label>` elements in `index.html` carry NO `for` attribute, so `#paint-preset`, `#paint-color`, `#paint-weight` and the layers panel's `.layer-opacity-input` were unnamed. Fixed at runtime (BE-owned markup untouched) + in Mac-owned `layers.js`.
+  2. **Every control was below the 44px floor.** `--touch` was 32px and `--touch-sm` 28/24px, so nav buttons were 40×40, round top-bar buttons 32×32, collapse chevrons 24×24, layer-row icon buttons 24×24, and every slider 3px tall (the thumb is a pseudo-element, not part of the box). New `--touch-a11y: 44px` token applied to every control; slider rows raised to a 44px tappable band.
+  3. **The first CSS pass silently did nothing.** The block was appended, but `.top-bar__center .nav-btn` (0,2,0) overrode the bare `.nav-btn` rule and `.form-input:focus` overrode `.form-input`. Moved to EOF and given the specificity needed to land — re-measuring showed the first attempt still at 40×40. An a11y rule appended to a 2900-line stylesheet is not applied until the computed value changes.
+  4. **A closed/hidden rail panel was still in the tab order.** `.panel--media.panel--hidden` sets `display:flex` and `.panel--mobile-closed` only applies a transform, so an off-screen panel's controls stayed reachable by Tab. Closed/hidden rail states now also get `visibility: hidden`.
+  5. **The 390px top bar overflowed the viewport.** Six 44px nav buttons + gaps = 284px plus the right-side group, in a fixed 40px bar → the right-side buttons wrapped below the header and off-screen (`top-bar__right` measured `right: 512px` in a 390px viewport). The bar now wraps and grows, `--header-h` is 111px at max-width 768px (the mobile panels are pinned to `top: var(--header-h)`).
+  6. **Sliders had no focus ring.** `.slider-row input[type=range]`, `.layer-opacity-input`, `.form-range`, `.paint-toolbar__slider` and `.motion-scrubber` all set `outline: none`, which outranks the bare `:focus-visible` rule. Explicit `:focus-visible` rules added.
+  7. **The 250px layers rail could not fit 44px buttons** — after fix 2, `layer-row__main` measured `right: 1026` in a 1024px viewport. The row's own buttons are 32px (WCAG 2.2 SC 2.5.8 AA minimum) and the row padding/gaps tightened; the collapse and Add-layer buttons keep 44px. The first attempt set the token on `.panel--layers` and regressed those two below the floor.
+  8. **Modal focus restore was incomplete.** `#export-root` and `#settings-overlay` moved focus in but never back; `#export-panel-root` restored on click but not Escape. Fixed in `js/ui/a11y-hardening.js` (capture-phase Escape handler, a `focusin`-on-BODY handler for the closed-while-focused case, and a wrapper on `window.__UISettings.show()/hide()`).
+- THREE TRAPS found while fixing (all documented in M13.md §3 and §6):
+  1. **My own `accessibleName()` helper treated an input's `value` as its name**, so it believed `#paint-color` ("#222222") and `#paint-weight` ("4") already had names and silently skipped exactly the controls the fix was written for. The browser does not use `value` as a name either.
+  2. **`setTimeout(0)` and `requestAnimationFrame` both ran before the lazily-created settings overlay existed**, so the trigger was never recorded. The only reliable anchor is wrapping the `__UISettings` singleton's `show()`.
+  3. **`root` was captured once at wrap time**; when the overlay is re-created the cached reference silently stops working. Now resolved via `getElementById` at every call.
+- THREE NEW MAESTRO PITFALLS (documented in M13.md §4.2):
+  1. **`pressKey: Escape` is NOT supported on web** — `CommandFailed: Keycode ESCAPE is not supported on web`. Dispatch the keydown in-page with `evalScript`.
+  2. **`openBrowser` is not a valid command** — use the `url:` header + `launchApp` (the pattern the existing flows use).
+  3. **`evalScript` accepts a multi-line `|` block; the `${...}` shorthand does not accept a statement block.**
+- ⚠ FOR BE: (a) `index.html` has three unassociated `<label class="paint-toolbar__label">` elements (~lines 101/110/114) with no `for`. The runtime aria-label covers the a11y tree; a proper `for` would be better. Raised, not edited, per the ownership rule. (b) `css/style.css` is now 3350 lines; the M13 block is the last 410 and is banner-delimited, ready to split into `css/a11y.css`. (c) `scripts/a11y-sweep.cjs` is a third probe harness alongside `visual-regression.cjs` and `style-polish.cjs` — recommended wiring: add it to AGENTS.md §3. (d) `js/ui/a11y-hardening.js` is additive and safe to fold into `app.js` when the shim pattern is retired.
+- ⚠ NOT DONE: **vision review of the a11y screenshots** — the vision backend has rate-limited every attempt since M10 (HTTP 429, `retry_after` up to 6104s). The geometry numbers and Maestro a11y-tree assertions above are real measurements, not a visual pass. `docs/research/a11y/*.png` are captured and ready.
+- blocker: none
+- next: M14 — reference docs (`docs/PANELS.md`, `docs/STROKE_FORMAT.md`)
+
 ---
 
 ## 6. Reading list

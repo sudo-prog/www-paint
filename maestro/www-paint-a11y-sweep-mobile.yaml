@@ -1,0 +1,116 @@
+# WWW_PAINT — M13 a11y + responsive sweep (MOBILE 390x844)
+# Run: maestro test --headless --screen-size 390x844 maestro/www-paint-a11y-sweep-mobile.yaml
+#
+# The mobile end of docs/MAC-TASKS.md M13. The desktop flow is
+# www-paint-a11y-sweep.yaml; run BOTH — a layout clean at 1440 is routinely
+# broken at 390, and the ui-quality-bar rule is to measure both ends.
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── A. Every surface mounted ──────────────────────────────────────────
+- assertTrue: "globalThis.document.getElementById('paint-canvas') !== null"
+- assertTrue: "globalThis.document.getElementById('controls-root') !== null"
+- assertTrue: "globalThis.document.getElementById('layers-root') !== null"
+- assertTrue: "globalThis.document.getElementById('media-root') !== null"
+- assertTrue: "globalThis.document.getElementById('style-library-root') !== null"
+- assertTrue: "globalThis.document.getElementById('export-panel-root') !== null"
+
+# ── C. No control below the 44px floor at 390px ───────────────────────
+- evalScript: |
+    const out = globalThis.document.querySelectorAll('button, input, select, textarea, a[href]');
+    const under = [];
+    for (const el of out) {
+      const r = el.getBoundingClientRect();
+      const cs = globalThis.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      if (r.width === 0 && r.height === 0) continue;
+      if (r.right > globalThis.innerWidth + 0.5 || r.left < -0.5) continue;
+      if (r.width < 43.5 || r.height < 43.5) {
+        under.push(el.tagName + '#' + (el.id || el.className));
+      }
+    }
+    globalThis.__underMin = under;
+- assertTrue: "globalThis.__underMin.length === 0"
+
+# ── H. No horizontal document overflow at 390px ───────────────────────
+- evalScript: |
+    const de = globalThis.document.documentElement;
+    globalThis.__docOverflow = de.scrollWidth - de.clientWidth;
+- assertTrue: "globalThis.__docOverflow === 0"
+
+# ── D. Every control has an accessible name ───────────────────────────
+- evalScript: |
+    const out = globalThis.document.querySelectorAll('button, input, select, textarea, a[href]');
+    const noname = [];
+    for (const el of out) {
+      const r = el.getBoundingClientRect();
+      const cs = globalThis.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      if (r.width === 0 && r.height === 0) continue;
+      const name = (el.getAttribute('aria-label') || '').trim()
+        || (el.getAttribute('aria-labelledby') || '').trim()
+        || (el.labels && el.labels.length ? el.labels[0].textContent.trim() : '')
+        || (el instanceof HTMLButtonElement ? el.textContent.trim() : '');
+      if (!name) noname.push(el.tagName + '#' + (el.id || el.className));
+    }
+    globalThis.__noName = noname;
+- assertTrue: "globalThis.__noName.length === 0"
+
+# ── E. The export panel is a dialog and Escape closes it ──────────────
+- tapOn:
+    id: "btn-export-panel"
+- assertTrue: "globalThis.document.getElementById('export-panel-root').getAttribute('role') === 'dialog'"
+- assertTrue: "globalThis.document.getElementById('export-panel-root').getAttribute('aria-modal') === 'true'"
+- assertTrue: "globalThis.document.getElementById('export-panel-root').classList.contains('export-panel--open') === true"
+- evalScript: |
+    globalThis.document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+- assertTrue: "globalThis.document.getElementById('export-panel-root').classList.contains('export-panel--open') === false"
+- assertTrue: "globalThis.document.activeElement === globalThis.document.getElementById('btn-export-panel')"
+
+# ── E. The settings modal is a dialog and Escape closes it ────────────
+- tapOn:
+    id: "btn-ui-settings"
+- assertTrue: "globalThis.document.getElementById('settings-overlay').getAttribute('role') === 'dialog'"
+- assertTrue: "globalThis.document.getElementById('settings-overlay').getAttribute('aria-modal') === 'true'"
+- evalScript: |
+    globalThis.document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+- assertTrue: "globalThis.document.getElementById('settings-overlay').classList.contains('settings-overlay--open') === false"
+- assertTrue: "globalThis.document.activeElement === globalThis.document.getElementById('btn-ui-settings')"
+
+# ── F. Live regions ───────────────────────────────────────────────────
+- assertTrue: "globalThis.document.getElementById('status-bar').getAttribute('aria-live') === 'polite'"
+- assertTrue: "globalThis.document.getElementById('export-panel-summary').getAttribute('aria-live') === 'polite'"
+
+# ── B. A visible focus ring is declared globally ──────────────────────
+- evalScript: |
+    const sheets = globalThis.document.styleSheets;
+    let ring = false;
+    for (const s of sheets) {
+      let rules; try { rules = s.cssRules; } catch (e) { continue; }
+      for (const r of rules) {
+        if (r.selectorText === ':focus-visible' && r.style.outlineWidth === '2px') ring = true;
+      }
+    }
+    globalThis.__focusRing = ring;
+- assertTrue: "globalThis.__focusRing === true"
+
+# ── G. prefers-reduced-motion is honoured ─────────────────────────────
+- evalScript: |
+    const sheets = globalThis.document.styleSheets;
+    let found = false;
+    for (const s of sheets) {
+      let rules; try { rules = s.cssRules; } catch (e) { continue; }
+      for (const r of rules) {
+        if (r.type === 4 && /prefers-reduced-motion/.test(r.conditionText || '')) found = true;
+      }
+    }
+    globalThis.__reducedMotionRule = found;
+- assertTrue: "globalThis.__reducedMotionRule === true"
