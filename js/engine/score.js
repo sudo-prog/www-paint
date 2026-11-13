@@ -28,6 +28,15 @@ import {
 } from './metrics.js';
 import { computeTonalMasks } from './masks.js';
 import { analyzeReference } from './ref-analyze.js';
+import { createStyleRasteriser, stampShapeStyles, isStyleRenderAvailable } from './style-render.js';
+
+/**
+ * The default style-aware render backend for {@link scoreProfileStyle} (H-S6).
+ * It renders the shapes through the real style registry where a canvas exists,
+ * and transparently falls back to the plain `rasterizeShapes` under plain
+ * `node`, so nothing changes off-browser.
+ */
+const styleRasteriser = createStyleRasteriser();
 
 /**
  * The tunable action space, as a JSON-serialisable descriptor list.
@@ -222,15 +231,25 @@ export const STYLE_PROFILE_DEFAULTS = Object.freeze({
  * from a reference image.
  *
  * Both sides go through the SAME analyser: the rendered frames are rasterised
- * with the harness's own rasteriser and then analysed exactly as the reference
- * image is. So the comparison never compares different feature definitions, and
- * any improvement in `styleMatch` is an improvement under one fixed measure.
+ * and then analysed exactly as the reference image is. So the comparison never
+ * compares different feature definitions, and any improvement in `styleMatch`
+ * is an improvement under one fixed measure.
+ *
+ * **H-S6 — the render honours the profile's `style`.** The default backend is a
+ * style-aware rasteriser (`style-render.js`) that pushes the shapes through the
+ * real style registry, so a pencil profile and an ink profile no longer render
+ * byte-identically. Where no canvas exists (`node`) it falls back to the plain
+ * style-agnostic rasteriser, so `node` output is unchanged — a style can only be
+ * rendered where one can be rendered. Pass `options.render` to inject a backend,
+ * `options.applyStyle: false` to skip stamping, `options.style` to override the
+ * style name.
  *
  * `composite` mixes the two objectives (`options.styleWeight`, default 0.7):
  * the style term dominates, but the reconstruction term stays in the loop so a
  * profile cannot win by painting something unrelated.
  *
- * Deterministic and headless: no DOM, no canvas, no randomness beyond the seed.
+ * Deterministic and headless: no DOM, no randomness beyond the seed; a canvas is
+ * used only when one is available (and then only through the style registry).
  *
  * @param {object} profile - a Style Profile.
  * @param {{pixels: Uint8ClampedArray, width: number, height: number}} image
@@ -264,7 +283,17 @@ export function scoreProfileStyle(profile, image, reference, options = {}) {
   optOpts.seed = optOpts.seed !== undefined ? optOpts.seed : seed;
   const { shapes, stats } = optimise(analysis, optOpts);
   const bg = options.background || averageColor(pixels);
-  const rendered = rasterizeShapes(shapes, w, h, bg);
+
+  // H-S6 — render through the profile's *style*, not only its stroke geometry.
+  // The style name comes from the profile (defaulting to the engine's own
+  // default), every shape is stamped with it, and the render goes through the
+  // style registry where a canvas exists (plain rasteriser otherwise).
+  const styleName = options.style !== undefined
+    ? options.style
+    : (normalizeProfile(profile).global.style || 'pencil');
+  const render = typeof options.render === 'function' ? options.render : styleRasteriser;
+  const renderShapes = options.applyStyle === false ? shapes : stampShapeStyles(shapes, styleName);
+  const rendered = render(renderShapes, w, h, bg);
 
   const refPacket = reference.module === 'ref-analyze'
     ? reference
@@ -286,6 +315,12 @@ export function scoreProfileStyle(profile, image, reference, options = {}) {
     reconstruction,
     composite,
     strokes: shapes.length,
+    style: styleName,
+    // 'style' = the registry-backed backend ran; 'plain' = the style-agnostic
+    // fallback (no canvas); 'custom' = the caller injected options.render.
+    renderBackend: typeof options.render === 'function'
+      ? 'custom'
+      : (isStyleRenderAvailable() ? 'style' : 'plain'),
     options: { ...optOpts, styleWeight },
     stats,
     refPacket,

@@ -66,6 +66,9 @@ import { exportProject, importProject, packLayers, exportHTML } from '../js/engi
 import {
   resolveLayerStyles, applyLayerStyles, preserveLayerProps, shapeLayerKey, TONAL_LAYER_NAMES
 } from '../js/engine/layer-styles.js';
+import {
+  STYLE_RENDER_DEFAULTS, isStyleRenderAvailable, toStyledShape, stampShapeStyles, createStyleRasteriser
+} from '../js/engine/style-render.js';
 
 // Simple test runner
 let passed = 0;
@@ -1715,6 +1718,84 @@ test('gateChange guards: a style gain bought with a fidelity drop is reverted', 
   assertEqual(GATE_DEFAULTS.guards, []);
   const noGuards = gateChange(baseline, cand2, { objective: 'styleMatch' });
   assertEqual(noGuards.decision, 'pending');
+});
+
+// ─── Style-aware render backend (Track-S hygiene H-S6) ────────────
+
+function eqArr(a, b, msg) {
+  if (a.length !== b.length) throw new Error(`${msg}: length ${a.length} != ${b.length}`);
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) throw new Error(`${msg}: idx ${i} ${a[i]} != ${b[i]}`);
+}
+
+/** Two optimiser-shaped ellipses (engine format: colours in fields, not params). */
+function makeEngineShapes() {
+  return [
+    { id: 'a', type: 'E', params: [10, 10, 8, 6, 0.3, 0.3, 0, 0], color0: [200, 60, 60], color1: [200, 60, 60], alpha: 0.9, style: 'painterly', layer: 0, order: 0, seed: 0 },
+    { id: 'b', type: 'E', params: [20, 14, 5, 5, 0, 0, 0, 0], color0: [40, 90, 160], color1: [40, 90, 160], alpha: 1, style: 'painterly', layer: 0, order: 1, seed: 1 },
+  ];
+}
+
+test('toStyledShape: carries colours into the style-module layout, never mutates', () => {
+  const s = makeEngineShapes()[0];
+  const before = s.params.slice();
+  const out = toStyledShape(s, 'ink');
+  // E/B/R: colours at params[5],[6] and alpha at [7] — the layout _convertShape builds.
+  assertEqual(out.params[5], s.color0, 'params[5] = color0');
+  assertEqual(out.params[6], s.color1, 'params[6] = color1');
+  assertEqual(out.params[7], s.alpha, 'params[7] = alpha');
+  assertEqual(out.style, 'ink', 'style stamped');
+  // Geometry is untouched (so the plain rasteriser sees identical geometry).
+  assertEqual(out.params[0], 10); assertEqual(out.params[2], 8); assertEqual(out.params[4], 0.3);
+  assertEqual(JSON.stringify(s.params), JSON.stringify(before), 'the input shape was mutated');
+  // S/T: colours ride on the tail.
+  const stroke = { type: 'S', params: [0, 0, 1, 1, 2, 0, 3, 0], color0: [1, 2, 3], color1: [4, 5, 6], alpha: 0.5, style: 'x' };
+  const so = toStyledShape(stroke, 'pencil');
+  assertEqual(so.params.length, 11, 'S params grew by 3');
+  assertEqual(so.params[8], stroke.color0); assertEqual(so.params[10], 0.5);
+});
+
+test('stampShapeStyles: new list, new shapes, no-op on empty style', () => {
+  const src = makeEngineShapes();
+  const styled = stampShapeStyles(src, 'pencil');
+  assertEqual(styled.length, src.length);
+  assertEqual(styled[0].style, 'pencil');
+  assertEqual(styled[0] === src[0], false, 'a new shape object');
+  assertEqual(src[0].style, 'painterly', 'the input list must not be mutated');
+  const same = stampShapeStyles(src);
+  assertEqual(same.length, 2);
+  assertEqual(same[0].style, 'painterly', 'no style name = no-op');
+});
+
+test('H-S6: the plain rasteriser ignores style, so the node path stays byte-identical', () => {
+  const raw = rasterizeShapes(makeEngineShapes(), 32, 32, [255, 255, 255]);
+  const styled = rasterizeShapes(stampShapeStyles(makeEngineShapes(), 'ink'), 32, 32, [255, 255, 255]);
+  eqArr(styled, raw, 'stamping a style must not move the plain rasteriser (geometry only)');
+});
+
+test('H-S6: createStyleRasteriser falls back to the plain rasteriser without a canvas', () => {
+  assertEqual(isStyleRenderAvailable(), false, 'node has no canvas — this test pins the fallback');
+  const sr = createStyleRasteriser();
+  const raw = rasterizeShapes(makeEngineShapes(), 32, 32, [255, 255, 255]);
+  const via = sr(stampShapeStyles(makeEngineShapes(), 'ink'), 32, 32, [255, 255, 255]);
+  eqArr(via, raw, 'the fallback must equal the plain rasteriser exactly');
+  assertEqual(typeof STYLE_RENDER_DEFAULTS.fallback, 'function');
+  assertEqual(STYLE_RENDER_DEFAULTS.fallback === rasterizeShapes, true);
+});
+
+test('H-S6: scoreProfileStyle reports its render backend and the profile style', () => {
+  const S = 40;
+  const px = new Uint8ClampedArray(S * S * 4);
+  for (let i = 0; i < S * S; i++) { px[i * 4] = 120; px[i * 4 + 1] = 130; px[i * 4 + 2] = 140; px[i * 4 + 3] = 255; }
+  const image = { pixels: px, width: S, height: S };
+  const r = scoreProfileStyle({ global: { style: 'ink', strokeCount: 30 } }, image, makePacket(), { seed: 3 });
+  assertEqual(r.style, 'ink', 'the profile style is reported');
+  assertEqual(r.renderBackend, 'plain', 'node falls back to the plain backend');
+  // An explicit backend is reported as custom, and is actually used.
+  let called = 0;
+  const custom = (shapes, w, h, bg) => { called++; return rasterizeShapes(shapes, w, h, bg); };
+  const r2 = scoreProfileStyle({ global: { style: 'ink', strokeCount: 30 } }, image, makePacket(), { seed: 3, render: custom });
+  assertEqual(r2.renderBackend, 'custom');
+  assertEqual(called, 1, 'the injected backend ran exactly once');
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

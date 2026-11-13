@@ -63,6 +63,7 @@ function startServer() {
 const PAGE_FN = async () => {
   const { analyzeReference } = await import('/js/engine/ref-analyze.js');
   const { scoreProfileStyle } = await import('/js/engine/score.js');
+  const { createStyleRasteriser } = await import('/js/engine/style-render.js');
 
   const SEED = 3047602159;
   const COUNT = 700;
@@ -103,6 +104,36 @@ const PAGE_FN = async () => {
   const nearInk = scoreProfileStyle(profile, content, refInk, { seed: 11 });
   const repeat = scoreProfileStyle(profile, content, refPencil, { seed: 11 });
 
+  // ── H-S6 (docs/checkpoints/S3.md §7 defect B) ────────────────────────────
+  // The defect was that scoreProfileStyle rendered through a STYLE-AGNOSTIC
+  // path, so a pencil and an ink profile scored byte-identically. The fix
+  // (js/engine/style-render.js) renders through the real style registry. Check
+  // it directly: two profiles that differ ONLY in style must produce DIFFERENT
+  // pixels. Capture the rendered frame through the style backend.
+  const renderForStyle = (style) => {
+    const backend = createStyleRasteriser();
+    let frame = null;
+    const wrap = (shapes, w, h, bg) => { frame = backend(shapes, w, h, bg); return frame; };
+    scoreProfileStyle({ global: { style, strokeCount: 200, detailLevel: 0.7 } }, content, refPencil,
+      { seed: 11, render: wrap });
+    const n = frame.length / 3;
+    const bgR = frame[0], bgG = frame[1], bgB = frame[2]; // top-left ≈ background
+    let painted = 0, sum = 0;
+    for (let i = 0; i < n; i++) {
+      const o = i * 3;
+      sum += (frame[o] + frame[o + 1] + frame[o + 2]) / 3;
+      if (Math.abs(frame[o] - bgR) > 4 || Math.abs(frame[o + 1] - bgG) > 4 || Math.abs(frame[o + 2] - bgB) > 4) painted++;
+    }
+    return { pixels: frame, paintedFrac: painted / n, meanLum: sum / n };
+  };
+  const pxPencil = renderForStyle('pencil');
+  const pxInk = renderForStyle('ink');
+  let diff = 0;
+  for (let i = 0; i < pxPencil.pixels.length; i++) {
+    if (Math.abs(pxPencil.pixels[i] - pxInk.pixels[i]) > 2) diff++;
+  }
+  const styleDiffFrac = diff / pxPencil.pixels.length;
+
   // Cost is held fixed: more strokes trivially move a fidelity metric, so every
   // comparison above runs at the same stroke count.
   const sameCost = nearPencil.strokes === nearInk.strokes && nearPencil.strokes === 200;
@@ -142,6 +173,18 @@ const PAGE_FN = async () => {
     deterministic: nearPencil.styleMatch === repeat.styleMatch
       && nearPencil.styleDistance === repeat.styleDistance,
     sameCost,
+    // H-S6: the style-aware render path actually ran, and two different styles
+    // produced different pixels (the old path rendered them identically).
+    styleAware: {
+      backend: nearPencil.renderBackend,
+      // The two renders compared below differ ONLY in `global.style`.
+      profileStyle: nearPencil.style,
+      rendersDiffer: +styleDiffFrac.toFixed(4),
+      pencilPaintedFrac: +pxPencil.paintedFrac.toFixed(4),
+      inkPaintedFrac: +pxInk.paintedFrac.toFixed(4),
+      pencilMeanLum: +pxPencil.meanLum.toFixed(2),
+      inkMeanLum: +pxInk.meanLum.toFixed(2),
+    },
     pageErrors: [],
   };
 };
@@ -189,13 +232,28 @@ async function main() {
     fail('the reference had no effect on the score — the metric cannot discriminate');
   }
 
+  // ── H-S6: the render honours the profile's style ──────────────────────────
+  if (r.styleAware.backend !== 'style') {
+    fail('the style-aware render backend did not run in the browser: ' + r.styleAware.backend);
+  }
+  if (!(r.styleAware.rendersDiffer > 0.05)) {
+    fail('a pencil and an ink profile rendered (nearly) identically — H-S6 is NOT fixed; '
+      + 'differing fraction ' + r.styleAware.rendersDiffer);
+  }
+  if (!(r.styleAware.pencilPaintedFrac > 0.05 && r.styleAware.inkPaintedFrac > 0.05)) {
+    fail('a styled render is blank: ' + JSON.stringify(r.styleAware));
+  }
+
   console.log(`MEASURED: a pencil profile scores styleMatch ${r.pencilProfile_vs_pencilRef} `
     + `against the pencil reference vs ${r.pencilProfile_vs_inkRef} against the ink reference `
     + `(margin ${r.margin}); deterministic; ${r.pencilProfile_vs_pencilRef >= r.pencilProfile_vs_inkRef
       ? 'the matching reference wins' : 'MISMATCHED — the metric did NOT prefer the matching reference'}`);
   if (r.margin <= 0) process.exit(1);
-  console.log('PASS: style match is deterministic, bounded, measured at equal cost, and prefers '
-    + 'the reference whose stroke language matches the profile');
+  console.log(`H-S6 MEASURED: renderBackend=${r.styleAware.backend}; a pencil and an ink profile differ `
+    + `in ${(r.styleAware.rendersDiffer * 100).toFixed(1)}% of pixels (was 0% before the fix); `
+    + `painted ${(r.styleAware.pencilPaintedFrac * 100).toFixed(1)}% / ${(r.styleAware.inkPaintedFrac * 100).toFixed(1)}%`);
+  console.log('PASS: style match is deterministic, bounded, measured at equal cost, prefers '
+    + 'the reference whose stroke language matches the profile, and the render honours the profile style');
   process.exit(0);
 }
 

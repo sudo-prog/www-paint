@@ -4,14 +4,17 @@
 (`js/engine/ref-analyze.js`, 16/16), **S2 done as a mechanism**
 (`scoreProfileStyle` + `refPacketDistance` + gate guards, `docs/checkpoints/S2.md`)
 and **S3 done** (multi-reference fusion, `docs/checkpoints/S3.md`, 29/29).
-**⚠ But building S3 exposed TWO DEFECTS IN S2** (`docs/checkpoints/S3.md` §7,
-now hygiene items **H-S5 / H-S6**): `orientationMatch` is not a metric (a packet's
-distance to itself is 0.12, so `styleMatch` floors at 0.875) and
-`scoreProfileStyle` renders through a **style-agnostic** path (a pencil profile and
-an ink profile score byte-identically), so S2 cannot yet measure style at all. S2's
-*"mechanism done, direction confirmed, magnitude not meaningful"* is now explained,
-and **H-S6 must be fixed before any style-match number means anything**.
-**Next: S4 / S9 (prerequisite: H-S6), or H3 real-LLM validation (S8).**
+**⚠ Building S3 exposed TWO DEFECTS IN S2** (`docs/checkpoints/S3.md` §7, hygiene
+**H-S5 / H-S6**). **H-S6 is now FIXED (2026-11-13, `docs/checkpoints/H-S6.md`):**
+`scoreProfileStyle` renders through a style-aware backend (`js/engine/style-render.js`)
+that honours the profile's `global.style` — a pencil vs an ink profile now differ in
+**97.1 %** of pixels (was 0 %, byte-identical), `node` output byte-identical, the 9
+baselines unmoved. **H-S5 remains:** `orientationMatch` is not a metric (its
+denominator penalises spread), so `styleMatch` is still floored — but it is now
+**unblocked and is the immediate next step** (S3 §8: "fix B first, then A").
+S2's *"mechanism done, direction confirmed, magnitude not meaningful"* still stands,
+for the two remaining reasons (H-S5, and a still-weak same-content reference pair).
+**Next: H-S5 (now unblocked) → S9, or H3 real-LLM validation (S8).**
 **Companion docs:** `docs/ROADMAP.md` (the brief) · `docs/AI_STYLE_HARNESS.md`
 (H0–H5 loop) · `docs/CLEANROOM.md` (Track R) · `docs/STYLE_PROFILE.md` (profile
 schema) · `docs/API.md`
@@ -78,8 +81,8 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 | **H-S2 — confidence / calibration UX** | When refs are weak or inconsistent, nothing surfaces a confidence or forces safer defaults. | Surface a confidence signal from S1/S3 and a safe-default path in the library UI (S6). |
 | **H-S3 — roadmap truth** | `docs/ROADMAP.md` §2 said "Layers: data model only" / "AI: None" long after both shipped — agents could mis-prioritise. | Fixed 2026-11-12 (this update). Keep status rows true after every stream (B7). |
 | **H-S4 — visual harness has no WebGL2** | `scripts/visual-regression.cjs` runs `--disable-gpu`, so stamp/WebGL paths are not exercised → false confidence on brush-tip changes. | Tracked as defect **0.7** (B7); either document hard or add a WebGL2 smoke. |
-| **H-S5 — `orientationMatch` is not a metric** | identity fails on BROAD (i.e. real) histograms: `refPacketDistance(p,p) = 0.12`, so `styleMatch` has a floor of 0.875 and can never reach 1. Cause: the denominator is a weighted mean of `cos(2Δθ)`, which penalises spread. This is the S2 §6 "term reads ≈0.50" mystery. | Fix by normalising with the kernel self-products `sqrt(K(a,a)·K(b,b))` (K is PSD ⇒ identity is exactly 1; delta-vs-delta unchanged). **Measured, then reverted — do NOT ship before H-S6**: alone it turns `style-match-probe` red for no gain. Pin/quoted tests now name it a `KNOWN DEFECT`. `docs/checkpoints/S3.md` §7A |
-| **H-S6 — `scoreProfileStyle` is STYLE-AGNOSTIC** | its render is `optimise()` → `rasterizeShapes()`, neither of which reads the profile's `style`; a **pencil and an ink profile score byte-identically** (0.887 / 0.928), so S2 measures the optimiser's stroke geometry, not the style. | **Prerequisite for S9 and for any style-match number to mean anything.** Needs a render path that honours `global.style`. Then re-validate H-S5 against it. `docs/checkpoints/S3.md` §7B |
+| **H-S5 — `orientationMatch` is not a metric** | identity fails on BROAD (i.e. real) histograms: `refPacketDistance(p,p)` is large, so `styleMatch` has a floor and can never reach 1. Cause: the denominator is a weighted mean of `cos(2Δθ)`, which penalises spread. This is the S2 §6 "term reads ≈0.50" mystery. | Fix by normalising with the kernel self-products `sqrt(K(a,a)·K(b,b))` (K is PSD ⇒ identity is exactly 1; delta-vs-delta unchanged). **Now unblocked — H-S6 has landed**, so this is the immediate next step: fix it and re-measure on the style-aware probe (invert the `KNOWN DEFECT` test in `tests/engine.test.js`; drop the note in `metrics.js`). `docs/checkpoints/S3.md` §7A |
+| **H-S6 — `scoreProfileStyle` is STYLE-AGNOSTIC** | its render was `optimise()` → `rasterizeShapes()`, neither of which reads the profile's `style`; a **pencil and an ink profile scored byte-identically** (0.887 / 0.928), so S2 measured the optimiser's stroke geometry, not the style. | **DONE (2026-11-13)** — `js/engine/style-render.js` (pure `toStyledShape`/`stampShapeStyles` + `createStyleRasteriser` through the real registry, falling back to the plain rasteriser without a canvas) wired into `scoreProfileStyle` (default backend, `options.render`/`applyStyle`/`style`, result `style`+`renderBackend`). Measured: a pencil vs an ink profile now differ in **97.1 %** of pixels (was 0 %); `node` output byte-identical; baselines 9/9 unmoved. `docs/checkpoints/H-S6.md` |
 
 ---
 
@@ -90,8 +93,10 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 3. **S2** — Style-Match Score in `metrics.js` / `score.js`; wire into `propose` + `gate`.
 4. **S6 (Phase 4.2)** — Profile library UI (Mac **M10**; already issued).
 5. **S3 + S4** — multi-ref fusion + hierarchical passes in the schema + engine.
-   *S3 done 2026-11-13.* **H-S6 (style-aware render path) now precedes S9/S2's
-   numbers** — it is the blocker found by S3; H-S5 follows it.
+   *S3 done 2026-11-13.* **H-S6 (style-aware render path) DONE 2026-11-13**
+   (`docs/checkpoints/H-S6.md`) — the blocker found by S3. **H-S5 (the orientation
+   kernel) is now the immediate next step**, validated against the fixed render
+   path, before S9/S2's numbers mean anything.
 6. **S8** — H3 real-LLM validation.
 7. **S7 (Phase 6)** — worker batch deterministic apply (BE **B5** + Mac **M11**).
 8. **R4 finish** — outlines / order / per-style shaping (BE **B4**; Mac **M7–M9**) when not blocking the S-track.
