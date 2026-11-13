@@ -1562,6 +1562,26 @@ test('orientationMatch: identical 1, 90° is anti, PI-periodic, wrap-aware', () 
     orientationMatch([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], b), 1e-12, 'symmetric');
 });
 
+test('orientationMatch: KNOWN DEFECT (S3.md §7) — identity fails for a BROAD histogram', () => {
+  // This test PINS CURRENT (buggy) BEHAVIOUR deliberately. A DELTA histogram
+  // matches itself exactly (asserted above); a BROAD one — i.e. every real
+  // render — does not, because the denominator is a weighted mean of cos(2Δθ),
+  // so it penalises spread. Consequence: `refPacketDistance(p, p)` is ~0.12, not
+  // 0, and `styleMatch` can never reach 1 even for a perfect match. It is NOT
+  // fixed yet because S2's only real-world check cannot validate either version
+  // (see docs/checkpoints/S3.md §7, defect B). When S9 fixes the render path and
+  // this kernel, INVERT this assertion to `=== 1` and drop the note in metrics.js.
+  const broad = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8];
+  const self = orientationMatch(broad, broad);
+  if (!(self < 0.9 && self > 0.4)) {
+    throw new Error(`expected the known spread penalty (~0.5), got ${self} — has it been fixed?`);
+  }
+  const other = [8, 5, 3, 5, 6, 2, 9, 5, 1, 4, 1, 3];
+  const s = orientationMatch(broad, other);
+  if (!(s >= 0 && s <= 1)) throw new Error('orientationMatch out of [0,1]: ' + s);
+  assertApprox(s, orientationMatch(other, broad), 1e-12, 'symmetric');
+});
+
 test('valueMapDistance: mean absolute difference, missing key counts as 0', () => {
   assertEqual(valueMapDistance({ a: 0.5, b: 0.5 }, { a: 0.5, b: 0.5 }), 0);
   // mean over the union of keys: (|0.5-0.9| + 0) / 2

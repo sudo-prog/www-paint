@@ -237,7 +237,11 @@ background · shadows · outline · midtone · highlights
         "rating": { "type": ["integer","null"], "minimum": -1, "maximum": 5, "description": "User rating; -1 = rejected" },
         "notes": { "type": "string", "maxLength": 1024 },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "refPacket": {
+          "type": ["object","null"],
+          "description": "Optional fused Track-S reference packet (S3): the consensus of 1-4 references, as emitted by js/engine/ref-analyze.js fuseReferences(). Consumed directly by refPacketDistance / scoreProfileStyle."
+        }
       }
     }
   }
@@ -273,6 +277,15 @@ A compact, cheap-to-compute descriptor used for **retrieval / few-shot** (roadma
 Tracks where a profile came from. `refs` holds the 1–4 style-reference images
 (roadmap 5.1) with a content hash so a profile can be re-derived or audited. A
 `rating` of `-1` marks a rejected proposal (feedback store, roadmap 5.3).
+
+`refPacket` (optional, added 2026-11-13 with Track-S **S3**) holds the **fused**
+reference descriptor: `ref-analyze.fuseReferences(packets)` merges 1–4 references
+into one packet-shaped consensus, down-weighting a reference that disagrees with
+the others, and the result is stored here so a profile carries *the style its
+references agree on* rather than any single reference. `profile.js` reads/writes
+it with `attachFusedReference()` / `fusedReferenceFromProfile()`. It is the same
+shape `RefPacket` a render is analysed into, so `refPacketDistance` /
+`scoreProfileStyle` (S2) consume it with no new code path.
 
 ---
 
@@ -347,6 +360,10 @@ Until then, a profile may be validated with any draft-07 validator
 | New **optional** field, or new enum member | bump `id` minor, keep `schemaVersion` |
 | New **required** field, or semantic change to an existing field | bump `schemaVersion` and add a migration |
 | Rename / remove a field | bump `schemaVersion`, add a migration, keep a compat reader |
+
+**Applied 2026-11-13:** `provenance.refPacket` added as an **optional** field
+(Track-S S3 multi-reference fusion) — `schemaVersion` stays 1, per the first row
+above. Existing profiles without it are unchanged.
 
 `schemaVersion` is an integer const per schema id. WWW_PAINT will adopt LAYERS'
 migration approach (`packages/schema`, AJV, v0→v1) rather than invent one.

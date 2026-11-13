@@ -17,10 +17,16 @@ import { analyzeImage } from '../js/engine/analyzer.js';
 import {
   analyzeReference,
   chooseGridSize,
+  fuseReferences,
   SCALE_BINS,
   ORIENTATION_BINS,
   REF_DEFAULTS,
+  FUSION_DEFAULTS,
 } from '../js/engine/ref-analyze.js';
+import { refPacketDistance } from '../js/engine/metrics.js';
+import {
+  attachFusedReference, fusedReferenceFromProfile, validateProfile, profileFromSettings,
+} from '../js/engine/profile.js';
 
 let passed = 0;
 let failed = 0;
@@ -203,6 +209,168 @@ test('chooseGridSize adapts and clamps to [minGrid, maxGrid]', () => {
   assertEqual(chooseGridSize(16384, 16384), REF_DEFAULTS.maxGrid);
   const mid = chooseGridSize(512, 512);
   assert(mid > REF_DEFAULTS.minGrid && mid < REF_DEFAULTS.maxGrid, `mid grid ${mid} not adaptive`);
+});
+
+// ── S3: multi-reference fusion ────────────────────────────────────
+console.log('');
+console.log('S3 — multi-reference fusion');
+
+/**
+ * A minimal hand-built RefPacket. Fusion is pure arithmetic on packets, so a
+ * synthetic packet is the right fixture here: it is fully deterministic and it
+ * pins the arithmetic exactly, which a real image could not.
+ */
+function synthPacket({ hist, obins, coh, palette = [] }) {
+  return {
+    version: 1,
+    module: 'ref-analyze',
+    scaleHistogram: hist,
+    orientationField: { binCount: ORIENTATION_BINS, bins: obins, dominant: 0, strength: 0.8 },
+    strokeScaleByBand: { background: 0.6, shadows: 0.5, midtones: 0.4, highlights: 0.3 },
+    coverage: { background: 0.25, shadows: 0.25, midtones: 0.25, highlights: 0.25 },
+    stats: { cells: 81, meanCoherence: coh, meanStrokeScale: 0.5, meanDensity: 0.2, meanLuma: 0.5, meanEnergy: 0.1 },
+    styleDNA: { palette, edgeDensity: 0.2, contrast: 0.3, wetnessEstimate: 0.4 },
+  };
+}
+const COARSE = [0, 0, 0, 0, 0, 0, 0, 9];   // all stroke mass in the coarsest bin
+const FINEE  = [9, 0, 0, 0, 0, 0, 0, 0];   // all stroke mass in the finest bin
+const O0 = new Array(ORIENTATION_BINS).fill(0); O0[0] = 1;
+const REF_A  = synthPacket({ hist: COARSE, obins: O0, coh: 0.5, palette: ['#111111', '#222222'] });
+const REF_A2 = synthPacket({ hist: COARSE, obins: O0, coh: 0.5, palette: ['#111111', '#333333'] });
+const SHEEP  = synthPacket({ hist: FINEE,  obins: O0, coh: 0.1, palette: ['#abcdef'] });
+
+test('S3: one reference fuses to its own normalised packet', () => {
+  const f = fuseReferences([pk]);
+  assertEqual(f.module, 'ref-fusion');
+  assertEqual(f.refCount, 1);
+  assertEqual(f.refs[0].outlier, false);
+  assertClose(f.refs[0].weight, 1, 1e-9);
+  const tot = pk.scaleHistogram.reduce((a, b) => a + b, 0);
+  f.scaleHistogram.forEach((v, i) => assertClose(v, pk.scaleHistogram[i] / tot, 1e-9, `scale bin ${i}`));
+  assertClose(f.scaleHistogram.reduce((a, b) => a + b, 0), 1, 1e-9, 'fused scale histogram is a distribution');
+  assertClose(f.orientationField.bins.reduce((a, b) => a + b, 0), 1, 1e-9, 'fused orientation bins sum to 1');
+  // Every term except `orientation` is exactly 0 against the source packet.
+  // `orientation` is NOT (≈0.48) because of the known metric defect recorded in
+  // docs/checkpoints/S3.md §7 — so assert the four terms that ARE exact, and pin
+  // the defect rather than pretend it is gone.
+  const d = refPacketDistance(f, pk);
+  for (const k of ['scale', 'coverage', 'bandScale', 'coherence']) {
+    assertClose(d.parts[k], 0, 1e-9, `part '${k}' must be exact against the source packet`);
+  }
+  assert(d.parts.orientation > 0.4, 'known S3.md §7 defect: nonzero at zero lag');
+});
+
+test('S3: KNOWN DEFECT (S3.md §7) — a real packet is not zero-distance from itself', () => {
+  // Pins the same metric defect as the engine.test.js case, on a REAL packet:
+  // the self-distance sits at ~0.12 instead of 0, so `styleMatch` has a floor.
+  // It distorts any absolute distance, though S3's fusion rule is RELATIVE (it
+  // compares deviations to each other), which is why fusion is still sound.
+  const d = refPacketDistance(pk, pk);
+  assert(d.distance > 0 && d.distance < 0.2, `expected the known ~0.12 self-distance, got ${d.distance}`);
+  assertClose(d.parts.scale, 0, 1e-12, 'the other terms vanish at zero lag');
+});
+
+test('S3: fusion works on real reference packets', () => {
+  const ringPk = analyzeReference(ring(128));
+  const f = fuseReferences([pk, ringPk]);
+  assertEqual(f.refCount, 2);
+  assertEqual(f.refs.map((r) => r.outlier), [false, false], 'two refs cannot identify an outlier');
+  assertClose(f.refs[0].weight, 0.5, 1e-9);
+  assertClose(f.scaleHistogram.reduce((a, b) => a + b, 0), 1, 1e-9);
+  assert(f.styleDNA.palette.length > 0, 'the fused palette is non-empty');
+  assertEqual(JSON.parse(JSON.stringify(f)), f, 'and still JSON-safe');
+});
+
+test('S3: fusion is deterministic and JSON-safe', () => {
+  const a = fuseReferences([REF_A, REF_A2, SHEEP]);
+  const b = fuseReferences([REF_A, REF_A2, SHEEP]);
+  assertEqual(a, b, 'same inputs must give a byte-identical packet');
+  assertEqual(JSON.parse(JSON.stringify(a)), a);
+});
+
+test('S3: an outlier reference is down-weighted, never dropped', () => {
+  const f = fuseReferences([REF_A, REF_A2, SHEEP]);
+  assertEqual(f.refs.map((r) => r.outlier), [false, false, true]);
+  const w = f.refs.map((r) => r.weight);
+  assertClose(w[0], 1 / 2.25, 1e-9, 'inlier weight');
+  assertClose(w[2], FUSION_DEFAULTS.outlierWeight / 2.25, 1e-9, 'outlier carries outlierWeight');
+  assert(w[2] < w[0], 'the outlier must weigh less than an inlier');
+  const bin0 = f.scaleHistogram[0], bin7 = f.scaleHistogram[7];
+  assert(bin7 > bin0, `coarse bin ${bin7} should dominate fine bin ${bin0}`);
+  assertClose(bin0, FUSION_DEFAULTS.outlierWeight / 2.25, 1e-9, 'the sheep contributes exactly its weight');
+  // Prove the down-weighting is what did it: disable it and the sheep is equal.
+  const g = fuseReferences([REF_A, REF_A2, SHEEP], { outlierWeight: 1 });
+  assertEqual(g.refs.map((r) => r.outlier), [false, false, true]);
+  assertClose(g.refs[2].weight, 1 / 3, 1e-9, 'without down-weighting every ref weighs equally');
+});
+
+test('S3: an explicit per-reference weight overrides the default', () => {
+  const f = fuseReferences([{ packet: REF_A, weight: 3 }, REF_A2]);
+  assertClose(f.refs[0].baseWeight, 0.75, 1e-9);
+  assertClose(f.refs[1].baseWeight, 0.25, 1e-9);
+  assertClose(f.refs[0].weight, 0.75, 1e-9);
+});
+
+test('S3: two dissimilar references flag nobody (no consensus to protect)', () => {
+  const f = fuseReferences([REF_A, SHEEP]);
+  assertEqual(f.refs.map((r) => r.outlier), [false, false]);
+  assertClose(f.refs[0].weight, 0.5, 1e-9);
+});
+
+test('S3: identical references agree fully', () => {
+  const f = fuseReferences([REF_A, REF_A2]);
+  assertClose(f.spread.agreement, 1, 1e-9);
+  assertClose(f.spread.scale, 0, 1e-9);
+});
+
+test('S3: the fused packet carries a spread (confidence) signal', () => {
+  const f = fuseReferences([REF_A, REF_A2, SHEEP]);
+  assert(f.spread.agreement < 1 && f.spread.agreement > 0.5, `agreement ${f.spread.agreement}`);
+  assert(f.spread.orientation < 1e-9, 'the refs share an orientation');
+  assert(f.spread.scale > 0, 'disagreeing scale histograms must show as spread');
+});
+
+test('S3: palette fusion keeps the dominant colours, capped by paletteSize', () => {
+  const f = fuseReferences([REF_A, REF_A2, SHEEP]);
+  assertEqual(f.styleDNA.palette, ['#111111', '#222222', '#333333', '#abcdef'],
+    'shared colours lead; ties break by hex; the down-weighted sheep ranks last');
+  const capped = fuseReferences([REF_A, REF_A2, SHEEP], { paletteSize: 2 });
+  assertEqual(capped.styleDNA.palette, ['#111111', '#222222']);
+});
+
+test('S3: rejects 0 refs, more than maxRefs, and non-packet inputs', () => {
+  let threw = 0;
+  const grab = (fn) => { try { fn(); } catch { threw++; } };
+  grab(() => fuseReferences([]));
+  grab(() => fuseReferences([REF_A, REF_A, REF_A, REF_A, REF_A]));
+  grab(() => fuseReferences([{ nope: true }]));
+  assertEqual(threw, 3, 'all three invalid inputs must throw');
+});
+
+test('S3: a fused reference attaches to provenance and round-trips the schema', () => {
+  const base = profileFromSettings({ style: 'pencil', strokeCount: 400 });
+  assert(validateProfile(base).ok, 'the base profile should be valid');
+  const fused = fuseReferences([REF_A, REF_A2, SHEEP]);
+  const withRef = attachFusedReference(base, fused);
+  assert(withRef !== base, 'attach must return a NEW profile');
+  assertEqual(base.provenance.refPacket, undefined, 'the input must not be mutated');
+  assertEqual(fusedReferenceFromProfile(withRef), fused, 'the fused packet reads back');
+  const round = JSON.parse(JSON.stringify(withRef));
+  const v = validateProfile(round);
+  assert(v.ok, `a profile with a fused ref must validate: ${JSON.stringify(v.errors)}`);
+  assertEqual(fusedReferenceFromProfile(round), fused, 'the fused packet survives JSON');
+});
+
+test('S3: a malformed fused reference is rejected, and null clears the field', () => {
+  const base = profileFromSettings({});
+  const bad = { ...base, provenance: { source: 'ai', refPacket: { nope: true } } };
+  assertEqual(validateProfile(bad).ok, false, 'a malformed refPacket must fail validation');
+  const withRef = attachFusedReference(base, fuseReferences([REF_A]));
+  assert(fusedReferenceFromProfile(withRef) !== null);
+  const cleared = attachFusedReference(withRef, null);
+  assertEqual(fusedReferenceFromProfile(cleared), null);
+  assertEqual('refPacket' in cleared.provenance, false, 'null clears the key entirely');
+  assert(validateProfile(cleared).ok, 'the cleared profile is still valid');
 });
 
 // ── Summary ───────────────────────────────────────────────────────

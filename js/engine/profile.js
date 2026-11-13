@@ -127,6 +127,14 @@ export function validateProfile(profile) {
     const p = profile.provenance;
     if (!isObj(p) || !PROVENANCE_SOURCES.includes(p.source)) {
       err('provenance.source', `must be one of ${PROVENANCE_SOURCES.join('|')}`);
+    } else if (p.refPacket !== undefined && p.refPacket !== null) {
+      // S3 fused reference (Track S) — optional. When present it must be the
+      // shape `ref-analyze.fuseReferences` emits, so `refPacketDistance` (S2)
+      // can score a render against it directly.
+      const fp = p.refPacket;
+      if (!isObj(fp) || !Array.isArray(fp.scaleHistogram) || !isObj(fp.orientationField)) {
+        err('provenance.refPacket', 'must be a fused RefPacket ({ scaleHistogram[], orientationField{} })');
+      }
     }
   }
 
@@ -418,6 +426,44 @@ export function profileFromSettings(settings = {}, overrides = {}) {
   };
 }
 
+/**
+ * Attach a fused Track-S reference packet (S3) to a profile's `provenance`.
+ *
+ * Returns a NEW profile — the input is not mutated (profile objects are shared
+ * with the library UI, which must not see its own object change under it).
+ * Passing `null`/`undefined` clears the field. The fused packet is the object
+ * `ref-analyze.fuseReferences` returns; it is stored verbatim on
+ * `provenance.refPacket` and is what `fusedReferenceFromProfile` reads back.
+ *
+ * @param {object} profile
+ * @param {object|null} fused
+ * @returns {object} a new profile carrying `provenance.refPacket`
+ */
+export function attachFusedReference(profile, fused) {
+  if (!isObj(profile)) throw new Error('attachFusedReference: a profile object is required');
+  const provenance = isObj(profile.provenance) ? { ...profile.provenance } : { source: 'human' };
+  if (!PROVENANCE_SOURCES.includes(provenance.source)) provenance.source = 'human';
+  if (fused === null || fused === undefined) {
+    delete provenance.refPacket;
+  } else {
+    if (!isObj(fused) || !Array.isArray(fused.scaleHistogram) || !isObj(fused.orientationField)) {
+      throw new Error('attachFusedReference: expected a fused RefPacket');
+    }
+    provenance.refPacket = fused;
+  }
+  return { ...profile, provenance };
+}
+
+/**
+ * The fused reference packet carried by a profile (or `null`).
+ * @param {object} profile
+ * @returns {object|null}
+ */
+export function fusedReferenceFromProfile(profile) {
+  const p = isObj(profile) ? profile.provenance : null;
+  return (isObj(p) && isObj(p.refPacket)) ? p.refPacket : null;
+}
+
 export default {
   PROFILE_SCHEMA_VERSION,
   PROFILE_ROLES,
@@ -429,4 +475,6 @@ export default {
   profileToLayerProps,
   applyProfile,
   profileFromSettings,
+  attachFusedReference,
+  fusedReferenceFromProfile,
 };

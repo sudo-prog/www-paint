@@ -378,6 +378,19 @@ export function orientationMatch(aBins, bBins) {
   const s = den > 0 ? num / den : 0;
   return Math.max(0, Math.min(1, (1 + s) / 2));
 }
+// KNOWN DEFECT (Track-S S3, docs/checkpoints/S3.md §7). The docstring above
+// claims "1 = the same distribution", but the denominator is a *weighted mean of
+// cos(2Δθ)*, which penalises SPREAD. For a DELTA histogram (all existing tests)
+// identity gives exactly 1; for a BROAD histogram — every real render — two
+// identical inputs score ~0.5, so `refPacketDistance(p, p) === 0.12`, not 0, and
+// `scoreProfileStyle` can never reach 1 even for a perfect match. The correct
+// form normalises by the kernel self-products `sqrt(K(a,a)·K(b,b))` (K is PSD, so
+// Cauchy–Schwarz bounds it to 1 at a === b). It is NOT applied here on purpose:
+// S2's only real-world check (`scripts/style-match-probe.cjs`) cannot validate
+// either version, because `scoreProfileStyle` renders through the STYLE-AGNOSTIC
+// optimiser+rasteriser path (a pencil profile and an ink profile score
+// identically — S3.md §7 defect B). Fixing this belongs with that render path,
+// in S9, behind a validated reference pair.
 
 /**
  * Mean absolute difference between two `{name: 0..1}` maps (the packets'
