@@ -23,7 +23,7 @@ import {
   REF_DEFAULTS,
   FUSION_DEFAULTS,
 } from '../js/engine/ref-analyze.js';
-import { refPacketDistance } from '../js/engine/metrics.js';
+import { refPacketDistance, refPacketMatch } from '../js/engine/metrics.js';
 import {
   attachFusedReference, fusedReferenceFromProfile, validateProfile, profileFromSettings,
 } from '../js/engine/profile.js';
@@ -249,25 +249,25 @@ test('S3: one reference fuses to its own normalised packet', () => {
   f.scaleHistogram.forEach((v, i) => assertClose(v, pk.scaleHistogram[i] / tot, 1e-9, `scale bin ${i}`));
   assertClose(f.scaleHistogram.reduce((a, b) => a + b, 0), 1, 1e-9, 'fused scale histogram is a distribution');
   assertClose(f.orientationField.bins.reduce((a, b) => a + b, 0), 1, 1e-9, 'fused orientation bins sum to 1');
-  // Every term except `orientation` is exactly 0 against the source packet.
-  // `orientation` is NOT (≈0.48) because of the known metric defect recorded in
-  // docs/checkpoints/S3.md §7 — so assert the four terms that ARE exact, and pin
-  // the defect rather than pretend it is gone.
+  // EVERY term is now exactly 0 against the source packet. `orientation` used to
+  // be ≈0.48 here, the known metric defect recorded in docs/checkpoints/S3.md §7
+  // and fixed by H-S5 (2026-11-14, `orientationMatch` now normalises by the
+  // kernel self-products, so identity is exact for a broad histogram).
   const d = refPacketDistance(f, pk);
-  for (const k of ['scale', 'coverage', 'bandScale', 'coherence']) {
+  for (const k of ['scale', 'coverage', 'bandScale', 'coherence', 'orientation']) {
     assertClose(d.parts[k], 0, 1e-9, `part '${k}' must be exact against the source packet`);
   }
-  assert(d.parts.orientation > 0.4, 'known S3.md §7 defect: nonzero at zero lag');
 });
 
-test('S3: KNOWN DEFECT (S3.md §7) — a real packet is not zero-distance from itself', () => {
-  // Pins the same metric defect as the engine.test.js case, on a REAL packet:
-  // the self-distance sits at ~0.12 instead of 0, so `styleMatch` has a floor.
-  // It distorts any absolute distance, though S3's fusion rule is RELATIVE (it
-  // compares deviations to each other), which is why fusion is still sound.
+test('S3: a real packet IS zero-distance from itself (H-S5 fixed the floor)', () => {
+  // Was the H-S5 known defect, pinned here on a REAL packet: the self-distance
+  // sat at ~0.12 because the orientation term was ~0.48 at zero lag, so
+  // `styleMatch` had a floor and could never reach 1. H-S5 (the kernel
+  // self-product normalisation) removed it; this asserts the floor is gone.
   const d = refPacketDistance(pk, pk);
-  assert(d.distance > 0 && d.distance < 0.2, `expected the known ~0.12 self-distance, got ${d.distance}`);
-  assertClose(d.parts.scale, 0, 1e-12, 'the other terms vanish at zero lag');
+  assertEqual(d.distance, 0, `self-distance must be exactly 0, got ${d.distance}`);
+  for (const k of Object.keys(d.parts)) assertClose(d.parts[k], 0, 1e-12, `part '${k}' at zero lag`);
+  assertClose(refPacketMatch(pk, pk), 1, 1e-12, 'a perfect match scores exactly 1');
 });
 
 test('S3: fusion works on real reference packets', () => {

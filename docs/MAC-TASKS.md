@@ -461,6 +461,34 @@ opted in). **Mac half:** wire primitives → media in the Mac-owned
 `js/engine/brush-media.js` once BE freezes the primitive list. **Blocked until
 BE issues the primitive list — do M10 first.**
 
+### M15 QA seat — BE push 2026-11-14 (H-S5, the orientation kernel)
+
+BE landed **H-S5**: `js/engine/metrics.js` — `orientationMatch` now normalises by
+the kernel self-products `sqrt(K(a,a)·K(b,b))`, so it is a real metric (identity
+exactly 1 for any histogram, `refPacketDistance(p,p) = 0`, no `styleMatch` floor).
+**No Mac action beyond the standing M15 QA pass** — nothing UI-side changed (no
+`js/ui/*`, `js/styles/*`, `css/*` or `index.html` edit) and the 9 pinned baselines
+are unmoved. Harness commands to re-run against `main` and report on:
+
+```
+node tests/engine.test.js                            # 137
+node tests/ref-analyze.test.js                       # 29
+NODE_PATH=<...> node scripts/style-match-probe.cjs   # exit 0 + an
+   # "H-S5 KNOWN LIMITATION" line for the pencil-vs-ink ADJACENT pair
+NODE_PATH=<...> node scripts/style-ref-matrix.cjs    # NEW diagnostic: 9x9
+   # reference-pair orientation/scale matrices + per-term styleMatch tables
+NODE_PATH=<...> node scripts/visual-regression.cjs   # 9/9, pinned baselines unmoved
+```
+
+**Note on the probe:** it no longer asserts the pencil-vs-ink margin. Those two
+references are `orientationMatch` 0.9636 apart (same content, both structure-aligned
+700-stroke renders), so they cannot separate a render — measured, not assumed; the
+probe prints that pair as a labelled known limitation and asserts on a genuinely
+different one (cross-hatch) instead. Details: `docs/checkpoints/H-S5.md`. One flake
+seen while landing: `scripts/visual-regression.cjs` reported `error=8` once under
+memory pressure and 9/9 on the immediate re-run — if you hit it, re-run before
+reporting.
+
 ## R3.3 Protocol (unchanged)
 
 1. **Never run git** (`AGENTS.md` §0.8). Edits reach the ThinkPad via Syncthing;

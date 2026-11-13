@@ -1565,24 +1565,29 @@ test('orientationMatch: identical 1, 90° is anti, PI-periodic, wrap-aware', () 
     orientationMatch([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], b), 1e-12, 'symmetric');
 });
 
-test('orientationMatch: KNOWN DEFECT (S3.md §7) — identity fails for a BROAD histogram', () => {
-  // This test PINS CURRENT (buggy) BEHAVIOUR deliberately. A DELTA histogram
-  // matches itself exactly (asserted above); a BROAD one — i.e. every real
-  // render — does not, because the denominator is a weighted mean of cos(2Δθ),
-  // so it penalises spread. Consequence: `refPacketDistance(p, p)` is ~0.12, not
-  // 0, and `styleMatch` can never reach 1 even for a perfect match. It is NOT
-  // fixed yet because S2's only real-world check cannot validate either version
-  // (see docs/checkpoints/S3.md §7, defect B). When S9 fixes the render path and
-  // this kernel, INVERT this assertion to `=== 1` and drop the note in metrics.js.
+test('orientationMatch: identity is exactly 1 for a BROAD histogram too (H-S5)', () => {
+  // H-S5 (docs/checkpoints/S3.md §7, defect A). The former denominator was the
+  // raw mass `Σ aᵢbⱼ`, i.e. a weighted mean of cos(2Δθ), which penalises SPREAD:
+  // a measured ~0.48 for two IDENTICAL broad histograms (see S3.md §7 — this
+  // test used to PIN that defect). Normalising by the kernel self-products
+  // `sqrt(K(a,a)·K(b,b))` makes identity exact for ANY distribution, because the
+  // kernel matrix cos(2·Δθᵢⱼ) is a Gram matrix and hence PSD.
   const broad = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8];
-  const self = orientationMatch(broad, broad);
-  if (!(self < 0.9 && self > 0.4)) {
-    throw new Error(`expected the known spread penalty (~0.5), got ${self} — has it been fixed?`);
-  }
+  assertApprox(orientationMatch(broad, broad), 1, 1e-12, 'broad identity');
+  assertApprox(orientationMatch(new Array(12).fill(1), new Array(12).fill(1)), 1, 1e-12,
+    'uniform identity');
+  assertApprox(orientationMatch([3, 1, 0, 5, 0, 0], [6, 2, 0, 10, 0, 0]), 1, 1e-12,
+    'identity is scale-invariant (raw counts == frequencies)');
+  // Cauchy–Schwarz bound (K is PSD): still bounded by [0,1] and symmetric
   const other = [8, 5, 3, 5, 6, 2, 9, 5, 1, 4, 1, 3];
   const s = orientationMatch(broad, other);
   if (!(s >= 0 && s <= 1)) throw new Error('orientationMatch out of [0,1]: ' + s);
   assertApprox(s, orientationMatch(other, broad), 1e-12, 'symmetric');
+  // A different distribution still scores below identity — the fix raises a
+  // perfect match to 1 WITHOUT flattening the metric into a constant.
+  if (!(orientationMatch(broad, other) < 0.999)) {
+    throw new Error('orientationMatch no longer discriminates: ' + s);
+  }
 });
 
 test('valueMapDistance: mean absolute difference, missing key counts as 0', () => {
@@ -1602,6 +1607,19 @@ test('refPacketDistance: a packet against itself is 0 in EVERY term', () => {
   assertApprox(refPacketMatch(A, A), 1, 1e-12);
   assertEqual(Object.keys(d.parts).sort(), ['bandScale', 'coherence', 'coverage', 'orientation', 'scale']);
   assertEqual(Object.keys(STYLE_MATCH_WEIGHTS).sort(), ['bandScale', 'coherence', 'coverage', 'orientation', 'scale']);
+
+  // H-S5 regression: `makePacket()` uses a DELTA orientation histogram, which the
+  // old kernel matched exactly — the defect only showed on a BROAD one, i.e. on
+  // every real render, where the orientation term was ~0.52 and so
+  // `refPacketDistance(p, p)` measured ~0.12 instead of 0. A perfect match must
+  // now be 0 in EVERY term for a realistic (broad) orientation field too.
+  const B = makePacket({
+    orientationField: { binCount: 12, bins: [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8], dominant: 3, strength: 0.5 },
+  });
+  const db = refPacketDistance(B, B);
+  assertEqual(db.distance, 0);
+  for (const k of Object.keys(db.parts)) assertApprox(db.parts[k], 0, 1e-12, 'broad part ' + k);
+  assertApprox(refPacketMatch(B, B), 1, 1e-12, 'broad packet matches itself exactly');
 });
 
 test('refPacketDistance: each term moves the composite by its own weight', () => {

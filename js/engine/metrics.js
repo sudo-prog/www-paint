@@ -355,42 +355,48 @@ export function histogramDistance(a, b) {
  * (0), and a 90° difference is anti. Neighbouring bins across the wrap compare
  * correctly for free (cosine is even and 2π-periodic).
  *
+ * The kernel is `K(a,b) = Σᵢⱼ aᵢbⱼ cos(2·Δθᵢⱼ)`; K is a Gram matrix (it is
+ * `cos(2θᵢ)cos(2θⱼ) + sin(2θᵢ)sin(2θⱼ)`, rank ≤ 2, hence PSD), so the score is
+ * normalised by the kernel SELF-PRODUCTS — `K(a,b) / sqrt(K(a,a)·K(b,b))` —
+ * which Cauchy–Schwarz bounds to [−1, 1]. Identity therefore gives exactly 1 for
+ * ANY distribution, broad or delta. (Track-S hygiene H-S5: dividing by the raw
+ * mass `Σᵢⱼ aᵢbⱼ` instead — the former behaviour — is a weighted mean of cos(2Δθ),
+ * which penalises SPREAD: two IDENTICAL broad histograms scored ~0.5, so
+ * `refPacketDistance(p, p)` was ~0.12 and `styleMatch` could never reach 1.)
+ * Delta histograms are unaffected (K = 1 for a unit bin), so every pre-H-S5
+ * expectation that compared spikes still holds.
+ *
  * @param {Array<number>} aBins 0..1 frequencies (or raw weights)
  * @param {Array<number>} bBins
  * @returns {number} 0..1
  */
+function orientationKernel(X, Y, n, step) {
+  let s = 0;
+  for (let i = 0; i < n; i++) {
+    const xi = X[i] || 0;
+    if (xi === 0) continue;
+    for (let j = 0; j < n; j++) {
+      const yj = Y[j] || 0;
+      if (yj === 0) continue;
+      s += xi * yj * Math.cos(2 * (i - j) * step);
+    }
+  }
+  return s;
+}
+
 export function orientationMatch(aBins, bBins) {
   const A = normaliseBins(aBins), B = normaliseBins(bBins);
   const n = Math.max(A.length, B.length);
   if (!n) return 0;
   const step = Math.PI / n;
-  let num = 0, den = 0;
-  for (let i = 0; i < n; i++) {
-    const ai = A[i] || 0;
-    if (ai === 0) continue;
-    for (let j = 0; j < n; j++) {
-      const bj = B[j] || 0;
-      if (bj === 0) continue;
-      num += ai * bj * Math.cos(2 * (i - j) * step);
-      den += ai * bj;
-    }
-  }
+  const num = orientationKernel(A, B, n, step);
+  const den = Math.sqrt(
+    Math.max(0, orientationKernel(A, A, n, step))
+    * Math.max(0, orientationKernel(B, B, n, step)),
+  );
   const s = den > 0 ? num / den : 0;
   return Math.max(0, Math.min(1, (1 + s) / 2));
 }
-// KNOWN DEFECT (Track-S S3, docs/checkpoints/S3.md §7). The docstring above
-// claims "1 = the same distribution", but the denominator is a *weighted mean of
-// cos(2Δθ)*, which penalises SPREAD. For a DELTA histogram (all existing tests)
-// identity gives exactly 1; for a BROAD histogram — every real render — two
-// identical inputs score ~0.5, so `refPacketDistance(p, p) === 0.12`, not 0, and
-// `scoreProfileStyle` can never reach 1 even for a perfect match. The correct
-// form normalises by the kernel self-products `sqrt(K(a,a)·K(b,b))` (K is PSD, so
-// Cauchy–Schwarz bounds it to 1 at a === b). It is NOT applied here on purpose:
-// S2's only real-world check (`scripts/style-match-probe.cjs`) cannot validate
-// either version, because `scoreProfileStyle` renders through the STYLE-AGNOSTIC
-// optimiser+rasteriser path (a pencil profile and an ink profile score
-// identically — S3.md §7 defect B). Fixing this belongs with that render path,
-// in S9, behind a validated reference pair.
 
 /**
  * Mean absolute difference between two `{name: 0..1}` maps (the packets'
