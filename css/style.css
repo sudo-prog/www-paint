@@ -3047,12 +3047,11 @@ body {
   height: 20px;
 }
 
-/* The media panel's slider rows: the row is the practical hit area. */
-.slider-row {
-  min-height: var(--touch-a11y-sm);
-}
+/* The media panel's slider rows: the input keeps a 44px box; the ROW stays at
+   its original compact height (see section 14 for why a min-height here broke
+   the desktop regression flow). */
 .slider-row input[type="range"] {
-  height: var(--touch-a11y-sm);
+  height: var(--touch-a11y);
 }
 
 /* The motion scrubber's tappable band. */
@@ -3081,7 +3080,7 @@ body {
 .export-panel__range-wrap .form-range { height: var(--touch-a11y-sm); }
 
 /* The band toggles in the media panel. */
-.media-band-toggle { min-height: var(--touch-a11y-sm); }
+.media-controls .media-band-toggle { min-height: var(--touch-a11y-sm); }
 .media-action-btn { min-height: var(--touch-a11y-sm); }
 
 /* Settings dialog buttons + color inputs. */
@@ -3201,11 +3200,10 @@ body {
 
 .slider-row,
 .layer-opacity-row {
-  min-height: var(--touch-a11y-sm);
+  min-height: var(--touch-sm);
 }
-.slider-row input[type="range"],
-.layer-opacity-input {
-  height: var(--touch-a11y-sm);
+.slider-row input[type="range"] {
+  height: var(--touch-a11y);
 }
 
 .mobile-toggle {
@@ -3304,21 +3302,96 @@ input[type="range"]:focus-visible {
 /* ── 13. The layers rail is 250px wide. Four 44px icon buttons plus the
        row padding do not fit (4 x 44 + 3 x 4 + 24 padding = 212px of
        buttons alone, and the layer row also carries the blend/style
-       selects). Give the rail its own narrower floor so the row stays
-       inside the panel; the buttons remain >= 32px, which is WCAG 2.2
-       SC 2.5.8's AA minimum. ── */
+       selects). Give the LAYER ROW's own buttons a narrower floor so the
+       row stays inside the panel; they remain >= 32px, which is WCAG 2.2
+       SC 2.5.8's AA minimum. Scoped to the row's buttons only — the
+       panel-head collapse button and the Add-layer button keep 44px. ── */
 
-.panel--layers {
-  --touch-a11y: 32px;
-  --touch-a11y-sm: 32px;
-}
+/* BE integration fix (2026-11-13): the row's own buttons must ALSO reach the
+   44px floor — the brief asks it of EVERY control, and 32px was an exception
+   the row did not need. The main / tools lines wrap and the name keeps a
+   legible floor, so the 44px buttons share the line where they fit (320px
+   mobile overlay) and wrap to a second line where they cannot (250px desktop
+   rail) instead of overflowing it. Measured: layer rows 44x44, underMin 0 at
+   390-1920, no overflow / no clipping. */
 .panel--layers .layer-action-btn,
 .panel--layers .layer-visibility-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+}
+.panel--layers .layer-style-select {
+  min-height: 44px;
+}
+.panel--layers .layer-opacity-input {
+  height: 44px;
+}
+.panel--layers .layer-row__main,
+.panel--layers .layer-tools-row {
+  flex-wrap: wrap;
+}
+.panel--layers .layer-row__name {
+  min-width: 74px;
 }
 .panel--layers .layer-row__actions {
   flex-wrap: wrap;
+}
+.panel--layers .layer-row {
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+}
+.panel--layers .layer-row__controls {
+  gap: var(--space-1);
+}
+.panel--layers .layer-tools-row {
+  gap: var(--space-1);
+}
+
+/* ── 14. The controls panel is a SCROLLING column. Raising every slider row
+       to a 44px band grew it by ~370px, which pushed the STRUCTURE section
+       below the fold — and Maestro (and any viewport-based a11y snapshot)
+       drops off-screen nodes from the tree, so the desktop regression flow
+       failed on `assertVisible: "STRUCTURE"`.
+
+       Fix: the INPUT keeps a 44px box (the target really is 44px) and its
+       vertical margins are NEGATIVE, so it contributes only its original
+       height. That only works when the container is NOT flex — a flex line is
+       sized to the item's margin box, which is why the first attempt failed.
+       `.slider-row` becomes `display: block`, so the margins collapse; the
+       value readout stays on the same baseline via `vertical-align: middle`.
+       Verified: input box 44px, row back to its pre-M13 height, STRUCTURE /
+       PATH ORDER / MOTION back in view. ── */
+
+.slider-row {
+  display: block;
+  position: relative;
+}
+.slider-row input[type="range"] {
+  display: inline-block;
+  vertical-align: middle;
+  width: calc(100% - 44px);
+  height: var(--touch-a11y);
+  margin-top: calc((var(--touch-a11y) - var(--touch-sm)) / -2);
+  margin-bottom: calc((var(--touch-a11y) - var(--touch-sm)) / -2);
+  /* Redraw the track as a 3px line at the vertical centre of the 44px box;
+     the default background would paint a 44px-tall bar. */
+  background: linear-gradient(
+    to bottom,
+    transparent 0, transparent calc(50% - 1.5px),
+    var(--border-strong) calc(50% - 1.5px), var(--border-strong) calc(50% + 1.5px),
+    transparent calc(50% + 1.5px), transparent 100%
+  );
+}
+[data-theme="dark"] .slider-row input[type="range"] {
+  background: linear-gradient(
+    to bottom,
+    transparent 0, transparent calc(50% - 1.5px),
+    var(--border) calc(50% - 1.5px), var(--border) calc(50% + 1.5px),
+    transparent calc(50% + 1.5px), transparent 100%
+  );
+}
+.slider-value {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* ── 10. prefers-reduced-motion: also kill the smooth scroll + the loading

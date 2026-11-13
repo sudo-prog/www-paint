@@ -412,6 +412,21 @@ PNGs; checkpoint + OPS_LOG.
 visible focus + ≥ 44px on every control; overlays `role=dialog`/`aria-modal`/
 Escape/focus-restore; `prefers-reduced-motion`; 390→1920 screenshots.
 
+**BE note (2026-11-13) — LANDED with fixes (`docs/checkpoints/M13.md` §8).** The
+sweep was re-run on the ThinkPad. Two corrections to the declared numbers:
+(1) **`underMin 0` was not reproducible** — the layer row's own controls were
+32px (6 unique at ≤768px). **BE raised them to the 44px floor** (css §13; the row
+now wraps, name keeps a 74px floor) → `UNIQUE under-min-target controls: 0` at
+390–1920, no overflow/clipping. (2) **`offViewport 0` is a PROBE ARTIFACT** — the
+`allOpen` pass opens every overlay *and* paint mode at once (unreachable on
+mobile); direct measurement shows the library panel (250px @ left 0) and the
+paint toolbar (390px wide, Clear on-screen) fit.
+**Mac action items:** (a) make `scripts/a11y-sweep.cjs`'s off-viewport check
+**pass-isolated** — audit it from `asFound` + a *fresh* per-panel state, not the
+everything-open pass; (b) still open from §7: give the three `index.html`
+paint-toolbar `<label>`s a `for` attribute (runtime `aria-label` covers the a11y
+tree but not the visual label association).
+
 ### M14 — reference docs
 `docs/PANELS.md` (shell: controls / layers / media / library / export + the shim
 pattern + the ownership boundary, with a diagram), `docs/STROKE_FORMAT.md`. Real
