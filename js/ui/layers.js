@@ -187,6 +187,9 @@ export class LayersManager {
     const opacityInput = document.createElement("input");
     opacityInput.type = "range";
     opacityInput.className = "layer-opacity-input";
+    // M13: the row has no <label for>, so without this the slider has no
+    // accessible name. Added here (Mac-owned file) rather than in index.html.
+    opacityInput.setAttribute("aria-label", "Layer opacity");
     opacityInput.min = "0";
     opacityInput.max = "1";
     opacityInput.step = "0.05";

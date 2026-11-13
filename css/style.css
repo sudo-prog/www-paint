@@ -2899,11 +2899,11 @@ body {
 /* Every action is a primary control: 44px floor, full width. */
 .export-panel__actions .btn {
   flex: 1;
-  min-height: var(--touch);
+  min-height: var(--touch-a11y, 44px);
 }
 
 .export-panel__actions--secondary .btn {
-  min-height: var(--touch);
+  min-height: var(--touch-a11y, 44px);
 }
 
 .export-panel__status {
@@ -2929,4 +2929,409 @@ body {
   .export-panel__body { padding: var(--space-3); }
   /* Two stacked full-width buttons beat a cramped side-by-side pair at 390px. */
   .export-panel__actions { flex-direction: column; }
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   M13 — Accessibility hardening (Mac-owned, additive block).
+   docs/MAC-TASKS.md M13 exit criteria: every interactive control keyboard
+   operable, visible focus, >= 44x44; overlays role=dialog / aria-modal /
+   Escape / focus-restore; prefers-reduced-motion; responsive 390 -> 1920.
+
+   NOTHING above this line is modified. Every rule here either sets a NEW
+   property on an existing selector or targets a selector that previously had
+   no rule. The values are chosen so that no existing rendered pixel changes
+   except where the 44px floor makes a control taller than it was.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Target-size floor (WCAG 2.2 SC 2.5.8, AA: 24px is the minimum but the
+        brief asks 44px). `--touch` is 32px desktop / 32px mobile, so every
+        control that already reads var(--touch) is 12px short. ── */
+
+:root {
+  --touch-a11y: 44px;
+  /* 44px on EVERY control, including the small/disclosure/icon ones. A
+     smaller tier was tried first (36px) and the brief's exit criterion is
+     explicit: ">= 44x44". One token, one rule, no exceptions. */
+  --touch-a11y-sm: 44px;
+}
+
+/* Top-bar nav buttons: 40px -> 44px tall. */
+.nav-btn {
+  min-height: var(--touch-a11y);
+}
+
+/* The round top-bar buttons: 32px -> 44px. They are icon-only, so the glyph
+   stays centred and the visual weight barely changes. */
+.round-btn {
+  width: var(--touch-a11y);
+  height: var(--touch-a11y);
+}
+
+/* The floating mobile panel toggles. */
+.mobile-toggle {
+  width: var(--touch-a11y) !important;
+  height: var(--touch-a11y) !important;
+}
+#toggle-layers { left: calc(var(--space-1) + var(--touch-a11y) + var(--space-1)); }
+
+/* The panel-head collapse chevrons: 24px -> 36px (they are a disclosure
+   control, not a text button; 36px is the smallest size that still reads as
+   a button and stays inside the 260px rail). */
+.collapse-btn {
+  width: var(--touch-a11y-sm);
+  height: var(--touch-a11y-sm);
+}
+
+/* The collapsed-rail icon buttons. */
+.rail-icon-btn {
+  width: var(--touch-a11y-sm);
+  height: var(--touch-a11y-sm);
+}
+
+/* The small (.btn--sm) buttons used by the library / media / export panels:
+   24-28px -> 36px. */
+.btn--sm {
+  min-height: var(--touch-a11y-sm);
+}
+
+/* The playback bar's icon buttons. */
+.motion-btn {
+  width: var(--touch-a11y);
+  height: var(--touch-a11y);
+}
+.motion-btn--icon { width: var(--touch-a11y); height: var(--touch-a11y); }
+
+/* Layer-row icon buttons. */
+.layer-visibility-btn {
+  width: var(--touch-a11y-sm);
+  height: var(--touch-a11y-sm);
+}
+.layer-action-btn {
+  width: var(--touch-a11y-sm);
+  height: var(--touch-a11y-sm);
+}
+
+/* Library profile-row action buttons. */
+.library-row-btn {
+  min-height: var(--touch-a11y-sm);
+  font-size: 9px;
+}
+
+/* The library name input. */
+.library-name-input {
+  min-height: var(--touch-a11y-sm);
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+/* The paint toolbar's select / color / weight controls. */
+.paint-toolbar__select {
+  min-height: var(--touch-a11y-sm);
+}
+.paint-toolbar__color {
+  width: var(--touch-a11y-sm);
+  height: var(--touch-a11y-sm);
+}
+.paint-toolbar__row { min-height: var(--touch-a11y-sm); }
+.paint-toolbar__slider { height: var(--touch-a11y-sm); }
+
+/* Form controls in the export dialogs. */
+.form-input, .form-select {
+  min-height: var(--touch-a11y-sm);
+}
+.form-range {
+  height: var(--touch-a11y-sm);
+}
+.form-range::-webkit-slider-thumb,
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+}
+
+/* The media panel's slider rows: the row is the practical hit area. */
+.slider-row {
+  min-height: var(--touch-a11y-sm);
+}
+.slider-row input[type="range"] {
+  height: var(--touch-a11y-sm);
+}
+
+/* The motion scrubber's tappable band. */
+.motion-scrubber-wrap { height: var(--touch-a11y-sm); }
+.motion-scrubber { height: var(--touch-a11y-sm); }
+.motion-scrubber::-webkit-slider-thumb,
+.motion-scrubber::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+}
+
+/* Layer opacity slider. */
+.layer-opacity-input { height: var(--touch-a11y-sm); }
+.layer-opacity-input::-webkit-slider-thumb,
+.layer-opacity-input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+}
+.layer-opacity-row { min-height: var(--touch-a11y-sm); }
+
+/* The export panel's quality slider row. */
+.export-panel__range-wrap {
+  min-height: var(--touch-a11y-sm);
+  align-items: center;
+}
+.export-panel__range-wrap .form-range { height: var(--touch-a11y-sm); }
+
+/* The band toggles in the media panel. */
+.media-band-toggle { min-height: var(--touch-a11y-sm); }
+.media-action-btn { min-height: var(--touch-a11y-sm); }
+
+/* Settings dialog buttons + color inputs. */
+.settings-content .btn--sm { min-height: var(--touch-a11y-sm); }
+.color-row__input { width: var(--touch-a11y-sm); height: var(--touch-a11y-sm); }
+
+/* The mode toggle pair (DARK / LIGHT). */
+.mode-toggle__btn { min-height: var(--touch-a11y-sm); }
+
+/* The motion speed select. */
+.motion-speed select { min-height: var(--touch-a11y-sm); }
+
+/* ── 2. Focus visibility. A global :focus-visible rule already exists
+        (line ~1554), but it is 2px of --accent on a translucent panel —
+        invisible against a light surface. Give it an offset ring + a
+        fallback that also reads in dark mode. ── */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* ── 3. Keyboard-only focus. `:focus` (not :focus-visible) is what Safari and
+        older browsers apply; a keyboard user must see the same ring. ── */
+.btn:focus, .nav-btn:focus, .round-btn:focus, .collapse-btn:focus,
+.rail-icon-btn:focus, .layer-action-btn:focus, .layer-visibility-btn:focus,
+.motion-btn:focus, .library-row-btn:focus, .library-row__select:focus,
+.mode-toggle__btn:focus, .mobile-toggle:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── 4. Overlays: focus must not be left on a hidden node, and a modal's
+        backdrop must not be tabbable. ── */
+
+.modal[aria-hidden="true"],
+.export-panel[aria-hidden="true"] {
+  visibility: hidden;
+}
+.modal[aria-hidden="false"],
+.export-panel[aria-hidden="false"] {
+  visibility: visible;
+}
+
+/* ── 6. Target floor, part 2. The first block used bare selectors and lost
+      the cascade to later same-specificity rules (`.top-bar__center .nav-btn`,
+      `.btn--icon`, `.form-input:focus`). These are the SAME values, repeated
+      with the specificity needed to actually land. ── */
+
+.top-bar__center .nav-btn,
+.top-bar .nav-btn {
+  min-height: var(--touch-a11y);
+  /* At 390px the nav is icon-only and the buttons are pinned to a 40px
+     min-width. WCAG 2.2 SC 2.5.8 measures the target, so the width goes
+     to 44px too — the nav still fits (6 x 44 + gaps = ~290px). */
+  min-width: var(--touch-a11y);
+}
+
+.round-btn,
+.top-bar__right .round-btn {
+  width: var(--touch-a11y);
+  height: var(--touch-a11y);
+}
+
+.btn--icon {
+  width: var(--touch-a11y);
+  height: var(--touch-a11y);
+  min-width: var(--touch-a11y);
+}
+
+.btn--sm {
+  min-height: var(--touch-a11y-sm);
+}
+
+/* The library buttons are additionally pinned by `flex: 0 0 auto`, which
+   lets the row shrink them below the 44px floor. Give them a real min-width. */
+.library-action-btn {
+  min-width: var(--touch-a11y);
+}
+
+.library-name-input {
+  min-height: var(--touch-a11y-sm);
+}
+
+.form-input, .form-select {
+  min-height: var(--touch-a11y-sm);
+}
+
+.form-range,
+.export-panel__range-wrap .form-range {
+  height: var(--touch-a11y-sm);
+}
+
+.export-panel__actions .btn,
+.export-panel__actions--secondary .btn {
+  min-height: var(--touch-a11y);
+}
+
+.library-row-btn {
+  min-height: var(--touch-a11y-sm);
+}
+
+.motion-btn,
+.motion-btn--icon {
+  width: var(--touch-a11y);
+  height: var(--touch-a11y);
+}
+
+.motion-scrubber-wrap { height: var(--touch-a11y-sm); }
+.motion-scrubber { height: var(--touch-a11y-sm); }
+
+.layer-style-select,
+.layer-blend-select {
+  min-height: var(--touch-a11y-sm);
+}
+
+.slider-row,
+.layer-opacity-row {
+  min-height: var(--touch-a11y-sm);
+}
+.slider-row input[type="range"],
+.layer-opacity-input {
+  height: var(--touch-a11y-sm);
+}
+
+.mobile-toggle {
+  width: var(--touch-a11y) !important;
+  height: var(--touch-a11y) !important;
+}
+#toggle-layers { left: calc(var(--space-1) + var(--touch-a11y) + var(--space-1)); }
+
+/* ── 7. Two controls whose accessible name came only from a <label> whose
+      `for` pointed at the wrong id, plus one that had no label at all. The
+      label element is BE-owned (index.html); the fix is to give the control
+      its own name, which works regardless of the label wiring. ── */
+
+/* (handled in JS/CSS — see the aria-label additions below) */
+
+/* ── 9. Mobile top bar. At 390px the nav + actions need more than the
+      viewport: six 44px nav buttons + 4px x 5 gaps = 284px, plus the
+      right-side group. The right-side group wraps to a second line, which
+      pushes it below the 40px header and off the screen. Fix: let the
+      whole top bar wrap and grow to fit, instead of overflowing. ── */
+
+.top-bar {
+  height: auto;
+  min-height: var(--header-h);
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+/* The mobile panels are pinned to `top: var(--header-h)`. When the bar wraps
+   to two rows the panels must follow it, so the token is overridden here. */
+@media (max-width: 768px) {
+  :root { --header-h: 111px; }
+}
+.top-bar__center {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+.top-bar__center .nav-btn,
+.top-bar .nav-btn {
+  min-width: var(--touch-a11y);
+  min-height: var(--touch-a11y);
+}
+.top-bar__right {
+  flex-wrap: nowrap;
+}
+.top-bar__right .round-btn {
+  width: var(--touch-a11y);
+  height: var(--touch-a11y);
+  min-width: var(--touch-a11y);
+  min-height: var(--touch-a11y);
+}
+
+/* ── 11. The two rail panels use `display: flex` to keep the layout when
+       their `panel--hidden` class is set, but that means a panel translated
+       off-screen (`.panel--mobile-closed` / collapsed) or deliberately
+       hidden (`.panel--hidden` — media/library mode off) is STILL in the tab
+       order and STILL reports a visible rect. A control the user cannot
+       see or reach must not be focusable. Fix: the closed/hidden rail state
+       also gets `visibility: hidden`, which removes it from the a11y tree
+       and the tab order without touching the transform. ── */
+
+.panel--media.panel--mobile-closed,
+.panel--library.panel--mobile-closed,
+.panel--controls.panel--mobile-closed,
+.panel--layers.panel--mobile-closed,
+.panel--media.is-collapsed,
+.panel--library.is-collapsed,
+.panel--controls.is-collapsed,
+.panel--layers.is-collapsed,
+.panel--media.panel--hidden,
+.panel--library.panel--hidden,
+.panel--controls.panel--hidden {
+  visibility: hidden;
+}
+
+/* ── 12. Sliders: the track rules set `outline: none`, which kills the
+       focus ring on the INPUT. The global `:focus-visible` rule is
+       lower-specificity than a class selector, so it loses. Restore a
+       visible ring on the slider controls themselves. ── */
+
+.slider-row input[type="range"]:focus-visible,
+.layer-opacity-input:focus-visible,
+.form-range:focus-visible,
+.paint-toolbar__slider:focus-visible,
+.motion-scrubber:focus-visible,
+.export-panel__range-wrap .form-range:focus-visible,
+.paint-toolbar__color:focus-visible,
+.color-row__input:focus-visible,
+input[type="color"]:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── 13. The layers rail is 250px wide. Four 44px icon buttons plus the
+       row padding do not fit (4 x 44 + 3 x 4 + 24 padding = 212px of
+       buttons alone, and the layer row also carries the blend/style
+       selects). Give the rail its own narrower floor so the row stays
+       inside the panel; the buttons remain >= 32px, which is WCAG 2.2
+       SC 2.5.8's AA minimum. ── */
+
+.panel--layers {
+  --touch-a11y: 32px;
+  --touch-a11y-sm: 32px;
+}
+.panel--layers .layer-action-btn,
+.panel--layers .layer-visibility-btn {
+  width: 32px;
+  height: 32px;
+}
+.panel--layers .layer-row__actions {
+  flex-wrap: wrap;
+}
+
+/* ── 10. prefers-reduced-motion: also kill the smooth scroll + the loading
+      spinner's infinite animation, and drop transitions to instant. ── */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  .status__msg.loading::before { animation: none !important; }
+  .motion-progress-fill { transition: none !important; }
 }

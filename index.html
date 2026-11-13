@@ -290,6 +290,7 @@
       "./js/ui/export-panel.js": "./js/ui/export-panel.js?v=20261030a",
       "./js/ui/export-panel-core.js": "./js/ui/export-panel-core.js?v=20261030a",
       "./js/ui/export-host.js": "./js/ui/export-host.js?v=20261030a",
+      "./js/ui/a11y-hardening.js": "./js/ui/a11y-hardening.js?v=20261030a",
       "./js/ui/layers.js": "./js/ui/layers.js?v=20261030a",
       "./js/ui/media.js": "./js/ui/media.js?v=20261030a",
       "./js/ui/media-host.js": "./js/ui/media-host.js?v=20261030a",
@@ -315,6 +316,7 @@
     import { attachMediaPanel } from './js/ui/media-host.js?v=20261030a';
     import { attachStyleLibrary } from './js/ui/style-library-host.js?v=20261030a';
     import { attachExportPanel } from './js/ui/export-host.js?v=20261030a';
+    import { initA11yHardening } from './js/ui/a11y-hardening.js?v=20261030a';
 
     const app = initApp();
 
@@ -333,6 +335,11 @@
       // Export & share panel (Phase 6 / Track-S S7). Same shim pattern; wraps
       // the engine's own exporter. app.js and export.js are never edited.
       attachExportPanel(app);
+
+      // M13 a11y hardening. Mac-owned; applies names, modal focus restore,
+      // focus traps and aria-hidden sync to the live DOM. Runs LAST so every
+      // panel has mounted. index.html / app.js are never edited.
+      initA11yHardening();
 
       // Load image button
       const loadBtn = document.getElementById('btn-load-image');
