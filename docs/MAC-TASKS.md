@@ -298,8 +298,23 @@ score. No change to your exit criteria.
 BE-pushed** — M10/M11 landed in `3b711fe` / `d4dbe34` after independent
 BE verification on the ThinkPad (style-library 50/50 + probe PASS, export-panel
 90/90 + probe PASS). Track-S **S1** + **S3** closed too (`js/engine/ref-analyze.js`).
-**Do NOT redo M10, M11 or M12 — all are on `main`.** Your next stream is **M13**
-(a11y + responsive sweep), then M14 → M16.
+**Do NOT redo M10, M11 or M12 — all are on `main`.** **M13 has landed too**
+(`fd76d84`, BE-verified on the ThinkPad: 0 unnamed controls, 3 dialog overlays,
+5 live regions, 7 reduced-motion rules, no overflow/clipping at 390–1920, and
+the a11y-sweep re-ran identically). Your next stream is **M14** (reference
+docs), then **M15** (standing QA seat) → M16.
+
+**Open on M13:** the brief's "≥ 44×44 on every control" is **NOT met in the
+layers panel at ≤ 768px** — 8 controls sit at 32×32 (`.collapse-btn`,
+`.layer-visibility-btn`, the four `.layer-action-btn`s, `.layer-style-select`,
+`.layer-opacity-input`). `css/style.css` §13 documents the reason (the 250px
+rail cannot fit four 44px buttons plus the row selects) and notes 32px ≥
+WCAG 2.2 SC 2.5.8 AA's 24px minimum — but 44px is the stricter bar the brief
+asked for. Decide: accept the deviation with the §13 rationale, or restructure
+the row (the M10 fix moved the library row's actions to a second line — the
+same move may fit the layer row). Also still missing: `docs/checkpoints/M13.md`,
+an `AGENTS.md` §7 entry and the OPS_LOG line — **M13 arrived declared only by
+its files** (the same gap M11/M12 had).
 
 **M12 (landed):** 11 non-pinned styles polished, five of them correctness defects
 the browser probe caught — `bokeh`'s `spacingFactor` was undefined so spacing went
