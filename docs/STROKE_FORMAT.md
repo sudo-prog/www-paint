@@ -65,18 +65,20 @@ tail — the same three values that also sit in the record's named fields.
 
 | Type | `params` layout | Length |
 |--|--|--|
-| `E` ellipse | `[cx, cy, rx, ry, rot, gradAngle, c0, c1, alpha]` | 8 |
-| `B` blob | `[cx, cy, rx, ry, rot, feather, c0, c1, alpha]` | 8 |
+| `E` ellipse | `[cx, cy, rx, ry, rot, c0, c1, alpha]` | 8 |
+| `B` blob | `[cx, cy, rx, ry, rot, c0, c1, alpha]` | 8 |
 | `T` triangle | `[x1, y1, x2, y2, x3, y3, across, c0, c1, alpha]` | 10 |
-| `R` bar | `[cx, cy, w, h, rot, gradAngle, c0, c1, alpha]` | 8 |
+| `R` bar | `[cx, cy, w, h, rot, c0, c1, alpha]` | 8 |
 | `S` stroke | `[x0, y0, x1, y1, x2, y2, w, gradAngle, c0, c1, alpha]` | 11 |
 
 **Angles are radians, not degrees.** `rot` rotates about the shape's own centre;
 `gradAngle` is the gradient axis for `color0 → color1`.
 
-**Index 5 means different things per type.** For `E` and `R` it is the gradient
-angle; for `B` it is the **feather** (softness) value; for `T` index 6 is
-`across`. This is the single most common way to misread a record.
+**Index 5 is NOT the native field for `E`/`B`/`R` — it is `c0`, the appended
+colour triple, which overwrites the native gradient angle / feather (see the
+code block below). For `T`, index 6 is `across`. `gradAngle`/`feather` survive
+only as the record's named `color0`/`color1`-adjacent fields, never in
+`params`. This is the single most common way to misread a record.
 
 ### Why `S` and `T` carry the colour triple twice
 
@@ -288,13 +290,15 @@ restores the object form with `id: "unpacked_<seed>"`.
 ## 7. How this was captured
 
 ```bash
-# Serve the repo (two servers may already be running from earlier sessions)
-lsof -nP -iTCP:8099 -sTCP:LISTEN
-python3 -m http.server 8099 --bind 0.0.0.0
-
-# Panel / nav / style-registry / project-structure capture
+# The probe serves the repo ITSELF on an ephemeral port — no dev server needed.
+# NODE_PATH only has to point at a directory containing playwright-core.
 NODE_PATH=<dir containing playwright-core> node scripts/m14-docs-probe.cjs --width=1440
+NODE_PATH=<dir containing playwright-core> node scripts/m14-docs-probe.cjs --width=390
 ```
+
+Chromium is auto-discovered on macOS and Linux (`chrome-mac-x64`,
+`chrome-linux64`, `chrome-linux`, newest `chromium-<n>` first); set
+`CHROME_BINARY` to override. No absolute per-machine path is baked in.
 
 The per-type records in §4 came from a headless run of the real page driving the
 engine directly:
@@ -309,15 +313,30 @@ await eng.generate({ style: 'paper', count: 20, seed: 9 });
 // then read eng.layers[].strokes[]
 ```
 
-`shapeBias` is the generator's own type selector (`js/engine/generator.js:223`,
-`weightedPick(s.shapeBias, random)`), so forcing a type is a supported knob, not
-a hack.
+`shapeBias` is the **modular** generator's own type selector
+(`js/engine/generator.js:223`, `weightedPick(s.shapeBias, random)`). It is NOT
+reached on the app path: `Engine.generate()` drives the **Painter**
+(`js/engine/engine.js:21/352`), and the string `shapeBias` does not appear in
+`painter.js` at all. The Painter picks types from its own `MIX` table
+(`painter.js:480 pickType`); `paper` is in `Painter.SHAPE_ID`, so its `'S'`
+shortcut is skipped and `MIX.paper` decides.
 
-**Probe result:** `total: 20  hist: {"B":11,"T":5,"E":2,"R":2}` — the `paper`
-style's own `MIX` table still overrode the bias for most shapes, which is why
-§4's `T` record is real but came from a mixed run rather than a pure-`T` run.
-The `mosaic` style produced a pure `R` histogram (`{"R":20}`) and the
-`watercolor` style produced `B` + `S` — both captured in the raw JSON.
+**The §4 records above came from a separate scratch run, not from
+`docs/research/m14-docs-probe.json`.** That JSON's `strokes` block is built by
+`createShape()` with hand-made 8-length params (so it exercises validation,
+not the Painter conversion), and its `project` block has `strokeCount: 0`.
+If a future reader wants the §4 records in machine-readable form, the probe
+needs a `realRun` block that drives `Engine.generate()` as above and dumps
+`eng.layers[].strokes[]`.
+
+**Histograms from that scratch run** (different source image from BE's
+re-run, so the counts differ — not a contradiction): `paper` `total: 20
+hist: {"B":11,"T":5,"E":2,"R":2}` — the `paper` style's own `MIX` table
+still decided most shapes, which is why §4's `T` record is real but came from
+a mixed run rather than a pure-`T` run. The `mosaic` style produced a pure `R`
+histogram and `watercolor` produced `B` + `S`. BE's independent engine run
+(`paper` 20, `watercolor` 60, `mosaic` 30) confirmed the per-type `params`
+lengths and that `params[5]` on E/B/R is the colour array.
 
 ---
 
@@ -327,7 +346,10 @@ The `mosaic` style produced a pure `R` histogram (`{"R":20}`) and the
    carries the same value. Do not use it to re-roll one shape.
 2. **`params` length is not uniform.** 8 for E/B/R, 10 for T, 11 for S — and
    the Painter's native pre-conversion arrays are 6, 7, 8, and 8. If you index
-   `params[8]` on an `E` record you get the colour array, not a number.
+   `params[8]` on an `E` record you get the colour array, not a number. For
+   E/B/R the conversion has already overwritten the native index 5, so the
+   record's `params` is `[...native[0..4], c0, c1, alpha]` — 8 entries, not 9.
+   The named `gradAngle`/`feather` fields are not in `params` at all.
 3. **`color0`/`color1` are floats, not integers.** Generated colours are
    `clamp(v + range(-15,15))` — real values like `74.68906236085212`. Only the
    packed form rounds.

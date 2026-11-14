@@ -35,15 +35,23 @@ floats over the gap between them.
 
 ```
 controls-root       role=complementary  controls=41  260x801@0,63    "Brush controls"
-paint-toolbar       role=complementary  controls=4   0x0@0,0         "Paint toolbar"   ← hidden (paint mode off)
+paint-toolbar       role=complementary  controls=4   0x0@0,0         "Paint toolbar"   ← display:none (paint mode off)
 media-root          role=complementary  controls=22  0x0@0,0         "Media, wet and tonal controls" ← hidden (media mode off)
 style-library-root  role=complementary  controls=8   0x0@0,0         "Style library"   ← hidden (library mode off)
 layers-root         role=complementary  controls=18  260x801@1180,63 "Layers"
 ```
 
-`0x0` means `display:none` — the panel is not merely off-screen, it is removed
-from layout. Two panels are visible at once on desktop: the left rail and the
-right rail.
+The probe reports **five** surfaces at 1440 because `.paint-toolbar` is
+`display:none` and still has a rect of `0x0@0,0`; it becomes a real surface
+(`260x801@0,63`, same slot as Controls) the moment paint mode is on. Count it as
+the sixth surface, not a hidden one.
+
+`0x0` on a panel whose toggle is OFF means `display:none` — the panel is not
+merely off-screen, it is removed from layout. **Exception:** `#paint-toolbar`
+reports `0x0` while it is a live `display:none` sibling of the rail, and
+`#media-root` / `#style-library-root` report `0x0` on desktop but a real rect at
+≤768px (the media query re-declares `display:flex` so they can overlay). Two
+panels are visible at once on desktop: the left rail and the right rail.
 
 **Measured at 390×900** (mobile):
 
@@ -60,7 +68,7 @@ a11y tree, which is why M13 added `visibility: hidden` to the closed state.
 
 ---
 
-## 2. The five panels
+## 2. The six surfaces
 
 | Panel | Container | Owner | Shows when |
 |--|--|--|--|
@@ -68,11 +76,14 @@ a11y tree, which is why M13 added `visibility: hidden` to the closed state.
 | **Media** | `#media-root` | Mac (`js/ui/media.js`) | Media nav toggled on |
 | **Library** | `#style-library-root` | Mac (`js/ui/style-library.js`) | Library nav toggled on |
 | **Layers** | `#layers-root` | Mac (`js/ui/layers.js`) | always (unless collapsed) |
+| **Paint** | `#paint-toolbar` | ThinkPad (markup in `index.html`, `_togglePaintMode` in `js/ui/app.js`) | Paint nav toggled — swaps the left rail's contents |
 | **Export** | `#export-panel-root` | Mac (`js/ui/export-panel.js`) | Export nav clicked — modal, independent of the rail |
 
-Three surfaces share the **left rail** — Controls, Media, Library — and exactly
-one of them may occupy it. Paint mode swaps the rail to `#paint-toolbar`
-(`js/ui/app.js:302` for the paint toggle, ThinkPad-owned).
+Four surfaces share the **left rail** — Controls, Media, Library and the Paint
+toolbar — and exactly one of them may occupy it. Paint mode swaps the rail's
+contents to `#paint-toolbar` (`js/ui/app.js:439` `_togglePaintMode`, ThinkPad-owned;
+the rail is `position: absolute` under `.main`, so the toolbar is not an overlay
+at any width).
 
 ### 2.1 Controls — six sections
 
@@ -134,7 +145,21 @@ Row controls are 44×44 (M13). The row **wraps** at the 250px rail — measured
 children 9px inside the row's right edge at 1024/1440, `underMin 0` at
 390–1920.
 
-### 2.4 Export — modal
+### 2.4 Paint toolbar — swaps the left rail's contents
+
+Not an overlay: `.paint-toolbar` is a `display:none` sibling inside the left
+rail, switched to `display:flex` by `.paint-toolbar--active`
+(`js/ui/app.js:449`). `index.html:96-125` supplies the markup —
+`#paint-preset` (select), `#paint-color` (color), `#paint-weight` (range) +
+`#paint-weight-value`, `#paint-clear`, and one more row below. Four controls,
+measured `0x0` until paint mode is on.
+
+Entering paint mode hides `#controls-root`; it does **not** hide `#media-root`
+or `#style-library-root` (those are retired by their own toggles), so the
+library host re-applies `paint-toolbar--active` under
+`_paintMode && !_libraryMode && !_mediaMode` (`js/ui/style-library-host.js:95`).
+
+### 2.5 Export — modal
 
 `#export-panel-root`, `role="dialog"`, `aria-modal="true"`. Independent of the
 rail; opened by `#btn-export-panel` (which carries
@@ -235,11 +260,12 @@ HANDOFF.md                    AGENTS.md
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
 
-**A discrepancy worth recording:** the AGENTS.md ownership list does not
-mention `js/ui/media.js`, `js/ui/style-library*.js`, `js/ui/export-*.js` or
-`js/ui/a11y-hardening.js` — all Mac-authored by M10–M13. The ownership list
-predates them. **Recommendation for BE:** add them to the Mac-owned list so the
-next agent does not hesitate to edit them.
+**A discrepancy now resolved on this side:** the AGENTS.md §1 ownership list
+does not mention `js/ui/media.js`, `js/ui/style-library*.js`,
+`js/ui/export-*.js` or `js/ui/a11y-hardening.js` — all Mac-authored by M10–M13.
+The list predates them. `HANDOFF.md` §6 (Mac-owned) now carries them. BE's own
+attempt to add them to `AGENTS.md` was refused by that file's write guard
+(2026-11-14), so the list is Mac-maintained; the four files above are Mac-owned.
 
 ---
 
@@ -252,6 +278,8 @@ next agent does not hesitate to edit them.
         Media nav ────────▶│ Media mode  ──▶ CONTROLS hidden, MEDIA shown
         Library nav ──────▶│ Library mode ─▶ CONTROLS hidden, LIBRARY shown
         Paint nav ────────▶│ Paint mode ──▶ CONTROLS hidden, PAINT-TOOLBAR shown
+                            │  (paint + library  ─▶ LIBRARY wins, toolbar off)
+                            │  (paint + media    ─▶ MEDIA wins, toolbar off)
                     ┌──────┴──────┐
                     │   LAYERS    │  independent; collapse → 56px icon rail
                     └─────────────┘
@@ -287,6 +315,10 @@ From `css/style.css:104-114`:
 | `--layers-w` | 260px | right rail width |
 | `--gap` | 12px | the black frame around the canvas |
 | `--nav-w` | 56px | collapsed icon rail |
+| `--touch-a11y` | 44px | the M13 control floor — every control's min box |
+| `--z-panel` | 90 | rail overlays at ≤768px |
+| `--z-header` | 100 | top bar (floats above the panels) |
+| `--z-modal` | 300 | dialogs |
 
 Canvas inset (`css/style.css:668-671`):
 

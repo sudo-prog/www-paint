@@ -323,10 +323,19 @@ docs/AI_STYLE_HARNESS.md  docs/STYLE_PROFILE.md  .github/**
 **Mac-owned — your streams:**
 ```
 js/engine/wetsim.js (new)     js/engine/masks.js (new)
-js/ui/layers.js               js/engine/brush-stamp-engine.js
+js/engine/outlines.js (new)   js/engine/order.js (new)
 js/styles/*  (except what the ThinkPad is actively on)
 tests/wetsim.test.js (new)    docs/checkpoints/P2.md P3.md
 docs/research/* (your artefacts)
+
+# Mac-authored UI, added by M6b–M15 and absent from the original list:
+js/ui/media.js  js/ui/media-host.js
+js/ui/style-library.js  js/ui/style-library-core.js  js/ui/style-library-host.js
+js/ui/export-panel.js  js/ui/export-panel-core.js  js/ui/export-host.js
+js/ui/a11y-hardening.js
+js/ui/layers.js  js/engine/brush-stamp-engine.js
+scripts/*-probe.cjs  scripts/a11y-sweep.cjs  scripts/style-polish.cjs
+tests/{outlines,order,shaping,style-library,export-panel,style-polish}.test.js
 ```
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.

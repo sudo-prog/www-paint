@@ -186,6 +186,178 @@ baseline style) will need a deliberate re-baseline.
 
 ---
 
+### 0.9 ~~BUG~~ ✅ FIXED by BE (verified 2026-11-14 17:30) — legacy `#export-root` dialog clips `Save Project` at ≤400px
+
+**Needs BE.** ThinkPad-owned: `js/ui/export.js` (markup), `#export-root` in
+`index.html`, `.form-actions` in `css/style.css:1417`.
+
+`#export-root` (the OLD export dialog, opened by `#btn-export` in the top bar —
+not the Mac-owned `#export-panel-root`) puts its five actions in a single
+`.form-actions` flex row: `display:flex; flex-wrap:nowrap` with
+`.form-actions .btn { flex:1 }`. At 390px the row needs **395px** (5 buttons =
+363px + 4×8px gaps) inside a **345px** container, so:
+
+- `Save Project` right edge = **408px** → **18px past the 390px viewport**
+- `elementFromPoint` at the button's centre returns
+  `DIV.export-dialog__content`, not the button → **it cannot be tapped**
+- Vision review of the 390px screenshot confirms the label is cut
+  ("Sa…" / "Pro…"). It fits again at 414px (−6px), so the break is exactly the
+  `@media (max-width: 400px)` band.
+
+Same dialog at 1440px: `Save Project` 378..459 — clean. The Mac-owned sibling
+`#export-panel-root` is clean at 390 (controls 29..361).
+
+**Why no gate caught it:** no Maestro flow and no probe opens `#export-root`.
+The a11y sweep asserts only its `role` / `aria-modal`. Suggested fix for BE:
+`flex-wrap: wrap` on `.form-actions` under `@media (max-width: 400px)` (the
+Mac-owned `export-panel` already stacks its actions), or drop the fifth button
+into the existing second `.form-actions` row with `Load Project`.
+
+**Mac raised, not edited** — ThinkPad-owned files, and M15 is a no-source-edit
+stream. Raw evidence: AGENTS.md §7, 2026-11-14 12:10.
+
+**✅ FIXED by BE, verified 2026-11-14 17:30.** `css/style.css:1417` now reads
+`.form-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }` (was
+`nowrap`) and `:1426` gives `.form-actions .btn { flex: 1; min-height:
+var(--touch-a11y-sm, 44px); }`. The overlay-coverage probe re-run at 390 / 400 /
+414 / 768 / 1024 / 1440 / 1920 now reports **`export-root pastViewport=0
+hitFail=0`** at every width, `clip 0`, `docOverflowX 0`. `Save Project` is
+tappable at 390px. Closed.
+
+---
+
+### 0.10 BUG (Mac, M15, 2026-11-14) — `#style-library-root` is unclickable at ≤768px: the mobile `position: fixed` rule never covers it
+
+**Needs BE.** ThinkPad-owned: `css/style.css` `@media (max-width: 768px)` block
+(lines 1633–1655) and `js/ui/style-library-host.js` (Mac-authored shim, but the
+rule it needs is in the BE-owned sheet).
+
+The mobile media query makes `.panel--controls`, `.panel--layers` and
+`.panel--media` `position: fixed` with `z-index: var(--z-panel)` (90) so they
+overlay the full-bleed canvas. **`.panel--library` is missing from that rule.**
+It stays `position: absolute; z-index: 1` (base `.panel` rule, line 286–290),
+while `.canvas-wrapper` is `position: absolute; z-index: 2` and spans the whole
+viewport at ≤768px (line 1658–1662).
+
+Measured at 390px with library mode ON (`#btn-library-mode` tapped, panel
+`visibility: visible`, rect `0..250`):
+
+- `.panel--library` computed `position: absolute`, `z-index: 1`
+- `.canvas-wrapper` computed `position: absolute`, `z-index: 2`, rect `0..390`
+- `document.elementsFromPoint` at the panel's collapse chevron centre returns
+  `section.canvas-wrapper` FIRST, then the button — the canvas is painted over
+  the panel
+- **All 6 library controls are untappable** (`elementFromPoint` at each centre
+  returns `section.canvas-wrapper` / `div.canvas-placeholder` /
+  `button.motion-btn`, never the control):
+  `Collapse library panel`, `Profile name`, `Save current settings`,
+  `Paste a Style Profile JSON`, `Import the pasted profile JSON`,
+  `Import a profile JSON file`
+
+Verified the fix by injecting the missing rule at runtime (same values the
+media panel already uses):
+
+```css
+@media (max-width: 768px) {
+  .panel--library {
+    position: fixed; top: var(--header-h); bottom: var(--status-h);
+    width: min(320px, 85vw) !important; max-width: none;
+    z-index: var(--z-panel);
+    box-shadow: 0 4px 20px -4px rgb(0 0 0 / 0.06);
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .panel--library.panel--mobile-closed { transform: translateX(-340px); }
+}
+```
+
+After injection, `position: fixed` and **6/6 controls tappable** (one residual
+`Import the pasted profile JSON` failure is the separate `button.mobile-toggle`
+overlap in 0.11 below). The panel's own rect is unchanged (`0..250`), so this is
+purely a stacking/positioning defect — the panel is drawn *behind* the canvas.
+
+**Why no gate caught it:** no Maestro flow opens the library panel at 390px
+(`www-paint-mobile-ui-audit.yaml` does not tap `#btn-library-mode`), and the
+a11y sweep only asserts the panel's `role` when it happens to be open.
+
+**Mac raised, not edited** — the fix belongs in the BE-owned stylesheet.
+
+---
+
+### 0.11 BUG (Mac, M15, 2026-11-14) — PATH ORDER segmented control overflows its panel at ≥769px; 7–8 of 11 options untappable
+
+**Needs BE.** ThinkPad-owned: `js/ui/controls.js` (`PATH_ORDER_OPTIONS`, 11
+entries) and `css/style.css` `.segmented` (line 997) / `.segmented__btn`
+(line 1003). The mobile wrap rule at line 1734 only applies at `max-width: 768px`.
+
+The PATH ORDER segmented control renders 11 buttons in a single `display: flex;
+flex-wrap: nowrap` row with `flex: 1` and `white-space: nowrap`. Measured at
+1440px (panel client width 240px):
+
+- `scrollWidth 748` vs `clientWidth 240` — **the row is 3.1× too wide**
+- Sum of button widths **704px** + 10×4px gaps = **744px** needed, 240px available
+- Buttons `Free`(9–73) `Down`(77–140) `Up`(144–180) `Right`(181–242) are inside
+  the panel; **`Left`(246) onward is past the panel edge**
+- `elementFromPoint` at each of `Left`, `Diagonal`, `Spiral`, `Spiral In`,
+  `Rings`, `Rings In`, `Clock` returns `div.canvas-placeholder` — **7 of 11
+  options untappable**. At 1024px the same 7 fail; at 769px the same 8 fail.
+
+The `overflow: hidden auto` on `.controls-scroll` clips the overflow, so the
+buttons are invisible rather than horizontally scrollable — the panel scrolls
+vertically only, and a 748px-wide row can never be brought into a 240px viewport.
+
+Same defect at 390px: the `max-width: 768px` wrap rule fires and the buttons
+reflow to 2 per row, but the panel is only open when toggled and the last row
+(`Clock`) lands at y≈1033, below the 900px viewport — reachable only by
+scrolling the panel. **This is a below-fold artefact, not a clipping defect:**
+`scrollIntoView({block:'center'})` on `Clock` at 768px brings it to y 520..564
+and `elementFromPoint` returns the button. The real §0.11 defect is the desktop
+overflow above 768px, where the row can never be scrolled into view.
+
+**Why no gate caught it:** `www-paint-mobile-ui-audit.yaml` asserts the PATH
+ORDER *section title* is visible, not the individual options; Maestro's
+accessibility-tree assertions pass because all 11 buttons are in the tree.
+
+**Suggested fix for BE (VERIFIED at runtime):** make the PATH ORDER control a
+grid rather than a nowrap flex row:
+
+```css
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+.segmented__btn { flex: unset; min-width: 0; }
+```
+
+Injected at 1440px: `scrollWidth 748 → 250` (vs `clientWidth 240`), **tap failures
+11 → 0 of 11**, 11 options reflow to 3 rows of 4/4/3, panel scroll height grows
+only 696 → 1115px (still scrollable). The media panel's `.media-band-row`
+(line 408) already uses the same 4-column grid pattern in the same 240px.
+
+NOTE: `.controls-scroll` is `overflow-y: auto`, so the panel DOES scroll
+vertically — the PATH ORDER buttons at 1440px are reachable by scrolling. The
+defect is that 7 of 11 are **clipped horizontally** and cannot be brought into
+view at any scroll offset (the row is 748px wide inside a 240px viewport, and
+`overflow-x: hidden` on the host prevents horizontal scrolling). At 390px the
+mobile wrap rule fires and the last row lands below the fold, but the panel
+scrolls to it.
+
+**Mac raised, not edited** — ThinkPad-owned files.
+
+---
+
+### 0.12 NOTE (Mac, M15, 2026-11-14) — `.mobile-toggle` overlaps the library panel's Import buttons at 390px
+
+`#toggle-controls` is `position: fixed; left: 8px; top: 776px; z-index: 100`
+(44×44). With the library panel open at 390px, the panel's Import row sits at
+y 766..810, so the floating toggle covers the `Import the pasted profile JSON`
+button (x 9..60). Measured: `elementFromPoint` at that button's centre returns
+`button.mobile-toggle`. This is a stacking-context issue (the toggle is
+`position: fixed` with `z-index: 100`, the panel `z-index: 90`), the same class
+of defect as 0.10. **Raised, not edited.**
+
+---
+
 ### 0.8 PROCESS — Mac: never run git, and log every turn in §7
 
 Two standing rules for round 2 (requested by the human, 2026-11-12):
@@ -233,9 +405,20 @@ docs/CLEANROOM.md  docs/ROADMAP.md  docs/ROADMAP_STATUS.md
 docs/AI_STYLE_HARNESS.md  docs/STYLE_PROFILE.md  .github/**
 ```
 
-**Mac-owned:** `js/engine/wetsim.js`, `js/engine/masks.js`, `js/ui/layers.js`,
+**Mac-owned:** `js/engine/wetsim.js`, `js/engine/masks.js`,
+`js/engine/outlines.js`, `js/engine/order.js`, `js/ui/layers.js`,
 `js/engine/brush-stamp-engine.js`, `js/styles/*`, `tests/wetsim.test.js`,
-`docs/checkpoints/P*.md`, `docs/research/*`, `HANDOFF.md`, `AGENTS.md`.
+`tests/{masks,outlines,order,shaping,style-library,export-panel,style-polish}.test.js`,
+`js/ui/media.js`, `js/ui/media-host.js`, `js/ui/style-library.js`,
+`js/ui/style-library-core.js`, `js/ui/style-library-host.js`,
+`js/ui/export-panel.js`, `js/ui/export-panel-core.js`, `js/ui/export-host.js`,
+`js/ui/a11y-hardening.js`, `scripts/*-probe.cjs`, `scripts/a11y-sweep.cjs`,
+`scripts/style-polish.cjs`, `docs/checkpoints/P*.md`, `docs/research/*`,
+`HANDOFF.md`, `AGENTS.md`.
+
+*(The six `js/ui/*` files and the extra test/script files were added by M6b–M15
+and were missing from this list; BE's own attempt to add them was refused by
+this file's write guard, 2026-11-14.)*
 
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
@@ -312,6 +495,27 @@ maestro test --headless --screen-size 390x844  maestro/www-paint-media-panel.yam
 maestro test --headless --screen-size 1440x900 maestro/www-paint-desktop-regression.yaml
 maestro test --headless --screen-size 1440x900 maestro/www-paint-media-behaviour.yaml
 ```
+
+### Overlay coverage probe (Mac M15) — the gap the flows cannot see
+
+Flows and the a11y sweep only exercise surfaces a flow explicitly opens. A
+defect can sit behind 11 green gates (§0.9, §0.10, §0.11 were all found this
+way). This probe opens **every** overlay and measures real geometry — box,
+computed position/z-index, `elementFromPoint(centre) === the control`,
+`scrollWidth - clientWidth`, right edge vs viewport:
+
+```bash
+NODE_PATH=<dir with playwright-core> node scripts/overlay-coverage-probe.cjs
+#   --url=http://127.0.0.1:8099/index.html
+#   --widths=390,400,414,768,1024,1440,1920
+#   --json=docs/research/overlay-coverage.json
+```
+
+It prints one line per surface per width with `open=<bool>` (the surface really
+opened — a collapsed panel measured as clean is a vacuous pass), `past`,
+`tapFail`, `clip`, `overX` (panel overflow) and `docX` (document overflow).
+`tapFail > 0` is a real untappable control; `past > 0` is a control past the
+viewport edge. Run it after each BE push alongside the Maestro set.
 
 **No API key is needed for local flows.** `MAESTRO_CLOUD_API_KEY` is only
 required for Maestro Cloud (uploading runs) and for the AI commands
@@ -1127,6 +1331,132 @@ Format:
 - TWO CORRECTIONS made while writing (caught by re-reading the source, not by a test): the PATH ORDER segmented control has 11 options, not 14 (`top-bottom`/`edges-first`/`one-line` live elsewhere); `layers.js` reverses for display at line 94, not 103.
 - blocker: none
 - next: M15 — standing QA seat (run the gates + a behavioural probe against `main` after each BE push; log in AGENTS.md §7 + one OPS_LOG line; no source edits)
+
+### 2026-11-14 12:10 — M15 standing QA seat, first pass against BE `1dfe71b`/H-S5 — 11/11 gates green, ONE new mobile defect found (raised, not edited)
+- did: M15's job is to re-run the gates + a behavioural probe against `main` after each BE push and report. Ran the Maestro MCP live (`list_devices` → `chromium`; `cheat_sheet` loaded), then every flow at its AUTHORED size, then the full gate set, then the a11y sweep, then a fresh geometry probe of every overlay at 390/1440. No source edits, per M15.
+- files: `AGENTS.md` §0 (new open item 0.9), `AGENTS.md` §7 (this entry). Nothing else written.
+- verified (raw):
+  ```
+  $ export JAVA_HOME="$(/usr/libexec/java_home)"   # required — MCP handshake fails without it
+  $ export CHROME_BINARY=/tmp/chrome-for-testing-147/.../Google Chrome for Testing
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-mobile-ui-audit.yaml      30 COMPLETED / 0 FAILED
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-a11y-sweep-mobile.yaml    39 / 0
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-media-panel.yaml          29 / 0
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-export-panel-mobile.yaml  20 / 0
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-a11y-sweep.yaml          55 / 0
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-desktop-regression.yaml  33 / 0
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-export-panel.yaml        35 / 0
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-media-behaviour.yaml     35 / 0
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-style-picker.yaml        14 / 0
+
+  $ node tests/{engine,wetsim,masks,outlines,order,shaping,ref-analyze,style-library,export-panel}.test.js
+    engine 137/137 · wetsim 15/15 · masks 19/19 · outlines 16/16 · order 24/24
+    shaping 18/18 · ref-analyze 29/29 · style-library 50/50 · export-panel 90/90 · style-polish 11/11  (Failed 0)
+  $ node scripts/visual-regression.cjs                      pass=9 fail=0 error=0 total=9
+  $ node scripts/style-match-probe.cjs                      exit 0, "H-S5 KNOWN LIMITATION" line present
+  $ node scripts/style-ref-matrix.cjs                       exit 0, 9x9 matrix
+  $ node scripts/media-panel-probe.cjs --size=128 --strokes=100   4/4 PASS
+  $ node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+    @390  controls 46 underMin 0 noName 0 offViewport 0 clipped 0 docOverflowX 0 errors 1
+    @1440 controls 30 underMin 0 noName 0 offViewport 0 clipped 0 docOverflowX 0 errors 0
+    UNIQUE underMin 0 · UNIQUE noName 0
+  ```
+- **NEW DEFECT (0.9) — the LEGACY export dialog clips `Save Project` at ≤400px.** `#export-root` (ThinkPad-owned `js/ui/export.js`, markup in `#export-root`, opened by `#btn-export`) lays its five actions in ONE `.form-actions` flex row with `flex-wrap: nowrap` (`css/style.css:1417`) and `.form-actions .btn { flex: 1 }`. Measured at 390: the row needs **395px** (5 buttons = 363px + 4×8px gaps) inside a **345px** container → `Save Project` right edge lands at **408px, i.e. 18px past the 390px viewport**, and `elementFromPoint` at its centre hits `DIV.export-dialog__content`, not the button: it is **untappable**. Vision review confirms the label is cut ("Sa…/Pro…"). It fits again at 414px (−6px), so the break is exactly at the `@media (max-width: 400px)` band. The Mac-owned sibling `#export-panel-root` is clean (every control 29..361 at 390). No Maestro flow and no probe opens `#export-root` — the a11y sweep asserts only its `role`/`aria-modal` — which is why 11 green gates did not see it. Raised as §0.9 for BE; not edited (ThinkPad-owned files, and M15 is a no-source-edit stream).
+- TWO PROBE ARTEFACTS recorded, neither a product defect:
+  1. `a11y-sweep` reports `errors 1` at 390 only — the browser's default `/favicon.ico` request. Confirmed by replaying the sweep's exact server + toggle sequence: the sole 404 is `/favicon.ico`. Repo ships no favicon; pre-existing and already documented in AGENTS.md (§4, the `da7d355` disagreement).
+  2. `noFocusRule 29` is **not** "no focus indicator". The probe's `declared` state means an element-specific `:focus-visible` rule; a bare `:focus-visible` global exists (`css/style.css:1554` and `:3101`) so all 29 report `global-rule`. Keyboard-walked 60 Tab stops at 1440 and 24 at 390 (paint mode): every control reports `:focus-visible` true with a `2px solid` accent outline. No defect.
+- blocker: none for the gates. §0.9 is raised for BE.
+- next: keep the QA seat warm — re-run this set after the next BE push; re-check §0.9 if BE lands it.
+
+### 2026-11-14 16:40 — M15 second pass: overlay-coverage probe built, THREE more defects found (§0.10–§0.12)
+- did: The first pass proved the gates only exercise surfaces a flow explicitly opens. Built `scripts/overlay-coverage-probe.cjs` — opens EVERY overlay (legacy export dialog, export panel, style library, media panel, brush controls, layers rail) at 390/400/414/768/1024/1440/1920 and measures real geometry: root box, computed display/visibility/position, target overflowX, and per control `box`, `elementFromPoint(centre) === itself`, `scrollWidth - clientWidth`, right edge vs viewport. Includes an `openVerified` check (a collapsed panel measured as "clean" is a vacuous pass) and `closeVerified` (an open modal occludes every later surface). Re-ran all 9 Maestro flows at their authored sizes first — 0 FAILED — then this probe.
+- files: `scripts/overlay-coverage-probe.cjs` (NEW, Mac-owned), `docs/research/overlay-coverage.json` (NEW), `AGENTS.md` §0 (items 0.10, 0.11, 0.12), `AGENTS.md` §7 (this entry). **No ThinkPad-owned file touched.**
+- verified (raw):
+  ```
+  $ NODE_PATH=<playwright-core> node scripts/overlay-coverage-probe.cjs
+  @ 390px
+    export-root        open=true  vis=visible c=13 past=1 tapFail=1   <- §0.9
+    export-panel-root  open=true  vis=visible c=8  past=0 tapFail=0
+    style-library-root open=true  vis=visible c=6  past=0 tapFail=6   <- §0.10
+    media-root         open=true  vis=visible c=20 past=0 tapFail=0
+    controls-root      open=true  vis=visible c=39 past=0 tapFail=3   <- below-fold only (see note)
+    layers-root        open=true  vis=visible c=14 past=0 tapFail=0
+  @ 1440px
+    export-root        open=true  vis=visible c=13 past=0 tapFail=0
+    export-panel-root  open=true  vis=visible c=8  past=0 tapFail=0
+    style-library-root open=true  vis=visible c=6  past=0 tapFail=0
+    media-root         open=true  vis=visible c=20 past=0 tapFail=0
+    controls-root      open=true  vis=visible c=39 past=0 tapFail=11  <- §0.11 (desktop)
+    layers-root        open=true  vis=visible c=14 past=0 tapFail=0
+  docOverflowX 0 at every width; clip 0 everywhere.
+  ```
+- **§0.10 — the Style Library panel is drawn BEHIND the canvas at ≤768px.** The `@media (max-width: 768px)` block makes `.panel--controls`, `.panel--layers` and `.panel--media` `position: fixed; z-index: var(--z-panel)`, but **`.panel--library` is missing from that rule**. It stays `position: absolute; z-index: 1` while `.canvas-wrapper` is `position: absolute; z-index: 2` and full-viewport. At 390 the panel reports `visibility: visible` and rect `0..250`, yet `elementsFromPoint` at every control returns `section.canvas-wrapper` first → **all 6 library controls untappable**. Injecting the missing rule at runtime (same values as the media panel) → `position: fixed`, 6/6 tappable. No Maestro flow opens the library at 390px, which is why 11 green gates missed it.
+- **§0.11 — the PATH ORDER segmented control overflows its panel; 7 of 11 options untappable at desktop widths.** `PATH_ORDER_OPTIONS` has 11 entries rendered into `.segmented` (`display:flex; flex-wrap:nowrap`, `.segmented__btn { flex:1; white-space:nowrap }`). At 1440 the control's `scrollWidth` is **748** against `clientWidth` **240**; the sum of the 11 button widths is 704px + 40px gaps. Buttons `Left`(x246) through `Clock`(x758) sit past the 251px panel edge, and `elementFromPoint` at each returns `div.canvas-placeholder` — **7 of 11 untappable**. The `.controls-scroll` host clips them (`overflow: hidden auto`, vertical only), so they are invisible, not scrollable. Same at 1024px (7 fail) and 769px (8 fail); at 390px the mobile wrap rule fires but the last row lands at y≈1033, below the fold. `www-paint-mobile-ui-audit.yaml` asserts only the PATH ORDER *section title*, and Maestro's a11y-tree check passes because all 11 buttons are in the tree.
+- **§0.12 — the floating `#toggle-controls` button overlaps the library panel's Import row at 390px.** `#toggle-controls` is `position: fixed; left: 8px; top: 776px; z-index: 100` (44×44); the library Import row is at y 766..810, so it covers `Import the pasted profile JSON` (x 9..60). `elementFromPoint` returns `button.mobile-toggle`. Same stacking class as §0.10.
+- FOUR PROBE PITFALLS found while building it (all now handled in the script, worth remembering):
+  1. **`elementFromPoint` returns null for anything below the fold** — a scrollable panel's off-screen controls all report "untappable". Only controls whose box intersects the viewport are hit-tested; the panel's own overflow is measured separately.
+  2. **A surface left open occludes every later surface.** A modal whose close control is itself clipped never closes → all later surfaces report false hit-failures. The probe now closes each surface via its own control, verifies it closed, and force-closes if not.
+  3. **The mobile panels slide in over 280ms.** A 400ms wait measures them mid-transition (`transform: translateX(-340px)`) and reports a false off-screen. Wait 600ms.
+  4. **Collapsing the layers panel adds `nav-right` to `#canvas-area`**, which widens the canvas *under* the open panel and occludes it. The probe clears `nav-left`/`nav-right` when opening the layers surface.
+- blocker: none for the gates. §0.10–§0.12 raised for BE.
+- next: keep the QA seat warm — re-run `scripts/overlay-coverage-probe.cjs` after each BE push alongside the Maestro set.
+
+### 2026-11-14 17:35 — M15 third pass: §0.9 confirmed FIXED by BE; §0.11 mobile failures shown to be below-fold artefacts
+- did: Re-ran the overlay-coverage probe after BE's `css/style.css` push (mtime 17:24). §0.9 is closed. Re-examined the 390/414/768 `controls-root` `tapFail 3` lines and proved they are below-fold artefacts, not clipping.
+- verified (raw):
+  ```
+  $ NODE_PATH=<playwright-core> node scripts/overlay-coverage-probe.cjs --widths=390,400,414,768,1024,1440,1920
+  @ 390   export-root pastViewport=0 hitFail=0 clip=0 docOverflowX=0   <- §0.9 CLOSED
+  @ 400   export-root pastViewport=0 hitFail=0
+  @ 414/768/1024/1440/1920  export-root pastViewport=0 hitFail=0
+  style-library-root hitFail 6 at 390/400/414/768 (unchanged)          <- §0.10 open
+  controls-root hitFail 11 at 1024/1440/1920 (unchanged)               <- §0.11 open
+  controls-root hitFail 3 at 390/414/768 = below-fold only:
+      Clock box y 1033..1077 in a 900px viewport; after
+      scrollIntoView({block:'center'}) -> y 520..564, elementFromPoint returns
+      BUTTON.segmented__btn, tappable. Not a defect.
+  ```
+- **§0.9 FIXED** — `css/style.css:1417` is now `flex-wrap: wrap` (was `nowrap`) and `:1426` adds `min-height: var(--touch-a11y-sm, 44px)` to `.form-actions .btn`. `Save Project` is tappable at 390px; the probe reports 0 past-viewport / 0 hit-fail at all seven widths. AGENTS.md §0.9 marked closed.
+- **§0.11 scope narrowed** — the 390/414/768 `tapFail 3` lines are the last row of the wrapped PATH ORDER control sitting below the 900px fold; the panel scrolls to them. The real defect is the desktop overflow at ≥769px (748px row in a 240px panel), unchanged.
+- files: `AGENTS.md` §0.9 (marked fixed), §0.11 (scope note), §7 (this entry). No ThinkPad-owned file touched.
+- blocker: none. §0.10, §0.11, §0.12 remain raised for BE.
+- next: re-run the probe after the next BE push.
+
+### 2026-11-14 20:30 — M14 follow-up: BE's six corrections applied + §0.10–§0.12 re-measured — Maestro MCP loaded, gates green
+- did: BE's 2026-11-14 M14 review (docs/MAC-TASKS.md §"M14 reference docs — BE-VERIFIED") raised SIX corrections. Applied five to Mac-owned files and re-measured the three open defects. Loaded the Maestro MCP (`list_devices` → `chromium`) and ran the mobile flow live before starting; the dev server was verified byte-identical to disk first (all five served hashes == disk hashes), so the tests were not running against stale files.
+- files: `docs/PANELS.md` (§1 paint-toolbar rect, §2 "five panels"→"six surfaces" + new §2.4 paint toolbar + §2.5 export renumbered, §4 ownership note, §5 state machine, §6 +4 tokens), `docs/STROKE_FORMAT.md` (§3 E/B/R rows now 8 names for length 8, §3 index-5 note, §7 shapeBias sentence corrected + evidence-linkage note + portable command, §8 gotcha 2), `scripts/m14-docs-probe.cjs` (Linux chrome candidates via `chromeCandidates()`, deterministic `probe_<T>_<label>` ids), `HANDOFF.md` §6 (Mac-owned list extended), `AGENTS.md` §1 (same list extended), `docs/research/m14-docs-probe.json` (regenerated)
+- verified (raw):
+  ```
+  $ curl-served vs disk shasum  →  css/style.css, js/ui/app.js, js/engine/engine.js, js/ui/controls.js, index.html  ALL MATCH
+  $ export PATH="$HOME/.maestro/bin:$PATH"; export JAVA_HOME=...
+  $ maestro list-devices --platform web  →  Web / chromium default      (MCP list_devices → chromium)
+  $ maestro test --headless --screen-size 390x844 maestro/www-paint-mobile-ui-audit.yaml
+      30 COMPLETED / 0 FAILED (exit 0)
+  $ node scripts/m14-docs-probe.cjs --width=1440
+      panels: 5   controls 41 260x801@0,63 · paint-toolbar 4 0x0@0,0 · media 22 0x0 · library 8 0x0 · layers 18 260x801@1180,63
+      ids: probe_E_ellipse probe_B_blob probe_T_triangle probe_R_bar probe_S_stroke   (deterministic, was Math.random)
+      page errors: 0
+  $ node tests/{engine,ref-analyze,style-library,export-panel,wetsim,masks}.test.js  →  Failed: 0
+  ```
+- BE CORRECTIONS APPLIED: (1) STROKE_FORMAT §1/§7 evidence linkage — the §4 records now say plainly they came from a scratch run and are NOT in `m14-docs-probe.json` (that file's `strokes` is `createShape()`-built, `project.strokeCount 0`), and name the `realRun` block that would capture them. (2) §7's `shapeBias` sentence — corrected: it is a modular-generator knob (`generator.js:223`), NOT reached on the app path (`Engine.generate()` runs the Painter; `shapeBias` appears nowhere in `painter.js`; types come from `Painter.MIX` / `pickType` at `painter.js:480`). (3) §3 table E/B/R rows listed 9 names against length 8 — now `[cx,cy,rx,ry,rot,c0,c1,alpha]`; §8 gotcha 2 says the same. (4) macOS-only chrome candidates — now macOS + Linux, newest-first, no baked-in `/Users/AIR2K/...` path. (5) non-deterministic JSON — `createShape()`'s `Math.random()` id replaced with a stable `probe_<T>_<label>`. (6) `HANDOFF.md` §6 stale — extended with the six Mac-authored `js/ui/*` files, the new tests and scripts.
+- RE-MEASURED §0.10–§0.12 (overlay-coverage probe, unchanged code): §0.10 still 6/6 library controls untappable at 390/400/414/768 (library panel drawn behind `.canvas-wrapper` — the mobile `position:fixed` rule still does not cover `.panel--library`). §0.11 still 7/11 PATH ORDER options untappable at 1024/1440/1920 (748px row in a 240px panel); the 390/414/768 `controls-root hitFail 3` are the same below-fold artefacts already recorded. §0.12 still the `#toggle-controls` overlap at 390. All three remain raised for BE; **no ThinkPad-owned file touched.**
+- ONE NEW OBSERVATION, not raised as a defect (ThinkPad-owned fix): `#toggle-controls` is `bottom: 80px` + 44px tall → it occupies y 776..820 at 390px, which is exactly the library Import row's y 766..820. Moving the floating toggles to sit just ABOVE the status bar (`bottom: calc(var(--status-h) + var(--space-2))`) instead of a fixed 80px would clear both the library row and the status strip at 390 without a z-index change. Recorded here for BE; not edited.
+- blocker: none. §0.10–§0.12 remain BE's.
+- next: M16 is BLOCKED (BE has not issued the S5 primitive list — `js/engine/primitives.js` does not exist). M15 QA seat stays warm: re-run the probe + Maestro set after BE's next push.
+
+**Post-fix flow re-run (2026-11-14 17:55, after BE's `css/style.css` push):**
+```
+$ maestro test --headless --screen-size 390x844  www-paint-mobile-ui-audit.yaml      30 COMPLETED / 0 FAILED
+$ maestro test --headless --screen-size 390x844  www-paint-a11y-sweep-mobile.yaml    39 / 0
+$ maestro test --headless --screen-size 390x844  www-paint-media-panel.yaml          29 / 0
+$ maestro test --headless --screen-size 390x844  www-paint-export-panel-mobile.yaml  20 / 0
+$ maestro test --headless --screen-size 1440x900 www-paint-a11y-sweep.yaml          55 / 0
+$ maestro test --headless --screen-size 1440x900 www-paint-desktop-regression.yaml  33 / 0
+$ maestro test --headless --screen-size 1440x900 www-paint-export-panel.yaml        35 / 0
+$ maestro test --headless --screen-size 1440x900 www-paint-media-behaviour.yaml     35 / 0
+$ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml        14 / 0
+280 COMPLETED, 0 FAILED — the §0.9 fix introduced no regression.
+```
 
 ---
 

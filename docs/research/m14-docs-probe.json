@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-14T00:30:13.973Z",
+  "capturedAt": "2026-11-14T10:06:08.722Z",
   "viewport": {
     "width": 1440,
     "height": 900
@@ -494,7 +494,7 @@
       "label": "ellipse",
       "valid": true,
       "shape": {
-        "id": "stroke_ntk5n8c2z",
+        "id": "probe_E_ellipse",
         "type": "E",
         "params": [
           64,
@@ -527,7 +527,7 @@
       "label": "blob",
       "valid": true,
       "shape": {
-        "id": "stroke_yl5g3mhax",
+        "id": "probe_B_blob",
         "type": "B",
         "params": [
           64,
@@ -560,7 +560,7 @@
       "label": "triangle",
       "valid": true,
       "shape": {
-        "id": "stroke_fqftgjw4k",
+        "id": "probe_T_triangle",
         "type": "T",
         "params": [
           20,
@@ -593,7 +593,7 @@
       "label": "bar",
       "valid": true,
       "shape": {
-        "id": "stroke_3a3crsi96",
+        "id": "probe_R_bar",
         "type": "R",
         "params": [
           64,
@@ -626,7 +626,7 @@
       "label": "stroke",
       "valid": true,
       "shape": {
-        "id": "stroke_0jkxtjrbz",
+        "id": "probe_S_stroke",
         "type": "S",
         "params": [
           16,

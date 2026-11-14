@@ -44,12 +44,29 @@ function startServer() {
   });
 }
 
-const CHROME_CANDIDATES = [
-  process.env.CHROME_BINARY,
-  path.join(process.env.HOME || '', 'Library/Caches/ms-playwright/chromium-1248/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
-  path.join(process.env.HOME || '', 'Library/Caches/ms-playwright/chromium-1243/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
-  '/tmp/chrome-for-testing-147/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
-].filter(Boolean);
+/** Every Chromium this machine (macOS or Linux) might have, newest first.
+ *  Mirrors the candidates `a11y-sweep.cjs` uses, so the probe runs on the
+ *  ThinkPad without CHROME_BINARY being set by hand. */
+function chromeCandidates() {
+  const home = process.env.HOME || '';
+  const macBase = path.join(home, 'Library/Caches/ms-playwright');
+  const linBase = path.join(home, '.cache/ms-playwright');
+  const out = [process.env.CHROME_BINARY];
+  for (const base of [macBase, linBase]) {
+    if (!fs.existsSync(base)) continue;
+    const dirs = fs.readdirSync(base)
+      .filter((d) => /^chromium-\d+$/.test(d))
+      .sort((a, b) => parseInt(b.split('-')[1], 10) - parseInt(a.split('-')[1], 10));
+    for (const d of dirs) {
+      out.push(path.join(base, d, 'chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'));
+      out.push(path.join(base, d, 'chrome-linux64/chrome'));
+      out.push(path.join(base, d, 'chrome-linux/chrome'));
+    }
+  }
+  return out.filter(Boolean);
+}
+
+const CHROME_CANDIDATES = chromeCandidates();
 
 async function main() {
   const server = await startServer();
@@ -137,6 +154,10 @@ async function main() {
         order: 3,
         seed: 7,
       });
+      // createShape() derives the id from Math.random(), which made this JSON
+      // change on every run. Give the docs probe stable ids so the artefact is
+      // diff-able (BE raised this, docs/MAC-TASKS.md 2026-11-14).
+      s.id = `probe_${t}_${label}`;
       out[t] = { label: label, valid: mod.isValidShape(s), shape: s };
     }
     return out;
