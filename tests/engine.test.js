@@ -36,13 +36,15 @@ import {
   orderShapes, estimateShapeCount
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
-import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan } from '../js/engine/optimizer.js';
+import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan, resolvePassPlan, PASS_SCALES } from '../js/engine/optimizer.js';
 import {
   REGION_DEFAULTS, quantizeBins, labelComponents, pcaFromStats, buildRegions, fitEllipse
 } from '../js/engine/regions.js';
 import {
-  PROFILE_SCHEMA_VERSION, PROFILE_ROLES, PROFILE_DEFAULTS, validateProfile, normalizeProfile,
-  profileToSettings, profileToLayerStyles, profileToLayerProps, applyProfile, profileFromSettings
+  PROFILE_SCHEMA_VERSION, PROFILE_ROLES, PROFILE_PASS_SCALES, PROFILE_DEFAULTS,
+  validateProfile, normalizeProfile,
+  profileToSettings, profileToLayerStyles, profileToPasses, profileToLayerProps,
+  applyProfile, profileFromSettings
 } from '../js/engine/profile.js';
 import {
   toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae as simMaeFromMae, ssimLuma, metricsVsTarget,
@@ -723,6 +725,156 @@ test('optimiser: multi-scale is deterministic for the same seed', () => {
   const a = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
   const b = optimise(analyzeImage(px, S, S), { count: 60, seed: 321 });
   assertEqual(a.shapes, b.shapes, 'multi-scale shape lists should be identical');
+});
+
+// ─── Optimiser explicit passes (Track S S4) ───────────────────────
+console.log('\nOptimiser explicit passes (Track S S4):');
+
+// Three vertical bands: dark (shadows) | mid grey | bright (highlights).
+const s4Image = (S) => makeRGBImage(S, S, (x) =>
+  (x < S / 3 ? [25, 25, 25] : x < (2 * S) / 3 ? [128, 128, 128] : [235, 235, 235]));
+// Which third a stroke's centre landed in.
+const s4Third = (s, S) => (s.params[0] < S / 3 ? 'dark' : s.params[0] < (2 * S) / 3 ? 'mid' : 'bright');
+const s4Hist = (shapes, S) => {
+  const h = { dark: 0, mid: 0, bright: 0 };
+  for (const s of shapes) h[s4Third(s, S)]++;
+  return h;
+};
+
+test('passes: no explicit schedule → the geometric coarse→fine plan runs verbatim', () => {
+  assertEqual(PASS_SCALES, ['coarse', 'medium', 'fine']);
+  const opts = resolveOptimiserOptions({});
+  assertEqual(resolvePassPlan(opts, 10), buildScalePlan(opts, 10),
+    'resolvePassPlan must return buildScalePlan unchanged when no passes are given');
+  assertEqual(resolvePassPlan(resolveOptimiserOptions({ passes: [] }), 10), buildScalePlan(opts, 10),
+    'an empty passes[] is the same as absent');
+  assertEqual(OPTIMISER_DEFAULTS.passes, null);
+});
+
+test('passes: an absent explicit schedule leaves the output byte-identical', () => {
+  const S = 80;
+  const an = analyzeImage(s4Image(S), S, S);
+  const base = { count: 60, seed: 5 };
+  const def = optimise(an, base);
+  assertEqual(optimise(an, { ...base, passes: null }).shapes, def.shapes, 'passes:null must not change output');
+  assertEqual(optimise(an, { ...base, passes: [] }).shapes, def.shapes, 'passes:[] must not change output');
+});
+
+test('passes: an explicit plan maps scale onto radii/blur/elongation and normalises weights', () => {
+  const opts = resolveOptimiserOptions({});
+  const plan = resolvePassPlan(resolveOptimiserOptions({
+    passes: [
+      { id: 'bg', scale: 'coarse', layers: ['background'], weight: 3 },
+      { id: 'masses', scale: 'medium', layers: ['shadows', 'midtone'], weight: 2 },
+      { id: 'accents', scale: 'fine', layers: ['highlights'], weight: 1 },
+    ],
+  }), 10);
+  assertEqual(plan.length, 3, 'one entry per declared pass, in paint order');
+  assertEqual(plan.map((p) => p.id), ['bg', 'masses', 'accents']);
+  assertEqual(plan[0].bands, ['background']);
+  assertEqual(plan[2].bands, ['highlights']);
+  assertApprox(plan[0].radiusMul, opts.coarseRadius, 1e-9, 'coarse radius');
+  assertApprox(plan[1].radiusMul, (opts.coarseRadius + opts.fineRadius) / 2, 1e-9,
+    'medium radius is the coarse→fine midpoint');
+  assertApprox(plan[1].blurR, (opts.coarseBlur / 2) * 10, 1e-9, 'medium blur is half the coarse blur');
+  assertApprox(plan[2].radiusMul, opts.fineRadius, 1e-9, 'fine radius');
+  assertApprox(plan[0].blurR, opts.coarseBlur * 10, 1e-9, 'coarse pass uses a blurred reference');
+  assertEqual(plan[2].blurR, 0, 'the finest pass works against the unblurred target');
+  assertApprox(plan[0].weight, 3 / 6, 1e-9, 'weights normalise to 1 (3:2:1)');
+  assertApprox(plan[2].weight, 1 / 6, 1e-9);
+  assertApprox(plan.reduce((a, p) => a + p.weight, 0), 1, 1e-9, 'pass weights must sum to 1');
+});
+
+test('passes: explicit radius/blur/elongation/alpha/detail override the scale keyword', () => {
+  const plan = resolvePassPlan(resolveOptimiserOptions({
+    passes: [{ id: 'x', scale: 'coarse', radius: 0.25, blur: 0, elongation: 2, alpha: 0.5, detail: 0.1 }],
+  }), 10);
+  assertEqual(plan[0].radiusMul, 0.25);
+  assertEqual(plan[0].blurR, 0);
+  assertEqual(plan[0].elongMul, 2);
+  assertEqual(plan[0].alpha, 0.5);
+  assertEqual(plan[0].detail, 0.1);
+});
+
+test('passes: an explicit schedule still emits exactly the budget, deterministically', () => {
+  const S = 96;
+  const an = analyzeImage(s4Image(S), S, S);
+  const passes = [
+    { id: 'bg', scale: 'coarse', layers: ['background'] },
+    { id: 'masses', scale: 'medium', layers: ['shadows', 'midtone'] },
+    { id: 'accents', scale: 'fine', layers: ['highlights'] },
+  ];
+  const a = optimise(an, { count: 120, seed: 7, passes });
+  const b = optimise(an, { count: 120, seed: 7, passes });
+  assertEqual(a.shapes, b.shapes, 'an explicit schedule must be deterministic');
+  assertEqual(a.shapes.length, 120, 'the budget is exact');
+  assertEqual(a.stats.scales, 3, 'stats.scales reports the schedule length');
+  if (!(a.stats.finalError < a.stats.initialError)) {
+    throw new Error('the pass schedule must still reduce error');
+  }
+  for (const s of a.shapes) if (!isValidShape(s)) throw new Error('explicit-pass shape invalid');
+});
+
+test('passes: a band-scoped pass anchors in its band, an unscoped one does not', () => {
+  const S = 96;
+  const an = analyzeImage(s4Image(S), S, S);
+  const run = (bands) => optimise(an, {
+    count: 90, seed: 5, regionInit: false,
+    passes: [bands ? { id: 'x', scale: 'fine', layers: bands } : { id: 'x', scale: 'fine' }],
+  }).shapes;
+  const frac = (shapes, third) => s4Hist(shapes, S)[third] / shapes.length;
+
+  const hi = frac(run(['highlights']), 'bright');
+  const sh = frac(run(['shadows']), 'dark');
+  const md = frac(run(['midtone']), 'mid');
+  const plain = frac(run(null), 'bright');
+  if (!(hi > 0.9)) throw new Error(`a highlights-scoped pass is not confined to the bright third: ${hi}`);
+  if (!(sh > 0.9)) throw new Error(`a shadows-scoped pass is not confined to the dark third: ${sh}`);
+  if (!(md > 0.85)) throw new Error(`a midtone-scoped pass is not confined to the mid third: ${md}`);
+  if (!(plain < hi - 0.2)) {
+    throw new Error(`the band bias must beat an unscoped pass (plain=${plain}, highlights=${hi})`);
+  }
+});
+
+test('passes: profile validation accepts a well-formed pass, rejects a bad one', () => {
+  assertEqual(PROFILE_PASS_SCALES, ['coarse', 'medium', 'fine']);
+  const base = {
+    schemaVersion: 1, id: 'p', name: 'S4', version: '1.0.0', global: {},
+    passes: [{ id: 'accents', scale: 'fine', layers: ['highlights'], weight: 2, alpha: 0.5 }],
+  };
+  assertEqual(validateProfile(base).ok, true, 'a declared pass must validate');
+  assertEqual(validateProfile({ ...base, passes: [{ id: 'x', scale: 'huge' }] }).errors[0].path, 'passes[0].scale');
+  assertEqual(validateProfile({ ...base, passes: [{ id: 'x', layers: ['nope'] }] }).errors[0].path, 'passes[0].layers');
+  assertEqual(validateProfile({ ...base, passes: [{ id: '' }] }).errors[0].path, 'passes[0].id');
+  assertEqual(validateProfile({ ...base, passes: [{ id: 'x', alpha: 2 }] }).errors[0].path, 'passes[0].alpha');
+  assertEqual(validateProfile({ ...base, passes: 'nope' }).errors[0].path, 'passes');
+  assertEqual(validateProfile({ schemaVersion: 1, id: 'p', name: 'n', version: '1.0.0', global: {} }).ok, true,
+    'a profile with no passes is still valid');
+});
+
+test('passes: normaliseProfile defaults a bare pass and is idempotent', () => {
+  const p = normalizeProfile({
+    schemaVersion: 1, id: 'p', name: 'S4', version: '1.0.0', global: {},
+    passes: [{ id: 'loose', scale: 'coarse' }, { id: '' }, { not: 'a pass' }],
+  });
+  assertEqual(p.passes.length, 1, 'a pass with no id is dropped (it cannot be addressed)');
+  assertEqual(p.passes[0], { id: 'loose', scale: 'coarse', layers: [] },
+    'scale is kept, layers default to empty, no numeric keys invented');
+  assertEqual(normalizeProfile(p).passes, p.passes, 'normaliseProfile must be a fixed point');
+});
+
+test('passes: a profile without passes sets no optimiser option (output unchanged)', () => {
+  const bare = { schemaVersion: 1, id: 'p', name: 'n', version: '1.0.0', global: { strokeCount: 80 } };
+  assertEqual(profileToPasses(bare), null,'profileToPasses is null when the profile declares none');
+  const noPasses = profileToOptimiserOptions(bare);
+  if ('passes' in noPasses) throw new Error('a profile without passes must not set optimiser.passes');
+  const withPasses = profileToOptimiserOptions({
+    ...bare, passes: [{ id: 'accents', scale: 'fine', layers: ['highlights'] }],
+  });
+  assertEqual(withPasses.passes, [{ id: 'accents', scale: 'fine', layers: ['highlights'] }],
+    'profileToOptimiserOptions carries passes through to the optimiser');
+  assertEqual(profileToPasses({ ...bare, passes: [{ id: 'a', scale: 'coarse', layers: ['midtone'] }] }),
+    [{ id: 'a', scale: 'coarse', layers: ['midtone'] }]);
 });
 
 // ─── Regions — CCL + PCA (Track R3) ───────────────────────────────

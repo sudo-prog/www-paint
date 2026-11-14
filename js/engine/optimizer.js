@@ -37,6 +37,18 @@
  *      roughly round) and *strong* at the fine scales, so the final, smallest
  *      strokes are the ones that lie along edges.
  *
+ * S4 — explicit hierarchical passes (`passes[]`, opt-in):
+ *   7. **The schedule can be authored, not only interpolated.** The R2 schedule
+ *      is a geometric coarse→fine interpolation. A Style Profile may instead
+ *      declare its passes explicitly (`{ id, scale, layers, radius, blur,
+ *      elongation, weight, alpha, detail }`) — `resolvePassPlan` maps them onto
+ *      the *same* pass machinery, so a profile can say "background → masses →
+ *      edges → accents" as first-class, tunable steps. A pass that names
+ *      `layers` (tonal roles) has its residual anchoring *biased* onto those
+ *      bands (`buildPassMask`); no band is ever a hard gate, so every pass stays
+ *      residual-driven. With no explicit passes the geometric plan runs verbatim
+ *      — byte-identical output.
+ *
  * A stroke is modelled as an anti-aliased filled ellipse ("brush dab") whose
  * colour is the local average of the current scale's target, with
  * `color0 === color1` so the dab renders as a flat patch in *any* renderer that
@@ -51,6 +63,29 @@ import { clamp, lerp } from '../utils/math.js';
 import { createShape, bounds } from './shapes.js';
 import { sampleEdge, sampleStructure } from './analyzer.js';
 import { buildRegions } from './regions.js';
+import { computeTonalMasks } from './masks.js';
+
+/**
+ * The three scale keywords an explicit pass may declare (Track-S S4). They map
+ * onto the same coarse→fine interpolation the geometric schedule uses:
+ * `coarse` = the coarsest radii / blurriest reference, `fine` = the finest,
+ * `medium` = the midpoint. Any of them can be overridden per pass with an
+ * explicit `radius` / `blur` / `elongation`.
+ * @type {string[]}
+ */
+export const PASS_SCALES = ['coarse', 'medium', 'fine'];
+
+/** scale keyword → position on the coarse(0) → fine(1) axis. */
+const SCALE_T = { coarse: 0, medium: 0.5, fine: 1 };
+
+/**
+ * Floor applied to a band mask. A hard 0 would freeze a gated pass out of the
+ * residual wherever its band is thin, defeating the "residual drives every
+ * pass" rule; the floor keeps the pass residual-driven while the band still
+ * dominates where it is present. Measured effect: a gated pass places the
+ * overwhelming majority of its strokes inside its band (see S4 tests).
+ */
+const BAND_MASK_FLOOR = 0.05;
 
 /**
  * Default options for {@link optimise}.
@@ -114,6 +149,17 @@ export const OPTIMISER_DEFAULTS = {
   regionFillMaxAreaFrac: 0.30, // max component area, as a fraction of the image
   regionFillMargin: 1.05,  // dab inflation over the fitted region extent
   regionFillAlpha: 1.0,    // opacity of a fill stroke
+
+  // ── S4 explicit hierarchical passes ──────────────────────────────────────
+  // Opt-in — `null` (default) → the geometric `buildScalePlan` schedule runs
+  // exactly as before, byte-identical. When an array is supplied it REPLACES
+  // that schedule: each entry is one explicit pass `{ id, scale, layers,
+  // radius, blur, elongation, weight, alpha, detail }`, in paint order, and
+  // the residual still drives every pass (each pass resets `err` against its
+  // own blurred reference and anchors by residual, exactly as before). A pass
+  // that names `layers` (tonal roles) has its anchoring *biased* onto those
+  // bands — the profile's bg → masses → edges → accents, as first-class steps.
+  passes: null,
 };
 
 /**
@@ -237,6 +283,105 @@ export function buildScalePlan(opts, baseR) {
   }
   for (const p of plan) p.weight /= wsum;
   return plan;
+}
+
+/**
+ * Build the pass schedule the optimiser will run — the geometric coarse→fine
+ * plan, OR the profile's explicit `passes[]` when one is supplied (Track-S S4).
+ *
+ * This is the single place the two schedules meet, so `optimise()` has one
+ * code path and the default is provably untouched: with no explicit passes it
+ * returns `buildScalePlan(opts, baseR)` **verbatim** (same objects, same
+ * numbers), and every explicit entry is normalised to the same shape the
+ * geometric plan uses (`radiusMul`, `blurR`, `elongMul`, `weight`) plus its own
+ * `id` / `scale` / `bands`.
+ *
+ * Explicit entry semantics:
+ * - `scale` — `coarse|medium|fine`; picks the `radiusMul`, `blurR` and
+ *   `elongMul` by the same coarse→fine interpolation `buildScalePlan` uses.
+ * - `radius` (a multiplier of the base dab radius), `blur` (a fraction of the
+ *   base radius), `elongation` — explicit overrides of the above.
+ * - `weight` — the pass's relative share of the stroke budget; the plan's
+ *   weights are normalised to sum to 1, so `weight` is a ratio, not a fraction.
+ * - `bands` (= the profile pass's `layers`) — tonal roles the pass is biased
+ *   toward (`background|shadows|outline|midtone|highlights`; `outline` reads
+ *   the edge field). Empty = no bias, a plain pass.
+ * - `alpha` / `detail` — per-pass overrides of the global dab opacity / detail
+ *   response.
+ *
+ * @param {object} opts - Resolved optimiser options.
+ * @param {number} baseR - Base dab radius.
+ * @returns {Array<object>} the pass plan, in paint order.
+ */
+export function resolvePassPlan(opts, baseR) {
+  const passes = opts.passes;
+  if (!Array.isArray(passes) || passes.length === 0) return buildScalePlan(opts, baseR);
+  const plan = passes.map((p, i) => {
+    const scale = PASS_SCALES.includes(p.scale) ? p.scale : 'medium';
+    const t = SCALE_T[scale];
+    return {
+      id: p.id !== undefined && p.id !== null ? String(p.id) : `pass${i}`,
+      scale,
+      bands: Array.isArray(p.layers) ? p.layers.slice()
+        : (Array.isArray(p.bands) ? p.bands.slice() : []),
+      radiusMul: p.radius !== undefined ? p.radius : lerp(opts.coarseRadius, opts.fineRadius, t),
+      blurR: (p.blur !== undefined ? p.blur : lerp(opts.coarseBlur, 0, t)) * baseR,
+      elongMul: p.elongation !== undefined ? p.elongation : lerp(0.5, 1, t),
+      weight: p.weight !== undefined ? p.weight : 1,
+      alpha: p.alpha,
+      detail: p.detail,
+    };
+  });
+  // Same convention as buildScalePlan: the weights are normalised to sum to 1,
+  // so `weight` reads as a ratio between passes rather than an absolute share.
+  const wsum = plan.reduce((a, p) => a + Math.max(0, p.weight), 0) || 1;
+  for (const p of plan) p.weight = Math.max(0, p.weight) / wsum;
+  return plan;
+}
+
+/**
+ * Build the per-pixel anchoring bias for one band-scoped pass (Track-S S4), or
+ * `null` when the pass names no bands (the common case → no computation, no
+ * behaviour change).
+ *
+ * Tonal roles resolve to the same soft masks the layer system renders with
+ * (`masks.js`, IF-1): `background`/`shadows`/`midtone`/`highlights` map onto
+ * the four tonal bands (`midtone` → `midtones`), and `outline` reads the
+ * analyser's own edge field (a stroke-language "edges" band has no tonal
+ * window). Several roles combine by `max`, so a pass may span bands.
+ *
+ * The result is normalised to a `[BAND_MASK_FLOOR, 1]` range — a soft bias, not
+ * a hard cut — so the pass is still anchored by *residual* and cannot be frozen
+ * out of the image where its band happens to be absent.
+ *
+ * @param {object} analysis - `analyzeImage` result (`width`, `height`,
+ *   `luminance`, `edges`).
+ * @param {string[]} bands - profile layer roles.
+ * @returns {Float32Array|null}
+ */
+function buildPassMask(analysis, bands) {
+  if (!Array.isArray(bands) || bands.length === 0) return null;
+  const n = analysis.width * analysis.height;
+  const tonal = bands.some((b) => b !== 'outline') ? computeTonalMasks(analysis).masks : null;
+  const mask = new Float32Array(n);
+  let any = false;
+  for (const b of bands) {
+    const m = b === 'outline'
+      ? analysis.edges
+      : (tonal ? tonal[b === 'midtone' ? 'midtones' : b] : null);
+    if (!m) continue;
+    any = true;
+    for (let i = 0; i < n; i++) if (m[i] > mask[i]) mask[i] = m[i];
+  }
+  if (!any) return null;
+  let maxv = 0;
+  for (let i = 0; i < n; i++) if (mask[i] > maxv) maxv = mask[i];
+  if (maxv <= 0) return null;
+  const inv = 1 / maxv;
+  for (let i = 0; i < n; i++) {
+    mask[i] = BAND_MASK_FLOOR + (1 - BAND_MASK_FLOOR) * mask[i] * inv;
+  }
+  return mask;
 }
 
 /**
@@ -541,9 +686,13 @@ export function optimise(analysis, options = {}) {
    * @returns {number} Number of strokes actually emitted (can be < budget when
    *   the pass runs out of error to remove).
    */
-  function paintPass(passTarget, radiusBase, elongScale, budget) {
+  function paintPass(passTarget, radiusBase, elongScale, budget, mask, passAlpha, passDetail) {
     levelTarget = passTarget;
     elongMul = elongScale;
+    // Per-pass overrides (S4) fall back to the global options, so a pass that
+    // declares neither is byte-identical to the pre-S4 pass body.
+    const alpha = passAlpha !== undefined ? passAlpha : opts.alpha;
+    const detail = passDetail !== undefined ? passDetail : opts.detail;
     let emitted = 0;
 
     for (let s = 0; s < budget; s++) {
@@ -552,24 +701,26 @@ export function optimise(analysis, options = {}) {
       // already received, then draw the anchor from the high-residual set with a
       // seeded weighted sample. Sampling (rather than always taking the argmax)
       // spreads strokes across the whole error region instead of walking a single
-      // boundary — the deterministic RNG keeps it reproducible.
+      // boundary — the deterministic RNG keeps it reproducible. A band-scoped
+      // pass (S4) multiplies the score by its band mask, biasing (never
+      // forcing) the residual sample onto that band.
       let best = -1, maxScore = 0;
       for (let i = 0; i < n; i++) {
-        const score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1));
+        const score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1);
         if (score > maxScore) { maxScore = score; best = i; }
       }
       if (best < 0 || maxScore <= 1e-4) break;
       const thr = opts.anchorThreshold * maxScore;
       for (let attempt = 0; attempt < 24; attempt++) {
         const i = Math.floor(random.next() * n);
-        if (err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) >= thr) { best = i; break; }
+        if (err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1) >= thr) { best = i; break; }
       }
       const ax = (best % W) + 0.5;
       const ay = Math.floor(best / W) + 0.5;
 
       // ── 2. propose a dab at the anchor ────────────────────────────────────
       const edgeMag = edges ? sampleEdge(edges, W, H, ax, ay) : 0;
-      const detailFactor = 1 - opts.detail * clamp(edgeMag, 0, 1);
+      const detailFactor = 1 - detail * clamp(edgeMag, 0, 1);
       let radius = radiusBase * detailFactor * random.range(0.85, 1.15);
       radius = clamp(radius, opts.minSize, opts.maxSize);
 
@@ -589,7 +740,7 @@ export function optimise(analysis, options = {}) {
 
       let p = {
         x: ax, y: ay, rx: radius * elong, ry: radius, rot,
-        r: 0, g: 0, b: 0, alpha: opts.alpha,
+        r: 0, g: 0, b: 0, alpha,
       };
       const col = localColor(ax, ay, clamp(0.45 * Math.min(p.rx, p.ry), 1.2, 3.5));
       p.r = col[0]; p.g = col[1]; p.b = col[2];
@@ -667,8 +818,17 @@ export function optimise(analysis, options = {}) {
     : 0;
   const regionUsed = regionInitPass(regionBudget);
 
-  // ── coarse → fine schedule ────────────────────────────────────────────────
-  const plan = buildScalePlan(opts, baseR);
+  // ── pass schedule: geometric coarse→fine, OR the Style Profile's explicit
+  //    passes[] (Track-S S4). `resolvePassPlan` returns `buildScalePlan(opts,
+  //    baseR)` verbatim when no explicit passes are supplied, so the default
+  //    schedule is byte-identical; either way every pass stays residual-driven
+  //    and resets `err` against its own (blurrier / sharper) reference.
+  const plan = resolvePassPlan(opts, baseR);
+  // Band masks are built only when some pass declares layers — nothing at all
+  // is computed for the geometric schedule or a plain explicit schedule.
+  const passMasks = plan.some((p) => p.bands && p.bands.length > 0)
+    ? plan.map((p) => buildPassMask(analysis, p.bands))
+    : null;
   let remaining = opts.count - fillUsed - regionUsed;
   // The schedule's own total (what the init left) drives the budget split, so
   // the pass weights still describe the schedule and the sum stays exact.
@@ -692,7 +852,8 @@ export function optimise(analysis, options = {}) {
         Math.abs(paint[i * 3 + 2] - passTarget[i * 3 + 2])
       ) / 3;
     }
-    const used = paintPass(passTarget, baseR * level.radiusMul, level.elongMul, budget);
+    const used = paintPass(passTarget, baseR * level.radiusMul, level.elongMul, budget,
+      passMasks ? passMasks[k] : null, level.alpha, level.detail);
     remaining -= used;
   }
 
@@ -712,4 +873,6 @@ export function optimise(analysis, options = {}) {
   };
 }
 
-export default { OPTIMISER_DEFAULTS, resolveOptions, buildScalePlan, optimise };
+export default {
+  OPTIMISER_DEFAULTS, resolveOptions, buildScalePlan, PASS_SCALES, resolvePassPlan, optimise,
+};

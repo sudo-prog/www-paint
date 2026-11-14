@@ -26,6 +26,25 @@ export const PROFILE_SCHEMA_VERSION = 1;
 /// Tonal roles, fixed to the engine's named layers.
 export const PROFILE_ROLES = ['background', 'shadows', 'outline', 'midtone', 'highlights'];
 
+/**
+ * Scale keywords an explicit hierarchical pass may declare (Track-S S4). They
+ * map onto the optimiser's coarse→fine pass schedule, so a profile can author
+ * "background → masses → edges → accents" as first-class steps instead of
+ * relying on the geometric interpolation.
+ * @type {string[]}
+ */
+export const PROFILE_PASS_SCALES = ['coarse', 'medium', 'fine'];
+
+/// Per-pass numeric overrides, with their `[min, max]` bounds (S4).
+const PASS_NUM_RANGES = {
+  radius: [0.05, 4],     // dab-radius multiplier of the base radius
+  blur: [0, 4],          // reference-blur, as a fraction of the base radius
+  elongation: [0, 4],    // elongation strength multiplier
+  weight: [0, 1000],     // relative share of the stroke budget
+  alpha: [0, 1],         // per-pass dab opacity
+  detail: [0, 1],        // per-pass detail response
+};
+
 const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'hard-light',
   'color-dodge', 'color-burn', 'darken', 'lighten', 'difference', 'exclusion',
   'hue', 'saturation', 'color', 'luminosity'];
@@ -119,6 +138,12 @@ export function validateProfile(profile) {
     else profile.effects.forEach((e, i) => validateEffect(e, `effects[${i}]`, err));
   }
 
+  // passes[] — explicit hierarchical passes (Track-S S4, optional)
+  if (profile.passes !== undefined) {
+    if (!Array.isArray(profile.passes)) err('passes', 'must be an array');
+    else profile.passes.forEach((p, i) => validatePass(p, `passes[${i}]`, err));
+  }
+
   // mediaModel
   if (profile.mediaModel !== undefined) validateMediaModel(profile.mediaModel, 'mediaModel', err);
 
@@ -205,6 +230,33 @@ function validateLayer(l, path, err) {
   if (l.order !== undefined && !(isInt(l.order) && l.order >= 0)) err(`${path}.order`, 'must be an integer >= 0');
 }
 
+/**
+ * Validate one explicit hierarchical pass (Track-S S4).
+ *
+ * `id` is required (a pass is addressed by name); `scale`, `layers` and the
+ * numeric overrides are optional. `layers` names tonal roles — the same roles
+ * `layers[]` uses, so a pass and a layer speak one vocabulary.
+ */
+function validatePass(p, path, err) {
+  if (!isObj(p)) { err(path, 'must be an object'); return; }
+  if (!isStr(p.id) || p.id.trim().length < 1 || p.id.length > 64) {
+    err(`${path}.id`, 'must be a non-empty string of at most 64 chars');
+  }
+  if (p.scale !== undefined && !PROFILE_PASS_SCALES.includes(p.scale)) {
+    err(`${path}.scale`, `must be one of ${PROFILE_PASS_SCALES.join('|')}`);
+  }
+  if (p.layers !== undefined && !Array.isArray(p.layers)) {
+    err(`${path}.layers`, 'must be an array');
+  } else if (Array.isArray(p.layers) && !p.layers.every((r) => PROFILE_ROLES.includes(r))) {
+    err(`${path}.layers`, `must be roles from ${PROFILE_ROLES.join('|')}`);
+  }
+  for (const [k, [min, max]] of Object.entries(PASS_NUM_RANGES)) {
+    if (p[k] === undefined) continue;
+    if (!isNum(p[k])) err(`${path}.${k}`, 'must be a number');
+    else if (p[k] < min || p[k] > max) err(`${path}.${k}`, `must be in [${min}, ${max}]`);
+  }
+}
+
 function validateEffect(e, path, err) {
   if (!isObj(e)) { err(path, 'must be an object'); return; }
   for (const k of ['core', 'params', 'opacity', 'blend', 'enabled']) {
@@ -264,13 +316,37 @@ export function normalizeProfile(profile) {
   const layers = Array.isArray(profile.layers)
     ? profile.layers.filter((l) => isObj(l) && PROFILE_ROLES.includes(l.role)).map((l) => ({ ...l }))
     : [];
+  // Explicit hierarchical passes (S4). A pass with no usable `id` is dropped
+  // (it cannot be addressed); everything else is defaulted and bounded so the
+  // optimiser receives a well-formed schedule. Always an array → the mapping
+  // layer knows "no passes" from `length === 0`.
+  const passes = Array.isArray(profile.passes)
+    ? profile.passes.filter((p) => isObj(p) && isStr(p.id) && p.id.trim() !== '').map(normalizePass)
+    : [];
   return {
     ...profile,
     schemaVersion: PROFILE_SCHEMA_VERSION,
     global,
     layers,
+    passes,
     mediaModel: isObj(profile.mediaModel) ? normalizeMedia(profile.mediaModel) : null,
   };
+}
+
+/**
+ * Normalise one explicit pass (S4): keep the declared values, default the rest.
+ * Idempotent — `normalizePass(normalizePass(p))` is a fixed point, which the
+ * suite pins, because the profile is folded through normalisation more than once
+ * (validate → map → engine).
+ */
+function normalizePass(p) {
+  const out = {
+    id: String(p.id).slice(0, 64),
+    scale: PROFILE_PASS_SCALES.includes(p.scale) ? p.scale : 'medium',
+    layers: Array.isArray(p.layers) ? p.layers.filter((r) => PROFILE_ROLES.includes(r)) : [],
+  };
+  for (const k of Object.keys(PASS_NUM_RANGES)) if (isNum(p[k])) out[k] = p[k];
+  return out;
 }
 
 function normalizeMedia(m) {
@@ -333,6 +409,24 @@ export function profileToLayerStyles(profile) {
     if (isStr(l.style) && l.style.trim() !== '') { out[l.role] = l.style; any = true; }
   }
   return any ? out : null;
+}
+
+/**
+ * The profile's explicit hierarchical passes (Track-S S4), normalised, or `null`
+ * when the profile declares none.
+ *
+ * This is the shape `optimizer.resolvePassPlan` consumes: `{ id, scale, layers,
+ * radius?, blur?, elongation?, weight?, alpha?, detail? }`. The optimiser owns
+ * the schedule semantics (what `coarse|medium|fine` resolves to), so this is a
+ * pure pass-through of the validated, normalised objects — no engine knowledge
+ * is duplicated here.
+ *
+ * @param {object} profile
+ * @returns {Array<object>|null}
+ */
+export function profileToPasses(profile) {
+  const p = normalizeProfile(profile);
+  return p.passes.length ? p.passes : null;
 }
 
 /**
@@ -467,11 +561,13 @@ export function fusedReferenceFromProfile(profile) {
 export default {
   PROFILE_SCHEMA_VERSION,
   PROFILE_ROLES,
+  PROFILE_PASS_SCALES,
   PROFILE_DEFAULTS,
   validateProfile,
   normalizeProfile,
   profileToSettings,
   profileToLayerStyles,
+  profileToPasses,
   profileToLayerProps,
   applyProfile,
   profileFromSettings,

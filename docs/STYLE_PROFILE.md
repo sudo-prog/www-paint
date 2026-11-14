@@ -26,6 +26,7 @@ StyleProfile
 ├── engine        : { name, version }          — producer stamp
 ├── global        : GlobalParams               — whole-image controls
 ├── layers[]      : LayerStyle                 — per tonal-role overrides
+├── passes[]      : HierPass                    — explicit hierarchical passes (S4)
 ├── effects[]     : EffectStackEntry           — LAYERS-compatible effect stack
 ├── mediaModel    : MediaModel                 — dry | wet | impasto
 ├── styleDNA      : StyleDNA                    — compact descriptor (retrieval)
@@ -73,6 +74,11 @@ background · shadows · outline · midtone · highlights
     "layers": {
       "type": "array",
       "items": { "$ref": "#/$defs/layerStyle" }
+    },
+    "passes": {
+      "type": "array",
+      "description": "Explicit hierarchical passes (Track-S S4). Absent = the engine's geometric coarse→fine schedule, unchanged.",
+      "items": { "$ref": "#/$defs/hierPass" }
     },
     "effects": {
       "type": "array",
@@ -143,6 +149,28 @@ background · shadows · outline · midtone · highlights
         "opacity": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 },
         "blendMode": { "$ref": "#/$defs/blendMode" },
         "order": { "type": "integer", "minimum": 0, "description": "Paint order (lower = painted first)" }
+      }
+    },
+    "hierPass": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": false,
+      "description": "One explicit hierarchical pass (S4). Passes run IN ARRAY ORDER; each is residual-driven and resets its error map against its own reference, so a profile can author bg -> masses -> edges -> accents as first-class steps.",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Stable pass name (addressed by the UI / proposer)" },
+        "scale": { "type": "string", "enum": ["coarse", "medium", "fine"], "default": "medium", "description": "Maps onto the engine's coarse->fine schedule: the pass's dab radius, reference blur and elongation strength" },
+        "layers": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "string", "enum": ["background", "shadows", "outline", "midtone", "highlights"] },
+          "description": "Tonal roles this pass is biased toward ('outline' reads the edge field). Empty = an unscoped pass. A bias, never a hard gate: the pass still anchors by residual."
+        },
+        "radius": { "type": "number", "minimum": 0.05, "maximum": 4, "description": "Dab-radius multiplier, overriding `scale`" },
+        "blur": { "type": "number", "minimum": 0, "maximum": 4, "description": "Reference blur, as a fraction of the base dab radius; overrides `scale`" },
+        "elongation": { "type": "number", "minimum": 0, "maximum": 4, "description": "Structure-elongation strength multiplier; overrides `scale`" },
+        "weight": { "type": "number", "minimum": 0, "maximum": 1000, "description": "Relative share of the stroke budget (the schedule's weights are normalised to 1)" },
+        "alpha": { "type": "number", "minimum": 0, "maximum": 1, "description": "Per-pass dab opacity (defaults to global.opacity)" },
+        "detail": { "type": "number", "minimum": 0, "maximum": 1, "description": "Per-pass detail response (defaults to global.detailLevel)" }
       }
     },
     "effectEntry": {
@@ -287,6 +315,40 @@ it with `attachFusedReference()` / `fusedReferenceFromProfile()`. It is the same
 shape `RefPacket` a render is analysed into, so `refPacketDistance` /
 `scoreProfileStyle` (S2) consume it with no new code path.
 
+### 3.6 `passes[]`
+Added 2026-11-13/14 with Track-S **S4**. Optional. Naming the explicit steps of
+the painting *as profile data* is what makes a profile a **procedure** and not
+only a parameter set: instead of one geometric coarse→fine schedule the engine
+interpolates, the profile can say **background → masses → edges → accents** as
+first-class, tunable passes.
+
+```json
+"passes": [
+  { "id": "bg",      "scale": "coarse", "layers": ["background"], "weight": 3 },
+  { "id": "masses",  "scale": "medium", "layers": ["shadows", "midtone"], "weight": 2 },
+  { "id": "edges",   "scale": "fine",   "layers": ["outline"], "weight": 1 },
+  { "id": "accents", "scale": "fine",   "layers": ["highlights"], "weight": 1 }
+]
+```
+
+- **Order is the paint order** — passes run in array order, exactly like the
+  schedule they replace.
+- **`scale`** (`coarse|medium|fine`) picks the pass's dab radius, reference blur
+  and elongation strength from the engine's own coarse→fine interpolation;
+  `radius` / `blur` / `elongation` override any of them per pass.
+- **`layers`** are the same tonal roles `layers[]` uses, with `outline` reading
+  the edge field. They *bias* where the pass puts its strokes — the pass is still
+  **residual-driven** (it anchors where the error is), so once a band is
+  satisfied the pass falls back to the global residual rather than idling.
+- **`weight`** is a *ratio* between passes, not a fraction: the engine
+  normalises the weights to sum to 1, so `3:2:1:1` above is all that matters.
+- **Absent `passes` = the geometric schedule, byte-identical.** No pass is
+  implied by the profile being present.
+- `profile.js` validates + normalises the array (`validateProfile` /
+  `normalizeProfile` / `profileToPasses`); `optimizer.resolvePassPlan` is the one
+  place the explicit and geometric schedules meet (Score → optimiser wiring via
+  `score.profileToOptimiserOptions`). Evidence: `docs/checkpoints/S4.md`.
+
 ---
 
 ## 4. Minimal example
@@ -364,6 +426,10 @@ Until then, a profile may be validated with any draft-07 validator
 **Applied 2026-11-13:** `provenance.refPacket` added as an **optional** field
 (Track-S S3 multi-reference fusion) — `schemaVersion` stays 1, per the first row
 above. Existing profiles without it are unchanged.
+
+**Applied 2026-11-14:** `passes[]` (+ `$defs/hierPass`) added as an **optional**
+field (Track-S S4 explicit hierarchical passes) — `schemaVersion` stays 1, same
+first row. A profile with no `passes` produces byte-identical output.
 
 `schemaVersion` is an integer const per schema id. WWW_PAINT will adopt LAYERS'
 migration approach (`packages/schema`, AJV, v0→v1) rather than invent one.

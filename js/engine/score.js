@@ -94,6 +94,10 @@ export function clampKnobs(vals = {}) {
  * Map a Style Profile onto modular-engine options (only the knobs the engine
  * actually honours). `overrides` (e.g. from `clampKnobs`) win.
  *
+ * Track-S S4: a profile's explicit `passes[]` is carried across as
+ * `optimiser.passes` (see `optimizer.resolvePassPlan`). A profile without
+ * `passes` sets nothing, so the geometric coarse→fine schedule runs unchanged.
+ *
  * @param {object} profile
  * @param {object} [overrides]
  * @returns {object} options for `optimizer.optimise()`
@@ -106,6 +110,11 @@ export function profileToOptimiserOptions(profile, overrides = {}) {
   if (g.opacity !== undefined) o.alpha = g.opacity;
   if (g.detailLevel !== undefined) o.detail = g.detailLevel;
   if (g.smart !== undefined) o.structureAlign = g.smart;
+  // Track-S S4 — an explicit `passes[]` schedule replaces the geometric
+  // coarse→fine plan (the optimiser resolves `coarse|medium|fine` and the
+  // per-pass overrides). Absent → the option stays unset, so the schedule (and
+  // therefore the output) is unchanged.
+  if (p.passes.length) o.passes = p.passes;
   return { ...o, ...overrides };
 }
 

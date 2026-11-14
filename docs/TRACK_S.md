@@ -23,7 +23,15 @@ references are 96.4 % identical in orientation (both are structure-aligned rende
 of the same content).
 **S2's *"mechanism done, direction confirmed, magnitude not meaningful"* still
 stands** for ONE reason: a still-weak same-content reference pair (S9/S10).
-**Next: S9 (real reference pair) / S4, or H3 real-LLM validation (S8).**
+**S4 (2026-11-14, `docs/checkpoints/S4.md`):** the Style Profile can author its
+paint schedule as first-class, tunable passes (`passes[]` — `bg → masses → edges
+→ accents`, each with `scale` / `layers` / `radius` / `blur` / `elongation` /
+`weight` / `alpha` / `detail`), mapped onto the R2 multi-scale machinery by
+`optimizer.resolvePassPlan`; a band-scoped pass biases where it anchors but stays
+residual-driven. Absent `passes` = the geometric schedule, **byte-identical**
+(9 pinned baselines unmoved, engine 137 → 146).
+**Next: S9 (real reference pair / algorithm refinement) or H3 real-LLM
+validation (S8); S5 (primitives) composes with `passes[]`.**
 **Companion docs:** `docs/ROADMAP.md` (the brief) · `docs/AI_STYLE_HARNESS.md`
 (H0–H5 loop) · `docs/CLEANROOM.md` (Track R) · `docs/STYLE_PROFILE.md` (profile
 schema) · `docs/API.md`
@@ -72,7 +80,7 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 | **S1** | **Analysis grid + structured RefPacket** — adaptive 8×8…32×32 grid over content *and* each ref; per cell: orientation, coherence, density, local contrast, implied stroke scale (relative units). Output `strokeScaleByBand`, orientation-field summary, tonal/depth-proxy masks. | BE | NEW `js/engine/ref-analyze.js` (consumes `analyzer.js`; analyzer stays additive) | `analyzeReference(image) → RefPacket`, pure + node-testable; a synthetic ring/square yields a scale histogram + orientation field hugging the edge; deterministic. |
 | **S2** | **Style-Match Score** — composite: reconstruction terms (down-weighted for pure style tasks) + stroke-scale histogram distance (ref vs result, per band) + orientation histogram / coherence match + layer-occupancy match + optional CLIP/LPIPS-style distance. | BE | `js/engine/metrics.js`, `js/engine/score.js`, `js/engine/gate.js` | `scoreProfile` can optimise style-match, not only photo fidelity; gate keeps a change only on measured style-match gain with no image regression; headless, deterministic. |
 | **S3** | **Multi-reference fusion** — extract a RefPacket / styleDNA per ref, then median- or weighted-merge scale distributions, orientation strength, wetness, palette (per-ref weights, outlier down-weighting). Fused packet stored on `profile.provenance`. | BE | `js/engine/ref-analyze.js`, `js/engine/profile.js` | **done** — `fuseReferences(refs, opts)` → a `ref-fusion` packet (weighted merge of scale / orientation / coverage / bandScale / stats / styleDNA.palette + a `spread` confidence signal); outlier down-weighted via `outlierWeight` (never dropped); `analyzeReference` gained a compact additive `styleDNA`; optional `provenance.refPacket` (+ `attachFusedReference` / `fusedReferenceFromProfile`), round-trips the schema. 29/29, `docs/checkpoints/S3.md`. |
-| **S4** | **Explicit hierarchical passes in the Style Profile** — `passes: [{ id, scale: coarse\|medium\|fine, layers: [...], ... }]`, mapped onto the existing R2 multi-scale machinery (residual drives the next pass). | BE | `docs/STYLE_PROFILE.md` (additive optional `passes[]`), `js/engine/profile.js`, `js/engine/optimizer.js` | Profile can express bg→masses→edges→accents as first-class, tunable steps; absent `passes` = current behaviour, byte-identical. |
+| **S4** | **Explicit hierarchical passes in the Style Profile** — `passes: [{ id, scale: coarse\|medium\|fine, layers: [...], ... }]`, mapped onto the existing R2 multi-scale machinery (residual drives the next pass). | BE | `docs/STYLE_PROFILE.md` (additive optional `passes[]`), `js/engine/profile.js`, `js/engine/optimizer.js` | **done** — optional `passes[]` (`$defs/hierPass` in the schema; `PROFILE_PASS_SCALES` + `validatePass`/`normalizePass`/`profileToPasses` in `profile.js`); `OPTIMISER_DEFAULTS.passes = null` + `resolvePassPlan(opts, baseR)` is the ONE seam, returning `buildScalePlan` verbatim when no passes are given; per-pass `scale`→radius/blur/elongation, `weight` normalised to 1, `alpha`/`detail` overrides, and a `layers` band **bias** (`buildPassMask`, floor 0.05 — residual-driven, never a hard gate). `score.profileToOptimiserOptions` carries the array. engine **146/146** (+9 structural tests), visual **9/9 pinned baselines UNMOVED**, `style-match-probe` numbers unchanged. `docs/checkpoints/S4.md` |
 | **S5** | **Stroke-language primitives** — a small mixable set (dry-stamp, wet-wash, bristle, smudge, hatch, spatter); profiles weight them per layer/pass; the AI proposes **weights**, not only registry style names. | BE + Mac | NEW `js/engine/primitives.js`; registry/`brush-media.js` wiring | Primitives resolve to existing styles/media with default weights (no output change until opted in); AI proposal may emit primitive weights. |
 | **S6** | **Profile library UI (Phase 4.2)** — save / load / list / apply / fork / delete; one-click apply; show score + provenance. | Mac (issued as **M10**) | `js/ui/style-library.js` (+ host shim), `docs/checkpoints/P4.md` | Save writes a schema-valid profile; apply re-bakes **identical** output for the same `(profile, seed, image-hash)`; export/import round-trips byte-identically. |
 | **S7** | **Worker automation path (Phase 6)** — `(profileId \| profile, image \| imageBatch, seed?) → { result, score, strokes }` in workers, with progress, cancel and deterministic bake; batch mode for automation. | BE (issued as **B5**) + Mac export UI (**M11**) | `js/engine/worker.js`, `js/engine/exporter.js` | Batch of N images completes with a deterministic result per image; cancel mid-run is clean; same `(profile, seed, image-hash)` → bit-identical PNG. |
@@ -106,8 +114,11 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
    (`docs/checkpoints/H-S6.md`) — the blocker found by S3. **H-S5 (the orientation
    kernel) DONE 2026-11-14** (`docs/checkpoints/H-S5.md`) — it is a metric now, and
    the style-aware probe shows the orientation term earning its weight on a
-   genuinely different reference pair. **S4 is the next S-item; S9/S10 (the real
-   content × ref-set matrix) are what make S2's magnitude meaningful.**
+   genuinely different reference pair. **S4 (hierarchical `passes[]`) DONE
+   2026-11-14** (`docs/checkpoints/S4.md`) — the profile authors its schedule as
+   first-class passes, band-biased but residual-driven, default unchanged
+   (engine 146/146, 9 pinned baselines unmoved). **S9/S10 (the real content ×
+   ref-set matrix) are what make S2's magnitude meaningful.**
 6. **S8** — H3 real-LLM validation.
 7. **S7 (Phase 6)** — worker batch deterministic apply (BE **B5** + Mac **M11**).
 8. **R4 finish** — outlines / order / per-style shaping (BE **B4**; Mac **M7–M9**) when not blocking the S-track.
