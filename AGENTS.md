@@ -276,6 +276,11 @@ NODE_PATH=<...> node scripts/visual-regression.cjs --styles=watercolor,ink   # s
 # vacuous — the rail was collapsed, see docs/checkpoints/M13.md §2b)
 NODE_PATH=<...> node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
 
+# M14 docs probe — live panel inventory + nav wiring + style registry +
+# project structure at a given viewport width (writes docs/research/m14-docs-probe.json)
+NODE_PATH=<...> node scripts/m14-docs-probe.cjs --width=1440
+NODE_PATH=<...> node scripts/m14-docs-probe.cjs --width=390
+
 # Media-panel BEHAVIOURAL probe (does a control change output?) — 4 PASS lines
 NODE_PATH=<...> node scripts/media-panel-probe.cjs --size=128 --strokes=100
 
@@ -1082,6 +1087,46 @@ Format:
 - ⚠ NOT DONE: **vision review** — the vision backend returned HTTP 429 (`retry_after` 88s) on every attempt this session, same as M10/M11. Geometry + Maestro a11y-tree assertions are real; the visual pass is still outstanding. `docs/research/a11y/*.png` and `layer-row-{390,1440}.png` are captured and ready.
 - blocker: none
 - next: M14 — reference docs (`docs/PANELS.md`, `docs/STROKE_FORMAT.md`)
+
+### 2026-11-14 09:00 — M14 reference docs — SHIPPED, measured
+- did: NEW `docs/PANELS.md` (shell diagram, the five panels with live rects at 1440 and 390, section inventories, the shim pattern with its five-rule contract, ownership boundary, panel state machine, positioning tokens, how to verify). NEW `docs/STROKE_FORMAT.md` (the record schema, `params` layout per shape type, five REAL captured records, the three renderers, all three serialization forms, seven gotchas). NEW `scripts/m14-docs-probe.cjs` — captures the live panel inventory, nav wiring, style registry, shape records and project structure from the real page at a given `--width`, writes `docs/research/m14-docs-probe.json`. Maestro MCP loaded and verified live before starting: `list_devices` → `chromium`, `maestro test --headless --screen-size 390x844 maestro/www-paint-mobile-ui-audit.yaml` → **30 COMPLETED / 0 FAILED / exit 0** against `http://localhost:8099`.
+- files: `docs/PANELS.md`, `docs/STROKE_FORMAT.md`, `scripts/m14-docs-probe.cjs`, `docs/research/m14-docs-probe.json`, `AGENTS.md` §3 (probe wired in)
+- verified (raw):
+  ```
+  $ export NODE_PATH=/Users/AIR2K/.npm/_npx/af752b90495482d7/node_modules
+  $ node scripts/m14-docs-probe.cjs --width=1440
+  === M14 DOCS PROBE ===
+  viewport: 1440x900
+  panels: 5
+    controls-root  role=complementary  controls=41  260x801@0,63    "Brush controls"
+    paint-toolbar  role=complementary  controls=4   0x0@0,0         "Paint toolbar"
+    media-root     role=complementary  controls=22  0x0@0,0         "Media, wet and tonal controls"
+    style-library-root role=complementary controls=8 0x0@0         "Style library"
+    layers-root    role=complementary  controls=18  260x801@1180,63 "Layers"
+  nav: Brush->controls  Layers->layers  Media->btn-media-mode  Library->btn-library-mode  Paint->btn-paint-mode  Export->btn-export-panel
+  styles: 51 pencil, ink, watercolor, oil, graffiti, graphic…
+  shape records: E:ellipse=valid  B:blob=valid  T:triangle=valid  R:bar=valid  S:stroke=valid
+  project: 1.0 layers=2 strokes=0
+  layerApi: _initLayers, _initMultiLayerLayers, addLayer, duplicateLayer, exportAllLayersAsPNG, getActiveLayer, getLayer, moveLayer, removeLayer, setLayerStyle
+  page errors: 0
+
+  $ node scripts/m14-docs-probe.cjs --width=390
+    controls-root  320x757@-340,111   media-root  320x757@-340,111
+    style-library-root  250x757@0,111   layers-root  320x757@410,111
+
+  # per-type records, real engine run (useWorker=false, 96x72 synthetic source)
+  paper   total: 20  hist: {"B":11,"T":5,"E":2,"R":2}
+  mosaic  total: 30  hist: {"R":30}
+  watercolor total: 60 hist: {"B":2,"S":58}
+  errors: 0
+  ```
+- THREE FINDINGS the docs now record, none of them invented:
+  1. **`params` is not a fixed-length array.** 8 for E/B/R, 10 for T, 11 for S — and the Painter's native pre-conversion arrays are 6/7/8/8. `_convertShape()` appends `c0,c1,alpha` to the tail AND copies them into the named fields; for E/B/R the appended `c0` **overwrites index 5** (gradient angle / feather). A record is therefore not self-describing: index 5 means different things per type.
+  2. **`shapeBias` cannot force a single type.** Setting `{T:1}` and generating still produced `E`+`S`, because `Painter.pickType()` (`painter.js:480`) returns `'S'` from its own `MIX` table whenever `LINES` is true (which it always is, `painter.js:91`). The §4 records are real but came from mixed runs. Documented as a probe caveat rather than presented as pure-type output.
+  3. **The AGENTS.md ownership list predates M10–M13.** `js/ui/media.js`, `js/ui/style-library*.js`, `js/ui/export-*.js` and `js/ui/a11y-hardening.js` are Mac-authored but absent from the ownership list. Raised for BE to add — not edited, per the ownership rule.
+- TWO CORRECTIONS made while writing (caught by re-reading the source, not by a test): the PATH ORDER segmented control has 11 options, not 14 (`top-bottom`/`edges-first`/`one-line` live elsewhere); `layers.js` reverses for display at line 94, not 103.
+- blocker: none
+- next: M15 — standing QA seat (run the gates + a behavioural probe against `main` after each BE push; log in AGENTS.md §7 + one OPS_LOG line; no source edits)
 
 ---
 

@@ -1,0 +1,726 @@
+{
+  "capturedAt": "2026-11-14T00:30:13.973Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "panels": [
+    {
+      "id": "controls-root",
+      "tag": "aside",
+      "role": "complementary",
+      "ariaLabel": "Brush controls",
+      "classes": "panel panel--controls controls-panel",
+      "title": "Brush",
+      "rect": {
+        "x": 0,
+        "y": 63,
+        "w": 260,
+        "h": 801
+      },
+      "controlCount": 41
+    },
+    {
+      "id": "paint-toolbar",
+      "tag": "aside",
+      "role": "complementary",
+      "ariaLabel": "Paint toolbar",
+      "classes": "panel paint-toolbar",
+      "title": null,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "controlCount": 4
+    },
+    {
+      "id": "media-root",
+      "tag": "aside",
+      "role": "complementary",
+      "ariaLabel": "Media, wet and tonal controls",
+      "classes": "panel panel--media media-panel panel--hidden",
+      "title": "Media",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "controlCount": 22
+    },
+    {
+      "id": "style-library-root",
+      "tag": "aside",
+      "role": "complementary",
+      "ariaLabel": "Style library",
+      "classes": "panel panel--library style-library-panel panel--hidden",
+      "title": "Library",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "controlCount": 8
+    },
+    {
+      "id": "layers-root",
+      "tag": "aside",
+      "role": "complementary",
+      "ariaLabel": "Layers",
+      "classes": "panel panel--layers layers-panel",
+      "title": "Layers",
+      "rect": {
+        "x": 1180,
+        "y": 63,
+        "w": 260,
+        "h": 801
+      },
+      "controlCount": 18
+    }
+  ],
+  "nav": [
+    {
+      "id": null,
+      "dataNav": "controls",
+      "ariaLabel": "Brush",
+      "label": "Brush",
+      "active": true
+    },
+    {
+      "id": null,
+      "dataNav": "layers",
+      "ariaLabel": "Layers",
+      "label": "Layers",
+      "active": false
+    },
+    {
+      "id": "btn-media-mode",
+      "dataNav": null,
+      "ariaLabel": "Media controls",
+      "label": "Media",
+      "active": false
+    },
+    {
+      "id": "btn-library-mode",
+      "dataNav": null,
+      "ariaLabel": "Style library",
+      "label": "Library",
+      "active": false
+    },
+    {
+      "id": "btn-paint-mode",
+      "dataNav": null,
+      "ariaLabel": "Paint mode",
+      "label": "Paint",
+      "active": false
+    },
+    {
+      "id": "btn-export-panel",
+      "dataNav": null,
+      "ariaLabel": "Export and share",
+      "label": "Export",
+      "active": false
+    }
+  ],
+  "styles": {
+    "count": 51,
+    "list": [
+      "pencil",
+      "ink",
+      "watercolor",
+      "oil",
+      "graffiti",
+      "graphic",
+      "charcoal",
+      "marker",
+      "calligraphy",
+      "cross-hatch",
+      "mosaic",
+      "scribble",
+      "halftone",
+      "string",
+      "sumi",
+      "gouache",
+      "knife",
+      "pastel",
+      "pen",
+      "wash",
+      "dots",
+      "confetti",
+      "hylics",
+      "linocut",
+      "riso",
+      "tape",
+      "thread",
+      "stitch",
+      "neon",
+      "bokeh",
+      "paper",
+      "glitch",
+      "frost",
+      "embroid",
+      "plast",
+      "ceramic",
+      "stone",
+      "metal",
+      "chrome",
+      "glass",
+      "lens",
+      "crystal",
+      "gold",
+      "bronze",
+      "copper",
+      "pewter",
+      "foam",
+      "beads",
+      "puffy",
+      "terrazzo",
+      "molten"
+    ],
+    "info": [
+      {
+        "name": "pencil",
+        "label": "Pencil / Graphite",
+        "category": "draw",
+        "description": "Coloured-pencil lines on paper: stamped, grainy, with a light-firm-light pressure profile. Areas shaded with close parallel strokes."
+      },
+      {
+        "name": "ink",
+        "label": "Ink Brush",
+        "category": "paint",
+        "description": "A loaded ink brush: strokes swell and taper, tails breaking into dry streaks. Filled areas pool denser at the rim with a ragged feathered edge."
+      },
+      {
+        "name": "watercolor",
+        "label": "Watercolor",
+        "category": "paint",
+        "description": "Transparent glazes that wander, fractal-edged outlines from stacked washes, granulation, and a wet bead of pigment at the tip and rim."
+      },
+      {
+        "name": "oil",
+        "label": "Oil / Acrylic",
+        "category": "paint",
+        "description": "A loaded bristles brush in thick, glossy oil paint — both colours side by side, ridges from every bristle, the end running dry. Acrylic mode gives flatter, streaky paint."
+      },
+      {
+        "name": "graffiti",
+        "label": "Graffiti / Spray",
+        "category": "paint",
+        "description": "Particle-spray: soft overspray haze, a dense particle body, speckles flying off, and occasional drips on heavy strokes."
+      },
+      {
+        "name": "graphic",
+        "label": "Flat Graphic",
+        "category": "graphic",
+        "description": "Clean flat shapes with bold colours and strong contrast. Supports halftone dots, bokeh glow, and geometric reduction sub-modes."
+      },
+      {
+        "name": "charcoal",
+        "label": "Charcoal",
+        "category": "draw",
+        "description": "Heavy grain, soft edges, smudgy look. Stamped brush with a firm-middle / very-light-at-ends pressure profile, rendered in multiple overlapping passes with decreasing opacity. Uses charcoal grey tones sampled from the source."
+      },
+      {
+        "name": "marker",
+        "label": "Alcohol Marker",
+        "category": "draw",
+        "description": "Alcohol marker with a chisel tip at 45°. Transparent ink that darkens where strokes overlap. Clean edges, no grain. A soft blot appears where the pen rests at the end of a stroke."
+      },
+      {
+        "name": "calligraphy",
+        "label": "Calligraphy",
+        "category": "draw",
+        "description": "Broad-nib calligraphy with pressure-sensitive ribbon strokes. Wide on downstrokes, thin on upstrokes. A 40° chisel nib creates a linear gradient along the stroke, with ink pooled at both ends as dark elliptical drops."
+      },
+      {
+        "name": "cross-hatch",
+        "label": "Cross-hatch",
+        "category": "draw",
+        "description": "Parallel lines at ±45° forming a cross-hatch pattern. Multiple layers of hatching at different angles are drawn as stamped brush strokes clipped to the shape, building up tonal density where lines cross."
+      },
+      {
+        "name": "mosaic",
+        "label": "Mosaic",
+        "category": "graphic",
+        "description": "Grid-based square tiles with dark grout between them. Each tile is filled with a gradient sampled from the source colour, with slight variation per tile and random rotation for an organic, hand-set-tile look."
+      },
+      {
+        "name": "scribble",
+        "label": "Scribble",
+        "category": "graphic",
+        "description": "Chaotic overlapping strokes within shapes. A pen goes back and forth at random angles, clipped to the shape boundary, with multiple passes building up density."
+      },
+      {
+        "name": "halftone",
+        "label": "Halftone",
+        "category": "graphic",
+        "description": "Comic-book Ben-Day dots on a 45° screen. Dot radius varies with luminance — light areas produce small or no dots, dark areas produce large dots. Multiple colour layers create the classic halftone printing effect."
+      },
+      {
+        "name": "string",
+        "label": "String Art",
+        "category": "craft",
+        "description": "String art: long straight lines connecting points on a grid, following colour gradients from c0 to c1. Thin threads clipped to the shape boundary create a woven, gradient-thread effect."
+      },
+      {
+        "name": "sumi",
+        "label": "Sumi Ink",
+        "category": "paint",
+        "description": "Bold wet sumi-e ink: loaded brush strokes that swell in the middle and taper to a point at each end. Low-alpha layering lets dense regions build up naturally through overlap, with a subtle wet-bleed softness at the edges."
+      },
+      {
+        "name": "gouache",
+        "label": "Gouache",
+        "category": "paint",
+        "description": "Opaque matte gouache paint: flat colour fill with a subtle darker edge. Fully covers what is beneath — no transparency or bleed. A thin darker rim gives the soft edge of a brush loaded with pigment."
+      },
+      {
+        "name": "knife",
+        "label": "Palette Knife",
+        "category": "paint",
+        "description": "Palette knife: broad flat strokes with hard edges and a light ridge highlight suggesting impasto paint. The fill is opaque and flat, with a highlight band along one side of each stroke."
+      },
+      {
+        "name": "pastel",
+        "label": "Pastel",
+        "category": "draw",
+        "description": "Soft pastel: chalky powder with grain, light speckle, and soft blended edges. Dry-medium texture — pigment sits on the paper surface rather than flowing."
+      },
+      {
+        "name": "pen",
+        "label": "Pen",
+        "category": "draw",
+        "description": "Technical pen: thin crisp constant-width lines with perfectly clean edges, no grain or scatter. Area fills are rendered as outline + parallel cross-hatch lines at a fixed angle, like a drafting pen on Bristol board."
+      },
+      {
+        "name": "wash",
+        "label": "Wash",
+        "category": "paint",
+        "description": "Wash: very translucent broad color with soft feathered edges. Overlap darkens naturally — each pass deposits a thin layer of diluted pigment, building up density where strokes cross."
+      },
+      {
+        "name": "dots",
+        "label": "Dots",
+        "category": "graphic",
+        "description": "Stipple / Ben-Day dots: small round dots with hard edges, placed on a grid with subtle radius and colour jitter. Dot size varies with local tone — darker areas get larger dots."
+      },
+      {
+        "name": "confetti",
+        "label": "Confetti",
+        "category": "graphic",
+        "description": "Confetti: small rotated rectangles and triangles, opaque, with random orientation and colour variation between c0 and c1. Like party streamers scattered across the canvas."
+      },
+      {
+        "name": "hylics",
+        "label": "Hylics",
+        "category": "graphic",
+        "description": "Claymation look: lumpy rounded blobs with wobbly edges, muted clay colors, soft shading, and a gentle drop shadow. Strokes are fat ribbons with uneven width and a matte surface."
+      },
+      {
+        "name": "linocut",
+        "label": "Linocut",
+        "category": "graphic",
+        "description": "Linocut print: bold carved shapes with high contrast, rough chipped edges, and a limited palette of solid ink tones."
+      },
+      {
+        "name": "riso",
+        "label": "Riso",
+        "category": "graphic",
+        "description": "Risograph: 2-3 flat spot-color inks with slight misregistration offset and paper grain texture. Each ink pass is solid and opaque, shifted slightly to create a characteristic fringe."
+      },
+      {
+        "name": "tape",
+        "label": "Tape",
+        "category": "craft",
+        "description": "Tape: flat opaque strips with hard straight edges and a slight sheen highlight. Clean cuts, uniform width, matte base with a glossy stripe."
+      },
+      {
+        "name": "thread",
+        "label": "Thread",
+        "category": "craft",
+        "description": "Thread: thin continuous wound lines with visible stitch direction and slight fuzz. Uniform-width matte strands with a subtle directional sheen and fiber texture."
+      },
+      {
+        "name": "stitch",
+        "label": "Stitch",
+        "category": "craft",
+        "description": "Cross-stitch: regular X-stitch marks on a grid, blocky, with limited colors. Each stitch is two diagonal lines forming an X, laid out in a fabric-like grid pattern."
+      },
+      {
+        "name": "neon",
+        "label": "Neon",
+        "category": "graphic",
+        "description": "Neon: bright glowing tube lines with a bright core and a soft outer glow halo. The glow is built from layered blurred strokes — wide and diffuse underneath, sharp and bright on top."
+      },
+      {
+        "name": "bokeh",
+        "label": "Bokeh",
+        "category": "graphic",
+        "description": "Bokeh: large soft translucent overlapping circles with bright rims. Each circle has a radial gradient that is bright at the center, translucent in the middle ring, and bright again at the edge — like out-of-focus point light sources."
+      },
+      {
+        "name": "paper",
+        "label": "Paper",
+        "category": "graphic",
+        "description": "Torn paper collage: flat opaque shapes with a deckle edge and a subtle drop shadow. Each shape looks like a torn piece of paper sitting on the canvas."
+      },
+      {
+        "name": "glitch",
+        "label": "Glitch",
+        "category": "graphic",
+        "description": "Digital glitch: RGB channel-split blocks with horizontal displacement slices and hard edges. Each channel is drawn with a small random offset, creating a color-fringe datamosh effect."
+      },
+      {
+        "name": "frost",
+        "label": "Frost",
+        "category": "graphic",
+        "description": "Frost: icy crystalline speckle in pale blues and whites. Sharp small shards radiate from edges with translucent glinting highlights and a field of frost crystals."
+      },
+      {
+        "name": "embroid",
+        "label": "Embroidery",
+        "category": "craft",
+        "description": "Embroidery: dense parallel satin-stitch bands filling the shape. Each stitch is a short glossy segment running along the gradient axis, with a border to complete the embroidered patch look."
+      },
+      {
+        "name": "plast",
+        "label": "Plastic",
+        "category": "graphic",
+        "description": "Plastic: glossy molded plastic with a flat base fill and a bright specular highlight streak. A reflective rim and soft shadow give the curved-surface plastic look."
+      },
+      {
+        "name": "ceramic",
+        "label": "Ceramic",
+        "category": "3d",
+        "description": "Glazed porcelain ropes with a lacquer highlight, ends that drop to a point. Lit in 3D with glossy reflections."
+      },
+      {
+        "name": "stone",
+        "label": "Stone",
+        "category": "3d",
+        "description": "Lines that fuse into one rock, matte, with procedural grain on the lit slopes. Lit in 3D with soft shadows."
+      },
+      {
+        "name": "metal",
+        "label": "Metal",
+        "category": "3d",
+        "description": "Polished kinetic metal — the picture colours as shadow, midtone, and highlight with sharp specular reflections. Lit in 3D."
+      },
+      {
+        "name": "chrome",
+        "label": "Chrome",
+        "category": "3d",
+        "description": "Liquid chrome ropes that melt together, reflecting a studio environment with fine surface grain. Lit in 3D with environment reflections."
+      },
+      {
+        "name": "glass",
+        "label": "Glass",
+        "category": "3d",
+        "description": "Clear rippled glass that bends what lies beneath it, with a bevelled rim, bright glint, and environment reflections. Lit in 3D with refraction."
+      },
+      {
+        "name": "lens",
+        "label": "Lens",
+        "category": "3d",
+        "description": "A clear lens that magnifies what lies beneath, with a dome cross-section, Fresnel reflections, and light-gathering. Lit in 3D with refraction."
+      },
+      {
+        "name": "crystal",
+        "label": "Crystal",
+        "category": "3d",
+        "description": "Cut crystal with flat facets that each bend what lies beneath, featuring dispersion, sharp glints, and random sparkle. Lit in 3D with refraction."
+      },
+      {
+        "name": "gold",
+        "label": "Gold",
+        "category": "3d",
+        "description": "Rough gold-leaf ropes — flakes laid side by side, each tilted its own way, with dark cracks between them. Lit in 3D with reflections."
+      },
+      {
+        "name": "bronze",
+        "label": "Bronze",
+        "category": "3d",
+        "description": "Dark cast bronze with green patina in the hollows and polished golden-brown on the high points. Lit in 3D."
+      },
+      {
+        "name": "copper",
+        "label": "Copper",
+        "category": "3d",
+        "description": "Rough copper ropes with green verdigris in the hollows and polished warm bronze where it catches the light. Lit in 3D."
+      },
+      {
+        "name": "pewter",
+        "label": "Pewter",
+        "category": "3d",
+        "description": "Rough granular dark metal with brushed texture — anisotropic highlights drawn out along the stroke direction. Lit in 3D."
+      },
+      {
+        "name": "foam",
+        "label": "Foam",
+        "category": "3d",
+        "description": "A heap of soft, bulbous foam beads lying in layers, casting shadows on each other. Lit in 3D with soft wrapped lighting."
+      },
+      {
+        "name": "beads",
+        "label": "Beads",
+        "category": "3d",
+        "description": "Chains of glossy lacquered beads laid along the stroke, each catching the light with a sharp specular highlight. Lit in 3D."
+      },
+      {
+        "name": "puffy",
+        "label": "Puffy",
+        "category": "3d",
+        "description": "Inflated glossy vinyl ropes — soft, puffed-up profile with a glossy sheen and rim reflections. Lit in 3D."
+      },
+      {
+        "name": "terrazzo",
+        "label": "Terrazzo",
+        "category": "3d",
+        "description": "Polished terrazzo with chips of stone set in a binder — each stroke becomes a textured slab with light and dark chips. Lit in 3D."
+      },
+      {
+        "name": "molten",
+        "label": "Molten",
+        "category": "3d",
+        "description": "Liquid metal ropes that melt together into a glowing mass, reflecting a studio with fine surface grain. Lit in 3D with reflections."
+      }
+    ]
+  },
+  "strokes": {
+    "E": {
+      "label": "ellipse",
+      "valid": true,
+      "shape": {
+        "id": "stroke_ntk5n8c2z",
+        "type": "E",
+        "params": [
+          64,
+          64,
+          40,
+          24,
+          0.4,
+          0,
+          0,
+          0
+        ],
+        "color0": [
+          180,
+          60,
+          40
+        ],
+        "color1": [
+          40,
+          90,
+          160
+        ],
+        "alpha": 0.85,
+        "style": "pencil",
+        "layer": 1,
+        "order": 3,
+        "seed": 7
+      }
+    },
+    "B": {
+      "label": "blob",
+      "valid": true,
+      "shape": {
+        "id": "stroke_yl5g3mhax",
+        "type": "B",
+        "params": [
+          64,
+          64,
+          36,
+          30,
+          0.2,
+          0,
+          0,
+          0
+        ],
+        "color0": [
+          180,
+          60,
+          40
+        ],
+        "color1": [
+          40,
+          90,
+          160
+        ],
+        "alpha": 0.85,
+        "style": "pencil",
+        "layer": 1,
+        "order": 3,
+        "seed": 7
+      }
+    },
+    "T": {
+      "label": "triangle",
+      "valid": true,
+      "shape": {
+        "id": "stroke_fqftgjw4k",
+        "type": "T",
+        "params": [
+          20,
+          80,
+          64,
+          20,
+          108,
+          80,
+          0,
+          0
+        ],
+        "color0": [
+          180,
+          60,
+          40
+        ],
+        "color1": [
+          40,
+          90,
+          160
+        ],
+        "alpha": 0.85,
+        "style": "pencil",
+        "layer": 1,
+        "order": 3,
+        "seed": 7
+      }
+    },
+    "R": {
+      "label": "bar",
+      "valid": true,
+      "shape": {
+        "id": "stroke_3a3crsi96",
+        "type": "R",
+        "params": [
+          64,
+          64,
+          90,
+          22,
+          0.5,
+          0,
+          0,
+          0
+        ],
+        "color0": [
+          180,
+          60,
+          40
+        ],
+        "color1": [
+          40,
+          90,
+          160
+        ],
+        "alpha": 0.85,
+        "style": "pencil",
+        "layer": 1,
+        "order": 3,
+        "seed": 7
+      }
+    },
+    "S": {
+      "label": "stroke",
+      "valid": true,
+      "shape": {
+        "id": "stroke_0jkxtjrbz",
+        "type": "S",
+        "params": [
+          16,
+          64,
+          64,
+          8,
+          112,
+          64,
+          6,
+          0
+        ],
+        "color0": [
+          180,
+          60,
+          40
+        ],
+        "color1": [
+          40,
+          90,
+          160
+        ],
+        "alpha": 0.85,
+        "style": "pencil",
+        "layer": 1,
+        "order": 3,
+        "seed": 7
+      }
+    }
+  },
+  "project": {
+    "version": "1.0",
+    "layerCount": 2,
+    "topLevelKeys": [
+      "version",
+      "width",
+      "height",
+      "background",
+      "image",
+      "layers",
+      "settings"
+    ],
+    "layerKeys": [
+      "id",
+      "name",
+      "visible",
+      "opacity",
+      "blendMode",
+      "locked",
+      "strokes"
+    ],
+    "strokeKeys": [],
+    "strokeCount": 0,
+    "sample": null,
+    "settingsKeys": [
+      "style",
+      "strokeSize",
+      "spacing",
+      "scatter",
+      "strokeCount",
+      "detailLevel",
+      "randomness",
+      "styleStrength",
+      "opacity",
+      "colorMode",
+      "paletteSize",
+      "pathOrder",
+      "shapeBias",
+      "adaptiveSize",
+      "alignToGradient",
+      "alignToStructure",
+      "useResidual",
+      "wetSim",
+      "media",
+      "mediaModel"
+    ]
+  },
+  "layerApi": {
+    "methods": [
+      "_initLayers",
+      "_initMultiLayerLayers",
+      "addLayer",
+      "duplicateLayer",
+      "exportAllLayersAsPNG",
+      "getActiveLayer",
+      "getLayer",
+      "moveLayer",
+      "removeLayer",
+      "setLayerStyle"
+    ],
+    "totalStrokes": 0,
+    "layerNames": [
+      "Background",
+      "Layer 1"
+    ]
+  },
+  "pageErrors": []
+}

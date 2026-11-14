@@ -175,28 +175,28 @@
       "buttons": [
         {
           "id": "export-panel-close",
-          "w": 32,
-          "h": 32
+          "w": 44,
+          "h": 44
         },
         {
           "id": "export-panel-download",
           "w": 333,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-copy-share",
           "w": 333,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-copy-profile",
           "w": 333,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-download-profile",
           "w": 333,
-          "h": 32
+          "h": 44
         }
       ]
     },
@@ -206,28 +206,28 @@
       "buttons": [
         {
           "id": "export-panel-close",
-          "w": 32,
-          "h": 32
+          "w": 44,
+          "h": 44
         },
         {
           "id": "export-panel-download",
           "w": 681,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-copy-share",
           "w": 681,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-copy-profile",
           "w": 681,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-download-profile",
           "w": 681,
-          "h": 32
+          "h": 44
         }
       ]
     },
@@ -237,28 +237,28 @@
       "buttons": [
         {
           "id": "export-panel-close",
-          "w": 32,
-          "h": 32
+          "w": 44,
+          "h": 44
         },
         {
           "id": "export-panel-download",
           "w": 215,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-copy-share",
           "w": 215,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-copy-profile",
           "w": 215,
-          "h": 32
+          "h": 44
         },
         {
           "id": "export-panel-download-profile",
           "w": 215,
-          "h": 32
+          "h": 44
         }
       ]
     }

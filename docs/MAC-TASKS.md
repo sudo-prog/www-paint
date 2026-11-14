@@ -489,6 +489,72 @@ seen while landing: `scripts/visual-regression.cjs` reported `error=8` once unde
 memory pressure and 9/9 on the immediate re-run — if you hit it, re-run before
 reporting.
 
+### M14 reference docs — BE-VERIFIED + LANDED 2026-11-14 (with corrections)
+
+`docs/PANELS.md`, `docs/STROKE_FORMAT.md`, `scripts/m14-docs-probe.cjs`,
+`docs/research/m14-docs-probe.json` and the `AGENTS.md` §3/§7 entries are **landed**
+(they arrived uncommitted via Syncthing; nothing was rewritten). BE re-ran the
+probe on the ThinkPad against the merged M13 css:
+
+- **Panel inventory REPRODUCES EXACTLY.** `--width=1440` → 5 panels,
+  `controls-root 41 260x801@0,63`, `layers-root 18 260x801@1180,63`,
+  toolbar/media/library `0x0` (hidden), nav wiring, `styles: 51`, layer API —
+  byte-identical to the Mac's JSON except `capturedAt` and the per-record
+  `stroke_*` ids. `--width=390` → `controls/media 320x757@-340,111`,
+  `style-library 250x757@-21,111`, `layers 320x757@410,111` (the Mac's 390
+  stdout said `250x757@0,111`; BE measures `-21` — the same LIBRARY-panel
+  `left:-21` already recorded as a known probe artifact for M13).
+- **The §3/§8 params-length claim is CONFIRMED by an independent engine run**
+  (real page, `useWorker=false`, `NODE_PATH`+`CHROME_BINARY`, synthetic source):
+  `paper` total 20 → `E` 8, `B` 8, `R` 8, `T` 10; `watercolor` total 60
+  (`{B:2,S:58}`) → `S` 11; `mosaic` total 30 → `{R:30}` pure R, `R` 8. For
+  E/B/R the record's `params[5]` is the **colour array** (verified by kind), i.e.
+  exactly the `_convertShape` overwrite the doc describes. The doc's own
+  histograms differ (paper `{B:11,T:5,E:2,R:2}`) because the source image differs
+  — not a contradiction.
+- **`export-panel-probe.json` REPRODUCES BYTE-IDENTICALLY** on a BE re-run
+  (32→44 heights + panel width 333→215 = the M13 44px work). `a11y-390.png`
+  re-generated here: same scene, OS font/AA only.
+
+**Mac action items (BE raised, did NOT edit Mac-owned docs):**
+
+1. **`STROKE_FORMAT.md` §1 + §7 overstate the evidence linkage.** The §4 records
+   are real (verified above) but they do **not** live in
+   `docs/research/m14-docs-probe.json`: that file's `strokes` block is built by
+   `createShape()` with hand-made 8-length params, and its `project` block has
+   `strokeCount 0`. §7's "both captured in the raw JSON" is not true for the
+   histograms either. Either extend the probe to dump the §7 snippet's output,
+   or correct the two sentences.
+2. **§7's `shapeBias` sentence is wrong for the app path.** `Engine.generate()`
+   runs the **Painter** (`engine.js:21/352`); `shapeBias` does not appear anywhere
+   in `painter.js`. It is a knob of the *modular* generator (`generator.js:223`),
+   not of the app's Painter — which is why `{T:1}` did not force triangles. The
+   real mechanism: the Painter picks types from its own `MIX` table
+   (`painter.js:480 pickType`), and `paper` is in `Painter.SHAPE_ID`, so the
+   `'S'` shortcut is skipped and `MIX.paper` decides. Fix the sentence.
+3. **§3 table rows for `E`/`B`/`R` list 9 param names but state length 8.** After
+   `_convertShape`, index 5 **is** `c0` (the gradient angle / feather is
+   overwritten), so the converted record is `[cx,cy,rx,ry,rot,c0,c1,alpha]`.
+   Re-label the table (the §3 code block and §4 note are already right).
+4. **`scripts/m14-docs-probe.cjs` does not run off the Mac.** Its
+   `CHROME_CANDIDATES` are macOS-only paths; BE had to set `CHROME_BINARY`
+   (and a Linux `NODE_PATH`) to run it. Add the Linux candidates the way
+   `a11y-sweep.cjs` does (`~/.cache/ms-playwright/*/chrome-linux64/chrome`), and
+   drop the hardcoded `/Users/AIR2K/.npm/_npx/...` from the §7 snippet (use
+   `<dir containing playwright-core>` like every other command in AGENTS.md §3).
+5. **`m14-docs-probe.json` is not deterministic** — the `stroke_*` ids come from
+   `createShape()`'s `Math.random()` suffix, so the file changes every run. Note
+   it, or give the probe's records a fixed id.
+6. **`HANDOFF.md` §6 is stale too** (macOS list missing the same four
+   `js/ui/*` files). HANDOFF is Mac-owned — fix it there.
+
+**For BE (blocked, recorded):** the `AGENTS.md` §1 ownership list still omits the
+Mac-authored `js/ui/media.js`(+`-host`), `js/ui/style-library*.js`,
+`js/ui/export-panel*.js`/`export-host.js`, `js/ui/a11y-hardening.js`. BE tried to
+add them and **`AGENTS.md` is write-protected** for BE (agent-instruction guard);
+the Mac owns the file — please add them there (a BE change would need human
+approval).
+
 ## R3.3 Protocol (unchanged)
 
 1. **Never run git** (`AGENTS.md` §0.8). Edits reach the ThinkPad via Syncthing;
