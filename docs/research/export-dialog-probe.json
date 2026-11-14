@@ -1,0 +1,690 @@
+{
+  "probe": "export-dialog (AGENTS §0.9)",
+  "minTarget": 44,
+  "sizes": [
+    {
+      "width": 320,
+      "verdict": "ok",
+      "innerWidth": 320,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 100.33,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 108.33,
+          "right": 195.67,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 203.67,
+          "right": 291,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 13,
+          "right": 148,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 156,
+          "right": 291,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 291,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 278,
+          "clientW": 278,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 278,
+          "clientW": 278,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 360,
+      "verdict": "ok",
+      "innerWidth": 360,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 86,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 94,
+          "right": 167,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 175,
+          "right": 248,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 256,
+          "right": 329,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 13,
+          "right": 329,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 329,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 316,
+          "clientW": 316,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 316,
+          "clientW": 316,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "verdict": "ok",
+      "innerWidth": 390,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 93.13,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 101.13,
+          "right": 181.25,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 189.25,
+          "right": 269.38,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 277.38,
+          "right": 357.5,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 13,
+          "right": 357.5,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 357.5,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 345,
+          "clientW": 345,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 345,
+          "clientW": 345,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 414,
+      "verdict": "ok",
+      "innerWidth": 414,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 98.81,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 106.81,
+          "right": 192.64,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 200.64,
+          "right": 286.47,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 294.47,
+          "right": 380.3,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 13,
+          "right": 380.3,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 380.3,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 367,
+          "clientW": 367,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 367,
+          "clientW": 367,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 480,
+      "verdict": "ok",
+      "innerWidth": 480,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 92.59,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 100.59,
+          "right": 180.2,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 188.2,
+          "right": 267.8,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 275.8,
+          "right": 355.41,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 363.41,
+          "right": 443,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 443,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 430,
+          "clientW": 430,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 430,
+          "clientW": 430,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 500,
+      "verdict": "ok",
+      "innerWidth": 500,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 96.39,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 104.39,
+          "right": 187.8,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 195.8,
+          "right": 279.19,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 287.19,
+          "right": 370.59,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 378.59,
+          "right": 462,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 462,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 449,
+          "clientW": 449,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 449,
+          "clientW": 449,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "verdict": "ok",
+      "innerWidth": 768,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 13,
+          "right": 147.31,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 155.31,
+          "right": 289.64,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 297.64,
+          "right": 431.95,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 439.95,
+          "right": 574.28,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 582.28,
+          "right": 716.59,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 13,
+          "right": 716.59,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 704,
+          "clientW": 704,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 704,
+          "clientW": 704,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "verdict": "ok",
+      "innerWidth": 1024,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 21,
+          "right": 102.19,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 110.19,
+          "right": 191.39,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 199.39,
+          "right": 280.59,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 288.59,
+          "right": 369.8,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 377.8,
+          "right": 459,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 21,
+          "right": 459,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 438,
+          "clientW": 438,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 438,
+          "clientW": 438,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "verdict": "ok",
+      "innerWidth": 1440,
+      "open": true,
+      "buttons": [
+        {
+          "label": "Export Image",
+          "left": 21,
+          "right": 102.19,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export Layers",
+          "left": 110.19,
+          "right": 191.39,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export HTML",
+          "left": 199.39,
+          "right": 280.59,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Export SVG",
+          "left": 288.59,
+          "right": 369.8,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Save Project",
+          "left": 377.8,
+          "right": 459,
+          "height": 46,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        },
+        {
+          "label": "Load Project",
+          "left": 21,
+          "right": 459,
+          "height": 44,
+          "offViewport": false,
+          "tappable": true,
+          "underMin": false
+        }
+      ],
+      "rows": [
+        {
+          "count": 5,
+          "scrollW": 438,
+          "clientW": 438,
+          "overflow": false
+        },
+        {
+          "count": 1,
+          "scrollW": 438,
+          "clientW": 438,
+          "overflow": false
+        }
+      ]
+    }
+  ]
+}

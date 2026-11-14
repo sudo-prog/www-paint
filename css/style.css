@@ -1414,8 +1414,16 @@ body {
 }
 
 .form-value { font-family: var(--f-mono); font-size: 9px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.05em; }
-.form-actions { display: flex; gap: var(--space-2); }
-.form-actions .btn { flex: 1; }
+.form-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* min-height 44px = the WCAG-aligned target bar the panels use (--touch-a11y-sm).
+   §0.9 (BE, 2026-11-14): the row defaulted to `nowrap` and, at 1440, the five
+   buttons already filled the body exactly (scrollWidth == clientWidth), so any
+   narrower body overflowed and clipped `Save Project` past the viewport
+   (measured right edge 392.45 vs 390; the 400px @media band is where it showed).
+   `flex-wrap: wrap` is the fix: the buttons wrap to a second line instead of
+   spilling, at every width; at desktop the row still fits on ONE line so the
+   layout is unchanged. .form-actions is used only by the #export-root dialog. */
+.form-actions .btn { flex: 1; min-height: var(--touch-a11y-sm, 44px); }
 
 /* ── Modal ── */
 .modal {
