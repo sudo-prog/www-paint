@@ -29,6 +29,12 @@ import {
   profileToExportText,
   STORAGE_KEY,
 } from './style-library-core.js';
+// Track-S S5 / M16 — the stroke-language mixer lives IN the Style panel: a mix
+// is a Style Profile field (`global.primitives` / `layers[].primitives` /
+// `passes[].primitives`), so this panel already owns the save / round-trip path
+// the mixer needs. The mixer only edits a mix; the panel writes it on save.
+import { PrimitiveMixerSection } from './primitive-mixer.js';
+import { writeMixAtLevel } from './primitive-mixer-core.js';
 
 /** Which Brush-panel keys are captured into `global`. */
 const GLOBAL_KEYS = [
@@ -85,6 +91,10 @@ export class StyleLibraryPanel {
     this._nameInput = null;
     /** @type {HTMLElement|null} */
     this._previewEl = null;
+    /** @type {PrimitiveMixerSection|null} */
+    this._mixer = null;
+    /** The profile the mixer mirrors (layers / passes), or null. */
+    this._selectedProfile = null;
 
     this._render();
     this._bindEvents();
@@ -119,6 +129,12 @@ export class StyleLibraryPanel {
     scroll.appendChild(this._section('SAVE', SAVE_HINT, this._renderSaveBody()));
     scroll.appendChild(this._section('PROFILES', '', this._renderListBody()));
     scroll.appendChild(this._section('IMPORT', IMPORT_HINT, this._renderImportBody()));
+
+    // Track-S S5 / M16 — the stroke-language mixer. It edits a mix and the panel
+    // writes it into the profile on SAVE; a profile that declares no mix keeps
+    // exporting/importing without a `primitives` key.
+    this._mixer = new PrimitiveMixerSection({ onChange: () => this._onMixerChange() });
+    scroll.appendChild(this._mixer.element);
   }
 
   /**
@@ -457,6 +473,9 @@ export class StyleLibraryPanel {
     try {
       const saved = this.library.save(profile);
       this._selectedId = saved.id;
+      // Mirror the SAVED profile so the mixer's level/target list stays coherent
+      // with what was written (e.g. a mix saved at the global level).
+      this._syncMixer(saved);
       this._setStatus(`Saved "${saved.name}".`);
       if (this._nameInput) this._nameInput.value = '';
       this._refresh();
@@ -499,7 +518,7 @@ export class StyleLibraryPanel {
     // `pathOrder`. Map it explicitly rather than guessing.
     if (g.pathOrder === undefined && settings.order !== undefined) g.pathOrder = settings.order;
 
-    return {
+    const profile = {
       ...base,
       name,
       global: g,
@@ -510,6 +529,13 @@ export class StyleLibraryPanel {
         notes: `Captured from the Brush panel (${settings.style || base.global.style})`,
       },
     };
+
+    // Write the mixer's current mix at the level it is editing. `writeMixAtLevel`
+    // removes the key for an empty mix, so a profile with no mix saves exactly
+    // as it would have before S5 — no `primitives` key invented (S5 guarantee).
+    return this._mixer
+      ? writeMixAtLevel(profile, this._mixer.getContext(), this._mixer.getMix())
+      : profile;
   }
 
   /**
@@ -524,6 +550,7 @@ export class StyleLibraryPanel {
       return;
     }
     this._selectedId = id;
+    this._syncMixer(result.profile);
     this.root.dispatchEvent(new CustomEvent('style-profile-apply', { detail: result }));
     if (this._onApply) this._onApply(result);
     const s = result.profile.global;
@@ -626,6 +653,8 @@ export class StyleLibraryPanel {
   _select(id) {
     this._selectedId = id;
     this._refresh();
+    const entry = this.library.get(id);
+    this._syncMixer(entry ? entry.profile : null);
     try {
       this._showPreview(this.library.exportText(id));
     } catch {
@@ -656,6 +685,26 @@ export class StyleLibraryPanel {
     if (note) note.textContent = this._storageNote();
     if (!this._selectedId && this._previewEl) this._previewEl.textContent = '';
   }
+
+  /**
+   * Point the mixer at a profile: mirror its layers / passes and load whatever
+   * mix it declares at the current level. Called on select, apply and save so
+   * the sliders always reflect the profile in hand.
+   * @param {object|null} profile
+   * @private
+   */
+  _syncMixer(profile) {
+    if (!this._mixer) return;
+    this._selectedProfile = profile || null;
+    this._mixer.setProfile(this._selectedProfile);
+  }
+
+  /**
+   * The mixer only edits a mix — it owns its own read-out. Kept as a hook so the
+   * panel can react later (e.g. a "unsaved mix" badge) without re-plumbing.
+   * @private
+   */
+  _onMixerChange() { /* the mixer renders its own read-out */ }
 
   /**
    * @param {string} text
@@ -695,6 +744,15 @@ export class StyleLibraryPanel {
   }
 
   /**
+   * The stroke-language mixer section (Track-S S5 / M16). Exposed so a probe can
+   * drive it without reaching into private fields.
+   * @returns {PrimitiveMixerSection|null}
+   */
+  get mixer() {
+    return this._mixer;
+  }
+
+  /**
    * Re-read the list (e.g. after an external import).
    */
   refresh() {
@@ -706,6 +764,7 @@ export class StyleLibraryPanel {
    */
   destroy() {
     this.root.innerHTML = '';
+    this._mixer = null;
   }
 }
 

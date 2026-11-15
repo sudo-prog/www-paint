@@ -611,6 +611,35 @@ still records the pre-fix run — deliberately left untouched, one writer per fi
 
 ---
 
+### M16 — Track-S S5 (primitives) — Mac half — **LANDED 2026-11-16** (`docs/checkpoints/M16.md`)
+
+**Built and verified by BE** while the Mac was down (human directive: *"Mac is
+down so pick up its work for now"*). The stream is still the Mac's on paper; the
+record exists so the next session can tell finished work from a scratchpad.
+
+- **New (Mac-owned file class):** `js/ui/primitive-mixer-core.js` (pure — mix ↔
+  six slider values, read/write at `global`/`layer`/`pass`, non-mutating, never
+  invents a key, read-out + validation), `js/ui/primitive-mixer.js` (the DOM
+  section), mounted in the Style panel; `index.html` + `css/style.css` §16 edits;
+  `tests/primitive-mixer.test.js`, `scripts/primitive-mixer-probe.cjs` (+ JSON +
+  2 PNGs), `maestro/www-paint-primitive-mixer.yaml`.
+- **Evidence:** mixer test **20/20** · probe **21/21** · Maestro **14/14** ·
+  engine **164/164** · all track suites Failed 0 · `rail-overlay-probe` PASS 9/9 ·
+  visual **9/9 pins unmoved** · `overlay-coverage-probe` 0 hitFail at 390–1920.
+- **One defect found + fixed in verification:** the shell's `.slider-row` 10px
+  collapse piled six labelled rows up (content overflowed ~46px/row). Scoped
+  override (§16); the probe's guard is verified both ways (`PMX_BROKEN_ROW=1`).
+- **BE doc nit owed (BE-owned file):** `js/engine/profile.js`
+  `profileToPrimitives` JSDoc says `effectiveStyle` is `null` with no mix, but it
+  returns `global.style` (the pre-S5 fallback the tests pin). Comment wrong, not
+  code — one-line fix.
+- **Mac action when back:** the standing **M15 QA seat** — re-run
+  `scripts/rail-overlay-probe.cjs` + `scripts/overlay-coverage-probe.cjs` + the
+  Maestro set against this push, and mark **§0.9–§0.12 closed** in `AGENTS.md` §0
+  (BE raised the closure there but `AGENTS.md` is write-protected for BE).
+
+---
+
 ## R3.3 Protocol (unchanged)
 
 1. **Never run git** (`AGENTS.md` §0.8). Edits reach the ThinkPad via Syncthing;

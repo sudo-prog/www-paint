@@ -1,0 +1,73 @@
+# WWW_PAINT — Track-S S5 / M16 stroke-language mixer (the Mac half)
+# Run: maestro test --headless --screen-size 1440x900 maestro/www-paint-primitive-mixer.yaml
+#
+# The mixer lives in the Style panel (Library). This flow proves, against the
+# real page, that the section mounts with six 0..1/0.05 weight sliders, that
+# moving them updates the canonical read-out and the resolved effectiveStyle,
+# and that the level picker mirrors the S5 precedence. Geometry (44px targets,
+# no row pile-up) is covered by scripts/primitive-mixer-probe.cjs.
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# ── Open the Style panel; the mixer is mounted inside it ──────────────
+- tapOn:
+    id: "btn-library-mode"
+- assertTrue: "globalThis.document.getElementById('primitive-mixer') !== null"
+
+# ── Six weight sliders, each 0..1 step 0.05 ───────────────────────────
+- evalScript: |
+    const sliders = [...document.querySelectorAll('#primitive-mixer input.mixer-range')];
+    globalThis.__mixerCount = sliders.length;
+    globalThis.__mixerMeta = sliders.map(s => s.min + '/' + s.max + '/' + s.step).join(' ');
+    globalThis.__mixerOk = sliders.length === 6 &&
+      sliders.every(s => s.min === '0' && s.max === '1' && s.step === '0.05');
+- assertTrue: "globalThis.__mixerOk"
+
+# ── Move two sliders → canonical read-out + resolved style ────────────
+- evalScript: |
+    const set = (id, v) => {
+      const el = document.getElementById('primitive-weight-' + id);
+      el.value = String(v);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    set('wet-wash', 0.75);
+    set('hatch', 0.25);
+    const txt = document.getElementById('primitive-readout').textContent;
+    globalThis.__mixerReadout = txt;
+    globalThis.__mixerReadoutOk =
+      txt.includes('Wet wash 75%') && txt.includes('Hatch 25%') && txt.includes('wash');
+- assertTrue: "globalThis.__mixerReadoutOk"
+
+# ── The level picker mirrors global / layer / pass ────────────────────
+- evalScript: |
+    const lvl = [...document.getElementById('primitive-level').options].map(o => o.value).join(',');
+    globalThis.__mixerLevels = lvl;
+    globalThis.__mixerLevelsOk = lvl === 'global,layer,pass';
+- assertTrue: "globalThis.__mixerLevelsOk"
+
+# ── Reachable by scrolling the panel ──────────────────────────────────
+# The mixer sits BELOW ABOUT/SAVE/PROFILES/IMPORT in the panel's scroll host, so
+# Maestro's viewport a11y snapshot does not include it until the host scrolls.
+# `scrollIntoView` did not move the managed browser's host, so scroll the host
+# explicitly and assert (from the DOM) that the section reaches the panel band.
+- evalScript: |
+    const host = document.querySelector('#style-library-root .library-scroll');
+    host.scrollTop = host.scrollHeight;
+    const pr = document.getElementById('style-library-root').getBoundingClientRect();
+    // After the host scrolls, the mixer's LAST control sits inside the panel's
+    // visible band — a viewport-relative check, not just "inside the panel box".
+    const clear = document.getElementById('primitive-clear').getBoundingClientRect();
+    globalThis.__mixerScrollTop = host.scrollTop;
+    globalThis.__mixerVisibleOk = host.scrollTop > 0 &&
+      clear.top > pr.top && clear.bottom <= pr.bottom + 2 && clear.top < innerHeight;
+- assertTrue: "globalThis.__mixerVisibleOk"
+
+- takeScreenshot: primitive-mixer-scrolled

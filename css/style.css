@@ -3487,3 +3487,88 @@ input[type="range"]:focus-visible {
   .status__msg.loading::before { animation: none !important; }
   .motion-progress-fill { transition: none !important; }
 }
+
+/* ── 16. Track-S S5 / M16 — the stroke-language mixer, a section of the Style
+       panel. Six weight sliders (0..1, step 0.05) reuse the shell's
+       `.slider-row` / `.slider-label` / `.slider-value`, so they inherit the
+       44px target band the rest of the app uses. The level picker mirrors the
+       S5 precedence (global / layer / pass) and shows a target selector only
+       when that level can be written. The read-out is monospaced data. ── */
+
+.primitive-mixer .mixer-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.primitive-mixer .mixer-field[hidden] { display: none; }
+.primitive-mixer .mixer-field__label {
+  flex: 0 0 auto;
+  min-width: 46px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+.primitive-mixer .mixer-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font: inherit;
+}
+.primitive-mixer .mixer-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+}
+.primitive-mixer .mixer-readout {
+  margin: var(--space-2) 0 0;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+.primitive-mixer .mixer-error {
+  margin: var(--space-1) 0 0;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--error);
+  word-break: break-word;
+}
+.primitive-mixer .mixer-error[hidden] { display: none; }
+.primitive-mixer .mixer-row--error .slider-label { color: var(--error); }
+.primitive-mixer .mixer-actions { margin-top: var(--space-2); }
+.primitive-mixer .mixer-clear-btn { min-height: 44px; }
+
+/* The shell's `.slider-row` is deliberately collapsed to a ~10px band (its
+   44px input overhangs that band via negative margins) so the Brush panel stays
+   compact. The mixer instead gives each primitive its own LABELLED line, so it
+   must restore the natural row height and drop the negative margins — without
+   this, six rows pile into 10px each and every label overlaps the next. The
+   input keeps its 44px target; only the row's layout box changes. */
+.primitive-mixer .mixer-slider-row {
+  display: block;
+  height: auto;
+  min-height: 0;
+  margin: 0 0 var(--space-1);
+}
+.primitive-mixer .mixer-slider-row .slider-label {
+  display: block;
+  margin-bottom: 2px;
+}
+.primitive-mixer .mixer-slider-row input[type="range"] {
+  display: inline-block;
+  vertical-align: middle;
+  width: calc(100% - 44px);
+  height: var(--touch-a11y, 44px);
+  margin: 0;
+}

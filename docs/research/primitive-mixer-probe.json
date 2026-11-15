@@ -1,0 +1,364 @@
+{
+  "url": "http://127.0.0.1:44957/index.html",
+  "at": "2026-11-15T17:00:47.348Z",
+  "widths": {
+    "1440x900": {
+      "sectionCount": 1,
+      "sliders": 6,
+      "rows": [
+        {
+          "t": 1046.8,
+          "b": 1102.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1110.8,
+          "b": 1166.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1174.8,
+          "b": 1230.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1238.8,
+          "b": 1294.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1302.8,
+          "b": 1358.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1366.8,
+          "b": 1422.8,
+          "h": 56,
+          "contentOverflow": 0
+        }
+      ],
+      "rowOverlap": 0,
+      "sliderMeta": [
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Dry stamp weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Wet wash weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Bristle weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Smudge weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Hatch weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Spatter weight"
+        }
+      ],
+      "controls": [
+        {
+          "label": "Primitive mix level",
+          "h": 44,
+          "underMin": false,
+          "rangeH": null,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Dry stamp weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Wet wash weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Bristle weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Smudge weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Hatch weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Spatter weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Clear the primitive mix",
+          "h": 44,
+          "underMin": false,
+          "rangeH": null,
+          "belowFold": true,
+          "unreachable": false
+        }
+      ],
+      "levelOptions": [
+        {
+          "v": "global",
+          "disabled": false
+        },
+        {
+          "v": "layer",
+          "disabled": true
+        },
+        {
+          "v": "pass",
+          "disabled": true
+        }
+      ],
+      "readout": "No mix — no primitive declared.",
+      "panelPos": "absolute",
+      "panel": {
+        "l": 0,
+        "r": 260,
+        "w": 260
+      }
+    },
+    "390x844": {
+      "sectionCount": 1,
+      "sliders": 6,
+      "rows": [
+        {
+          "t": 1035.8,
+          "b": 1091.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1099.8,
+          "b": 1155.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1163.8,
+          "b": 1219.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1227.8,
+          "b": 1283.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1291.8,
+          "b": 1347.8,
+          "h": 56,
+          "contentOverflow": 0
+        },
+        {
+          "t": 1355.8,
+          "b": 1411.8,
+          "h": 56,
+          "contentOverflow": 0
+        }
+      ],
+      "rowOverlap": 0,
+      "sliderMeta": [
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Dry stamp weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Wet wash weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Bristle weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Smudge weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Hatch weight"
+        },
+        {
+          "min": "0",
+          "max": "1",
+          "step": "0.05",
+          "aria": "Spatter weight"
+        }
+      ],
+      "controls": [
+        {
+          "label": "Primitive mix level",
+          "h": 44,
+          "underMin": false,
+          "rangeH": null,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Dry stamp weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Wet wash weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Bristle weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Smudge weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Hatch weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Spatter weight",
+          "h": 44,
+          "underMin": false,
+          "rangeH": 44,
+          "belowFold": true,
+          "unreachable": false
+        },
+        {
+          "label": "Clear the primitive mix",
+          "h": 44,
+          "underMin": false,
+          "rangeH": null,
+          "belowFold": true,
+          "unreachable": false
+        }
+      ],
+      "levelOptions": [
+        {
+          "v": "global",
+          "disabled": false
+        },
+        {
+          "v": "layer",
+          "disabled": true
+        },
+        {
+          "v": "pass",
+          "disabled": true
+        }
+      ],
+      "readout": "No mix — no primitive declared.",
+      "panelPos": "fixed",
+      "panel": {
+        "l": 0,
+        "r": 320,
+        "w": 320
+      }
+    }
+  },
+  "readoutAfterMix": "Wet wash 75% · Hatch 25% → wash",
+  "savedMix": {
+    "wet-wash": 0.75,
+    "hatch": 0.25
+  },
+  "reloaded": {
+    "wet": "0.75",
+    "hatch": "0.25",
+    "readout": "Wet wash 75% · Hatch 25% → wash"
+  },
+  "roundTrip": {
+    "parseOk": true,
+    "identical": true,
+    "importOk": true,
+    "mixPreserved": true,
+    "primitives": {
+      "wet-wash": 0.75,
+      "hatch": 0.25
+    }
+  },
+  "passed": 21,
+  "failed": 0
+}
