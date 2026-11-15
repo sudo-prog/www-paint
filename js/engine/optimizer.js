@@ -64,6 +64,7 @@ import { createShape, bounds } from './shapes.js';
 import { sampleEdge, sampleStructure } from './analyzer.js';
 import { buildRegions } from './regions.js';
 import { computeTonalMasks } from './masks.js';
+import { mixStrokeLanguage } from './primitives.js';
 
 /**
  * The three scale keywords an explicit pass may declare (Track-S S4). They map
@@ -160,6 +161,16 @@ export const OPTIMISER_DEFAULTS = {
   // that names `layers` (tonal roles) has its anchoring *biased* onto those
   // bands — the profile's bg → masses → edges → accents, as first-class steps.
   passes: null,
+
+  // ── S5 stroke-language primitives ────────────────────────────────────────
+  // Opt-in — `null` (default) → every pass keeps the geometry it had,
+  // byte-identical. When a mix (`{ primitive: weight }`, see
+  // `js/engine/primitives.js`) is supplied, it is the DEFAULT stroke language
+  // for the schedule: each pass's radius multiplier / reference blur /
+  // elongation / dab alpha / detail response come from the weighted mix, and an
+  // explicit per-pass `radius`/`blur`/`elongation`/`alpha`/`detail` still wins.
+  // A pass may override the profile-level mix with its own `primitives`.
+  primitives: null,
 };
 
 /**
@@ -265,23 +276,53 @@ function blurRGB(src, w, h, radius) {
  */
 export function buildScalePlan(opts, baseR) {
   const n = Math.max(1, opts.scales | 0);
-  if (n === 1) {
-    return [{ radiusMul: 1, blurR: 0, elongMul: 1, weight: 1 }];
-  }
   const plan = [];
-  let wsum = 0;
-  for (let k = 0; k < n; k++) {
-    const t = k / (n - 1); // 0 coarse → 1 fine
-    const weight = 1 / (k + Math.max(0.1, opts.weightBias)); // decreasing share, coarse-first
-    plan.push({
-      radiusMul: lerp(opts.coarseRadius, opts.fineRadius, t),
-      blurR: baseR * lerp(opts.coarseBlur, 0, t),
-      elongMul: lerp(0.5, 1, t),
-      weight,
-    });
-    wsum += weight;
+  if (n === 1) {
+    plan.push({ radiusMul: 1, blurR: 0, elongMul: 1, weight: 1 });
+  } else {
+    let wsum = 0;
+    for (let k = 0; k < n; k++) {
+      const t = k / (n - 1); // 0 coarse → 1 fine
+      const weight = 1 / (k + Math.max(0.1, opts.weightBias)); // decreasing share, coarse-first
+      plan.push({
+        radiusMul: lerp(opts.coarseRadius, opts.fineRadius, t),
+        blurR: baseR * lerp(opts.coarseBlur, 0, t),
+        elongMul: lerp(0.5, 1, t),
+        weight,
+      });
+      wsum += weight;
+    }
+    for (const p of plan) p.weight /= wsum;
   }
-  for (const p of plan) p.weight /= wsum;
+  // S5 — a profile-level primitive mix retunes the geometric schedule. It is a
+  // no-op (`null` → nothing at all) unless the profile opted in, so the default
+  // schedule stays byte-identical.
+  applyPrimitiveLanguage(plan, opts.primitives, baseR);
+  return plan;
+}
+
+/**
+ * Overwrite a plan's stroke language with a primitive mix's weighted geometry
+ * (Track-S S5). A no-op when the mix resolves to nothing — which is what keeps
+ * every pre-S5 profile byte-identical.
+ *
+ * @param {Array<object>} plan - plan entries, mutated in place.
+ * @param {object|Array|null} mix - a primitive mix, or null/absent.
+ * @param {number} baseR - Base dab radius (blur is a fraction of it).
+ * @returns {Array<object>} the same plan.
+ */
+export function applyPrimitiveLanguage(plan, mix, baseR) {
+  const lang = mix ? mixStrokeLanguage(mix) : null;
+  if (!lang) return plan;
+  for (const entry of plan) {
+    entry.radiusMul = lang.radiusMul;
+    entry.blurR = baseR * lang.blur;
+    entry.elongMul = lang.elongMul;
+    entry.alpha = lang.alpha;
+    entry.detail = lang.detail;
+    entry.primitives = { ...lang.primitives };
+    entry.style = lang.style;
+  }
   return plan;
 }
 
@@ -319,18 +360,27 @@ export function resolvePassPlan(opts, baseR) {
   const plan = passes.map((p, i) => {
     const scale = PASS_SCALES.includes(p.scale) ? p.scale : 'medium';
     const t = SCALE_T[scale];
-    return {
+    // S5 — the pass's own primitive mix, else the profile-level one. An explicit
+    // per-pass radius/blur/elongation/alpha/detail still wins over the mix.
+    const lang = mixStrokeLanguage(p.primitives !== undefined ? p.primitives : opts.primitives);
+    const entry = {
       id: p.id !== undefined && p.id !== null ? String(p.id) : `pass${i}`,
       scale,
       bands: Array.isArray(p.layers) ? p.layers.slice()
         : (Array.isArray(p.bands) ? p.bands.slice() : []),
-      radiusMul: p.radius !== undefined ? p.radius : lerp(opts.coarseRadius, opts.fineRadius, t),
-      blurR: (p.blur !== undefined ? p.blur : lerp(opts.coarseBlur, 0, t)) * baseR,
-      elongMul: p.elongation !== undefined ? p.elongation : lerp(0.5, 1, t),
+      radiusMul: p.radius !== undefined ? p.radius
+        : (lang ? lang.radiusMul : lerp(opts.coarseRadius, opts.fineRadius, t)),
+      blurR: (p.blur !== undefined ? p.blur : (lang ? lang.blur : lerp(opts.coarseBlur, 0, t))) * baseR,
+      elongMul: p.elongation !== undefined ? p.elongation : (lang ? lang.elongMul : lerp(0.5, 1, t)),
       weight: p.weight !== undefined ? p.weight : 1,
-      alpha: p.alpha,
-      detail: p.detail,
+      alpha: p.alpha !== undefined ? p.alpha : (lang ? lang.alpha : undefined),
+      detail: p.detail !== undefined ? p.detail : (lang ? lang.detail : undefined),
     };
+    if (lang) {
+      entry.primitives = { ...lang.primitives };
+      entry.style = lang.style;
+    }
+    return entry;
   });
   // Same convention as buildScalePlan: the weights are normalised to sum to 1,
   // so `weight` reads as a ratio between passes rather than an absolute share.
@@ -874,5 +924,6 @@ export function optimise(analysis, options = {}) {
 }
 
 export default {
-  OPTIMISER_DEFAULTS, resolveOptions, buildScalePlan, PASS_SCALES, resolvePassPlan, optimise,
+  OPTIMISER_DEFAULTS, resolveOptions, buildScalePlan, applyPrimitiveLanguage,
+  PASS_SCALES, resolvePassPlan, optimise,
 };

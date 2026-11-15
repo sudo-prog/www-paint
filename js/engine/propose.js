@@ -25,6 +25,7 @@
 
 import { rng } from '../utils/rng.js';
 import { KNOB_SET, getKnobDefaults, clampKnobs, scoreProfile } from './score.js';
+import { PRIMITIVE_IDS, PRIMITIVES, normalizePrimitiveMix } from './primitives.js';
 
 /** Default search configuration. @type {object} */
 export const SEARCH_DEFAULTS = {
@@ -38,7 +39,54 @@ export const SEARCH_DEFAULTS = {
   sigmaInit: 0.25,      // initial step, as a fraction of each knob's range
   sigmaMin: 0.02,
   init: null,           // starting knob vector; defaults to getKnobDefaults()
+  primitives: false,    // S5 — also search the stroke-language primitive weights
+  primitiveInit: 0.25,  // starting weight for each primitive knob (uniform mix)
 };
+
+/**
+ * The primitive-weight knobs (Track-S S5): one `[0, 1]` weight per
+ * stroke-language primitive, so the AI proposes **weights** — a stroke
+ * language — not only a registry style name. They are extra knobs rather than
+ * {@link KNOB_SET} members because they are opt-in: `searchProfile({primitives:
+ * true})` appends them, and `clampKnobs(vals, primitiveKnobs())` bounds them.
+ *
+ * @returns {Array<object>}
+ */
+export function primitiveKnobs() {
+  return PRIMITIVE_IDS.map((id) => ({
+    name: `prim_${id.replace(/-/g, '_')}`,
+    path: `primitives.${id}`,
+    target: `primitive.${id}`,
+    type: 'number',
+    min: 0,
+    max: 1,
+    step: 0.05,
+    default: 0,
+    group: 'stroke-language',
+    description: PRIMITIVES[id].label,
+  }));
+}
+
+/**
+ * Read primitive weights out of a knob vector → a canonical mix
+ * (`{ primitive: weight }`), or `null` when no weight is set / all are zero.
+ *
+ * @param {object} knobs
+ * @returns {Record<string, number>|null}
+ */
+export function knobsToPrimitiveMix(knobs = {}) {
+  const raw = {};
+  let any = false;
+  for (const id of PRIMITIVE_IDS) {
+    const v = knobs[`prim_${id.replace(/-/g, '_')}`];
+    if (v === undefined) continue;
+    any = true;
+    raw[id] = v;
+  }
+  if (!any) return null;
+  const mix = normalizePrimitiveMix(raw);
+  return Object.keys(mix).length ? mix : null;
+}
 
 /**
  * The knobs a search may move: numeric/integer/boolean knobs that actually
@@ -87,6 +135,10 @@ export function knobsToProfile(baseProfile, knobs) {
     if (knobs[k.name] === undefined) continue;
     if (k.path.startsWith('global.')) global[k.path.slice('global.'.length)] = knobs[k.name];
   }
+  // S5 — primitive weights become the profile's stroke-language mix. Absent →
+  // the key is untouched, so a search that does not use them changes nothing.
+  const mix = knobsToPrimitiveMix(knobs);
+  if (mix) global.primitives = mix;
   return { ...baseProfile, global };
 }
 
@@ -121,11 +173,19 @@ export function knobsToOptimiser(knobs) {
 export function searchProfile(baseProfile, image, options = {}) {
   const opts = { ...SEARCH_DEFAULTS, ...options };
   const random = rng(opts.seed | 0);
-  const active = searchableKnobs(opts.fixed);
+  // S5 — primitive-weight knobs are opt-in extras (they are not KNOB_SET
+  // members, so a search that does not ask for them is bit-for-bit the old one).
+  const primKnobs = opts.primitives ? primitiveKnobs() : [];
+  const active = searchableKnobs(opts.fixed).concat(primKnobs);
   // Start from the schema defaults, then the BASE PROFILE's own values (so a
   // fixed knob is held at the profile's count, not the schema default), then
-  // any explicit `init`.
-  const start = clampKnobs({ ...getKnobDefaults(), ...profileKnobValues(baseProfile), ...(opts.init || {}) });
+  // any explicit `init`. Primitive weights start at a uniform mix.
+  const primStart = {};
+  for (const k of primKnobs) primStart[k.name] = opts.primitiveInit;
+  const start = clampKnobs(
+    { ...getKnobDefaults(), ...profileKnobValues(baseProfile), ...primStart, ...(opts.init || {}) },
+    primKnobs,
+  );
   // Hold fixed knobs at their base value so the mapping never drops them.
   const frozen = {};
   for (const name of opts.fixed) if (start[name] !== undefined) frozen[name] = start[name];
@@ -143,17 +203,17 @@ export function searchProfile(baseProfile, image, options = {}) {
   const evaluate = (knobs, tag) => {
     const value = objective(knobs);
     evals++;
-    const rec = { value, knobs: clampKnobs({ ...frozen, ...knobs }), tag };
+    const rec = { value, knobs: clampKnobs({ ...frozen, ...knobs }, primKnobs), tag };
     history.push(rec);
     return rec;
   };
 
-  const baselineVec = clampKnobs({ ...frozen, ...active.reduce((a, k) => { a[k.name] = start[k.name]; return a; }, {}) });
+  const baselineVec = clampKnobs({ ...frozen, ...active.reduce((a, k) => { a[k.name] = start[k.name]; return a; }, {}) }, primKnobs);
   const baseline = evaluate(baselineVec, 'baseline');
 
   let best = baseline;
   if (active.length === 0 || opts.evaluations <= 1) {
-    return finish(best, baseline, history, evals, baseProfile, opts);
+    return finish(best, baseline, history, evals, baseProfile, opts, primKnobs);
   }
 
   const range = (k) => (k.type === 'boolean' ? 1 : (k.max - k.min));
@@ -206,11 +266,13 @@ export function searchProfile(baseProfile, image, options = {}) {
     }
   }
 
-  return finish(best, baseline, history, evals, baseProfile, opts);
+  return finish(best, baseline, history, evals, baseProfile, opts, primKnobs);
 }
 
-function finish(best, baseline, history, evals, baseProfile, opts) {
-  const knobs = clampKnobs(best.knobs);
+function finish(best, baseline, history, evals, baseProfile, opts, primKnobs = []) {
+  // `primKnobs` must be passed through here too: clampKnobs drops unknown keys,
+  // so without them the winning primitive weights would be silently stripped.
+  const knobs = clampKnobs(best.knobs, primKnobs);
   return {
     knobs,
     profile: knobsToProfile(baseProfile, knobs),
@@ -218,8 +280,14 @@ function finish(best, baseline, history, evals, baseProfile, opts) {
     baseline: { [opts.objective]: baseline.value },
     improved: best.value > baseline.value,
     evaluations: evals,
+    // S5 — the winning stroke-language mix, or null when the search did not use
+    // primitive weights (or every weight landed at zero).
+    primitives: knobsToPrimitiveMix(knobs),
     history,
   };
 }
 
-export default { SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile };
+export default {
+  SEARCH_DEFAULTS, primitiveKnobs, knobsToPrimitiveMix,
+  searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile,
+};

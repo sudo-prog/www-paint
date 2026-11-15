@@ -357,6 +357,10 @@ export class PaintingEngine {
     // present → no behavioural change (output stays byte-identical).
     const profile = opts.profile !== undefined ? opts.profile : this.settings.profile;
     let profileSeed = null;
+    // S5 — a profile that opts into stroke-language primitives resolves to the
+    // dominant primitive's registry style. `null` for a pre-S5 profile, so this
+    // line changes nothing until a profile declares a mix.
+    let profilePrimitiveStyle = null;
     if (profile) {
       const r = applyProfile(profile);
       this.settings = resolveSettings({ ...this.settings, ...r.settings });
@@ -364,9 +368,12 @@ export class PaintingEngine {
       if (r.mediaModel) this.settings.mediaModel = r.mediaModel;
       this.settings.profile = profile;
       profileSeed = r.seed;
+      profilePrimitiveStyle = r.primitives ? r.primitives.effectiveStyle : null;
     }
 
-    const style = opts.style || this.settings.style || 'pencil';
+    // An explicit `opts.style` still wins; the primitive-derived style is more
+    // specific than the profile's own bare `global.style`, which is the point.
+    const style = opts.style || profilePrimitiveStyle || this.settings.style || 'pencil';
     const count = opts.count || this.settings.strokeCount || 1000;
     const layerIdx = opts.layer !== undefined ? opts.layer : 0;
     const seed = opts.seed !== undefined ? opts.seed

@@ -20,8 +20,20 @@
  * @module profile
  */
 
+import {
+  normalizePrimitiveMix, validatePrimitiveMix, effectiveStyle, PRIMITIVE_IDS,
+} from './primitives.js';
+
 /// The schema version this reader understands.
 export const PROFILE_SCHEMA_VERSION = 1;
+
+/**
+ * The levels a profile may declare a stroke-language primitive mix at, from
+ * widest to most specific (Track-S S5). Most specific wins; see
+ * `profileEffectiveStyle`.
+ * @type {string[]}
+ */
+export const PROFILE_PRIMITIVE_LEVELS = ['global', 'layer', 'pass'];
 
 /// Tonal roles, fixed to the engine's named layers.
 export const PROFILE_ROLES = ['background', 'shadows', 'outline', 'midtone', 'highlights'];
@@ -173,6 +185,7 @@ function validateGlobal(g, err) {
     else if (g[key] < min || g[key] > max) err(`global.${key}`, `must be in [${min}, ${max}]`);
   };
   if (g.style !== undefined && !isStr(g.style)) err('global.style', 'must be a string');
+  if (g.primitives !== undefined) validatePrimitiveMixField(g.primitives, 'global.primitives', err);
   if (g.strokeCount !== undefined && !(isInt(g.strokeCount) && g.strokeCount >= 1 && g.strokeCount <= 200000)) {
     err('global.strokeCount', 'must be an integer in [1, 200000]');
   }
@@ -220,6 +233,7 @@ function validateLayer(l, path, err) {
     err(`${path}.role`, `must be one of ${PROFILE_ROLES.join('|')}`);
   }
   if (l.style !== undefined && !isStr(l.style)) err(`${path}.style`, 'must be a string');
+  if (l.primitives !== undefined) validatePrimitiveMixField(l.primitives, `${path}.primitives`, err);
   if (l.enabled !== undefined && typeof l.enabled !== 'boolean') err(`${path}.enabled`, 'must be a boolean');
   if (l.opacity !== undefined && !(isNum(l.opacity) && l.opacity >= 0 && l.opacity <= 1)) {
     err(`${path}.opacity`, 'must be in [0, 1]');
@@ -250,11 +264,38 @@ function validatePass(p, path, err) {
   } else if (Array.isArray(p.layers) && !p.layers.every((r) => PROFILE_ROLES.includes(r))) {
     err(`${path}.layers`, `must be roles from ${PROFILE_ROLES.join('|')}`);
   }
+  // S5 — a pass may carry its own stroke-language primitive mix.
+  if (p.primitives !== undefined) validatePrimitiveMixField(p.primitives, `${path}.primitives`, err);
   for (const [k, [min, max]] of Object.entries(PASS_NUM_RANGES)) {
     if (p[k] === undefined) continue;
     if (!isNum(p[k])) err(`${path}.${k}`, 'must be a number');
     else if (p[k] < min || p[k] > max) err(`${path}.${k}`, `must be in [${min}, ${max}]`);
   }
+}
+
+/**
+ * Validate a declared primitive mix at any level, forwarding the primitive
+ * module's own errors with the profile's path prefix (Track-S S5).
+ * @param {*} mix
+ * @param {string} path
+ * @param {Function} err
+ */
+function validatePrimitiveMixField(mix, path, err) {
+  for (const e of validatePrimitiveMix(mix, path).errors) err(e.path, e.message);
+}
+
+/**
+ * Canonicalise a declared primitive mix, or return `undefined` when it holds no
+ * usable primitive. Returning `undefined` (rather than `{}`) is deliberate: the
+ * key is then absent, so a profile that never declared primitives normalises to
+ * exactly the object it did before S5 — the byte-identical guarantee.
+ * @param {*} mix
+ * @returns {Record<string, number>|undefined}
+ */
+function canonicalPrimitiveMix(mix) {
+  if (mix === undefined) return undefined;
+  const canon = normalizePrimitiveMix(mix);
+  return Object.keys(canon).length ? canon : undefined;
 }
 
 function validateEffect(e, path, err) {
@@ -313,8 +354,17 @@ export function normalizeProfile(profile) {
     multiLayer: g.multiLayer !== undefined ? g.multiLayer : PROFILE_DEFAULTS.multiLayer,
     seed: g.seed,
   };
+  // S5 — the profile-level stroke-language mix, canonicalised. Absent → the key
+  // is not added at all, so a pre-S5 profile normalises byte-identically.
+  const globalMix = canonicalPrimitiveMix(g.primitives);
+  if (globalMix !== undefined) global.primitives = globalMix;
   const layers = Array.isArray(profile.layers)
-    ? profile.layers.filter((l) => isObj(l) && PROFILE_ROLES.includes(l.role)).map((l) => ({ ...l }))
+    ? profile.layers.filter((l) => isObj(l) && PROFILE_ROLES.includes(l.role)).map((l) => {
+      const out = { ...l };
+      const mix = canonicalPrimitiveMix(l.primitives);
+      if (mix !== undefined) out.primitives = mix; else delete out.primitives;
+      return out;
+    })
     : [];
   // Explicit hierarchical passes (S4). A pass with no usable `id` is dropped
   // (it cannot be addressed); everything else is defaulted and bounded so the
@@ -346,6 +396,9 @@ function normalizePass(p) {
     layers: Array.isArray(p.layers) ? p.layers.filter((r) => PROFILE_ROLES.includes(r)) : [],
   };
   for (const k of Object.keys(PASS_NUM_RANGES)) if (isNum(p[k])) out[k] = p[k];
+  // S5 — a pass's own stroke-language mix (canonical), when it declares one.
+  const mix = canonicalPrimitiveMix(p.primitives);
+  if (mix !== undefined) out.primitives = mix;
   return out;
 }
 
@@ -430,6 +483,94 @@ export function profileToPasses(profile) {
 }
 
 /**
+ * The profile-level stroke-language primitive mix (Track-S S5), canonicalised,
+ * or `null` when the profile declares none.
+ *
+ * @param {object} profile
+ * @returns {Record<string, number>|null}
+ */
+export function profileGlobalPrimitiveMix(profile) {
+  const p = normalizeProfile(profile);
+  const mix = p.global.primitives;
+  return mix && Object.keys(mix).length ? { ...mix } : null;
+}
+
+/**
+ * Per-role primitive mixes (`{ role: { primitive: weight } }`). A role that
+ * declares none is omitted — it inherits the profile-level mix.
+ *
+ * @param {object} profile
+ * @returns {Record<string, object>}
+ */
+export function profileLayerPrimitiveMixes(profile) {
+  const p = normalizeProfile(profile);
+  const out = {};
+  for (const l of p.layers) if (l.primitives) out[l.role] = { ...l.primitives };
+  return out;
+}
+
+/**
+ * Per-pass primitive mixes keyed by pass id (`{ passId: { primitive: weight } }`).
+ * A pass that declares none is omitted — it inherits the profile-level mix.
+ *
+ * @param {object} profile
+ * @returns {Record<string, object>}
+ */
+export function profilePassPrimitiveMixes(profile) {
+  const p = normalizeProfile(profile);
+  const out = {};
+  for (const pass of p.passes) if (pass.primitives) out[pass.id] = { ...pass.primitives };
+  return out;
+}
+
+/**
+ * The registry style a profile paints with **today**, taking its stroke-language
+ * primitives into account (Track-S S5): the most specific declared mix wins —
+ * the pass named by `opts.passId` (or the only pass), else the first layer that
+ * declares one, else the profile-level mix — and resolves to its dominant
+ * primitive's registry style. With no mix anywhere this is exactly
+ * `global.style`, so pre-S5 behaviour is unchanged.
+ *
+ * @param {object} profile
+ * @param {object} [opts]
+ * @param {string} [opts.passId] - resolve for one named pass.
+ * @returns {string|null}
+ */
+export function profileEffectiveStyle(profile, opts = {}) {
+  const p = normalizeProfile(profile);
+  let mix = null;
+  const pass = opts.passId !== undefined
+    ? p.passes.find((x) => x.id === opts.passId)
+    : (p.passes.length === 1 ? p.passes[0] : null);
+  if (pass && pass.primitives) mix = pass.primitives;
+  if (!mix) {
+    const layer = p.layers.find((l) => l.primitives);
+    if (layer) mix = layer.primitives;
+  }
+  if (!mix && p.global.primitives) mix = p.global.primitives;
+  return effectiveStyle(mix, p.global.style || null) || null;
+}
+
+/**
+ * Everything the engine/UI needs to know about a profile's stroke-language
+ * primitives, in one object (Track-S S5). `effectiveStyle` is `null` when the
+ * profile declares no primitives at any level — the honest "pre-S5 profile" case.
+ *
+ * @param {object} profile
+ * @returns {{global: object|null, layers: Record<string,object>,
+ *   passes: Record<string,object>, effectiveStyle: string|null}}
+ */
+export function profileToPrimitives(profile) {
+  const p = normalizeProfile(profile);
+  return {
+    global: profileGlobalPrimitiveMix(p),
+    layers: profileLayerPrimitiveMixes(p),
+    passes: profilePassPrimitiveMixes(p),
+    effectiveStyle: profileEffectiveStyle(p),
+  };
+}
+
+/**
  * Per-layer panel props (opacity / blend / order / visibility) keyed by role,
  * for the layer panel (`app.js` ↔ `js/ui/layers.js`). Only roles the profile
  * mentions are returned.
@@ -457,7 +598,7 @@ export function profileToLayerProps(profile) {
  * @param {object} profile
  * @returns {{settings: object, layerStyles: Record<string,string>|null,
  *   layerProps: object, mediaModel: object|null, multiLayer: boolean,
- *   seed: number|null, valid: boolean, errors: Array}}
+ *   seed: number|null, primitives: object, valid: boolean, errors: Array}}
  */
 export function applyProfile(profile) {
   const { ok, errors } = validateProfile(profile);
@@ -469,6 +610,9 @@ export function applyProfile(profile) {
     mediaModel: p.mediaModel,
     multiLayer: !!p.global.multiLayer,
     seed: isInt(p.global.seed) ? p.global.seed : null,
+    // S5 — the stroke-language primitive mixes (all null/empty for a pre-S5
+    // profile, which is how a consumer detects "not opted in").
+    primitives: profileToPrimitives(p),
     valid: ok,
     errors,
   };
@@ -562,12 +706,18 @@ export default {
   PROFILE_SCHEMA_VERSION,
   PROFILE_ROLES,
   PROFILE_PASS_SCALES,
+  PROFILE_PRIMITIVE_LEVELS,
   PROFILE_DEFAULTS,
   validateProfile,
   normalizeProfile,
   profileToSettings,
   profileToLayerStyles,
   profileToPasses,
+  profileGlobalPrimitiveMix,
+  profileLayerPrimitiveMixes,
+  profilePassPrimitiveMixes,
+  profileEffectiveStyle,
+  profileToPrimitives,
   profileToLayerProps,
   applyProfile,
   profileFromSettings,

@@ -21,7 +21,7 @@
 import { clamp } from '../utils/math.js';
 import { analyzeImage } from './analyzer.js';
 import { optimise, OPTIMISER_DEFAULTS } from './optimizer.js';
-import { normalizeProfile } from './profile.js';
+import { normalizeProfile, profileGlobalPrimitiveMix, profileEffectiveStyle } from './profile.js';
 import {
   rasterizeShapes, averageColor, metricsVsTarget, toFloatRGB, maskedMetrics, simMae,
   toRGBA, refPacketDistance, STYLE_MATCH_WEIGHTS,
@@ -76,9 +76,10 @@ export function getKnobDefaults() {
  * @param {object} vals
  * @returns {object} a safe, bounded subset of `vals`
  */
-export function clampKnobs(vals = {}) {
+export function clampKnobs(vals = {}, extraKnobs = null) {
   const out = {};
-  for (const k of KNOB_SET) {
+  const set = Array.isArray(extraKnobs) && extraKnobs.length ? KNOB_SET.concat(extraKnobs) : KNOB_SET;
+  for (const k of set) {
     if (vals[k.name] === undefined) continue;
     let v = vals[k.name];
     if (k.type === 'boolean') v = !!v;
@@ -115,6 +116,11 @@ export function profileToOptimiserOptions(profile, overrides = {}) {
   // per-pass overrides). Absent → the option stays unset, so the schedule (and
   // therefore the output) is unchanged.
   if (p.passes.length) o.passes = p.passes;
+  // Track-S S5 — a profile-level stroke-language mix retunes the pass schedule's
+  // geometry (`optimizer.applyPrimitiveLanguage`). Absent → the option stays
+  // unset, so the schedule (and the output) is unchanged.
+  const mix = profileGlobalPrimitiveMix(p);
+  if (mix) o.primitives = mix;
   return { ...o, ...overrides };
 }
 
@@ -297,9 +303,12 @@ export function scoreProfileStyle(profile, image, reference, options = {}) {
   // The style name comes from the profile (defaulting to the engine's own
   // default), every shape is stamped with it, and the render goes through the
   // style registry where a canvas exists (plain rasteriser otherwise).
+  // S5 — the profile's stroke-language primitives decide the style when it
+  // declares any (the dominant primitive's registry style); otherwise this is
+  // `global.style` exactly as before.
   const styleName = options.style !== undefined
     ? options.style
-    : (normalizeProfile(profile).global.style || 'pencil');
+    : (profileEffectiveStyle(profile) || 'pencil');
   const render = typeof options.render === 'function' ? options.render : styleRasteriser;
   const renderShapes = options.applyStyle === false ? shapes : stampShapeStyles(shapes, styleName);
   const rendered = render(renderShapes, w, h, bg);

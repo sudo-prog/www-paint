@@ -1,0 +1,203 @@
+{
+  "module": "primitives-probe",
+  "capturedAt": "2026-11-15T12:10:28.418Z",
+  "image": {
+    "width": 64,
+    "height": 64,
+    "kind": "synthetic (bands + disc + diagonal edge)"
+  },
+  "primitives": [
+    "dry-stamp",
+    "wet-wash",
+    "bristle",
+    "smudge",
+    "hatch",
+    "spatter"
+  ],
+  "resolution": {
+    "dry-stamp": {
+      "label": "Dry stamp",
+      "style": "pencil",
+      "styleExists": true,
+      "media": "pencil",
+      "mediaExists": true,
+      "brushName": "cpencil",
+      "language": {
+        "radiusMul": 0.34,
+        "blur": 0.06,
+        "elongMul": 0.9,
+        "alpha": 0.95,
+        "detail": 0.85
+      },
+      "mediaModelKind": "dry"
+    },
+    "wet-wash": {
+      "label": "Wet wash",
+      "style": "wash",
+      "styleExists": true,
+      "media": "wash",
+      "mediaExists": true,
+      "brushName": "HB",
+      "language": {
+        "radiusMul": 1.55,
+        "blur": 0.9,
+        "elongMul": 1,
+        "alpha": 0.55,
+        "detail": 0.45
+      },
+      "mediaModelKind": "wet"
+    },
+    "bristle": {
+      "label": "Bristle",
+      "style": "oil",
+      "styleExists": true,
+      "media": "gouache",
+      "mediaExists": true,
+      "brushName": "marker",
+      "language": {
+        "radiusMul": 0.8,
+        "blur": 0.12,
+        "elongMul": 1.85,
+        "alpha": 0.9,
+        "detail": 0.7
+      },
+      "mediaModelKind": "impasto"
+    },
+    "smudge": {
+      "label": "Smudge",
+      "style": "charcoal",
+      "styleExists": true,
+      "media": "charcoal",
+      "mediaExists": true,
+      "brushName": "charcoal",
+      "language": {
+        "radiusMul": 1.1,
+        "blur": 0.6,
+        "elongMul": 0.7,
+        "alpha": 0.5,
+        "detail": 0.5
+      },
+      "mediaModelKind": "dry"
+    },
+    "hatch": {
+      "label": "Hatch",
+      "style": "cross-hatch",
+      "styleExists": true,
+      "media": "pen",
+      "mediaExists": true,
+      "brushName": "pen",
+      "language": {
+        "radiusMul": 0.24,
+        "blur": 0.02,
+        "elongMul": 2.4,
+        "alpha": 0.85,
+        "detail": 0.95
+      },
+      "mediaModelKind": "dry"
+    },
+    "spatter": {
+      "label": "Spatter",
+      "style": "graffiti",
+      "styleExists": true,
+      "media": "spray",
+      "mediaExists": true,
+      "brushName": "spray",
+      "language": {
+        "radiusMul": 0.5,
+        "blur": 0.15,
+        "elongMul": 0.4,
+        "alpha": 0.35,
+        "detail": 0.9
+      },
+      "mediaModelKind": "dry"
+    }
+  },
+  "algebra": {
+    "dropsUnknownAndZero": true,
+    "canonicalOrder": true,
+    "sumsToOne": true,
+    "fixedPoint": true,
+    "emptyForEmpty": true,
+    "rejectsUnknown": true
+  },
+  "noOp": {
+    "shapesIdentical": true,
+    "planVerbatim": true,
+    "defaultIsNull": true
+  },
+  "effect": {
+    "planChanges": true,
+    "languageApplied": true,
+    "dominantStyleOnPass": true,
+    "singleIsVerbatim": true,
+    "explicitOverrideWins": true,
+    "deterministic": true,
+    "outputChanges": true
+  },
+  "baselinePencilProfile": {
+    "simMae": 95.727,
+    "strokes": 140
+  },
+  "perPrimitive": {
+    "dry-stamp": {
+      "style": "pencil",
+      "simMae": 96.112,
+      "deltaVsPencilProfile": 0.385,
+      "strokes": 140
+    },
+    "wet-wash": {
+      "style": "wash",
+      "simMae": 94.101,
+      "deltaVsPencilProfile": -1.626,
+      "strokes": 140
+    },
+    "bristle": {
+      "style": "oil",
+      "simMae": 96.689,
+      "deltaVsPencilProfile": 0.962,
+      "strokes": 140
+    },
+    "smudge": {
+      "style": "charcoal",
+      "simMae": 94.95,
+      "deltaVsPencilProfile": -0.777,
+      "strokes": 140
+    },
+    "hatch": {
+      "style": "cross-hatch",
+      "simMae": 96.015,
+      "deltaVsPencilProfile": 0.288,
+      "strokes": 140
+    },
+    "spatter": {
+      "style": "graffiti",
+      "simMae": 90.643,
+      "deltaVsPencilProfile": -5.084,
+      "strokes": 140
+    }
+  },
+  "search": {
+    "knobs": [
+      "prim_dry_stamp",
+      "prim_wet_wash",
+      "prim_bristle",
+      "prim_smudge",
+      "prim_hatch",
+      "prim_spatter"
+    ],
+    "winMix": {
+      "dry-stamp": 0.4477340912449313,
+      "bristle": 0.35295522765759396,
+      "smudge": 0.008505417808223564,
+      "hatch": 0.10177664671446204,
+      "spatter": 0.08902861657478905
+    },
+    "winValue": 97.0925,
+    "baselineValue": 96.3843,
+    "improved": true,
+    "deterministic": true,
+    "evaluations": 40,
+    "note": "the search moved primitive weights and preferred a non-empty stroke language"
+  },
+  "failures": []
+}

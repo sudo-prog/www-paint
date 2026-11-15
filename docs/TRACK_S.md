@@ -30,8 +30,18 @@ paint schedule as first-class, tunable passes (`passes[]` — `bg → masses →
 `optimizer.resolvePassPlan`; a band-scoped pass biases where it anchors but stays
 residual-driven. Absent `passes` = the geometric schedule, **byte-identical**
 (9 pinned baselines unmoved, engine 137 → 146).
-**Next: S9 (real reference pair / algorithm refinement) or H3 real-LLM
-validation (S8); S5 (primitives) composes with `passes[]`.**
+**S5 (2026-11-15, `docs/checkpoints/S5.md`):** the BE half of the stroke-language
+primitives is **landed** — `js/engine/primitives.js` (6 primitives, each resolving
+to an existing registry style + `brush-media` preset, with a declared stroke
+language and media model), a mix declarable at `global` / `layer` / `pass`
+(precedence pass > layer > global), and the optimiser retuning each pass's
+geometry from it (enums from the dominant primitive; explicit per-pass numbers
+still win). Absent a mix = **byte-identical** (engine 146 → **164**, 9 pinned
+baselines unmoved). **The mixer UI is Mac M16** (`docs/PRIMITIVES.md` §7).
+**Next: S9 (real reference pair / algorithm refinement) or S10 (the content ×
+ref-set matrix — which is what would let anyone claim a mix *matches* a
+reference); S5 composes with `passes[]` and its weights are searchable dimensions
+for S9.**
 **Companion docs:** `docs/ROADMAP.md` (the brief) · `docs/AI_STYLE_HARNESS.md`
 (H0–H5 loop) · `docs/CLEANROOM.md` (Track R) · `docs/STYLE_PROFILE.md` (profile
 schema) · `docs/API.md`
@@ -81,7 +91,7 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 | **S2** | **Style-Match Score** — composite: reconstruction terms (down-weighted for pure style tasks) + stroke-scale histogram distance (ref vs result, per band) + orientation histogram / coherence match + layer-occupancy match + optional CLIP/LPIPS-style distance. | BE | `js/engine/metrics.js`, `js/engine/score.js`, `js/engine/gate.js` | `scoreProfile` can optimise style-match, not only photo fidelity; gate keeps a change only on measured style-match gain with no image regression; headless, deterministic. |
 | **S3** | **Multi-reference fusion** — extract a RefPacket / styleDNA per ref, then median- or weighted-merge scale distributions, orientation strength, wetness, palette (per-ref weights, outlier down-weighting). Fused packet stored on `profile.provenance`. | BE | `js/engine/ref-analyze.js`, `js/engine/profile.js` | **done** — `fuseReferences(refs, opts)` → a `ref-fusion` packet (weighted merge of scale / orientation / coverage / bandScale / stats / styleDNA.palette + a `spread` confidence signal); outlier down-weighted via `outlierWeight` (never dropped); `analyzeReference` gained a compact additive `styleDNA`; optional `provenance.refPacket` (+ `attachFusedReference` / `fusedReferenceFromProfile`), round-trips the schema. 29/29, `docs/checkpoints/S3.md`. |
 | **S4** | **Explicit hierarchical passes in the Style Profile** — `passes: [{ id, scale: coarse\|medium\|fine, layers: [...], ... }]`, mapped onto the existing R2 multi-scale machinery (residual drives the next pass). | BE | `docs/STYLE_PROFILE.md` (additive optional `passes[]`), `js/engine/profile.js`, `js/engine/optimizer.js` | **done** — optional `passes[]` (`$defs/hierPass` in the schema; `PROFILE_PASS_SCALES` + `validatePass`/`normalizePass`/`profileToPasses` in `profile.js`); `OPTIMISER_DEFAULTS.passes = null` + `resolvePassPlan(opts, baseR)` is the ONE seam, returning `buildScalePlan` verbatim when no passes are given; per-pass `scale`→radius/blur/elongation, `weight` normalised to 1, `alpha`/`detail` overrides, and a `layers` band **bias** (`buildPassMask`, floor 0.05 — residual-driven, never a hard gate). `score.profileToOptimiserOptions` carries the array. engine **146/146** (+9 structural tests), visual **9/9 pinned baselines UNMOVED**, `style-match-probe` numbers unchanged. `docs/checkpoints/S4.md` |
-| **S5** | **Stroke-language primitives** — a small mixable set (dry-stamp, wet-wash, bristle, smudge, hatch, spatter); profiles weight them per layer/pass; the AI proposes **weights**, not only registry style names. | BE + Mac | NEW `js/engine/primitives.js`; registry/`brush-media.js` wiring | Primitives resolve to existing styles/media with default weights (no output change until opted in); AI proposal may emit primitive weights. |
+| **S5** | **Stroke-language primitives** — a small mixable set (dry-stamp, wet-wash, bristle, smudge, hatch, spatter); profiles weight them per layer/pass; the AI proposes **weights**, not only registry style names. | BE (**BE half done**) + Mac (**M16**) | NEW `js/engine/primitives.js`; `optimizer.js` / `profile.js` / `score.js` / `propose.js` / `engine.js` wiring | **done (BE half)** — `js/engine/primitives.js` declares the 6 primitives, each resolving to an **existing** registry style **and** `MEDIA_PRESETS` entry (asserted, so a rename cannot silently break one) plus a declared stroke language (`radiusMul`/`blur`/`elongMul`/`alpha`/`detail`) and media model. A mix (`{ id: weight }`, normalised to 1, canonical order, fixed point) may be declared at `global.primitives` / `layers[].primitives` / `passes[].primitives` (precedence pass > layer > global). `optimizer.resolvePassPlan` retunes each pass's geometry from the mix, enums from the **dominant** primitive, explicit per-pass numbers still win; `score.profileToOptimiserOptions` carries it and `scoreProfileStyle` paints the resolved style; `engine.generate({profile})` uses the primitive-derived style; `propose.primitiveKnobs()` lets the search propose **weights**. **No output change until opted in** (no key invented; shapes + geometric plan byte-identical for null/`{}`/all-unknown), verified by `scripts/primitives-probe.cjs` (PASS) and **164/164** engine tests (+18), **9/9 pinned baselines UNMOVED**. Docs: `docs/PRIMITIVES.md`. **NOT done:** the mixer UI (**M16**), per-layer application by the optimiser (deliberately carried only), and any fidelity/match claim (**S10**). `docs/checkpoints/S5.md` |
 | **S6** | **Profile library UI (Phase 4.2)** — save / load / list / apply / fork / delete; one-click apply; show score + provenance. | Mac (issued as **M10**) | `js/ui/style-library.js` (+ host shim), `docs/checkpoints/P4.md` | Save writes a schema-valid profile; apply re-bakes **identical** output for the same `(profile, seed, image-hash)`; export/import round-trips byte-identically. |
 | **S7** | **Worker automation path (Phase 6)** — `(profileId \| profile, image \| imageBatch, seed?) → { result, score, strokes }` in workers, with progress, cancel and deterministic bake; batch mode for automation. | BE (issued as **B5**) + Mac export UI (**M11**) | `js/engine/worker.js`, `js/engine/exporter.js` | Batch of N images completes with a deterministic result per image; cancel mid-run is clean; same `(profile, seed, image-hash)` → bit-identical PNG. |
 | **S8** | **H3 real-LLM validation** — fixed ref sets + content set; measure % usable first proposals; iterate prompt + clamp + H2 refine until **≥ 70 %**. | BE | `js/engine/vision-propose.js`, `docs/checkpoints/H3.md` | One real end-to-end run recorded (model + images); ≥ 70 %-usable measured, or the shortfall recorded honestly. |
@@ -122,7 +132,8 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 6. **S8** — H3 real-LLM validation.
 7. **S7 (Phase 6)** — worker batch deterministic apply (BE **B5** + Mac **M11**).
 8. **R4 finish** — outlines / order / per-style shaping (BE **B4**; Mac **M7–M9**) when not blocking the S-track.
-9. **S5, S9, S10** — primitives, continuous refinement, full style eval suite.
+9. **S5 done (BE half 2026-11-15, `docs/checkpoints/S5.md` — UI is Mac M16);
+   S9, S10** — continuous refinement, full style eval suite.
 
 Cross-links to issued streams: **S6 = Mac M10**, **S7 = BE B5 + Mac M11**,
 **S8 = BE H3-validation**, "finish R4" = BE B4. The rest (S1–S5, S9, S10) are

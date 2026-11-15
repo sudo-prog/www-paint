@@ -36,16 +36,27 @@ import {
   orderShapes, estimateShapeCount
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
-import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan, resolvePassPlan, PASS_SCALES } from '../js/engine/optimizer.js';
+import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan, resolvePassPlan, PASS_SCALES, applyPrimitiveLanguage } from '../js/engine/optimizer.js';
 import {
   REGION_DEFAULTS, quantizeBins, labelComponents, pcaFromStats, buildRegions, fitEllipse
 } from '../js/engine/regions.js';
 import {
-  PROFILE_SCHEMA_VERSION, PROFILE_ROLES, PROFILE_PASS_SCALES, PROFILE_DEFAULTS,
+  PROFILE_SCHEMA_VERSION, PROFILE_ROLES, PROFILE_PASS_SCALES, PROFILE_PRIMITIVE_LEVELS, PROFILE_DEFAULTS,
   validateProfile, normalizeProfile,
   profileToSettings, profileToLayerStyles, profileToPasses, profileToLayerProps,
+  profileGlobalPrimitiveMix, profileLayerPrimitiveMixes, profilePassPrimitiveMixes,
+  profileEffectiveStyle, profileToPrimitives,
   applyProfile, profileFromSettings
 } from '../js/engine/profile.js';
+import {
+  PRIMITIVE_IDS, PRIMITIVES, PRIMITIVE_LEVELS, LANGUAGE_FIELDS, isKnownPrimitive, resolvePrimitive,
+  primitiveMixEntries, normalizePrimitiveMix, validatePrimitiveMix, resolvePrimitiveMix,
+  dominantPrimitive, effectiveStyle, mixStrokeLanguage, mixMediaModel, mixMediaParams,
+  primitiveStyleMix, resolvePrimitiveLevels
+} from '../js/engine/primitives.js';
+// S5 pins the primitive vocabulary against what the repo really registers.
+import { getStyle } from '../js/styles/index.js';
+import { MEDIA_PRESETS, resolveMedia } from '../js/engine/brush-media.js';
 import {
   toFloatRGB, averageColor, rasterizeShapes, meanAbsError, simMae as simMaeFromMae, ssimLuma, metricsVsTarget,
   weightedSsimLuma, maskedMetrics, maskedMetricsVsTarget,
@@ -57,7 +68,8 @@ import {
   TONAL_BANDS, scoreProfileLayers, STYLE_PROFILE_DEFAULTS, scoreProfileStyle
 } from '../js/engine/score.js';
 import {
-  SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile
+  SEARCH_DEFAULTS, searchableKnobs, profileKnobValues, knobsToProfile, knobsToOptimiser, searchProfile,
+  primitiveKnobs, knobsToPrimitiveMix
 } from '../js/engine/propose.js';
 import {
   MEMORY_VERSION, HASH_GRID, averageHash, hamming, profileSignature, createMemory
@@ -1966,6 +1978,297 @@ test('H-S6: scoreProfileStyle reports its render backend and the profile style',
   const r2 = scoreProfileStyle({ global: { style: 'ink', strokeCount: 30 } }, image, makePacket(), { seed: 3, render: custom });
   assertEqual(r2.renderBackend, 'custom');
   assertEqual(called, 1, 'the injected backend ran exactly once');
+});
+
+// ─── Stroke-language primitives (Track S S5) ──────────────────────
+console.log('\nStroke-language primitives (Track S S5):');
+
+/// A minimal schema-valid profile carrying a primitive mix, with an override hook.
+const s5Profile = (over = {}) => ({
+  schemaVersion: 1, id: 's5', name: 'S5', version: '1.0.0',
+  global: { strokeCount: 90 }, ...over,
+});
+const s5Image = (S = 48) => makeRGBImage(S, S, (x, y) => {
+  const d = Math.hypot(x - S / 2, y - S / 2);
+  if (d < S * 0.2) return [210, 70, 60];
+  return x < S / 2 ? [45, 60, 90] : [200, 195, 150];
+});
+
+test('S5: every primitive resolves to an EXISTING registry style and media preset', () => {
+  assertEqual(PRIMITIVE_IDS.length, 6, 'the declared primitive set');
+  assertEqual(PRIMITIVE_LEVELS, ['global', 'layer', 'pass']);
+  for (const id of PRIMITIVE_IDS) {
+    const r = resolvePrimitive(id);
+    if (!r) throw new Error(`resolvePrimitive('${id}') returned nothing`);
+    // The resolution is into things the repo already has — not a new renderer.
+    if (!getStyle(r.style)) throw new Error(`primitive '${id}' names unknown style '${r.style}'`);
+    if (!MEDIA_PRESETS[r.media]) throw new Error(`primitive '${id}' names unknown media preset '${r.media}'`);
+    for (const f of LANGUAGE_FIELDS) assertEqual(typeof r.language[f], 'number', `${id}.language.${f}`);
+    assertEqual(typeof r.mediaParams.brushName, 'string', `${id} resolves to a media parameter block`);
+  }
+  assertEqual(isKnownPrimitive('wet-wash'), true);
+  assertEqual(isKnownPrimitive('nope'), false);
+  assertEqual(resolvePrimitive('nope'), null);
+});
+
+test('S5: normalizePrimitiveMix is canonical, drops unknown/zero, and is a fixed point', () => {
+  const m = normalizePrimitiveMix({ hatch: 3, 'wet-wash': 1, nope: 9, spatter: 0 });
+  assertEqual(m, { 'wet-wash': 0.25, hatch: 0.75 }, 'known, positive, canonical order, normalised');
+  assertEqual(normalizePrimitiveMix(m), m, 'normalisation is a fixed point');
+  assertEqual(normalizePrimitiveMix({}), {}, 'an empty mix stays empty');
+  assertEqual(normalizePrimitiveMix(null), {});
+  assertEqual(normalizePrimitiveMix(['bad']), {}, 'a non-object mix cannot invent primitives');
+  assertEqual(normalizePrimitiveMix({ hatch: -1, spatter: 0 }), {}, 'non-positive weights are dropped');
+  // The array form is accepted too, and merges duplicates.
+  assertEqual(normalizePrimitiveMix([{ id: 'hatch', weight: 1 }, { primitive: 'hatch', weight: 1 }]),
+    { hatch: 1 }, 'duplicate entries add up');
+  assertEqual(primitiveMixEntries({ hatch: 1 }), [{ id: 'hatch', weight: 1 }]);
+});
+
+test('S5: validatePrimitiveMix reports the unknown id / all-zero case', () => {
+  assertEqual(validatePrimitiveMix({ hatch: 1 }).ok, true);
+  assertEqual(validatePrimitiveMix({ nope: 1 }).errors[0],
+    { path: 'primitives.nope', message: "unknown primitive 'nope'" });
+  assertEqual(validatePrimitiveMix({ hatch: -2 }).errors[0].path, 'primitives.hatch');
+  assertEqual(validatePrimitiveMix({ hatch: 0 }).errors[0].path, 'primitives');
+  assertEqual(validatePrimitiveMix(7).ok, false, 'a scalar is not a mix');
+  assertEqual(validatePrimitiveMix([{ id: 'nope', weight: 1 }]).errors[0].path, 'primitives[0].id');
+});
+
+test('S5: dominant/style resolution is weight-ordered with a canonical tie-break', () => {
+  assertEqual(dominantPrimitive({ 'wet-wash': 1, hatch: 3 }), 'hatch');
+  assertEqual(dominantPrimitive({ hatch: 1, 'wet-wash': 1 }), 'wet-wash',
+    'a tie breaks on canonical order (wet-wash precedes hatch)');
+  assertEqual(dominantPrimitive({}), null);
+  assertEqual(effectiveStyle({ 'wet-wash': 1 }), 'wash');
+  assertEqual(effectiveStyle({}, 'ink'), 'ink', 'no mix → the caller fallback');
+  assertEqual(effectiveStyle({}, null), null);
+  assertEqual(primitiveStyleMix({ 'dry-stamp': 1, spatter: 2 }),
+    { pencil: 1 / 3, graffiti: 2 / 3 }, 'two primitives on one style would add up');
+});
+
+test('S5: a single primitive keeps its numbers verbatim; a mix averages them', () => {
+  const one = mixStrokeLanguage({ hatch: 1 });
+  assertEqual(one.radiusMul, PRIMITIVES.hatch.language.radiusMul);
+  assertEqual(one.alpha, PRIMITIVES.hatch.language.alpha);
+  assertEqual(one.primitives, { hatch: 1 });
+  assertEqual(one.style, 'cross-hatch');
+  const two = mixStrokeLanguage({ 'wet-wash': 1, hatch: 1 });
+  assertApprox(two.radiusMul, (1.55 + 0.24) / 2);
+  assertApprox(two.elongMul, (1 + 2.4) / 2);
+  assertApprox(two.alpha, (0.55 + 0.85) / 2);
+  assertEqual(two.style, 'wash', 'the tie-break decides the resolved style');
+  assertEqual(mixStrokeLanguage({}), null, 'no language for an empty mix');
+  assertEqual(mixStrokeLanguage(null), null);
+});
+
+test('S5: media model / media params average the numbers and take the tip from the dominant', () => {
+  assertEqual(mixMediaModel({ bristle: 1 }), PRIMITIVES.bristle.mediaModel, 'single → verbatim');
+  const m = mixMediaModel({ bristle: 1, spatter: 1 });
+  assertApprox(m.bristle, 0.5);
+  assertEqual(m.kind, 'impasto', 'kind is an enum — the dominant primitive decides');
+  assertEqual(mixMediaModel({}), null);
+  const single = mixMediaParams({ hatch: 1 });
+  assertEqual(single, resolveMedia('pen'), 'a single primitive IS its media preset');
+  const two = mixMediaParams({ 'wet-wash': 1, hatch: 1 });
+  assertEqual(two.brushName, 'HB', 'the dominant primitive names the tip');
+  assertApprox(two.size, (20 + 3) / 2, 0.001, 'NUMERIC media fields are weighted');
+  assertEqual(mixMediaParams({}, { size: 7 }), null);
+  assertEqual(mixMediaParams({ hatch: 1 }, { size: 7 }).size, 7, 'an override wins');
+});
+
+test('S5: resolvePrimitiveLevels prefers pass > layer > global', () => {
+  assertEqual(resolvePrimitiveLevels({ global: { hatch: 1 }, layer: { 'wet-wash': 1 }, pass: { spatter: 1 } }),
+    { spatter: 1 });
+  assertEqual(resolvePrimitiveLevels({ global: { hatch: 1 }, layer: { 'wet-wash': 1 } }), { 'wet-wash': 1 });
+  assertEqual(resolvePrimitiveLevels({ global: { hatch: 1 } }), { hatch: 1 });
+  assertEqual(resolvePrimitiveLevels({}), {}, 'no level declares one → no primitives');
+});
+
+test('S5: profile validation accepts a mix at every level and rejects a bad one', () => {
+  const ok = validateProfile(s5Profile({ global: { strokeCount: 90, primitives: { hatch: 1 } } }));
+  assertEqual(ok.ok, true, JSON.stringify(ok.errors));
+  const bad = validateProfile(s5Profile({ global: { primitives: { nope: 1 } } }));
+  assertEqual(bad.errors[0].path, 'global.primitives.nope');
+  assertEqual(PROFILE_PRIMITIVE_LEVELS, ['global', 'layer', 'pass']);
+  const layer = validateProfile(s5Profile({ layers: [{ role: 'shadows', primitives: { hatch: 2 } }] }));
+  assertEqual(layer.ok, true, JSON.stringify(layer.errors));
+  const badLayer = validateProfile(s5Profile({ layers: [{ role: 'shadows', primitives: { x: 1 } }] }));
+  assertEqual(badLayer.errors[0].path, 'layers[0].primitives.x');
+  const pass = validateProfile(s5Profile({ passes: [{ id: 'a', primitives: { hatch: 1 } }] }));
+  assertEqual(pass.ok, true, JSON.stringify(pass.errors));
+  const badPass = validateProfile(s5Profile({ passes: [{ id: 'a', primitives: { x: 1 } }] }));
+  assertEqual(badPass.errors[0].path, 'passes[0].primitives.x');
+});
+
+test('S5: a profile that declares no primitives normalises byte-identically', () => {
+  const bare = s5Profile({ passes: [{ id: 'loose', scale: 'coarse' }] });
+  const p = normalizeProfile(bare);
+  assertEqual('primitives' in p.global, false, 'no empty mix is invented on global');
+  assertEqual(p.passes[0], { id: 'loose', scale: 'coarse', layers: [] }, 'no primitives key on a pass');
+  assertEqual(normalizeProfile(p), p, 'still a fixed point');
+  assertEqual(profileGlobalPrimitiveMix(bare), null);
+  assertEqual(profileToPrimitives(bare).effectiveStyle, null, 'null when not opted in');
+});
+
+test('S5: normaliseProfile canonicalises mixes and stays a fixed point', () => {
+  const prof = s5Profile({
+    global: { strokeCount: 90, primitives: { hatch: 3, 'wet-wash': 1, nope: 1 } },
+    layers: [{ role: 'shadows', primitives: { spatter: 2 } }],
+    passes: [{ id: 'accents', scale: 'fine', primitives: { hatch: 1, bristle: 1 } }],
+  });
+  const p = normalizeProfile(prof);
+  assertEqual(p.global.primitives, { 'wet-wash': 0.25, hatch: 0.75 }, 'global mix canonicalised');
+  assertEqual(p.layers[0].primitives, { spatter: 1 });
+  assertEqual(p.passes[0].primitives, { bristle: 0.5, hatch: 0.5 });
+  assertEqual(normalizeProfile(p), p, 'normaliseProfile is a fixed point with mixes');
+  assertEqual(profileToPrimitives(prof).passes, { accents: { bristle: 0.5, hatch: 0.5 } });
+  assertEqual(profileToPrimitives(prof).layers, { shadows: { spatter: 1 } });
+});
+
+test('S5: profileEffectiveStyle follows pass > layer > global, else global.style', () => {
+  assertEqual(profileEffectiveStyle(s5Profile({ global: { style: 'ink' } })), 'ink', 'unchanged when not opted in');
+  assertEqual(profileEffectiveStyle({ ...s5Profile(), global: { primitives: { hatch: 1 } } }), 'cross-hatch');
+  const withLayer = s5Profile({
+    global: { primitives: { hatch: 1 } },
+    layers: [{ role: 'shadows', primitives: { 'wet-wash': 1 } }],
+  });
+  assertEqual(profileEffectiveStyle(withLayer), 'wash', 'a layer mix is more specific than global');
+  const withPass = s5Profile({
+    global: { primitives: { hatch: 1 } },
+    passes: [{ id: 'accents', primitives: { spatter: 1 } }],
+  });
+  assertEqual(profileEffectiveStyle(withPass), 'graffiti', 'the only pass wins over the global mix');
+  assertEqual(profileEffectiveStyle(withPass, { passId: 'accents' }), 'graffiti');
+  assertEqual(profileEffectiveStyle(s5Profile()), null, 'no mix, no style → null');
+});
+
+test('S5: no primitives → the geometric schedule and the output are byte-identical', () => {
+  const opts = resolveOptimiserOptions({ count: 90, seed: 5 });
+  assertEqual(OPTIMISER_DEFAULTS.primitives, null);
+  assertEqual(resolveOptimiserOptions({}).primitives, null);
+  assertEqual(buildScalePlan(opts, 10), buildScalePlan(resolveOptimiserOptions({ count: 90, seed: 5, primitives: null }), 10),
+    'an explicit null mix is the same as absent');
+  assertEqual(buildScalePlan(opts, 10), buildScalePlan(resolveOptimiserOptions({ count: 90, seed: 5, primitives: {} }), 10),
+    'an empty mix is the same as absent');
+  const an = analyzeImage(s5Image(), 48, 48);
+  const def = optimise(an, { count: 90, seed: 5 });
+  assertEqual(optimise(an, { count: 90, seed: 5, primitives: null }).shapes, def.shapes);
+  assertEqual(optimise(an, { count: 90, seed: 5, primitives: {} }).shapes, def.shapes);
+  assertEqual(optimise(an, { count: 90, seed: 5, primitives: { nope: 1 } }).shapes, def.shapes,
+    'a mix of only unknown primitives is still a no-op');
+  assertEqual('primitives' in resolvePassPlan(opts, 10)[0], false, 'no key is added to the plan');
+});
+
+test('S5: a primitive mix retunes the schedule and moves the output deterministically', () => {
+  const opts = resolveOptimiserOptions({ count: 90, seed: 5, primitives: { hatch: 1 } });
+  const plan = resolvePassPlan(opts, 10);
+  assertEqual(plan.length, 3, 'the geometric schedule still runs');
+  for (const entry of plan) {
+    assertEqual(entry.radiusMul, PRIMITIVES.hatch.language.radiusMul, 'the mix replaces the scale keyword');
+    assertApprox(entry.blurR, 10 * PRIMITIVES.hatch.language.blur);
+    assertEqual(entry.alpha, PRIMITIVES.hatch.language.alpha);
+    assertEqual(entry.detail, PRIMITIVES.hatch.language.detail);
+    assertEqual(entry.primitives, { hatch: 1 });
+    assertEqual(entry.style, 'cross-hatch');
+  }
+  assertEqual(applyPrimitiveLanguage([{ radiusMul: 1 }], null, 10), [{ radiusMul: 1 }], 'a null mix is a no-op');
+  const an = analyzeImage(s5Image(), 48, 48);
+  const a = optimise(an, { count: 90, seed: 5 });
+  const b = optimise(an, { count: 90, seed: 5, primitives: { hatch: 1 } });
+  const c = optimise(an, { count: 90, seed: 5, primitives: { hatch: 1 } });
+  if (JSON.stringify(a.shapes) === JSON.stringify(b.shapes)) {
+    throw new Error('opting into a mix must change the paint');
+  }
+  assertEqual(b.shapes, c.shapes, 'the mix is deterministic for a fixed seed');
+  assertEqual(b.shapes.length, a.shapes.length, 'the budget is still exact');
+});
+
+test('S5: a pass mix overrides the profile mix; explicit numbers override both', () => {
+  const profileMixPass = resolvePassPlan(resolveOptimiserOptions({
+    primitives: { hatch: 1 }, passes: [{ id: 'accents', scale: 'fine', primitives: { 'wet-wash': 1 } }],
+  }), 10)[0];
+  assertEqual(profileMixPass.primitives, { 'wet-wash': 1 }, 'the pass mix wins');
+  assertEqual(profileMixPass.style, 'wash');
+  assertEqual(profileMixPass.radiusMul, PRIMITIVES['wet-wash'].language.radiusMul);
+  const explicit = resolvePassPlan(resolveOptimiserOptions({
+    primitives: { hatch: 1 },
+    passes: [{ id: 'accents', scale: 'fine', primitives: { 'wet-wash': 1 }, radius: 0.25, blur: 0, elongation: 2, alpha: 0.5, detail: 0.1 }],
+  }), 10)[0];
+  assertEqual(explicit.radiusMul, 0.25, 'an explicit radius still wins');
+  assertEqual(explicit.blurR, 0);
+  assertEqual(explicit.elongMul, 2);
+  assertEqual(explicit.alpha, 0.5);
+  assertEqual(explicit.detail, 0.1);
+  assertEqual(explicit.primitives, { 'wet-wash': 1 });
+});
+
+test('S5: profileToOptimiserOptions carries the mix, and nothing at all when absent', () => {
+  const bare = profileToOptimiserOptions(s5Profile());
+  if ('primitives' in bare) throw new Error('a profile with no primitives must not set optimiser.primitives');
+  assertEqual(profileToOptimiserOptions(s5Profile({ global: { primitives: { hatch: 3, 'wet-wash': 1 } } })).primitives,
+    { 'wet-wash': 0.25, hatch: 0.75 });
+  // A layer-level mix is not a profile-level one: it stays the layer system's job.
+  const layerOnly = profileToOptimiserOptions(s5Profile({ layers: [{ role: 'shadows', primitives: { hatch: 1 } }] }));
+  if ('primitives' in layerOnly) throw new Error('a layer mix must not silently become the global mix');
+  assertEqual(applyProfile(s5Profile()).primitives, { global: null, layers: {}, passes: {}, effectiveStyle: null },
+    'applyProfile reports the primitive state');
+});
+
+test('S5: scoreProfileStyle paints the mix\'s registry style and reports it', () => {
+  const S = 40;
+  const img = { pixels: s5Image(S), width: S, height: S };
+  const packet = makePacket();
+  const r = scoreProfileStyle(s5Profile({ global: { style: 'ink', primitives: { hatch: 1 } } }), img, packet, { seed: 3 });
+  assertEqual(r.style, 'cross-hatch', 'the dominant primitive decides the style');
+  const plain = scoreProfileStyle(s5Profile({ global: { style: 'ink' } }), img, packet, { seed: 3 });
+  assertEqual(plain.style, 'ink', 'no mix → the profile style exactly as before');
+  assertEqual(plain.renderBackend, 'plain');
+});
+
+test('S5: propose emits primitive WEIGHTS, not only style names', () => {
+  const knobs = primitiveKnobs();
+  assertEqual(knobs.length, PRIMITIVE_IDS.length);
+  assertEqual(knobs.map((k) => k.name),
+    ['prim_dry_stamp', 'prim_wet_wash', 'prim_bristle', 'prim_smudge', 'prim_hatch', 'prim_spatter']);
+  for (const k of knobs) {
+    assertEqual(k.type, 'number');
+    assertEqual([k.min, k.max], [0, 1]);
+    assertEqual(k.target, `primitive.${k.name.slice('prim_'.length).replace(/_/g, '-')}`);
+  }
+  assertEqual(knobsToPrimitiveMix({}), null, 'no weights set → no mix');
+  assertEqual(knobsToPrimitiveMix({ prim_hatch: 0 }), null, 'all-zero → no mix');
+  assertEqual(knobsToPrimitiveMix({ prim_hatch: 1, prim_wet_wash: 3 }), { 'wet-wash': 0.75, hatch: 0.25 });
+  // knobsToProfile writes the mix onto the profile's global block.
+  const prof = knobsToProfile(s5Profile(), { prim_hatch: 1, prim_wet_wash: 3 });
+  assertEqual(prof.global.primitives, { 'wet-wash': 0.75, hatch: 0.25 });
+  assertEqual(knobsToProfile(s5Profile(), {}).global.primitives, undefined,
+    'a search without primitive knobs leaves the profile alone');
+  // The primitive knobs are NOT part of the engine knob set (opt-in only).
+  assertEqual(KNOB_SET.some((k) => k.name.startsWith('prim_')), false);
+  assertEqual(searchableKnobs().some((k) => k.name.startsWith('prim_')), false);
+  assertEqual(clampKnobs({ prim_hatch: 5 }, knobs).prim_hatch, 1, 'clampKnobs bounds the extras');
+  assertEqual(clampKnobs({ prim_hatch: 5 }).prim_hatch, undefined, 'and drops them without the extras');
+});
+
+test('S5: a primitive-weight search is deterministic and proposes a real mix', () => {
+  const S = 32;
+  const img = { pixels: s5Image(S), width: S, height: S };
+  const cfg = { method: 'cma', evaluations: 19, seed: 99, primitives: true, primitiveInit: 0.3 };
+  const a = searchProfile(s5Profile({ global: { strokeCount: 40 } }), img, cfg);
+  const b = searchProfile(s5Profile({ global: { strokeCount: 40 } }), img, cfg);
+  assertEqual(a.primitives, b.primitives, 'the winning mix is deterministic for a fixed seed');
+  assertEqual(a.score[SEARCH_DEFAULTS.objective], b.score[SEARCH_DEFAULTS.objective]);
+  assertEqual(a.evaluations, 19, 'the budget is respected');
+  if (!a.primitives) throw new Error('a primitive-weight search must return a mix (or report none, which this content does not)');
+  const sum = Object.values(a.primitives).reduce((s, w) => s + w, 0);
+  assertApprox(sum, 1, 1e-9, 'the winning mix is normalised');
+  for (const id of Object.keys(a.primitives)) assertEqual(isKnownPrimitive(id), true);
+  // A search that does NOT ask for primitives is unchanged: no mix, old knob set.
+  const noPrim = searchProfile(s5Profile({ global: { strokeCount: 40 } }), img,
+    { method: 'cma', evaluations: 19, seed: 99 });
+  assertEqual(noPrim.primitives, null);
+  assertEqual(Object.keys(noPrim.knobs).some((k) => k.startsWith('prim_')), false);
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

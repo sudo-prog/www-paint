@@ -349,6 +349,35 @@ first-class, tunable passes.
   place the explicit and geometric schedules meet (Score → optimiser wiring via
   `score.profileToOptimiserOptions`). Evidence: `docs/checkpoints/S4.md`.
 
+### 3.7 `primitives` (stroke-language mix)
+
+Added 2026-11-15 with Track-S **S5** (`docs/PRIMITIVES.md` is the contract).
+Optional at **three** levels — `global.primitives`, `layers[].primitives`,
+`passes[].primitives` — with **pass > layer > global** precedence. A mix is a map
+of primitive id → weight:
+
+```json
+"global": { "primitives": { "wet-wash": 3, "hatch": 1 } }
+```
+
+- The six primitives are fixed (`js/engine/primitives.js`, `PRIMITIVE_IDS`):
+  `dry-stamp`, `wet-wash`, `bristle`, `smudge`, `hatch`, `spatter`. An unknown id
+  is a **validation error** — not a silent drop.
+- **Weights are relative** and are normalised to sum 1; non-positive weights are
+  dropped. Because the order is canonical, two equal mixes serialise identically.
+- Each primitive **resolves to an existing registry style and `brush-media`
+  preset** plus a declared stroke language (`radiusMul` / `blur` / `elongMul` /
+  `alpha` / `detail`) — it is a vocabulary, not a new renderer. The dominant
+  primitive (highest weight; ties break on canonical order) supplies the style
+  and the enums; the numeric fields are the weighted average.
+- **Absent = byte-identical.** No `primitives` key is invented, the geometric
+  schedule and the `node` output are unchanged, and the 9 pinned visual baselines
+  stay put. A declared mix retunes each pass's geometry, with an explicit per-pass
+  `radius`/`blur`/`elongation`/`alpha`/`detail` still winning.
+- `profile.js` validates + canonicalises every level (`validatePrimitiveMix`,
+  `normalizePrimitiveMix`) and exposes `profileToPrimitives` /
+  `profileEffectiveStyle`. Evidence: `docs/checkpoints/S5.md`.
+
 ---
 
 ## 4. Minimal example

@@ -455,11 +455,30 @@ After each BE push: run the gates + a behavioural probe against `main`; log in
 AGENTS.md §7 + one OPS_LOG line. **No source edits.** Disagreements logged as
 `MAC: [VERIFY] <claim> — DISAGREE: <evidence>`.
 
-### M16 — Track-S S5 (primitives) — Mac half
-BE writes `js/engine/primitives.js` (registry + default weights, inert until
-opted in). **Mac half:** wire primitives → media in the Mac-owned
-`js/engine/brush-media.js` once BE freezes the primitive list. **Blocked until
-BE issues the primitive list — do M10 first.**
+### M16 — Track-S S5 (primitives) — Mac half — **UNBLOCKED 2026-11-15**
+
+**BE has issued the primitive list and landed the BE half.** The contract is
+`docs/PRIMITIVES.md` — **read §1 (the list + the language table) and §7 (your
+brief) before starting.** Evidence: `docs/checkpoints/S5.md`.
+
+- `js/engine/primitives.js` exists (BE-owned; **do not edit the table**): six
+  primitives `dry-stamp`, `wet-wash`, `bristle`, `smudge`, `hatch`, `spatter`,
+  each resolving to an **existing** registry style + `brush-media` preset.
+- A mix (`{ "<primitive-id>": <weight> }`, weights are **relative** — normalised
+  to 1) may be declared at `global.primitives` / `layers[].primitives` /
+  `passes[].primitives`; precedence is **pass > layer > global**.
+- **Your half is the UI mixer** (`docs/PRIMITIVES.md` §7): the 6 weight sliders
+  (`0..1`, step 0.05 — the same range as `propose.primitiveKnobs()`), a level
+  picker matching the precedence, the `effectiveStyle` readout, round-trip via
+  `profileToPrimitives()`, and `validatePrimitiveMix` paths surfaced next to the
+  offending control. **A profile with no mix must export/import unchanged** (no
+  `primitives` key invented).
+- **Do not touch** `js/engine/optimizer.js`, `profile.js`, `score.js`,
+  `propose.js`, `engine.js` — the geometry/score/app wiring is BE's and is done.
+  Mismatch in a primitive's *number*? Raise it here via OPS_LOG.
+- **No behaviour change is expected in the app until a profile opts in**, so the
+  9 pinned baselines must stay unmoved and the existing Maestro set must stay
+  green — that is the M15 QA pass for this push.
 
 ### M15 QA seat — BE push 2026-11-14 (H-S5, the orientation kernel)
 
