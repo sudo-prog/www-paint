@@ -226,7 +226,7 @@ tappable at 390px. Closed.
 
 ---
 
-### 0.10 BUG (Mac, M15, 2026-11-14) — `#style-library-root` is unclickable at ≤768px: the mobile `position: fixed` rule never covers it
+### 0.10 ~~BUG~~ ✅ FIXED by BE (`c2e5164`, verified 2026-11-15) — `#style-library-root` was unclickable at ≤768px: the mobile `position: fixed` rule never covered it
 
 **Needs BE.** ThinkPad-owned: `css/style.css` `@media (max-width: 768px)` block
 (lines 1633–1655) and `js/ui/style-library-host.js` (Mac-authored shim, but the
@@ -283,7 +283,7 @@ a11y sweep only asserts the panel's `role` when it happens to be open.
 
 ---
 
-### 0.11 BUG (Mac, M15, 2026-11-14) — PATH ORDER segmented control overflows its panel at ≥769px; 7–8 of 11 options untappable
+### 0.11 ~~BUG~~ ✅ FIXED by BE (`c2e5164`, verified 2026-11-15) — PATH ORDER segmented control overflowed its panel at ≥769px; 7–8 of 11 options were untappable
 
 **Needs BE.** ThinkPad-owned: `js/ui/controls.js` (`PATH_ORDER_OPTIONS`, 11
 entries) and `css/style.css` `.segmented` (line 997) / `.segmented__btn`
@@ -346,7 +346,7 @@ scrolls to it.
 
 ---
 
-### 0.12 NOTE (Mac, M15, 2026-11-14) — `.mobile-toggle` overlaps the library panel's Import buttons at 390px
+### 0.12 ~~NOTE~~ ✅ FIXED by BE (`c2e5164`, verified 2026-11-15) — `.mobile-toggle` overlapped the library panel's Import buttons at 390px
 
 `#toggle-controls` is `position: fixed; left: 8px; top: 776px; z-index: 100`
 (44×44). With the library panel open at 390px, the panel's Import row sits at
@@ -1458,6 +1458,24 @@ $ maestro test --headless --screen-size 1440x900 www-paint-media-behaviour.yaml 
 $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml        14 / 0
 280 COMPLETED, 0 FAILED — the §0.9 fix introduced no regression.
 ```
+
+### 2026-11-16 10:07 — M16 (Track-S S5 Mac half) BUILT, VERIFIED and LANDED by BE while the Mac was down
+- did: Built + verified the stroke-language mixer UI (**M16**) — the Style panel now has a **STROKE LANGUAGE** section (six primitive weight sliders, a `global`/`layer`/`pass` level picker, the resolved `effectiveStyle` read-out). The Mac was **down**, so **BE** picked up the stream under the human directive *"Mac is down so pick up its work for now"* and lands it (BE is the sole writer/pusher). Commit `37f68ca`.
+- files: `js/ui/primitive-mixer-core.js` (NEW, pure), `js/ui/primitive-mixer.js` (NEW, DOM), `js/ui/style-library.js` (mount), `index.html` (importmap), `css/style.css` §16 (mixer styles + the `.slider-row` row-height override), `tests/primitive-mixer.test.js` (NEW, 20), `scripts/primitive-mixer-probe.cjs` (NEW, 21), `docs/research/primitive-mixer-probe.json` + `primitive-mixer{,-section}.png` (NEW), `maestro/www-paint-primitive-mixer.yaml` (NEW, 14), `docs/checkpoints/M16.md` (NEW).
+- verified (raw), all re-run on the ThinkPad:
+  ```
+  $ node tests/primitive-mixer.test.js      -> Passed: 20  Failed: 0
+  $ node tests/engine.test.js               -> Passed: 164 Failed: 0
+  $ node scripts/primitive-mixer-probe.cjs  -> 21 passed / 0 failed (1440 + 390)
+  $ maestro test --headless --screen-size 1440x900 maestro/www-paint-primitive-mixer.yaml -> 14 COMPLETED / 0 FAILED (exit 0)
+  $ node scripts/rail-overlay-probe.cjs     -> PASS — 0 of 9 sizes failed
+  $ node scripts/visual-regression.cjs      -> pass=9 fail=0 error=0  (pins UNMOVED)
+  $ node scripts/overlay-coverage-probe.cjs -> 0 hitFail / 0 clip / 0 docOverflowX at 390-1920
+  ```
+- ONE DEFECT found + fixed during verification: the shell's `.slider-row` collapses to a 10px band, so six **labelled** rows piled up (labelled content overflowed ~46px/row, every label overlapping the next). Scoped override in `css/style.css` §16; the probe's row guard is verified **both ways** (`PMX_BROKEN_ROW=1` → FAIL; fixed → PASS).
+- **§0.9 / §0.10 / §0.11 / §0.12 are all FIXED and re-measured clean at 390–1920** (the overlay-coverage probe reports `hitFail=0`, `clip=0`, `docOverflowX=0` on all six surfaces at every width). The §0 headings are marked closed below.
+- blocker: none.
+- next: **Mac** — the M15 QA seat (re-run `rail-overlay-probe` + `overlay-coverage-probe` + the Maestro set after this push). **BE** — S9/S10, and a one-line JSDoc fix in `js/engine/profile.js` (`profileToPrimitives`'s `effectiveStyle` comment says `null`, but it returns `global.style`).
 
 ---
 
