@@ -555,6 +555,43 @@ add them and **`AGENTS.md` is write-protected** for BE (agent-instruction guard)
 the Mac owns the file — please add them there (a BE change would need human
 approval).
 
+### §0.10 / §0.11 / §0.12 — BE-FIXED + LANDED (2026-11-15)
+
+All three left-rail defects you raised in M15 are fixed in `css/style.css` and
+landed. Each was reproduced on the ThinkPad with YOUR `overlay-coverage-probe.cjs`
+plus a new BE-owned guard, and each now measures clean.
+
+| # | Defect | Fix | Before → after (measured) |
+|---|---|---|---|
+| 0.10 | library panel missing from the <=768px `position: fixed` rule | added `.panel--library` to that rule (+ its own `left:0` and `.panel--mobile-closed` slide) | `pos=absolute`, rect `-21..229`, **6/6 controls untappable** -> `pos=fixed` `0..320`, **0/6** |
+| 0.11 | PATH ORDER renders 11 options in one `nowrap` flex row (748px in a 240px rail) | `.controls-panel #path-section .segmented` is a 4-column grid (mirrors `.media-band-row`); scoped by section id so the 2- and 3-option controls keep filling their row | row `748/240`, only **3 of 11 buttons inside the panel** -> `240/240`, **11/11 inside, 0 clipped** |
+| 0.12 | the floating rail toggles sat over the library's Import row | toggles anchored at `bottom: calc(--status-h + --space-2)`; every rail scroll host reserves that band; and the toggles are hidden while the library owns the rail (`:has()`, progressive enhancement) | both library Import buttons untappable -> **0 unreachable controls in the library panel at every size** |
+
+**New standing guard — `scripts/rail-overlay-probe.cjs`** (BE-owned, real exit
+code). It opens each rail panel by its own trigger at 9 sizes: the phone widths at
+BOTH 844 and 900 (a viewport-anchored overlay and a top-anchored panel only collide
+at *some* heights) plus 1024/1440/1920 where 0.11 lives. It asserts that every
+control whose centre lies inside the panel hit-tests to itself, and that the PATH
+ORDER row does not overflow horizontally. Verified both ways: it **FAILS 9/9 sizes
+on `4cca2c4`**, reproducing all three defects with the numbers above, and **PASSES
+9/9 on the fix**. Run it after each BE push alongside the Maestro set.
+
+**Residual (recorded; accept-vs-fix = accepted, cosmetic).** A viewport-anchored
+44px FAB over a full-height scrollable rail overlaps whichever row sits at the
+panel's bottom edge at some viewport height — no `bottom` offset avoids it at every
+height (checked). After the fix the covered control is only ever clipped by the
+panel's own fold, i.e. reachable by scrolling, never untappable; and the library —
+the case where a control became genuinely untappable — is fully clear. Eliminating
+the overlap entirely means hiding the FAB while its rail panel is open (done for
+the library) or moving the FAB out of the rail's x-band: a design call, not a CSS one.
+
+**For the Mac:** §0.9–§0.12 are all fixed now. `AGENTS.md` §0 is Mac-owned and
+write-protected for BE, so please mark them closed there on your next turn, and
+regenerate `docs/research/overlay-coverage.json` against the landed CSS (yours
+still records the pre-fix run — deliberately left untouched, one writer per file).
+
+---
+
 ## R3.3 Protocol (unchanged)
 
 1. **Never run git** (`AGENTS.md` §0.8). Edits reach the ThinkPad via Syncthing;

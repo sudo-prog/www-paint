@@ -1013,6 +1013,31 @@ body {
 .segmented__btn:hover { color: var(--text-primary); background: var(--border); }
 .segmented__btn--active { background: var(--text-primary); color: var(--bg-primary); }
 
+/* PATH ORDER carries 11 options. As a single nowrap flex row that is ~748px of
+   content inside the 258px rail, so 7 of 11 buttons sat past the panel edge and
+   `.controls-scroll` (overflow-x: hidden) clipped them permanently — they could
+   not be scrolled into view at any offset (AGENTS.md 0.11). Grid them 4-up,
+   mirroring `.media-band-row` (the same 4-column pattern in the same rail).
+   Scoped by section id on purpose: the generic `.segmented` is shared with the
+   2- and 3-option controls (Multi/Single, Outline, Fill, Color), which must
+   keep filling their row. */
+.controls-panel #path-section .segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+.controls-panel #path-section .segmented__btn {
+  /* `flex: none` + `min-width: 0` let the button fill its 1fr track instead of
+     being sized by the generic `flex: 1` rule; horizontal padding is what pushes
+     a 2-word label ("Spiral In") to a third line, so keep it vertical-heavy. */
+  flex: none;
+  min-width: 0;
+  padding: var(--space-2) var(--space-1);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
 /* ── Sliders ── */
 .control-slider { display: flex; flex-direction: column; gap: var(--space-2); }
 .slider-label {
@@ -1638,7 +1663,7 @@ body {
      whole body and the panels become fixed overlays on top of it. */
   .main { flex-direction: column; gap: 0; overflow: visible; }
 
-  .panel--controls, .panel--layers {
+  .panel--controls, .panel--layers, .panel--library {
     position: fixed; top: var(--header-h); bottom: var(--status-h);
     width: min(320px, 85vw) !important; max-width: none;
     z-index: var(--z-panel);
@@ -1648,6 +1673,13 @@ body {
 
   .panel--controls { left: 0; right: auto; }
   .panel--controls.panel--mobile-closed { transform: translateX(-340px); }
+  /* The library panel shares the left rail, so it needs the SAME fixed-overlay
+     rule as the other two. Without it, `.panel--library` stayed `position:
+     absolute; z-index: 1` while `.canvas-wrapper` is `position: absolute;
+     z-index: 2` and full-bleed at <=768px — the canvas painted over the open
+     panel and all six of its controls were untappable (AGENTS.md 0.10). */
+  .panel--library { left: 0; right: auto; }
+  .panel--library.panel--mobile-closed { transform: translateX(-340px); }
   .panel--layers { left: auto; right: 0; }
   .panel--layers.panel--mobile-closed { transform: translateX(340px); }
   /* The media panel is an overlay too — it needs the SAME fixed positioning
@@ -1676,7 +1708,11 @@ body {
     display: flex !important;
     position: fixed !important;
     left: var(--space-2);
-    bottom: 80px;
+    /* Anchored just above the status strip. At a flat 80px the toggles landed on
+       the style library's Import row (y 766..810 at 390px) and covered both
+       buttons — they were untappable (AGENTS.md 0.12). `--status-h` + one gap
+       keeps them clear of the strip at every viewport height. */
+    bottom: calc(var(--status-h) + var(--space-2));
     z-index: calc(var(--z-panel) + 10);
     align-items: center; justify-content: center;
     width: var(--touch); height: var(--touch); border-radius: 50%;
@@ -1687,6 +1723,19 @@ body {
   }
   #toggle-layers {
     left: calc(var(--space-1) + var(--touch) + var(--space-1));
+  }
+
+  /* While the style library has the left rail, the floating toggles must not
+     float over it: the library's content is taller than its scroll host at phone
+     heights, so its bottom-most row (the Import buttons) always lands in the
+     toggles' band at some viewport height — the buttons being 46px/68px wide,
+     the 44px overlay took their hit centre and they were untappable (AGENTS.md
+     0.12). The library is closed by its own collapse chevron, and `:has()` is a
+     progressive enhancement — without it the rule is ignored and the toggles
+     simply stay where they were. */
+  .main:has(.panel--library:not(.panel--mobile-closed):not(.panel--hidden)) #toggle-controls,
+  .main:has(.panel--library:not(.panel--mobile-closed):not(.panel--hidden)) #toggle-layers {
+    display: none !important;
   }
 
   .mobile-toggle:hover { color: var(--text-primary); border-color: var(--text-primary); }
@@ -2793,7 +2842,12 @@ body {
 
 /* ── Mobile adjustments ── */
 @media (max-width: 768px) {
-  .library-scroll { padding: 0; }
+  /* Reserve the floating rail toggles' band (see `.mobile-toggle`) at the end of
+     the library's scroll host. Without it the Import row was the host's
+     bottom-most content and sat underneath the toggles at every viewport height,
+     so both Import buttons were untappable (AGENTS.md 0.12). The controls and
+     media hosts already carry a bottom pad for the same reason. */
+  .panel--library > .library-scroll { padding: 0 0 calc(var(--touch) + var(--space-2) + var(--space-1)); }
   .library-row-btn { min-height: var(--touch); }
 }
 
