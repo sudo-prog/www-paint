@@ -1,6 +1,6 @@
 # Clean-Room Engine — Decision & Track
 
-**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0 + R1 + R2 + R3 done**
+**Date:** 2026-11-10 · Agent: BE (ThinkPad) · Status: **decided; R0–R4 done** (R4 = 4 of 4, all opt-in/default-off) · R5 / R6 open
 
 ---
 
@@ -70,7 +70,7 @@ matching it.
 | R1 | Optimiser core | Residual/error-driven stroke placement + per-stroke local refinement (our own hill-climb), on the modular engine. Beats R0 baseline. |
 | R2 | Structure-guided multi-scale | Coarse→fine; strokes follow the shared structure tensor (roadmap 1.2/1.3). |
 | R3 | Better init | CCL + PCA stroke init (roadmap 1.4). Fidelity ≥ reference at equal stroke count. |
-| R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. **3 of 4 landed** (all opt-in, default off): region-fill (`regionFill`; small measured gain), order (`r4`), outlines (`r4Outline`; **costs** fidelity on the parity targets → no gain claimed). **per-style shaping open** (applied by `modular-bridge.js`, not the optimiser). See `docs/checkpoints/R4.md` + `docs/checkpoints/R4-outline.md`. |
+| R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. **DONE — 4 of 4 landed, all opt-in/default-off**: region-fill (`regionFill`; small measured gain), order (`r4`), outlines (`r4Outline`; **costs** fidelity → no gain claimed), per-style shaping (`r4Shaping`, via the `r4.js` seam; **costs** fidelity → no gain claimed). See `docs/checkpoints/R4.md`, `R4-outline.md`, `R4-shaping.md`. |
 | R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. |
 | R6 | Retire the legacy painter | App + baselines run 100% on the modular engine; the legacy painter demoted to a dev-only fixture. |
 
@@ -88,7 +88,15 @@ structured images (blobs 97.52→**98.08** simMae / 0.8671→**0.8902** SSIM —
 gap to reference 2.02→1.46; smooth 98.78→**98.88**); rings (rotationally
 symmetric — no principal axis) and `noise` are flat. Evidence:
 `docs/checkpoints/R1.md`, `docs/checkpoints/R2.md`, `docs/checkpoints/R3.md`,
-`docs/research/parity/baseline.json`.
+`docs/research/parity/baseline.json`. **R4 ✔ (2026-11-17)** — all four feature-parity
+items are reachable from the engine of record, each behind its own opt-in default
+that is **off**, each proven byte-identical when off (`docs/checkpoints/R4.md`,
+`R4-outline.md`, `R4-shaping.md`): region-fill (`regionFill`, small measured gain),
+order (`r4`), outlines (`r4Outline`) and per-style shaping (`r4Shaping`). Honest
+read: outlines and shaping **cost** MAE/SSIM — they are constraints paying for a
+perceptual/structural intent the fidelity metrics do not measure — so neither
+claims a gain; both are candidates for a style/perceptual fitness target (Track-S
+S10) rather than tuning against MAE.
 
 Ship-safety: the app stays runnable at every step. The legacy painter remains the default
 until R6, switched behind a flag during R1–R5 so the two can be compared live.

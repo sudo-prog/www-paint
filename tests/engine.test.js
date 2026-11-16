@@ -36,8 +36,8 @@ import {
   orderShapes, estimateShapeCount
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
-import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, resolveR4OutlineMode, buildScalePlan, resolvePassPlan, PASS_SCALES, applyPrimitiveLanguage } from '../js/engine/optimizer.js';
-import { planOutlines } from '../js/engine/r4.js';
+import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, resolveR4OutlineMode, buildScalePlan, resolvePassPlan, PASS_SCALES, applyPrimitiveLanguage, resolveR4Shaping, applyR4Shaping, SHAPING_PARTS } from '../js/engine/optimizer.js';
+import { planOutlines, buildR4Plan } from '../js/engine/r4.js';
 import {
   REGION_DEFAULTS, quantizeBins, labelComponents, pcaFromStats, buildRegions, fitEllipse
 } from '../js/engine/regions.js';
@@ -2368,6 +2368,153 @@ test('S5: a primitive-weight search is deterministic and proposes a real mix', (
     { method: 'cma', evaluations: 19, seed: 99 });
   assertEqual(noPrim.primitives, null);
   assertEqual(Object.keys(noPrim.knobs).some((k) => k.startsWith('prim_')), false);
+});
+
+// ─── Track R4 — per-style shaping ─────────────────────────────────
+console.log('\nPer-style shaping (Track R4):');
+
+/** Shape ids, SORTED: two sets with the same ids hold the very same shapes. */
+const r4Ids = (shapes) => shapes.map((s) => s.id).sort();
+
+test('shaping: default off adds nothing and matches an explicit null', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const def = optimise(an, { count: 200, seed: 7 });
+  const explicit = optimise(an, { count: 200, seed: 7, r4Shaping: null });
+  assertEqual(OPTIMISER_DEFAULTS.r4Shaping, null);
+  assertEqual(def.stats.shaping, undefined, 'no shaping stats when the option is off');
+  assertEqual(def.shapes.length, 200);
+  assertEqual(JSON.stringify(def.shapes), JSON.stringify(explicit.shapes), 'opt-out is byte-identical');
+  // A flat field holds no residual, so the schedule emits nothing — and shaping
+  // must not manufacture strokes to fill the budget.
+  const flat = makeRGBImage(S, S, () => [128, 128, 128]);
+  const fr = optimise(analyzeImage(flat, S, S), { count: 120, seed: 7, r4Shaping: 'pencil' });
+  assertEqual(fr.shapes.length, 0, 'a flat field needs no strokes, shaping or not');
+});
+
+test('shaping: a style retunes size/order/fill, keeps the budget, is deterministic', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const off = optimise(an, { count: 200, seed: 7 });
+  const a = optimise(an, { count: 200, seed: 7, r4Shaping: 'pencil' });
+  const b = optimise(an, { count: 200, seed: 7, r4Shaping: 'pencil' });
+  assertEqual(a.stats.shaping, 'pencil');
+  assertEqual(a.stats.shapingParts, SHAPING_PARTS, 'all four parts by default');
+  assertEqual(a.stats.paintOrder, 'down', "pencil's own paint order");
+  if (!(a.stats.fill > 0)) throw new Error("pencil's region-fill share should block in a region");
+  assertEqual(a.shapes.length, 200, 'the budget is unchanged — shaping retunes, it does not spend');
+  assertEqual(JSON.stringify(a.shapes), JSON.stringify(b.shapes), 'deterministic');
+  if (JSON.stringify(a.shapes) === JSON.stringify(off.shapes)) {
+    throw new Error('a style with a size band, an order and a fill share must change the output');
+  }
+});
+
+test('shaping: the size band really bounds the dab radius', () => {
+  // Big target, thin budget: the base radius (≈11.4 px) sits ABOVE the style's
+  // own ceiling, so the band has to bind. `paintPass` proposes
+  // `radius = clamp(…, minSize, maxSize)` and the hill-climb may then scale a
+  // dab by at most `maxSizeFactor` (2), so `ry ≤ 2·maxSize` is a HARD invariant
+  // — and the unshaped run on the same image breaks it.
+  const S = 128;
+  const px = makeRGBImage(S, S, (x, y) => (y < S / 2 ? [40, 60, 120] : [220, 200, 160]));
+  const an = analyzeImage(px, S, S);
+  const off = optimise(an, { count: 80, seed: 11 });
+  const band = optimise(an, { count: 80, seed: 11, r4Shaping: { style: 'halftone', parts: ['size'] } });
+  const maxRy = (shapes) => Math.max(...shapes.map((s) => s.params[3]));
+  assertEqual(band.stats.shapingParts, ['size']);
+  if (!(maxRy(band.shapes) <= 2 * 12 + 1e-9)) {
+    throw new Error(`ry ${maxRy(band.shapes)} exceeded 2x the style ceiling (12)`);
+  }
+  if (!(maxRy(off.shapes) > 2 * 12)) {
+    throw new Error('the unshaped run should exceed the band, or the test proves nothing');
+  }
+  assertEqual(band.shapes.length, off.shapes.length, 'the budget is untouched');
+});
+
+test('shaping: parts[] isolates which of the four apply', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const off = optimise(an, { count: 200, seed: 7 });
+  const sizeOnly = optimise(an, { count: 200, seed: 7, r4Shaping: { style: 'watercolor', parts: ['size'] } });
+  const orderOnly = optimise(an, { count: 200, seed: 7, r4Shaping: { style: 'string', parts: ['order'] } });
+  const elongOnly = optimise(an, { count: 200, seed: 7, r4Shaping: { style: 'string', parts: ['elongation'] } });
+  const fillOnly = optimise(an, { count: 200, seed: 7, r4Shaping: { style: 'watercolor', parts: ['fill'] } });
+
+  assertEqual(sizeOnly.stats.shapingParts, ['size']);
+  assertEqual(sizeOnly.stats.paintOrder, undefined, 'no order part → no reorder');
+  assertEqual(sizeOnly.stats.fill, 0, 'no fill part → no fill pass');
+  assertEqual(r4Ids(sizeOnly.shapes), r4Ids(off.shapes), 'same shape set, retuned geometry');
+  if (JSON.stringify(sizeOnly.shapes) === JSON.stringify(off.shapes)) {
+    throw new Error('the size part should have retuned the dabs');
+  }
+
+  assertEqual(orderOnly.stats.paintOrder, 'spiral');
+  assertEqual(orderOnly.stats.fill, 0);
+  assertEqual(r4Ids(orderOnly.shapes), r4Ids(off.shapes), 'ordering permutes the SAME shapes');
+  if (JSON.stringify(orderOnly.shapes) === JSON.stringify(off.shapes)) {
+    throw new Error('the spiral order should have permuted the sequence');
+  }
+
+  assertEqual(elongOnly.stats.paintOrder, undefined);
+  assertEqual(elongOnly.stats.fill, 0);
+  if (JSON.stringify(elongOnly.shapes) === JSON.stringify(off.shapes)) {
+    throw new Error('the elongation part should have retuned the dabs');
+  }
+
+  assertEqual(fillOnly.stats.paintOrder, undefined);
+  if (!(fillOnly.stats.fill > 0)) throw new Error('the fill part should block in a region');
+});
+
+test('shaping: an explicit option wins over the style value', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const off = optimise(an, { count: 200, seed: 7 });
+  const both = optimise(an, {
+    count: 200, seed: 7,
+    r4Shaping: { style: 'watercolor', parts: ['size', 'fill'] },
+    minSize: OPTIMISER_DEFAULTS.minSize, maxSize: OPTIMISER_DEFAULTS.maxSize, regionFill: 0,
+  });
+  assertEqual(both.stats.shaping, 'watercolor', 'the parts still report as applied');
+  assertEqual(both.stats.fill, 0, 'the explicit regionFill wins over the style share');
+  assertEqual(JSON.stringify(both.shapes), JSON.stringify(off.shapes),
+    'a fully overridden shaping is a no-op');
+  const ordered = optimise(an, {
+    count: 200, seed: 7, r4Shaping: { style: 'string', parts: ['order'] }, r4: 'down',
+  });
+  assertEqual(ordered.stats.paintOrder, 'down', 'the explicit order mode wins');
+});
+
+test('shaping: resolveR4Shaping is total — string, object, plan object, unknown', () => {
+  assertEqual(SHAPING_PARTS, ['size', 'elongation', 'order', 'fill']);
+  assertEqual(resolveR4Shaping('pencil').maxSize, 10);
+  assertEqual(resolveR4Shaping('pencil').order, 'down');
+  assertEqual(resolveR4Shaping('pencil').source, 'table');
+  assertEqual(resolveR4Shaping('pencil').parts, SHAPING_PARTS);
+  assertEqual(resolveR4Shaping({ style: 'ink', parts: ['order'] }).parts, ['order']);
+  assertEqual(resolveR4Shaping({ style: 'ink', parts: ['nope'] }), null, 'no known part → nothing applies');
+  assertEqual(resolveR4Shaping(42), null);
+  assertEqual(resolveR4Shaping(null), null);
+  assertEqual(resolveR4Shaping('not-a-style'), null, 'an unknown style name is a safe no-op');
+  // The plan object from the r4 seam is accepted as-is, and keeps its own
+  // provenance: a table-sourced plan is not re-reported as a caller override.
+  const plan = buildR4Plan({ style: 'watercolor', order: 'down' });
+  const fromPlan = resolveR4Shaping(plan);
+  assertEqual(fromPlan.style, 'watercolor');
+  assertEqual(fromPlan.maxSize, 20);
+  assertEqual(fromPlan.source, 'table');
+  const overridden = resolveR4Shaping({ style: 'ink', shaping: { maxSize: 12, order: 'down' }, parts: ['size'] });
+  assertEqual([overridden.maxSize, overridden.order, overridden.source], [12, 'down', 'override']);
+  assertEqual(overridden.parts, ['size']);
+});
+
+test('shaping: applyR4Shaping is the identity when off, a copy when on', () => {
+  const base = resolveOptimiserOptions({});
+  assertEqual(applyR4Shaping(base, {}) === base, true, 'off → the very same object, untouched');
+  const shaped = applyR4Shaping(resolveOptimiserOptions({ r4Shaping: 'pencil' }), { r4Shaping: 'pencil' });
+  assertEqual([shaped.maxSize, shaped.elongation, shaped.r4, shaped.regionFill], [10, 1.2, 'down', 0.1]);
+  assertEqual([base.maxSize, base.elongation, base.r4, base.regionFill],
+    [OPTIMISER_DEFAULTS.maxSize, OPTIMISER_DEFAULTS.elongation, OPTIMISER_DEFAULTS.r4, OPTIMISER_DEFAULTS.regionFill],
+    'the input options are never mutated');
 });
 
 // ─── Summary ──────────────────────────────────────────────────────

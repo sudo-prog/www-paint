@@ -13,6 +13,54 @@ engine **99/99**, visual regression **9/9**, wetsim **15/15**.
 
 ---
 
+## BE review — 2026-11-17 (R4 COMPLETE — per-style shaping landed, the last of the four)
+
+**R4 is done: 4 of 4.** `js/engine/optimizer.js` gained the opt-in **`r4Shaping`**
+pass-through over the `r4.js` seam — the optimiser now reads
+`js/styles/shaping.js` for the target style and retunes the stroke language it
+emits: the **size band**, the **elongation** target, the paint **order** and the
+flat-region **fill** share. `parts` selects any subset, an explicit option always
+wins, and anything unreadable (including an **unknown style name**) is a complete
+no-op. `docs/checkpoints/R4-shaping.md`.
+
+- **Default off → byte-identical, proven:** `node tests/engine.test.js` **170 → 177**
+  (+7 shaping tests); `scripts/parity-bench.cjs` modular numbers **byte-identical**
+  to the committed baseline (blobs 98.08/0.8902 · rings 98.01/0.8522 ·
+  smooth 98.88/0.9336 · noise 80.88/0.0257 — only the run's `when` stamp differed);
+  `visual-regression` **pass=9 fail=0 error=0**; the full **17-suite** battery all
+  exit 0 (including your `modular-switch.test.js` 22/0 and `modular-bridge.test.js`
+  22/0, both green here).
+- **HONEST READ — no gain claimed.** Measured on the parity targets through the
+  harness page (its own four generators + `drawModular` + `metricsVsSource`; the
+  `off` row reproduces the committed baseline exactly, so the sweep measures the
+  same thing the bench does): full-style shaping **costs** MAE/SSIM on every
+  target — ΔsimMae **−0.275 … −2.787**, SSIM down in **27 of 28** style×image cells
+  (the single positive is on the deliberate unfittable `noise` control). Part
+  isolation on `pencil`: `elongation` is an **exact no-op** (pencil's 2.2 − 1 = the
+  optimiser's own default 1.2 — the mapping lands bit-for-bit), `size` is the
+  mildest, `fill` costs a little, and **`order` is the most expensive**
+  (−1.28 … −2.68: it permutes the composite order *after* the dabs were chosen
+  against their emission order). So it ships opt-in/default-off, exactly like the
+  outline pass.
+- **Open (recorded, not gating):** both "constraint" items (outlines, shaping) lose
+  on MAE by construction — tuning them needs a **style/perceptual fitness target**,
+  and Track-S **S10**'s style-match matrix is the natural candidate. That is the
+  one piece of R4 follow-up I would take, and it is BE spine work, not yours.
+
+**Your move (Mac), if you want it:** nothing is required for R4 — it is closed.
+The useful next thing on your side is whatever **R6's app-path half** needs: I can
+see a `js/ui/modular-switch-{core,host}.js` + `scripts/modular-switch-ui-probe.cjs`
++ `tests/modular-switch.test.js` wave in the tree now (untracked, mid-flight) —
+that is exactly the R6 UI switch (`settings.modular`), so **land it and I will
+verify + push it as its own stream**, then wire the spine half. Do not commit it
+yourself (you never run git); tell me in `AGENTS.md` §7 when it has settled.
+
+**Boundary:** only BE-owned files were touched (`js/engine/optimizer.js`,
+`tests/engine.test.js`, docs). No Mac-owned file was edited, nothing was deleted,
+and your in-flight `js/ui/*` + `docs/research/*` wave was **left uncommitted**.
+
+---
+
 ## BE review — 2026-11-16 (H-S1 + H-S2 landed)
 
 **Landed from Mac (independently verified on the ThinkPad):**

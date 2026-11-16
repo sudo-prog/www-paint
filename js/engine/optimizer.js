@@ -65,7 +65,11 @@ import { sampleEdge, sampleStructure } from './analyzer.js';
 import { buildRegions } from './regions.js';
 import { computeTonalMasks } from './masks.js';
 import { mixStrokeLanguage } from './primitives.js';
-import { planOrder, planOutlines } from './r4.js';
+import { planOrder, planOutlines, resolveEffectiveShaping } from './r4.js';
+// Read-only: the shaping table is the registry of style names a shaping request
+// can name. Imported directly (not through `r4.js`) because `r4.js` re-exports
+// it only on its default export object.
+import { SHAPING_TABLE } from '../styles/shaping.js';
 
 /**
  * The three scale keywords an explicit pass may declare (Track-S S4). They map
@@ -196,6 +200,21 @@ export const OPTIMISER_DEFAULTS = {
   r4OutlineRadius: 0.6,    // dab radius, as a fraction of the pass's base radius
   r4OutlineAlpha: 0.9,     // opacity of an outline dab
   r4OutlineOptions: null,  // forwarded to `planOutlines()` (threshold, scale, …)
+
+  // ── R4 per-style shaping (feature parity: style-dependent stroke geometry) ─
+  // Opt-in — `null` (default) → every stroke keeps the geometry it had and the
+  // output is byte-identical to R3. When set, the optimiser reads the style's
+  // own shaping entry (`js/styles/shaping.js`, through the `r4.js` seam) and
+  // retunes the stroke language it emits: the stroke SIZE band, the elongation
+  // target, the paint ORDER and the flat-region FILL share.
+  //
+  // Accepts a bare style name (`'pencil'`), a `{ style, parts, …override }`
+  // object, or the plan object from `buildR4Plan()` (`{ style, shaping, … }`).
+  // An explicitly supplied option ALWAYS wins over the style's value (the
+  // S4/S5 precedent), and `parts` restricts which of the four apply. Anything
+  // unrecognised resolves to nothing at all, so a stale or future value is a
+  // safe no-op rather than a silent restyle.
+  r4Shaping: null,
 };
 
 /**
@@ -221,6 +240,140 @@ export function resolveOptions(o = {}) {
 export function resolveR4OutlineMode(v) {
   const raw = typeof v === 'string' ? v : (v && (v.outline?.mode ?? v.mode));
   return raw === 'first' || raw === 'last' ? raw : 'off';
+}
+
+/**
+ * The four parts of a style's shaping entry the optimiser can apply, in the
+ * order they are documented. `parts` names any subset of these.
+ * @type {string[]}
+ */
+export const SHAPING_PARTS = ['size', 'elongation', 'order', 'fill'];
+
+/** part name → the `js/styles/shaping.js` field it reads. */
+const SHAPING_PART_FIELD = {
+  size: 'maxSize',           // (minSize travels with it — a band needs both ends)
+  elongation: 'elongation',
+  order: 'order',
+  fill: 'regionFill',
+};
+
+/**
+ * Resolve the R4 shaping intent from the `r4Shaping` option.
+ *
+ * Accepts a bare style name (`'pencil'`), a `{ style, parts, shaping }` object,
+ * or the plan object from `js/engine/r4.js` `buildR4Plan()` (which carries both
+ * `style` and the resolved `shaping`). Returns `null` — a complete no-op —
+ * for anything it cannot read, including a style name that is not in the
+ * shaping table, so a stale, future or mistyped value never restyles.
+ *
+ * The returned object is flat and fresh: `{ style, source, parts, minSize,
+ * maxSize, elongation, order, regionFill }`.
+ *
+ * @param {*} v
+ * @returns {null|{style: string|null, source: string, parts: string[],
+ *   minSize: number, maxSize: number, elongation: number, order: string,
+ *   regionFill: number}}
+ */
+export function resolveR4Shaping(v) {
+  if (v === null || v === undefined || v === false) return null;
+  let style = null;
+  let override = null;
+  let requested = null;
+  // A `buildR4Plan()` plan reports where its own shaping came from; a plan that
+  // took the TABLE's values must not be re-reported as a caller override.
+  let declaredSource = null;
+
+  if (typeof v === 'string') {
+    style = v;
+  } else if (typeof v === 'object') {
+    style = typeof v.style === 'string' ? v.style : null;
+    // A plan object (`buildR4Plan()`) carries the resolved fields under
+    // `shaping`; a caller may equally hand its own partial override there.
+    if (v.shaping && typeof v.shaping === 'object') override = v.shaping;
+    if (Array.isArray(v.parts)) requested = v.parts;
+    if (typeof v.shapingSource === 'string') declaredSource = v.shapingSource;
+  } else {
+    return null;
+  }
+
+  // A caller may pass an override with no style name at all (a hand-built plan)
+  // — then the table's documented defaults are the base. With neither a known
+  // style nor a single known field there is nothing to apply.
+  const hasOverride = !!override
+    && SHAPING_PARTS.some((p) => override[SHAPING_PART_FIELD[p]] !== undefined);
+  if (!style && !hasOverride) return null;
+  // An UNKNOWN style name is a no-op, not the table's fallback entry: a typo
+  // must not silently restyle the run with somebody else's stroke language.
+  // (`SHAPING_TABLE` covers the whole registry — `r4.js` `shapingCoverageGaps()`
+  // is the completeness check, and it is empty.)
+  if (style && !Object.prototype.hasOwnProperty.call(SHAPING_TABLE, style)) return null;
+
+  // Values first, then provenance: a plan whose own `shapingSource` says the
+  // table supplied it keeps `source: 'table'` (identical values either way).
+  const useOverride = hasOverride && declaredSource !== 'table';
+  const { source, shaping } = resolveEffectiveShaping(
+    style || undefined,
+    useOverride ? override : null,
+  );
+  // `parts` defaults to all four; an unrecognised name is dropped, and a list
+  // that resolves to nothing is a no-op rather than a restyle of nothing.
+  const parts = requested === null
+    ? SHAPING_PARTS.slice()
+    : SHAPING_PARTS.filter((p) => requested.includes(p));
+  if (parts.length === 0) return null;
+
+  return {
+    style,
+    source,
+    parts,
+    minSize: shaping.minSize,
+    maxSize: shaping.maxSize,
+    elongation: shaping.elongation,
+    order: shaping.order,
+    regionFill: shaping.regionFill,
+  };
+}
+
+/**
+ * Apply a style's shaping to the optimiser options (R4 per-style shaping).
+ *
+ * Pure and **default-off**: with `r4Shaping` unset (or unresolvable) the very
+ * same object is returned, so every earlier result stays byte-identical. Each
+ * part is applied only when the CALLER did not set that option explicitly
+ * (`raw` is the caller's own object, before defaults were merged), which keeps
+ * an explicit option winning over the style's value.
+ *
+ * | part | option it sets | when |
+ * |---|---|---|
+ * | `size` | `minSize` / `maxSize` | the style's stroke-size band |
+ * | `elongation` | `elongation` | so aspect reaches the style's value at coherence 1 |
+ * | `order` | `r4` | the style's preferred paint order |
+ * | `fill` | `regionFill` | the flat-region share the style can carry |
+ *
+ * @param {object} opts - Resolved options (defaults already merged in).
+ * @param {object} [raw] - The caller's own options object (explicitness test).
+ * @returns {object} `opts`, or a shaped copy of it.
+ */
+export function applyR4Shaping(opts, raw = {}) {
+  const sh = resolveR4Shaping(opts.r4Shaping);
+  if (!sh) return opts;
+  const set = new Set(sh.parts);
+  const out = { ...opts };
+  if (set.has('size')) {
+    if (raw.minSize === undefined) out.minSize = Math.max(opts.minSize, sh.minSize);
+    if (raw.maxSize === undefined) out.maxSize = Math.min(opts.maxSize, sh.maxSize);
+  }
+  if (set.has('elongation') && raw.elongation === undefined) {
+    // `paintPass` builds the aspect as `1 + elongation·elongMul·coherence`, so
+    // the option that makes a fully coherent stroke reach the style's value is
+    // one less than it. Rounded to 6 dp so a style whose value lands on the
+    // optimiser's own default (2.2 → 1.2) is bit-identical to it, not 1.2+2e-16.
+    out.elongation = clamp(+(sh.elongation - 1).toFixed(6), 0, 8);
+  }
+  if (set.has('order') && raw.r4 === undefined) out.r4 = sh.order;
+  if (set.has('fill') && raw.regionFill === undefined) out.regionFill = clamp(sh.regionFill, 0, 1);
+  out.shaping = sh;
+  return out;
 }
 
 /**
@@ -487,7 +640,10 @@ function buildPassMask(analysis, bands) {
  *   measured on the optimiser's own paint buffer against the ORIGINAL target.
  */
 export function optimise(analysis, options = {}) {
-  const opts = resolveOptions(options);
+  // R4 per-style shaping is applied over the merged options, but reads the
+  // CALLER's own object to tell an explicit option from a defaulted one. With
+  // `r4Shaping` unset this returns the identical object — byte-identical path.
+  const opts = applyR4Shaping(resolveOptions(options), options);
   const { width: W, height: H, pixels, edges, edgeX, edgeY } = analysis;
   const structure = opts.structureAlign ? analysis.structure : null;
   const n = W * H;
@@ -1067,6 +1223,8 @@ export function optimise(analysis, options = {}) {
       simMae: +(100 * (1 - finalError / 255)).toFixed(2),
       ...(outlineActive ? { outline: outlineUsed, outlineMode: r4OutlineMode } : {}),
       ...(paintOrder ? { paintOrder } : {}),
+      // Reported only when a style's shaping actually retuned the run.
+      ...(opts.shaping ? { shaping: opts.shaping.style || null, shapingParts: opts.shaping.parts } : {}),
     },
   };
 }
@@ -1074,4 +1232,5 @@ export function optimise(analysis, options = {}) {
 export default {
   OPTIMISER_DEFAULTS, resolveOptions, resolveR4OutlineMode, buildScalePlan, applyPrimitiveLanguage,
   PASS_SCALES, resolvePassPlan, optimise,
+  SHAPING_PARTS, resolveR4Shaping, applyR4Shaping,
 };

@@ -164,7 +164,10 @@ is neither `scorer.js` nor `score.js`.
 ### 3.6 `js/engine/optimizer.js` — the modular engine of record
 
 - `OPTIMISER_DEFAULTS` (`obj`) — the full option table, **including the opt-in
-  defaults**: `regionFill: 0`, `passes: null`, `primitives: null`, `r4: null`.
+  defaults**: `regionFill: 0`, `passes: null`, `primitives: null`, `r4: null`,
+  `r4Outline: null`, `r4Shaping: null`. Track R4's per-style shaping is applied by
+  `resolveR4Shaping(v)` / `applyR4Shaping(opts, raw)` and the four parts are named
+  by `SHAPING_PARTS` (`size`, `elongation`, `order`, `fill`).
   Every one is documented in-file as byte-identical-until-opted-in.
 - `optimise(analysis, options)` → `{shapes, stats}` — **the** generation call.
 - `resolveOptions(o)` · `buildScalePlan(opts, baseR)` — the R2 coarse→fine schedule.
@@ -247,12 +250,20 @@ mixed — read §4 before assuming it is inert:**
   calls the *primitives* (`planOrder`, `planOutlines`), not `buildR4Plan()`
   wholesale: it has no shape set at outline time, and it computes order over the
   shapes it emits, at the tail.
+- `optimizer.js` imports `resolveEffectiveShaping` and reads the style's own
+  shaping entry when `opts.r4Shaping` is set (**default `null` → nothing is read
+  and the output is byte-identical**). So the **shaping half is wired into the
+  optimiser too** — not only into `modular-bridge.js`; `resolveR4Shaping` is total
+  (an unknown style name, an empty `parts` list or any other unreadable value is a
+  complete no-op) and each of the four parts is independently selectable via
+  `parts`. See `docs/checkpoints/R4-shaping.md`, `tests/engine.test.js`.
 - `modular-bridge.js:51` imports `buildR4Plan` + `resolveEffectiveShaping`.
 - `scripts/r4-probe.cjs` imports the module directly (verification only).
 
 **Net:** the *order*, *outline* and *shaping* halves are all reachable from the
 engine of record; each sits behind an opt-in default that is **off**, so the app
 path (`js/engine/app` painter + the default modular optimiser) is byte-identical.
+**R4 is complete (4 of 4)** — region-fill, order, outlines, shaping.
 
 - `buildR4Plan(args)` → the plan the BE spine should call.
 - `planOrder(shapes, mode, opts)` — over a **copy** (a rejected plan must not
@@ -363,11 +374,11 @@ Stated plainly so nobody mistakes "exists" for "runs":
 
 | Module | Importers outside its own test | Status |
 |---|---|---|
-| `js/engine/r4.js` | `optimizer.js` (`planOrder`, `planOutlines`), `modular-bridge.js` (`buildR4Plan`) | **live (opt-in, default off)** — order behind `opts.r4`, outlines behind `opts.r4Outline`; byte-identical when both off |
+| `js/engine/r4.js` | `optimizer.js` (`planOrder`, `planOutlines`, `resolveEffectiveShaping`), `modular-bridge.js` (`buildR4Plan`) | **live (opt-in, default off)** — order behind `opts.r4`, outlines behind `opts.r4Outline`, shaping behind `opts.r4Shaping`; byte-identical when all three are off |
 | `js/engine/modular-bridge.js` | none | inert — `enabled` defaults `false` |
 | `js/engine/outlines.js` | `r4.js`, `modular-bridge.js` (via `buildR4Plan`), `optimizer.js` (via `r4.js` `planOutlines`) | **live (opt-in, default off)** — the optimiser's `r4Outline` pass |
 | `js/engine/order.js` | `r4.js`, `optimizer.js` (via `r4.js`) | **live behind `opts.r4`** |
-| `js/styles/shaping.js` | `r4.js`, `modular-bridge.js` | **live** — shaping is applied by the bridge |
+| `js/styles/shaping.js` | `r4.js`, `optimizer.js` (directly, for `r4Shaping`), `modular-bridge.js` | **live (opt-in, default off)** — applied by the bridge and, since R4's last item, by the optimiser's own `r4Shaping` |
 | `js/engine/primitives.js` | `profile.js`, `optimizer.js`, `propose.js` | **live** (opt-in) |
 | `js/engine/style-render.js` | `score.js` | **live** (default backend of `scoreProfileStyle`) |
 
