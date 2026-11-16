@@ -35,6 +35,7 @@ import { getAllStyles } from '../styles/index.js';
 import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
 import { applyLayerStyles, preserveLayerProps, resolveLayerStyles } from './layer-styles.js';
 import { applyProfile } from './profile.js';
+import { buildModularPlan } from './modular-bridge.js';
 
 // Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
 // The actual painting is done by Painter, but the settings object is still
@@ -412,6 +413,38 @@ export class PaintingEngine {
     }
     if (!this._pixels) {
       throw new Error('No pixel data available. Call loadImage first.');
+    }
+
+    // ── R6 — modular-engine path (opt-in, default off) ──────────────────────
+    // The modular engine (`optimizer.js`) is the engine of record (Track R), but
+    // the app has always generated with the legacy `painter.js`. This is the R6
+    // switch: with `settings.modular` (or an explicit `opts.modular`) on, the
+    // paint is planned by `buildModularPlan` instead. It returns `shapes: []`
+    // whenever `enabled` is false, so the DEFAULT path is untouched and output
+    // stays byte-identical (the 9 pinned baselines cannot move). Single-layer
+    // only for now — multi-layer still routes through the Painter.
+    const modular = opts.modular !== undefined ? !!opts.modular : !!this.settings.modular;
+    if (modular && !multiLayer) {
+      const plan = buildModularPlan(this._analysis, {
+        enabled: true,
+        style,
+        count,
+        seed,
+        layerStyles,
+        width: this.width,
+        height: this.height,
+      });
+      if (plan.shapes.length) {
+        const layer = this.getLayer(layerIdx);
+        if (layer) layer.strokes = plan.shapes;
+        this.renderer.multiLayer = false;
+        this.renderer.setLayers(this.layers);
+        this._lastCount = plan.shapes.length;
+        if (typeof opts.onShape === 'function') {
+          for (let i = 0; i < plan.shapes.length; i++) opts.onShape(plan.shapes[i], i);
+        }
+        return plan.shapes;
+      }
     }
 
     const selected = [];

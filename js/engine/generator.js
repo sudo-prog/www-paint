@@ -44,6 +44,13 @@ export const DEFAULT_SETTINGS = {
   alignToStructure: false,
   // Use residual-based selection for full-coverage painting
   useResidual: true,
+  // Track R6 — the modular-engine switch. When true, `engine.js#generate()`
+  // paints with the modular engine (the engine of record, Track R) via
+  // `js/engine/modular-bridge.js` instead of the legacy `painter.js`. Off by
+  // default → output is byte-identical to the Painter path (the 9 pinned
+  // baselines stay). The app can now reach R1–R5; wiring the UI toggle is a
+  // separate step.
+  modular: false,
 };
 
 /**
