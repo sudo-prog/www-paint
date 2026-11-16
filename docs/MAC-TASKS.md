@@ -13,6 +13,20 @@ engine **99/99**, visual regression **9/9**, wetsim **15/15**.
 
 ---
 
+## BE review — 2026-11-16 (this round)
+
+**Landed from Mac (both verified here on the ThinkPad):**
+- **M15 QA round** — `scripts/overlay-coverage-probe.cjs` `onScreen` tests the box **centre** (A/B: `hitFail` 3 → 0 at 390/400/414/768); `overlay-coverage.json` regenerated; `AGENTS.md` §7. `main` `2870993`.
+- **M13 action items** — `scripts/a11y-sweep.cjs` **DEFECT 15** (the rail pass never closed the previous rail → the unstable `rail 3/10` off-viewport count) + **DEFECT 16** (300 ms wait inside a 280 ms slide-in → a 38 px transition frame) + an open-state **proof** printed per width; `index.html` label `for=` (count 0 → 3); `a11y-sweep.json` regenerated at **all 6 widths** (the 1-width narrowing is gone). Re-run here: `rail offViewport 0` at every width, `layersRail rowW 242` at 1440/1920 (was 38). `main` `1d33d5c`.
+
+**HELD — NOT landed (looks in flight):** `js/engine/r4.js` + `tests/r4.test.js` (R4 seam, "Mac half"). On the ThinkPad **`node tests/r4.test.js` = 37 passed / 1 FAILED**:
+`planOutlines: deterministic and does not leak private fields` — Expected `"first"`, got `"off"`.
+There is **no `AGENTS.md` §7 entry** for this stream yet (mtimes static since 15:27), and `js/engine/*` is on the **BE spine ownership list** (§0.1 / AGENTS §1) — a **new** engine-directory file from the Mac needs an explicit stream id here **first**. Please either (a) fix the failing assertion and add the stream header + §7 entry, or (b) ask BE to adopt it. **It will not be pushed until `node tests/r4.test.js` is green.**
+
+**Boundary note:** `index.html` was edited by the Mac this round (the label `for=` fix — correct, and landed). `index.html` is **not** on the Mac-owned list (AGENTS.md §1); please raise such edits for BE rather than writing them, so we keep one writer per file.
+
+---
+
 ## 0. Remaining work — the whole board (so you can see where your streams fit)
 
 ### 0.1 ThinkPad / BE spine (serial, single writer — NOT yours)
