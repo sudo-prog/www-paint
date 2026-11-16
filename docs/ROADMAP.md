@@ -1,6 +1,6 @@
 # WWW_PAINT — Project Brief & Development Roadmap
 
-Version 1.3 · 2026-11-12
+Version 1.4 · 2026-11-17
 
 > **This is the living brief.** Update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 > Work strictly in order (see §8 Agent Protocol). Do not start Phase N+1 until Phase N exit criteria are checked.
@@ -40,15 +40,15 @@ Build a pure-web, stroke-based image-to-art engine that can:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R R0–R3 done, R4 partial; the app still paints via the legacy `painter.js` until R6 |
+| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R R0–R3 done, R4 partial; the app still paints via the legacy `painter.js` **by default** — the R6 modular switch exists but is opt-in (`settings.modular`, default off). Track-S S7 added `js/engine/bake.js` (deterministic bake + worker batch/cancel) |
 | Shape vocabulary (E/B/T/R/S) | Complete | Five primitives — ellipse, blob, triangle, rect, stroke |
 | Styles | 50+ registered | Quality varies; 10 on the enhanced p5.brush stamp path (WebGL2) with a working fallback |
 | p5.brush integration | Working (stamp path) | `js/engine/brush-stamp-engine.js` + `js/engine/brush-media.js`; harness has no WebGL2 → the 9 baselines stay put |
 | Layers / per-layer styles | Working | `masks.js` tonal bands + `layer-styles.js` + the layer panel; multi-layer composite verified |
 | Wet media | Working (opt-in) | `js/engine/wetsim.js` + `mediaModel` integration; dry default is byte-identical |
-| Style Profile | Engine consumes it (4.1 done; 4.2 library UI open) | `js/engine/profile.js` + `engine.generate({ profile })` |
-| AI style loop (harness) | H1/H2/H4/H5 done; H3 mechanism done (real-LLM validation pending) | `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js` |
-| Style-match metrics / ref analysis grid | **Not started** | **Track S** (S1–S10) — the sref accuracy gap |
+| Style Profile | **Complete (4.1 + 4.2)** | `js/engine/profile.js` + `engine.generate({ profile })`; the library UI is Mac M10 (`3b711fe`, = Track-S S6) |
+| AI style loop (harness) | H1/H2/H4/H5 done; **5.5 done** (optional memory warm start, opt-in); H3 mechanism done — real-LLM validation **blocked on the free-only pool (no vision-capable model)** | `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js` |
+| Style-match metrics / ref analysis grid | **Shipped** — Track S S1–S7 + S10 done; S8 (real-LLM validation) blocked (no vision model on the free-only pool); S9 PARTIAL (the diagonal loss is **STRUCTURAL** — needs a feature-space fix, S9b) | `ref-analyze.js` `metrics.js` `bake.js`; board: `docs/TRACK_S.md` |
 
 Key existing docs in repo: `ARCHITECTURE.md`, `RE_BREAKDOWN.md`, and the plan set
 `docs/CLEANROOM.md` (Track R), `docs/AI_STYLE_HARNESS.md` (Harness H),
