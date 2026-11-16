@@ -2765,6 +2765,53 @@ body {
   min-width: 0;
 }
 
+/* ─── REFERENCE CONFIDENCE (Track-S hygiene H-S2) ─────────────────────────
+   A profile that carries a fused reference packet (`provenance.refPacket`,
+   Track-S S3) gets a chip in its row: `consistent` / `mixed` / `conflicting`,
+   the reference count and the agreement percentage. The word is the signal;
+   the number is the evidence (hover for the per-axis spread).
+
+   Text, not an icon: the chip IS a status word, and an icon would need a
+   legend. Colour is the secondary channel, never the only one — the word is
+   always present, so a colour-blind user and a monochrome screenshot both read
+   it. */
+
+.library-row__ref {
+  font-family: var(--f-mono);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  padding: 1px var(--space-1);
+  border-radius: var(--r-xs, 3px);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: help;
+}
+
+/* Good — a quiet affirmative. Not green-heavy: it is the default state and
+   should not shout. */
+.library-row__ref--good {
+  color: var(--text-tertiary);
+  border-color: var(--border);
+}
+
+/* Fair — worth noticing, not a problem. */
+.library-row__ref--fair {
+  color: var(--text-secondary);
+  border-color: var(--text-tertiary);
+  background: var(--bg-secondary);
+}
+
+/* Low — the one that must be impossible to miss. A real accent tint, because
+   the safe-default advice depends on this being seen. */
+.library-row__ref--low {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 600;
+}
+
 /* The actions are a full-width row below the identity. */
 .library-row__actions {
   display: flex;

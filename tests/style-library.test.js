@@ -521,6 +521,185 @@ test('summarize tolerates a minimal profile', () => {
   assertEqual(s.strokeCount, 0, 'missing strokeCount not handled');
 });
 
+// ─── Reference confidence (Track-S hygiene H-S2) ─────────────────────────
+//
+// The confidence read-out is derived from a REAL fused packet where one is
+// available — `fuseReferences` over real `analyzeReference` packets — so the
+// thresholds are tested against the numbers the engine actually emits, not a
+// hand-made shape. The synthetic-packet tests then pin the tolerant paths.
+
+import {
+  refConfidenceBand,
+  refConfidenceAdvice,
+  REF_CONFIDENCE_LABELS,
+  referenceConfidence,
+} from '../js/ui/style-library-core.js';
+import { analyzeReference, fuseReferences } from '../js/engine/ref-analyze.js';
+
+/** A 64x64 RGBA source from a per-pixel function. */
+function synthImage(fn) {
+  const w = 64, h = 64;
+  const pixels = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const [r, g, b] = fn(x, y);
+      pixels[i] = r; pixels[i + 1] = g; pixels[i + 2] = b; pixels[i + 3] = 255;
+    }
+  }
+  return { pixels, width: w, height: h };
+}
+
+const GRAD_A = synthImage((x, y) => [255 * (x / 63), 128, 255 * (y / 63)]);
+const GRAD_B = synthImage((x, y) => [200 * (x / 63), 60, 180]);
+const BLACK_SHEEP = synthImage(() => [30, 30, 30]);
+
+/** A profile carrying a real fused packet. */
+function profileWithPacket(refs) {
+  const packets = refs.map((r) => analyzeReference(r, {}));
+  const fused = fuseReferences(packets, {});
+  const p = seedProfile();
+  p.provenance = { source: 'human', refPacket: fused };
+  return { profile: p, fused };
+}
+
+test('refConfidenceBand: the thresholds are exact and ordered', () => {
+  assertEqual(refConfidenceBand(null), 'none', 'null is not none');
+  assertEqual(refConfidenceBand(undefined), 'none', 'undefined is not none');
+  assertEqual(refConfidenceBand(NaN), 'none', 'NaN is not none');
+  assertEqual(refConfidenceBand(0.99), 'good', 'high agreement is not good');
+  assertEqual(refConfidenceBand(0.8), 'good', 'the good boundary is not inclusive');
+  assertEqual(refConfidenceBand(0.79), 'fair', 'just under good is not fair');
+  assertEqual(refConfidenceBand(0.5), 'fair', 'the fair boundary is not inclusive');
+  assertEqual(refConfidenceBand(0.49), 'low', 'just under fair is not low');
+  assertEqual(refConfidenceBand(0), 'low', 'zero agreement is not low');
+});
+
+test('refConfidenceAdvice: every actionable band has words', () => {
+  for (const band of ['good', 'fair', 'low']) {
+    assert(refConfidenceAdvice(band).length > 0, `${band} has no advice`);
+  }
+  // `none` is the exception by design: a profile with no reference has nothing
+  // to be confident about, so it must NOT be handed a false warning.
+  assertEqual(refConfidenceAdvice('none'), '', 'none must be silent');
+  // An unknown band must not throw and must not read as advice either.
+  assertEqual(refConfidenceAdvice('bogus'), '', 'an unknown band must be silent');
+  // The conflicting band must be the strongest warning.
+  assert(refConfidenceAdvice('low').length > refConfidenceAdvice('fair').length,
+    'low is not more emphatic than fair');
+});
+
+test('REF_CONFIDENCE_LABELS: every band has a distinct, non-empty word', () => {
+  const words = Object.values(REF_CONFIDENCE_LABELS);
+  assertEqual(words.length, 4, 'not four bands');
+  for (const w of words) assert(w && w.length > 0, 'an empty label');
+  assertEqual(new Set(words).size, 4, 'labels are not distinct');
+});
+
+test('referenceConfidence: a profile with no packet is none, with agreement null', () => {
+  const c = referenceConfidence(seedProfile());
+  assertEqual(c.band, 'none', 'no packet is not none');
+  assertEqual(c.refCount, 0, 'refCount should be 0');
+  assertEqual(c.agreement, null, 'agreement must be null, not 0 — 0 reads as maximal disagreement');
+  assertEqual(c.scaleSpread, null, 'scale spread should be null');
+  assertEqual(c.outlierCount, 0, 'outlier count should be 0');
+});
+
+test('referenceConfidence: tolerates a malformed packet rather than throwing', () => {
+  // A hand-edited / imported profile may carry anything. None of these may throw.
+  const bad = [
+    { provenance: null },
+    { provenance: { refPacket: null } },
+    { provenance: { refPacket: {} } },
+    { provenance: { refPacket: { spread: null } } },
+    { provenance: { refPacket: { spread: { agreement: 'high' } } } },
+    { provenance: { refPacket: { spread: { agreement: 0.9 }, refCount: 'many' } } },
+    { provenance: { refPacket: { spread: { agreement: 0.9 }, refs: [{ outlier: true }, null] } } },
+  ];
+  for (const p of bad) {
+    const c = referenceConfidence(p);
+    assertEqual(c.band, refConfidenceBand(c.agreement), `band disagrees with agreement for ${JSON.stringify(p)}`);
+  }
+});
+
+test('referenceConfidence: a real fused packet reports its refs and agreement', () => {
+  const { profile } = profileWithPacket([GRAD_A, GRAD_B]);
+  const c = referenceConfidence(profile);
+  assertEqual(c.refCount, 2, 'refCount not read from the packet');
+  assert(c.agreement > 0 && c.agreement <= 1, `agreement out of range: ${c.agreement}`);
+  // Two different gradients are NOT identical — the agreement must be below 1.
+  assert(c.agreement < 1, `two different references reported agreement ${c.agreement}`);
+});
+
+test('referenceConfidence: a single reference fuses to agreement exactly 1', () => {
+  // `pairwiseMean` of one item is 0 by definition, so agreement is 1. That is
+  // correct and worth pinning: one reference cannot disagree with itself.
+  const { profile } = profileWithPacket([GRAD_A]);
+  const c = referenceConfidence(profile);
+  assertEqual(c.refCount, 1, 'refCount should be 1');
+  assert(Math.abs(c.agreement - 1) < 1e-9, `one reference gave agreement ${c.agreement}`);
+});
+
+test('referenceConfidence: a contradictory reference set lands in a lower band than an agreeing one', () => {
+  // The whole point of H-S2: the two cases must be DISTINGUISHABLE.
+  const good = referenceConfidence(profileWithPacket([GRAD_A, GRAD_B]).profile);
+  const bad = referenceConfidence(profileWithPacket([GRAD_A, GRAD_B, BLACK_SHEEP]).profile);
+  assertEqual(good.refCount, 2, 'good set refCount');
+  assertEqual(bad.refCount, 3, 'bad set refCount');
+  assert(bad.agreement < good.agreement,
+    `the contradictory set (${bad.agreement}) did not score lower than the agreeing set (${good.agreement})`);
+  assertEqual(bad.band === 'low' || bad.band === 'fair', true, `contradictory set banded ${bad.band}`);
+});
+
+test('referenceConfidence: the outlier count is read from the packet refs', () => {
+  const { profile, fused } = profileWithPacket([GRAD_A, GRAD_B, BLACK_SHEEP]);
+  const outliers = (fused.refs || []).filter((r) => r && r.outlier === true).length;
+  const c = referenceConfidence(profile);
+  assertEqual(c.outlierCount, outliers, 'outlierCount disagrees with the packet');
+});
+
+test('summarizeProfile surfaces the confidence band and refCount (H-S2)', () => {
+  const plain = summarizeProfile(seedProfile());
+  assertEqual(plain.refConfidence, 'none', 'a profile with no packet must read none');
+  assertEqual(plain.refCount, 0, 'a profile with no packet must report 0 refs');
+
+  const { profile } = profileWithPacket([GRAD_A, GRAD_B]);
+  const s = summarizeProfile(profile);
+  assertEqual(s.refCount, 2, 'refCount not summarised');
+  assertEqual(s.refConfidence, referenceConfidence(profile).band, 'band not summarised');
+  assert(s.refConfidence !== 'none', 'a profile with a packet still reads none');
+});
+
+test('the fused packet survives the library round-trip and still reads confident', () => {
+  // H-S2 is only useful if the chip survives save → list → export → import.
+  const { profile } = profileWithPacket([GRAD_A, GRAD_B]);
+  const lib = new ProfileLibrary({ storage: memoryStorage() });
+  const saved = lib.save(profile);
+  const row = lib.list().find((r) => r.id === saved.id);
+  assertEqual(row.summary.refCount, 2, 'refCount lost across the library');
+  assertEqual(row.summary.refConfidence, referenceConfidence(saved).band, 'band lost across the library');
+
+  const text = lib.exportText(saved.id);
+  const lib2 = new ProfileLibrary({ storage: memoryStorage() });
+  const res = lib2.importText(text);
+  assert(res[0].ok, `re-import failed: ${res[0].error}`);
+  const row2 = lib2.list()[0];
+  assertEqual(row2.summary.refCount, 2, 'refCount lost across export/import');
+  assertEqual(row2.summary.refConfidence, row.summary.refConfidence, 'band changed across export/import');
+});
+
+test('H-S2 is output-neutral: a profile with a packet applies exactly as before', () => {
+  // The chip must not change what APPLY does — same settings, same seed.
+  const { profile } = profileWithPacket([GRAD_A, GRAD_B]);
+  const lib = new ProfileLibrary({ storage: memoryStorage() });
+  const saved = lib.save(profile);
+  const a = lib.apply(saved.id);
+  assert(a.ok, `apply failed: ${JSON.stringify(a.errors)}`);
+  const plain = lib.apply(lib.save(seedProfile()).id);
+  assertEqual(Object.keys(a.settings).sort().join(','), Object.keys(plain.settings).sort().join(','),
+    'the packet changed the settings shape');
+});
+
 // ─── Summary ─────────────────────────────────────────────────────────────
 console.log('\n=== Results ===');
 console.log(`Passed: ${passed}`);

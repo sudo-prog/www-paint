@@ -1,0 +1,167 @@
+[
+  {
+    "width": 390,
+    "widths": [],
+    "noPacketChipCount": 0,
+    "badRowFound": true,
+    "chip": {
+      "text": "conflicting · 4 refs 49%",
+      "band": "low",
+      "titleHasSpread": true,
+      "insideButton": false,
+      "box": {
+        "l": 18,
+        "r": 143.6,
+        "w": 125.6,
+        "h": 13
+      },
+      "clip": 0,
+      "onScreen": true,
+      "insidePanel": true,
+      "hitIsChip": true,
+      "hitTag": "SPAN.library-row__ref library"
+    },
+    "row": {
+      "box": {
+        "t": 563.3,
+        "b": 655.3,
+        "h": 92
+      },
+      "insidePanel": true,
+      "pastViewport": false
+    },
+    "actions": {
+      "box": {
+        "t": 602.3,
+        "b": 646.3
+      },
+      "insidePanel": true,
+      "onScreen": true
+    },
+    "panel": {
+      "mode": true,
+      "hidden": false,
+      "box": {
+        "l": 0,
+        "r": 320,
+        "w": 320
+      }
+    },
+    "docOverflowX": 0,
+    "viewport": {
+      "w": 390,
+      "h": 900
+    },
+    "pageErrors": []
+  },
+  {
+    "width": 768,
+    "widths": [],
+    "noPacketChipCount": 0,
+    "badRowFound": true,
+    "chip": {
+      "text": "conflicting · 4 refs 49%",
+      "band": "low",
+      "titleHasSpread": true,
+      "insideButton": false,
+      "box": {
+        "l": 18,
+        "r": 143.6,
+        "w": 125.6,
+        "h": 13
+      },
+      "clip": 0,
+      "onScreen": true,
+      "insidePanel": true,
+      "hitIsChip": true,
+      "hitTag": "SPAN.library-row__ref library"
+    },
+    "row": {
+      "box": {
+        "t": 563.3,
+        "b": 655.3,
+        "h": 92
+      },
+      "insidePanel": true,
+      "pastViewport": false
+    },
+    "actions": {
+      "box": {
+        "t": 602.3,
+        "b": 646.3
+      },
+      "insidePanel": true,
+      "onScreen": true
+    },
+    "panel": {
+      "mode": true,
+      "hidden": false,
+      "box": {
+        "l": 0,
+        "r": 320,
+        "w": 320
+      }
+    },
+    "docOverflowX": 0,
+    "viewport": {
+      "w": 768,
+      "h": 900
+    },
+    "pageErrors": []
+  },
+  {
+    "width": 1440,
+    "widths": [],
+    "noPacketChipCount": 0,
+    "badRowFound": true,
+    "chip": {
+      "text": "conflicting · 4 refs 49%",
+      "band": "low",
+      "titleHasSpread": true,
+      "insideButton": false,
+      "box": {
+        "l": 18,
+        "r": 143.6,
+        "w": 125.6,
+        "h": 13
+      },
+      "clip": 0,
+      "onScreen": true,
+      "insidePanel": true,
+      "hitIsChip": true,
+      "hitTag": "SPAN.library-row__ref library"
+    },
+    "row": {
+      "box": {
+        "t": 543.3,
+        "b": 635.3,
+        "h": 92
+      },
+      "insidePanel": true,
+      "pastViewport": false
+    },
+    "actions": {
+      "box": {
+        "t": 582.3,
+        "b": 626.3
+      },
+      "insidePanel": true,
+      "onScreen": true
+    },
+    "panel": {
+      "mode": true,
+      "hidden": false,
+      "box": {
+        "l": 0,
+        "r": 260,
+        "w": 260
+      }
+    },
+    "docOverflowX": 0,
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "pageErrors": []
+  }
+]

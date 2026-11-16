@@ -182,6 +182,105 @@ export function profileFromExportText(text, opts = {}) {
 }
 
 /**
+ * Reference-confidence bands (Track-S hygiene **H-S2**).
+ *
+ * A Style Profile may carry a fused reference packet
+ * (`provenance.refPacket`, Track-S S3). `fuseReferences` reports a `spread`
+ * object — the pairwise disagreement of the references it fused — and until now
+ * **nothing surfaced it**: a profile built from four mutually-contradictory
+ * references scored exactly like one built from a single reference, and there
+ * was no way to tell which. H-S2 is the UI half of that item.
+ *
+ * `agreement` = `1 − mean pairwise refPacketDistance` across the refs. It is the
+ * one number worth showing; `scale` / `orientation` / `coherence` are the
+ * per-axis spread and are carried along for the detail read-out.
+ *
+ * Thresholds are a **display convention, not a metric change**: nothing here
+ * re-scores, re-weights or re-fuses a reference, and the bands are deliberately
+ * coarse (three words). They are set from the fusion's own outlier rule
+ * (`FUSION_DEFAULTS.outlierRatio = 1.5`, `outlierThreshold = 0.25`) rather than
+ * invented from nothing.
+ */
+export const REF_CONFIDENCE = Object.freeze({
+  /** `agreement >= 0.8` — the references agree. */
+  good: 0.8,
+  /** `0.5 <= agreement < 0.8` — usable, but say so. */
+  fair: 0.5,
+});
+
+/** Band key for an `agreement` value. `none` = no packet, `low` = below fair. */
+export function refConfidenceBand(agreement) {
+  if (!Number.isFinite(agreement)) return 'none';
+  if (agreement >= REF_CONFIDENCE.good) return 'good';
+  if (agreement >= REF_CONFIDENCE.fair) return 'fair';
+  return 'low';
+}
+
+/** One-word label per band. `none` and `low` are different messages. */
+export const REF_CONFIDENCE_LABELS = Object.freeze({
+  none: 'no reference',
+  good: 'consistent',
+  fair: 'mixed',
+  low: 'conflicting',
+});
+
+/**
+ * Human read-out for a band, including the H-S2 safe-default advice.
+ *
+ * The advice is the point of the item: when the references disagree, the fused
+ * packet is a compromise and the profile should be treated as a starting point
+ * rather than a matched target. `none` gets no advice — a profile with no
+ * reference has nothing to be confident about, and telling the user to "expect
+ * variation" there would be noise.
+ *
+ * @param {string} band
+ * @returns {string}
+ */
+export function refConfidenceAdvice(band) {
+  switch (band) {
+    case 'low':
+      return 'References disagree strongly — treat this profile as a starting point, not a matched target. Check the reference set.';
+    case 'fair':
+      return 'References differ somewhat — expect variation between bakes on different source images.';
+    case 'good':
+      return 'References agree — the profile describes one consistent stroke language.';
+    default:
+      return '';
+  }
+}
+
+/**
+ * Confidence summary for a profile's fused reference packet.
+ *
+ * Deliberately tolerant, like {@link summarizeProfile}: a hand-edited or
+ * imported profile may carry a packet of any shape, and the list row must still
+ * render. `agreement` is `null` (not 0) when there is no packet — 0 would read
+ * as "references maximally disagree" when the truth is "there were no
+ * references".
+ *
+ * @param {object} profile
+ * @returns {{refCount: number, band: string, agreement: number|null,
+ *   scaleSpread: number|null, orientationSpread: number|null,
+ *   coherenceSpread: number|null, outlierCount: number}}
+ */
+export function referenceConfidence(profile) {
+  const p = isObj(profile) ? profile.provenance : null;
+  const rp = isObj(p) ? p.refPacket : null;
+  const spread = isObj(rp) ? rp.spread : null;
+  const refs = Array.isArray(rp?.refs) ? rp.refs : [];
+  const agreement = Number.isFinite(spread?.agreement) ? spread.agreement : null;
+  return {
+    refCount: Number.isInteger(rp?.refCount) ? rp.refCount : refs.length,
+    band: refConfidenceBand(agreement),
+    agreement,
+    scaleSpread: Number.isFinite(spread?.scale) ? spread.scale : null,
+    orientationSpread: Number.isFinite(spread?.orientation) ? spread.orientation : null,
+    coherenceSpread: Number.isFinite(spread?.coherence) ? spread.coherence : null,
+    outlierCount: refs.filter((r) => r && r.outlier === true).length,
+  };
+}
+
+/**
  * One line of list metadata for a stored profile.
  *
  * Deliberately tolerant: a hand-edited or imported profile may be missing any
@@ -189,11 +288,13 @@ export function profileFromExportText(text, opts = {}) {
  *
  * @param {object} profile
  * @returns {{style: string, strokeCount: number, layerCount: number,
- *   seed: number|null, mediaKind: string, pathOrder: string, updatedAt: string|null}}
+ *   seed: number|null, mediaKind: string, pathOrder: string, updatedAt: string|null,
+ *   refCount: number, refConfidence: string}}
  */
 export function summarizeProfile(profile) {
   const g = isObj(profile) && isObj(profile.global) ? profile.global : {};
   const layers = Array.isArray(profile?.layers) ? profile.layers : [];
+  const conf = referenceConfidence(profile);
   return {
     style: isStr(g.style) && g.style ? g.style : '—',
     strokeCount: Number.isFinite(g.strokeCount) ? g.strokeCount : 0,
@@ -202,6 +303,8 @@ export function summarizeProfile(profile) {
     mediaKind: isStr(profile?.mediaModel?.kind) ? profile.mediaModel.kind : 'dry',
     pathOrder: isStr(g.pathOrder) ? g.pathOrder : 'free',
     updatedAt: isStr(profile?.provenance?.updatedAt) ? profile.provenance.updatedAt : null,
+    refCount: conf.refCount,
+    refConfidence: conf.refCount > 0 ? conf.band : 'none',
   };
 }
 

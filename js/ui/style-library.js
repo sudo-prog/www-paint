@@ -28,6 +28,9 @@ import {
   coerceProfileName,
   profileToExportText,
   STORAGE_KEY,
+  referenceConfidence,
+  refConfidenceAdvice,
+  REF_CONFIDENCE_LABELS,
 } from './style-library-core.js';
 // Track-S S5 / M16 — the stroke-language mixer lives IN the Style panel: a mix
 // is a Style Profile field (`global.primitives` / `layers[].primitives` /
@@ -355,6 +358,27 @@ export class StyleLibraryPanel {
     meta.textContent = `${s.style} · ${s.strokeCount} strokes · ${s.mediaKind}`;
     select.appendChild(meta);
 
+    // Track-S hygiene H-S2 — the reference-confidence read-out. Only rendered
+    // when the profile carries a fused reference packet, so a library of
+    // ordinary profiles keeps the exact row it had (no layout shift, no noise).
+    //
+    // It is appended to `.library-row__main`, NOT to the select button: a button
+    // must not contain interactive/labelled content, and a `title`-carrying span
+    // inside a `<button>` is a nested-interactive smell. It is a sibling of the
+    // button, on its own line, so it costs the row no width.
+    const conf = referenceConfidence(row.profile);
+    if (conf.refCount > 0) {
+      const ref = document.createElement('span');
+      ref.className = `library-row__ref library-row__ref--${conf.band}`;
+      ref.dataset.refBand = conf.band;
+      // Text, not an icon: this is a status word, and an icon would need a
+      // legend. `tabular-nums` keeps the percentage from jittering.
+      const pct = conf.agreement === null ? '' : ` ${Math.round(conf.agreement * 100)}%`;
+      ref.textContent = `${REF_CONFIDENCE_LABELS[conf.band] || conf.band} · ${conf.refCount} ref${conf.refCount === 1 ? '' : 's'}${pct}`;
+      ref.title = this._confidenceTitle(conf);
+      main.appendChild(ref);
+    }
+
     main.appendChild(select);
     el.appendChild(main);
 
@@ -371,6 +395,28 @@ export class StyleLibraryPanel {
     el.appendChild(actions);
 
     return el;
+  }
+
+  /**
+   * Title (hover) text for the confidence chip: the band advice plus the raw
+   * per-axis spread, so the number behind the word is inspectable without a
+   * console. `role="img"` on the chip carries the accessible name.
+   * @param {object} conf - result of `referenceConfidence`
+   * @returns {string}
+   * @private
+   */
+  _confidenceTitle(conf) {
+    const advice = refConfidenceAdvice(conf.band);
+    const pct = (v) => (Number.isFinite(v) ? `${Math.round(v * 100)}%` : '—');
+    const parts = [
+      `${REF_CONFIDENCE_LABELS[conf.band] || conf.band}: ${conf.refCount} reference${conf.refCount === 1 ? '' : 's'}`,
+      `agreement ${pct(conf.agreement)}`,
+      `scale spread ${pct(conf.scaleSpread)}`,
+      `orientation spread ${pct(conf.orientationSpread)}`,
+      `coherence spread ${pct(conf.coherenceSpread)}`,
+    ];
+    if (conf.outlierCount > 0) parts.push(`${conf.outlierCount} outlier${conf.outlierCount === 1 ? '' : 's'} down-weighted`);
+    return advice ? `${parts.join(' · ')}\n${advice}` : parts.join(' · ');
   }
 
   /**
@@ -554,7 +600,12 @@ export class StyleLibraryPanel {
     this.root.dispatchEvent(new CustomEvent('style-profile-apply', { detail: result }));
     if (this._onApply) this._onApply(result);
     const s = result.profile.global;
-    this._setStatus(`Applied "${result.profile.name}" — ${s.style || 'default style'}, seed ${result.seed ?? 'engine default'}.`);
+    const conf = referenceConfidence(result.profile);
+    // H-S2 — the safe-default half. A conflicting reference set is a *reason
+    // to expect the bake to be a compromise*, and the panel is the place that
+    // says so; the row chip alone would be missed on the moment of applying.
+    const advice = conf.refCount > 0 && conf.band !== 'good' ? ` ${refConfidenceAdvice(conf.band)}` : '';
+    this._setStatus(`Applied "${result.profile.name}" — ${s.style || 'default style'}, seed ${result.seed ?? 'engine default'}.${advice}`);
     this._refresh();
   }
 

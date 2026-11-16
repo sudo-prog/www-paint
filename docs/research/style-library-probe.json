@@ -50,6 +50,7 @@
         "layers",
         "mediaModel",
         "name",
+        "passes",
         "provenance",
         "schemaVersion",
         "version"
@@ -158,6 +159,122 @@
     {
       "name": "pageErrors",
       "value": []
+    },
+    {
+      "name": "fixtureAgreementGood",
+      "value": 0.8315
+    },
+    {
+      "name": "fixtureAgreementBad",
+      "value": 0.4944
+    },
+    {
+      "name": "chipCountNoPacket",
+      "value": 0
+    },
+    {
+      "name": "chipCountWithPacket",
+      "value": 2
+    },
+    {
+      "name": "rowCount",
+      "value": 2
+    },
+    {
+      "name": "goodChipBand",
+      "value": "good"
+    },
+    {
+      "name": "chipBand",
+      "value": "low"
+    },
+    {
+      "name": "chipText",
+      "value": "conflicting · 4 refs 49%"
+    },
+    {
+      "name": "chipTitle",
+      "value": "conflicting: 4 references · agreement 49% · scale spread 67% · orientation spread 3% · coherence spread 96%\nReferences disagree strongly — treat this profile as a starting point, not a matched target. Check the reference set."
+    },
+    {
+      "name": "chipSaysConflicting",
+      "value": true
+    },
+    {
+      "name": "chipSaysRefs",
+      "value": true
+    },
+    {
+      "name": "titleCarriesSpread",
+      "value": true
+    },
+    {
+      "name": "chipOutsideButton",
+      "value": true
+    },
+    {
+      "name": "panelOpenState",
+      "value": {
+        "mode": true,
+        "hidden": false,
+        "mobileClosed": false,
+        "w": 260,
+        "h": 801,
+        "chips": 2
+      }
+    },
+    {
+      "name": "chipBox",
+      "value": {
+        "t": 566.3,
+        "l": 18,
+        "w": 125.6,
+        "h": 13
+      }
+    },
+    {
+      "name": "chipOnScreen",
+      "value": true
+    },
+    {
+      "name": "chipInsidePanel",
+      "value": true
+    },
+    {
+      "name": "chipNoClip",
+      "value": 0
+    },
+    {
+      "name": "rowInsidePanel",
+      "value": true
+    },
+    {
+      "name": "rowBox",
+      "value": {
+        "t": 543.3,
+        "b": 650.3,
+        "h": 107
+      }
+    },
+    {
+      "name": "conflictingRowFound",
+      "value": true
+    },
+    {
+      "name": "conflictingStatus",
+      "value": "Applied \"H-S2 Conflicting\" — pencil, seed 1. References disagree strongly — treat this profile as a starting point, not a matched target. Check the reference set."
+    },
+    {
+      "name": "conflictingAdviceShown",
+      "value": true
+    },
+    {
+      "name": "goodStatus",
+      "value": "Applied \"H-S2 Good\" — pencil, seed 1."
+    },
+    {
+      "name": "goodAdviceAbsent",
+      "value": true
     }
   ]
 }

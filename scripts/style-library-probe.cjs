@@ -191,6 +191,163 @@ const PAGE_FN = async ({ size, strokes }) => {
   /* ── 8. Page errors ───────────────────────────────────────────── */
   step('pageErrors', window.__probeErrors || []);
 
+  /* ── 9. Reference confidence chip (Track-S hygiene H-S2) ──────── */
+  // The chip is DOM, so it can only be asserted here. It must be:
+  //   (a) ABSENT for a profile with no packet (no noise, no layout shift);
+  //   (b) PRESENT and correct for a profile carrying a real fused packet;
+  //   (c) geometrically clean — on-screen, not clipped, not overflowing;
+  //   (d) accompanied by the safe-default advice in the apply status.
+  //
+  // Step 6 above DELETED the only profile, so this section creates its own
+  // rows rather than assuming one survives. Rows are added in a fixed order
+  // (good first, conflicting last) and looked up by their chip band, never by
+  // index — the list sorts by name, so index order is not ours to rely on.
+  const { analyzeReference, fuseReferences } = await import('/js/engine/ref-analyze.js');
+
+  const synth = (fn) => {
+    const w = 64, h = 64;
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d');
+    const img = cx.createImageData(w, h);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const [r, g, b] = fn(x, y);
+        img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+      }
+    }
+    cx.putImageData(img, 0, 0);
+    return cv;
+  };
+  const gradA = synth((x, y) => [255 * (x / 63), 128, 255 * (y / 63)]);
+  const gradB = synth((x, y) => [200 * (x / 63), 60, 180]);
+  // A genuinely CONTRADICTORY pair of extra references: a near-black image and
+  // a near-white one. Measured, not guessed — agreement for `A,B` is 0.8315
+  // (good), and adding these two drops it to 0.4944 (low). Other candidates
+  // (`A,B,S,S` = 0.5603, `A,A,S,S` = 0.5385) did NOT reach the fair threshold,
+  // so the fixture is part of the contract and its numbers are recorded.
+  const dark = synth(() => [30, 30, 30]);
+  const light = synth(() => [250, 250, 250]);
+  const toPixels = (cv) => {
+    const cx = cv.getContext('2d');
+    const d = cx.getImageData(0, 0, cv.width, cv.height);
+    return { pixels: new Uint8ClampedArray(d.data.buffer), width: cv.width, height: cv.height };
+  };
+  const fuseOf = (...srcs) => fuseReferences(srcs.map((s) => analyzeReference(toPixels(s), {})), {});
+  let saveSeq = 1;
+  // Record the fixtures' real agreement so a threshold change is visible here.
+  step('fixtureAgreementGood', +fuseOf(gradA, gradB).spread.agreement.toFixed(4));
+  step('fixtureAgreementBad', +fuseOf(gradA, gradB, dark, light).spread.agreement.toFixed(4));
+
+  /** Save a profile carrying `packet` under a known name, through the library. */
+  const saveWithPacket = (name, packet) => {
+    // A FRESH object each time. Reusing one base across saves is not safe: the
+    // library normalises its input in place-ish ways and the probe would silently
+    // save the second row with the first row's packet (the bug that made the
+    // "good" row read `fair`).
+    const base = {
+      schemaVersion: 1,
+      id: '00000000-0000-4000-8000-' + String(saveSeq++).padStart(12, '0'),
+      name,
+      version: '1.0.0',
+      engine: { name: 'www-paint', version: '0.1.0' },
+      global: { style: 'pencil', strokeCount: 400, seed: 1 },
+      layers: [], effects: [], mediaModel: { kind: 'dry' },
+      provenance: { source: 'human', refPacket: packet },
+    };
+    // `app.library` IS the panel (the host assigns `app.library = panel`), so
+    // the library is `panel.library`. Going through the panel keeps the row
+    // render in the probe's control.
+    const lib = panel.library || panel;
+    const saved = lib.save(base);
+    if (typeof panel.refresh === 'function') panel.refresh();
+    return saved;
+  };
+
+  // (a) After step 6's delete the library is empty -> no chip anywhere.
+  step('chipCountNoPacket', root.querySelectorAll('.library-row__ref').length);
+
+  // (b) A profile carrying a real fused packet.
+  const goodFused = fuseOf(gradA, gradB);
+  const badFused = fuseOf(gradA, gradB, dark, light);
+  saveWithPacket('H-S2 Good', goodFused);
+  saveWithPacket('H-S2 Conflicting', badFused);
+  await new Promise((r) => setTimeout(r, 250));
+
+  const chips = [...root.querySelectorAll('.library-row__ref')];
+  step('chipCountWithPacket', chips.length);
+  step('rowCount', root.querySelectorAll('.library-row').length);
+  const goodChip = chips.find((c) => c.dataset.refBand === 'good');
+  step('goodChipBand', goodChip ? goodChip.dataset.refBand : null);
+  const badChip = chips.find((c) => c.dataset.refBand === 'low');
+  step('chipBand', badChip ? badChip.dataset.refBand : null);
+  step('chipText', badChip ? badChip.textContent : null);
+  step('chipTitle', badChip ? (badChip.title || '') : null);
+  step('chipSaysConflicting', badChip ? /conflicting/.test(badChip.textContent) : false);
+  step('chipSaysRefs', badChip ? /4 refs/.test(badChip.textContent) : false);
+  step('titleCarriesSpread', badChip ? /scale spread/.test(badChip.title || '') : false);
+  // The chip must NOT be inside the select button (nested interactive content).
+  step('chipOutsideButton', badChip ? !badChip.closest('button') : false);
+
+  // (c) Geometry: the chip must be fully on-screen and inside its panel.
+  // OPEN THE PANEL FIRST. At the probe's 1280px viewport the library is a
+  // desktop rail that starts HIDDEN (`_libraryMode = false`), so every chip
+  // measures 0x0 — a vacuous pass, not a clean measurement. Same rule as the
+  // a11y sweep's `layersRail open=true rowW=…`: assert the surface is open
+  // before trusting its numbers.
+  const btn = document.getElementById('btn-library-mode');
+  if (btn && !app._libraryMode) btn.click();
+  await new Promise((r) => setTimeout(r, 600));
+  const panelState = (() => {
+    const r = root.getBoundingClientRect();
+    return {
+      mode: !!app._libraryMode,
+      hidden: root.classList.contains('panel--hidden'),
+      mobileClosed: root.classList.contains('panel--mobile-closed'),
+      w: +r.width.toFixed(1), h: +r.height.toFixed(1),
+      chips: root.querySelectorAll('.library-row__ref').length,
+    };
+  })();
+  step('panelOpenState', panelState);
+
+  const chipsNow = [...root.querySelectorAll('.library-row__ref')];
+  const badChipNow = chipsNow.find((c) => c.dataset.refBand === 'low');
+  if (badChipNow) {
+    const c = badChipNow.getBoundingClientRect();
+    const panelBox = root.getBoundingClientRect();
+    step('chipBox', { t: +c.top.toFixed(1), l: +c.left.toFixed(1), w: +c.width.toFixed(1), h: +c.height.toFixed(1) });
+    step('chipOnScreen', c.width > 0 && c.height > 0 && c.top >= 0 && c.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth);
+    step('chipInsidePanel', c.left >= panelBox.left - 1 && c.right <= panelBox.right + 1);
+    step('chipNoClip', badChipNow.scrollWidth - badChipNow.clientWidth);
+    // The row must not have grown so much that it overflows the panel.
+    const row = badChipNow.closest('.library-row').getBoundingClientRect();
+    step('rowInsidePanel', row.top >= panelBox.top - 1 && row.bottom <= panelBox.bottom + 1);
+    step('rowBox', { t: +row.top.toFixed(1), b: +row.bottom.toFixed(1), h: +row.height.toFixed(1) });
+  }
+
+  // (d) Applying a conflicting profile must surface the safe-default advice.
+  const badRow = [...root.querySelectorAll('.library-row')]
+    .find((el) => (el.querySelector('.library-row__ref') || {}).dataset?.refBand === 'low');
+  step('conflictingRowFound', !!badRow);
+  if (badRow) {
+    badRow.querySelector('[data-action="apply"]').click();
+    await new Promise((r) => setTimeout(r, 1200));
+    const st = root.querySelector('#library-status').textContent;
+    step('conflictingStatus', st);
+    step('conflictingAdviceShown', /starting point|reference set/i.test(st));
+  }
+  // And a good profile must NOT be handed the warning.
+  const goodRow = [...root.querySelectorAll('.library-row')]
+    .find((el) => (el.querySelector('.library-row__ref') || {}).dataset?.refBand !== 'low');
+  if (goodRow) {
+    goodRow.querySelector('[data-action="apply"]').click();
+    await new Promise((r) => setTimeout(r, 1200));
+    const st = root.querySelector('#library-status').textContent;
+    step('goodStatus', st);
+    step('goodAdviceAbsent', !/starting point|reference set/i.test(st));
+  }
+
   return out;
 };
 
@@ -217,6 +374,17 @@ async function main() {
   });
 
   await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'load', timeout: 30000 });
+  await page.waitForFunction(() => !!window.__app, { timeout: 20000 });
+
+  // ISOLATE STORAGE. The library persists to localStorage, so a probe re-run
+  // inherits every profile saved by the previous run. Row lookups by band then
+  // match a stale row from an earlier session and the probe reports a defect
+  // that is really its own state (this cost two false failures). Clear it and
+  // reload so the panel starts from an empty library.
+  await page.evaluate(() => {
+    try { localStorage.removeItem('www-paint.styleProfiles.v1'); } catch { /* ignore */ }
+  });
+  await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => !!window.__app, { timeout: 20000 });
 
   await page.evaluate(() => {
@@ -258,6 +426,31 @@ async function main() {
     rowCountAfterReimport: get('rowCountAfterReimport'),
     rowCountAfterDelete: get('rowCountAfterDelete'),
     controlsWithoutId: get('controlsWithoutId'),
+    chipCountNoPacket: get('chipCountNoPacket'),
+    chipCountWithPacket: get('chipCountWithPacket'),
+    chipBand: get('chipBand'),
+    chipText: get('chipText'),
+    chipTitle: get('chipTitle'),
+    goodChipBand: get('goodChipBand'),
+    chipSaysConflicting: get('chipSaysConflicting'),
+    chipSaysRefs: get('chipSaysRefs'),
+    titleCarriesSpread: get('titleCarriesSpread'),
+    chipOutsideButton: get('chipOutsideButton'),
+    panelOpenState: get('panelOpenState'),
+    fixtureAgreementGood: get('fixtureAgreementGood'),
+    fixtureAgreementBad: get('fixtureAgreementBad'),
+    chipBox: get('chipBox'),
+    chipOnScreen: get('chipOnScreen'),
+    chipInsidePanel: get('chipInsidePanel'),
+    chipNoClip: get('chipNoClip'),
+    rowInsidePanel: get('rowInsidePanel'),
+    rowBox: get('rowBox'),
+    rowCount: get('rowCount'),
+    conflictingRowFound: get('conflictingRowFound'),
+    conflictingStatus: get('conflictingStatus'),
+    conflictingAdviceShown: get('conflictingAdviceShown'),
+    goodStatus: get('goodStatus'),
+    goodAdviceAbsent: get('goodAdviceAbsent'),
     pageErrors: pageErrors.slice(0, 5),
   }, null, 2));
 
@@ -281,6 +474,29 @@ async function main() {
   if (get('rowCountAfterReimport') !== 1) fail(`re-import duplicated the row: ${get('rowCountAfterReimport')}`);
   if (get('rowCountAfterDelete') !== 0) fail(`delete did not remove the row: ${get('rowCountAfterDelete')}`);
   if (get('controlsWithoutId').length) fail(`controls without an id: ${JSON.stringify(get('controlsWithoutId'))}`);
+  // H-S2 — the confidence chip.
+  if (get('chipCountNoPacket') !== 0) fail(`a profile with NO packet rendered a chip: ${get('chipCountNoPacket')}`);
+  if (get('chipCountWithPacket') < 1) fail(`a profile WITH a packet rendered no chip: ${get('chipCountWithPacket')}`);
+  if (!['good', 'fair', 'low'].includes(get('chipBand'))) fail(`the chip band is not a band: ${get('chipBand')}`);
+  if (!get('chipOnScreen')) fail(`the chip is off-screen: ${JSON.stringify(get('chipBox'))}`);
+  if (!get('chipInsidePanel')) fail('the chip overflows its panel');
+  if (get('chipNoClip') > 0) fail(`the chip clips its own text by ${get('chipNoClip')}px`);
+  if (!get('rowInsidePanel')) fail('the row grew past the panel');
+  if (!get('chipSaysConflicting')) fail(`a 'low' chip does not say conflicting: ${get('chipText')}`);
+  if (!get('chipSaysRefs')) fail(`the chip does not report the reference count: ${get('chipText')}`);
+  if (!get('titleCarriesSpread')) fail('the chip title does not expose the per-axis spread');
+  if (!get('chipOutsideButton')) fail('the chip is nested inside the select button (nested interactive content)');
+  // The geometry numbers are only meaningful if the panel was really open.
+  const pos = get('panelOpenState') || {};
+  if (!pos.mode || pos.hidden || pos.w === 0) {
+    fail(`the library panel was not open, so the chip geometry is vacuous: ${JSON.stringify(pos)}`);
+  }
+  if (!(get('fixtureAgreementBad') < get('fixtureAgreementGood'))) {
+    fail(`the fixtures do not disagree: good=${get('fixtureAgreementGood')} bad=${get('fixtureAgreementBad')}`);
+  }
+  if (get('goodAdviceAbsent') === false) fail(`a good profile was handed the conflicting warning: ${get('goodStatus')}`);
+  if (!get('conflictingRowFound')) fail('a conflicting reference set did not produce a `low` chip');
+  if (!get('conflictingAdviceShown')) fail(`the safe-default advice was not surfaced: ${get('conflictingStatus')}`);
   if (pageErrors.length) fail('page errors: ' + pageErrors.slice(0, 3).join(' | '));
 
   console.log('PASS: panel mounts, save writes a schema-valid profile, apply changes the render, '
