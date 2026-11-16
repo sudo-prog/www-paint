@@ -65,6 +65,7 @@ import { sampleEdge, sampleStructure } from './analyzer.js';
 import { buildRegions } from './regions.js';
 import { computeTonalMasks } from './masks.js';
 import { mixStrokeLanguage } from './primitives.js';
+import { planOrder } from './r4.js';
 
 /**
  * The three scale keywords an explicit pass may declare (Track-S S4). They map
@@ -171,6 +172,16 @@ export const OPTIMISER_DEFAULTS = {
   // explicit per-pass `radius`/`blur`/`elongation`/`alpha`/`detail` still wins.
   // A pass may override the profile-level mix with its own `primitives`.
   primitives: null,
+
+  // ── R4 paint order (feature parity: path/order modes) ────────────────────
+  // Opt-in — `null` (default) → the emitted shapes keep their emission order,
+  // byte-identical to R3. When set, the R4 order mode permutes the PAINT ORDER
+  // of the returned shapes via `js/engine/r4.js` `planOrder` (which plans over a
+  // COPY, so no shape's own fields are touched). Accepts the plan object from
+  // `buildR4Plan()` (`{ order: { mode } }`), a `{ order }` object, or a bare
+  // mode string (`free|down|up|left|right|diag|spiral|spiralin|rings|ringsin|
+  // clock`). An unknown / extension mode is a safe no-op.
+  r4: null,
 };
 
 /**
@@ -907,6 +918,27 @@ export function optimise(analysis, options = {}) {
     remaining -= used;
   }
 
+  // ── R4 paint order — consume the plan's order mode (opt-in, default off) ──
+  // The R4 plan (js/engine/r4.js) names a paint order for the shape set. Applying
+  // it here just PERMUTES the returned array — the array order is the composite
+  // order the renderer paints in. `planOrder` plans over a COPY of the shapes, so
+  // no shape's own fields (`seed`, `order`) are mutated; only the sequence the
+  // renderer walks changes. `stats` still describe the optimiser's own
+  // emission-order paint buffer — the shape SET is unchanged by a reorder, so
+  // the reported error remains the optimiser's objective value for that set.
+  const r4Order = typeof opts.r4 === 'string' ? opts.r4 : (opts.r4 && opts.r4.order);
+  const r4Mode = typeof r4Order === 'string' ? r4Order : (r4Order && r4Order.mode);
+  let paintOrder = null;
+  if (r4Mode) {
+    const planned = planOrder(shapes, r4Mode, { width: W, height: H });
+    paintOrder = planned.mode;
+    if (planned.native && planned.changed) {
+      const permuted = planned.order.map((i) => shapes[i]);
+      shapes.length = 0;
+      for (const s of permuted) shapes.push(s);
+    }
+  }
+
   const finalError = meanErrorVs(target);
   return {
     shapes,
@@ -919,6 +951,7 @@ export function optimise(analysis, options = {}) {
       finalError: +finalError.toFixed(4),
       mae: +finalError.toFixed(4),
       simMae: +(100 * (1 - finalError / 255)).toFixed(2),
+      ...(paintOrder ? { paintOrder } : {}),
     },
   };
 }
