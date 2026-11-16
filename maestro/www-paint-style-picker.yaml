@@ -2,7 +2,7 @@
 # Requires Chrome 147 (CHROME_BINARY) — Selenium 4.43 in Maestro 2.11.0
 # doesn't support CDP v155 (system Chrome 155).
 # Run: CHROME_BINARY=.../chrome-for-testing-147 maestro test --headless --screen-size 1440x900 maestro/www-paint-style-picker.yaml
-url: http://localhost:3001/index.maestro.html
+url: http://127.0.0.1:8099/index.maestro.html
 
 ---
 - launchApp
