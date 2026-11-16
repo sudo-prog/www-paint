@@ -1666,6 +1666,75 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
 - next: the Mac task list (M6a–M16) is now fully closed. Keep the M15 QA seat warm —
   re-run this set after BE's next push.
 
+### 2026-11-16 16:40 — Track R4 (Mac half) — the feature-parity seam LANDED, 43/43 + probe PASS
+- did: Track R was **4/7** — R0–R3 done, **R4 partial** (only BE's region-fill),
+  R5/R6 todo. R4's other three items were code that already existed and was
+  **inert**: `outlines.js` (M7), `order.js` (M8), `shaping.js` (M9) each had a
+  full test suite and **zero importers**. So R4 was blocked on an *adapter*, not
+  on new algorithms. NEW `js/engine/r4.js` is that adapter: one frozen, pure,
+  node-testable surface over the three modules, with `buildR4Plan(args)` as the
+  ONE call the BE spine should make. ADDITIVE `percentilePeak()` export on
+  `outlines.js`. Full write-up: `docs/checkpoints/R4-mac.md`.
+- **THREE DEFECTS THE NEW TESTS CAUGHT, all in the seam (not in the source
+  modules):**
+  (1) **`planOrder` read `order` per input slot — the identity by construction.**
+      `orderShapes` writes `order` as the shape's POSITION in the returned array,
+      so slot `i` always reads `i` and every mode reported `changed:false`. The
+      permutation is the ARRAY order; fixed by mapping each returned shape back to
+      its index in the working copy.
+  (2) **`planOrder` mutated the caller's shapes.** `orderShapes` sets `order` on
+      the objects it is handed and its contract is "a new array of the SAME
+      objects", so forwarding the caller's array wrote into caller state. Fixed by
+      planning over a copy — a rejected plan must not have stamped `order`.
+  (3) **`planOutlines` rejected every REAL analysis.** The guard was
+      `Array.isArray(analysis.edges)`, but `analyzeImage` returns a
+      **Float32Array** — every real call silently returned an empty plan. Fixed to
+      a length-based check.
+  (4) smaller: `buildR4Plan` fed an already-R4 outline mode through the legacy
+      mapper (which only knows `first`/`edges` by coincidence), so any future R4
+      mode would have been dropped to `off`. An explicit R4 mode is now honoured
+      first.
+- **⚠ RECORDED FINDING — the walk misses soft-edged subjects, and my fix did NOT
+  work.** Vision review of the probe overlay (3 soft blobs + 2 hard rings) is
+  unambiguous: the contours trace the hard rings and do not touch the blobs. I
+  tried a relative threshold and **disproved the hypothesis** — `analyzeImage`
+  normalises `edges` by the image's own max (`analyzer.js:94-99`), so the cut is
+  already relative, and LOWERING it **merges** contours rather than adding soft
+  ones (measured 30 vs 31, and 3 vs 4). Three candidate scale statistics (pctl
+  peak, mean accepted strength, p99/p50 spread) each failed on a different
+  fixture. **No relative-threshold option ships**; `percentilePeak` stays as a
+  reported diagnostic. A real fix is a coherence/structure gate or a multi-scale
+  detector, and it is BE spine work (`analyzer.js` is BE-owned). Raised for BE in
+  `docs/MAC-TASKS.md`.
+- verified (raw):
+  ```
+  $ node tests/r4.test.js       -> Passed 43  Failed 0      (NEW)
+  $ node tests/outlines.test.js -> Passed 16   Failed 0      (unmoved)
+  $ node tests/order.test.js    -> Passed 24   Failed 0      (unmoved)
+  $ node tests/shaping.test.js  -> Passed 18   Failed 0      (unmoved)
+  $ node tests/engine.test.js   -> Passed 164  Failed 0      (unmoved)
+  $ node scripts/r4-probe.cjs --width=1440 -> PASS
+  $ node scripts/r4-probe.cjs --width=390  -> PASS
+  probe @1440: pencil/style/off order=down changed=true outline=off n=0
+               ink/up/first     order=up   changed=true outline=first n=31
+               oil/spiral/first order=spiral changed=true outline=first n=31
+               outline: mode first count 31 threshold 0.3 scale 1   · 0 console errors
+  ```
+  Probe = real Chromium against a real `analyzeImage()` result at 1440×900 and
+  390×844; asserts registry count, `validateShaping().ok`, 0 coverage gaps, 14
+  order modes, budget honoured, shaping fields well-formed, `off` lays no contours
+  while an active lay-in does. Artefacts: `docs/research/r4-plan.json`,
+  `r4-plan-390.json`, `r4-outlines-{1440,390}.png`.
+- files: `js/engine/r4.js` (NEW), `js/engine/outlines.js` (additive export only),
+  `tests/r4.test.js` (NEW), `scripts/r4-probe.cjs` (NEW),
+  `docs/checkpoints/R4-mac.md` (NEW), `docs/research/r4-*`,
+  `docs/MAC-TASKS.md`, `AGENTS.md` §7. **No ThinkPad-owned file touched. Nothing
+  deleted.** No re-baseline: the 9 pins cannot move (no render path touched; the
+  three source modules stay inert until BE wires them).
+- blocker: none.
+- next: BE consumes `buildR4Plan()` from `optimizer.js` (opt-in, default off,
+  prove byte-identical) and rules on the soft-edge finding. Mac: M15 QA seat.
+
 ---
 
 ## 6. Reading list

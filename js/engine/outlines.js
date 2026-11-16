@@ -62,6 +62,30 @@ function buildEdgeMask(analysis, threshold) {
 }
 
 /**
+ * A high percentile of an image's EDGE field.
+ *
+ * Computed over NON-ZERO magnitudes only — a whole-image percentile is dominated
+ * by flat paper. Retained as a REPORTED DIAGNOSTIC (it is how the soft-edge gap
+ * was measured: on a mixed source p50=p80=0.0377 while the hard edge is 1.0), not
+ * as an input to the threshold. Lowering the cut was measured to MERGE contours
+ * rather than add soft ones, so no relative-threshold option ships.
+ *
+ * @param {Float32Array|Array<number>} edges
+ * @param {number} percentile - 0..1
+ * @returns {number}
+ */
+export function percentilePeak(edges, percentile = 0.6) {
+  const n = edges ? edges.length : 0;
+  if (!n) return 0;
+  const nonzero = [];
+  for (let i = 0; i < n; i++) if (edges[i] > 0) nonzero.push(edges[i]);
+  if (!nonzero.length) return 0;
+  nonzero.sort((a, b) => a - b);
+  const at = Math.min(nonzero.length - 1, Math.max(0, Math.round((nonzero.length - 1) * percentile)));
+  return nonzero[at];
+}
+
+/**
  * Best next step from `(x, y)`: the unvisited edge neighbour with the highest
  * edge magnitude, excluding the direction the walk arrived from.
  *
@@ -182,6 +206,8 @@ export function extractOutlines(analysis, options = {}) {
   const { mask, mag, edgeCount } = buildEdgeMask(analysis, o.threshold);
   if (edgeCount === 0) return { width, height, outlines: [] };
 
+  const minStrength = o.minStrength;
+
   const visited = new Set();
   const outlines = [];
   const maxSteps = Math.max(1, o.maxSteps | 0);
@@ -244,4 +270,4 @@ export function extractOutlines(analysis, options = {}) {
   return { width, height, outlines: capped };
 }
 
-export default { extractOutlines, OUTLINE_DEFAULTS };
+export default { extractOutlines, OUTLINE_DEFAULTS, percentilePeak };
