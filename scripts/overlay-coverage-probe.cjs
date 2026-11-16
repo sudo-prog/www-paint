@@ -92,7 +92,15 @@ const MEASURE = (ROOT) => {
   // A control is ON-SCREEN when its box intersects the viewport. Only these are
   // hit-tested: `elementFromPoint` returns null for anything below the fold,
   // which would report every off-screen control as "untappable".
-  const onScreen = (b) => b.r > 0 && b.b > 0 && b.l < innerWidth && b.t < innerHeight;
+  const onScreen = (b) => {
+    // Test the box CENTRE, not its top edge. A control's box is its BORDER box,
+    // so `b.t < innerHeight` admitted controls whose centre sat below the fold;
+    // `elementFromPoint` then returns null and a reachable control was reported
+    // as untappable (the false §0.11 "hitFail 3" at 390-768). Scroll position is
+    // the user's business — the panel's own overflow is measured separately.
+    const cy = b.t + (b.b - b.t) / 2;
+    return b.r > 0 && b.b > 0 && b.l < innerWidth && cy < innerHeight;
+  };
   const doc = document.documentElement;
   const view = { w: innerWidth, h: innerHeight };
   const rect = (el) => {

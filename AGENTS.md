@@ -420,6 +420,12 @@ docs/AI_STYLE_HARNESS.md  docs/STYLE_PROFILE.md  .github/**
 and were missing from this list; BE's own attempt to add them was refused by
 this file's write guard, 2026-11-14.)*
 
+**Added 2026-11-16 (M15 QA pass) — two omissions still present:** the M16 files
+`js/ui/primitive-mixer.js` and `js/ui/primitive-mixer-core.js` are **not** in the
+Mac-owned list above (they were built and landed by BE in `37f68ca` while the Mac
+was down, so the list was never extended for them). Also `maestro/*.yaml` is
+unlisted — it is Mac-authored and BE has re-run those flows read-only.
+
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
 
@@ -1476,6 +1482,107 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
 - **§0.9 / §0.10 / §0.11 / §0.12 are all FIXED and re-measured clean at 390–1920** (the overlay-coverage probe reports `hitFail=0`, `clip=0`, `docOverflowX=0` on all six surfaces at every width). The §0 headings are marked closed below.
 - blocker: none.
 - next: **Mac** — the M15 QA seat (re-run `rail-overlay-probe` + `overlay-coverage-probe` + the Maestro set after this push). **BE** — S9/S10, and a one-line JSDoc fix in `js/engine/profile.js` (`profileToPrimitives`'s `effectiveStyle` comment says `null`, but it returns `global.style`).
+
+### 2026-11-16 12:50 — M15 QA seat against BE `37f68ca` (M16 push): gates green, §0.9–§0.12 re-measured, probe defect fixed
+- did: The Maestro MCP was loaded (`mcp__maestro__list_devices` → `chromium`) and the
+  two Maestro skills loaded (`maestro-mobile-web-audit`, `maestro-web-verification`)
+  plus `ui-quality-bar`. Re-ran the whole M15 set against the M16 push. Fixed the
+  server situation first (below), regenerated `docs/research/overlay-coverage.json`
+  against the landed CSS, and fixed a real defect in the Mac-owned probe.
+- **SERVER (environment, not code):** both port-8099 servers were wedged — PID 13766
+  (`--bind 127.0.0.1`, cwd = the WWW_PAINT repo, started Nov 11) and PID 84596
+  (`--bind 0.0.0.0`, cwd = **20.17_3DDD_STUDIO/20.20_3DDD_STUDIO_V2**, i.e. the WRONG
+  project). Both accepted a TCP connection and returned **empty replies** (`curl`
+  exit 52, "Empty reply from server"), so `curl | shasum` returned `da39a3ee…` —
+  the SHA of the empty string — which reads as "STALE" for every file. That is a
+  **silent failure mode worth remembering: an empty reply hashes as a valid value.**
+  A new server on **8097** was bound to the repo; all served hashes then matched disk
+  (`index.html`, `css/style.css`, `js/ui/primitive-mixer.js` — MATCH). Flows were run
+  from copies of `maestro/*.yaml` with only the `url:` port rewritten (repo files
+  untouched, one writer per file).
+- **DEFECT 14 (Mac-owned probe, FIXED):** `scripts/overlay-coverage-probe.cjs`'s
+  `onScreen()` used `b.t < innerHeight`, but a control's box is its **border box**,
+  so anything whose top sat inside the viewport and whose bottom ran past it was
+  hit-tested at a centre below the fold → `elementFromPoint` returns `null` →
+  reported as `hitFail` / untappable. Measured on the real page at 390/400/414/768:
+  `Rings`, `Rings In`, `Clock` at `t:889 b:933` in a 900px viewport. **Proof they
+  are not defects:** with the panel scrolled to `scrollTop` 200/400/500/600 the same
+  three buttons hit-test to `BUTTON.segmented__btn` and `ok:true`. The panel's own
+  overflow is measured separately (`targetOverflowX=0`, `docOverflowX=0`,
+  `clip=0`, `pastViewport=0` at every width). Fixed by testing the box **centre**
+  against the viewport instead of its top edge.
+- **§0.9 / §0.10 / §0.11 / §0.12 re-measured on the landed CSS — all still clean.**
+  `overlay-coverage.json` regenerated at 390/400/414/768/1024/1440/1920:
+  `export-root` `hitFail=0 pastViewport=0 clip=0` (min control 32, unchanged),
+  `style-library-root` `hitFail=0`, `media-root` `hitFail=0`,
+  `controls-root` **now `hitFail=0`** (was 3) at every width, `layers-root`
+  `hitFail=0`. `minControl` 44 on every Mac-owned surface except the legacy
+  `#export-root` (32 — ThinkPad-owned `js/ui/export.js`; recorded, not edited).
+  `BE`'s `scripts/rail-overlay-probe.cjs` → **PASS, 0 of 9 sizes failed**
+  (`library` and `controls` `unreachable=0` at every size, PATH ORDER row
+  `300/300` at 768 and `240/240` at 1440, `btns=11 inside=11`).
+- verified (raw):
+  ```
+  $ maestro test --headless --screen-size 1440x900 .../www-paint-primitive-mixer.yaml
+      14 COMPLETED / 0 FAILED (exit 0)
+  $ mobile-ui-audit 390x844        30 COMPLETED / 0 FAILED
+  $ media-panel 390x844            29 COMPLETED / 0 FAILED
+  $ a11y-sweep-mobile 390x844      39 COMPLETED / 0 FAILED
+  $ export-panel-mobile 390x844    20 COMPLETED / 0 FAILED
+  $ a11y-sweep 1440x900            55 COMPLETED / 0 FAILED
+  $ desktop-regression 1440x900    33 COMPLETED / 0 FAILED
+  $ export-panel 1440x900          35 COMPLETED / 0 FAILED
+  $ media-behaviour 1440x900       35 COMPLETED / 0 FAILED
+  $ style-picker 1440x900          14 COMPLETED / 0 FAILED   (url corrected, see below)
+  $ primitive-mixer 1440x900       14 COMPLETED / 0 FAILED
+  ---
+  $ node tests/engine.test.js          -> Passed: 164  Failed: 0
+  $ node tests/ref-analyze.test.js     -> Passed: 29   Failed: 0
+  $ node tests/primitive-mixer.test.js -> Passed: 20   Failed: 0
+  $ node tests/style-library.test.js   -> Passed: 50   Failed: 0
+  $ node tests/export-panel.test.js    -> Passed: 90   Failed: 0
+  $ node tests/{wetsim,masks,outlines,order,shaping}.test.js -> 15/15 19/19 16/16 24/24 18/18, Failed 0
+  $ node tests/style-polish.test.js    -> Passed: 11  Failed: 0
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0 total=9   (pins UNMOVED)
+  $ node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+      underMin 0 · noName 0 · offViewport 0 · clipped 0 · docOverflowX 0 at every width
+      layersRail open=true rowW=302 underMin=0 @390
+  $ node scripts/rail-overlay-probe.cjs       -> PASS — 0 of 9 sizes failed
+  $ node scripts/primitive-mixer-probe.cjs   -> 21 passed / 0 failed
+  $ node scripts/media-panel-probe.cjs       -> 4 PASS lines
+  $ node scripts/export-panel-probe.cjs      -> PASS (0 page errors)
+  $ under-24px control scan, all six surfaces, 390 + 1440, everything opened -> []
+  $ 404 / requestfailed scan, 390 + 1440 -> []   (the previously-recorded favicon 404 does not reproduce)
+  ```
+- **One flow failure was a HARNESS error, not a regression:** `www-paint-style-picker.yaml`
+  in the repo still carries `url: http://localhost:3001/index.maestro.html` (a stale
+  dev port from an earlier session) so it launched an empty page and failed on its
+  first assertion `Assert that "WWW" is visible... FAILED`. Re-run against the real
+  URL → 14 COMPLETED / 0 FAILED. **Raised for BE** (that flow is a repo file; the Mac
+  did not edit it) — the same class of stale-URL issue as the port-8099 servers.
+  **UPDATE 12:55 — RESOLVED BY SYNC:** BE landed S10 (`17036d7`) while this entry was
+  being written, and the Syncthing copy now has the baseline, so
+  `node tests/style-accuracy.test.js` → **Passed: 9, Failed: 0**. The `style-picker`
+  URL is the only remaining stale one (`grep -rn "localhost:3001" maestro/*.yaml` →
+  that single file); everything else in `maestro/` points at `127.0.0.1:8099`.
+- **One suite could not run at 12:50 but DOES now:** `node tests/style-accuracy.test.js`
+  aborted with `missing pinned baseline docs/research/style-accuracy/baseline.json`.
+  BE's S10 push (`17036d7`, synced 12:33) delivered `baseline.json` (243 cells,
+  94 KB) + `scripts/style-accuracy-bench.cjs`; the suite now passes **9/9**. No local
+  baseline was fabricated to work around it.
+- **VISION REVIEW: one image reviewed** (`media-panel-mobile-bottom.png`, 390px) —
+  no defects found (labels full, no overlap, no horizontal overflow, no emoji).
+  The remaining screenshots could not be reviewed: the vision backend returned
+  **HTTP 429** on every further attempt (`retry_after: 281`). Recorded rather than
+  claimed.
+- files: `AGENTS.md` §1 (M16 files + `maestro/*.yaml` added to the Mac-owned list),
+  `AGENTS.md` §7 (this entry), `scripts/overlay-coverage-probe.cjs` (the `onScreen`
+  fix), `docs/research/overlay-coverage.json` (regenerated against the landed CSS).
+  **No ThinkPad-owned file touched. Nothing deleted.**
+- blocker: none for the gates. Three items raised for BE: the stale `style-picker`
+  flow URL, the missing `style-accuracy` baseline, and the `profileToPrimitives`
+  JSDoc nit already recorded.
+- next: keep the QA seat warm — re-run this set after BE's next push.
 
 ---
 
