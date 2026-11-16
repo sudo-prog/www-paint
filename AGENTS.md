@@ -1536,6 +1536,10 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
   $ style-picker 1440x900          14 COMPLETED / 0 FAILED   (url corrected, see below)
   $ primitive-mixer 1440x900       14 COMPLETED / 0 FAILED
   ---
+  TOTAL MAESTRO: 301 COMPLETED / 0 FAILED across 10 flows at their authored sizes
+  ---
+  $ node tests/style-accuracy.test.js  -> Passed: 9  Failed: 0   (BE S10 17036d7)
+  ---
   $ node tests/engine.test.js          -> Passed: 164  Failed: 0
   $ node tests/ref-analyze.test.js     -> Passed: 29   Failed: 0
   $ node tests/primitive-mixer.test.js -> Passed: 20   Failed: 0
@@ -1570,11 +1574,21 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
   BE's S10 push (`17036d7`, synced 12:33) delivered `baseline.json` (243 cells,
   94 KB) + `scripts/style-accuracy-bench.cjs`; the suite now passes **9/9**. No local
   baseline was fabricated to work around it.
-- **VISION REVIEW: one image reviewed** (`media-panel-mobile-bottom.png`, 390px) —
-  no defects found (labels full, no overlap, no horizontal overflow, no emoji).
-  The remaining screenshots could not be reviewed: the vision backend returned
-  **HTTP 429** on every further attempt (`retry_after: 281`). Recorded rather than
-  claimed.
+- **VISION REVIEW:** two images reviewed. (1) `media-panel-mobile-bottom.png`
+  (390px) — no defects. (2) `export-panel-desktop-default.png` (1440px) — the
+  reviewer flagged **"the QUALITY slider thumb sits at ~20% while the label reads
+  92%"** as a state/render mismatch. **DISPROVED by measurement, and the reason is
+  worth recording:** the panel defaults to PNG, and the quality row is
+  `disabled` for PNG (`js/ui/export-panel.js:319-320`), so what the reviewer saw
+  was the **disabled track**, not the thumb. Measured directly: `value=0.9`
+  against `pct=92%`; with format switched to JPG and the slider driven to
+  `0.1 / 0.5 / 1`, a pixel scan of the element's own box finds the dark thumb at
+  columns **2–11 / 172–181 / 384–393** of a 396px track — i.e. 10% / 50% / 100%.
+  Track and label agree; **no defect.** (The a11y-sweep's
+  `getComputedStyle(el,'::-webkit-slider-thumb')` is useless here — it reports the
+  thumb as 396×44, i.e. the whole track.) Further screenshots could not be
+  reviewed: the vision backend returned **HTTP 429** on every attempt
+  (`retry_after: 281`, then `1067`).
 - files: `AGENTS.md` §1 (M16 files + `maestro/*.yaml` added to the Mac-owned list),
   `AGENTS.md` §7 (this entry), `scripts/overlay-coverage-probe.cjs` (the `onScreen`
   fix), `docs/research/overlay-coverage.json` (regenerated against the landed CSS).
@@ -1583,6 +1597,74 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
   flow URL, the missing `style-accuracy` baseline, and the `profileToPrimitives`
   JSDoc nit already recorded.
 - next: keep the QA seat warm — re-run this set after BE's next push.
+
+### 2026-11-16 14:10 — BE's two M13 action items CLOSED (a11y-sweep isolation + the label `for` gap) — both Mac-owned files
+- did: BE's Round-3 M13 review raised two Mac action items: (a) make
+  `scripts/a11y-sweep.cjs`'s off-viewport check **pass-isolated and stable** (the
+  `rail` number flipped 0 vs 3 between runs), and (b) give the three `index.html`
+  paint-toolbar `<label>`s a `for` attribute. Both done, plus a third defect of the
+  same class found while fixing (a). Full write-up: `docs/checkpoints/M13.md` §9.
+- **DEFECT 15 (Mac-owned probe, FIXED) — `PAGE_AUDIT_RAIL` never closed the previous
+  rail.** The rail panels are mutually exclusive (`btn-library-mode` clears
+  `_mediaMode` and vice-versa), so the media pass left media mode ON and the
+  library pass then opened into a rail already occupied: the library panel was
+  still at `translateX(-340px)` (rect `-340..-20`) while its controls were
+  measured, so all 10 hit-tested to `null` and were reported `offViewport`.
+  **That is the unstable `rail 10` BE flagged.** Fix: close any active rail mode
+  before opening the one under test.
+- **DEFECT 16 (Mac-owned probe, FIXED) — the wait was inside the animation, twice.**
+  `PAGE_AUDIT_RAIL` waited 300ms after the click, which is inside the 280ms
+  slide-in; `PAGE_AUDIT_LAYERS` had the identical bug. Measured at 1920px the
+  layers row went **38px → 143.9px → 242px** across 300ms, so the sweep's
+  `layersRail rowW=38` was a transition frame, **not** a collapsed rail (real row
+  width 242px). Both waits raised to 600ms.
+- **Open-state proof added.** `PAGE_AUDIT_RAIL` now returns `{ audit, opened }`
+  (`onScreen`, `position`, rect, `mobileClosed`) and the console prints it per
+  width, so a surface that is not provably open can no longer report a clean
+  number silently:
+  ```
+  @ 500px  ... offViewport 0 (rail 0) ...
+          btn-media-mode   open=true pos=fixed rect=0..320 mobileClosed=false
+          btn-library-mode open=true pos=fixed rect=0..320 mobileClosed=false
+  ```
+- **DEFECT (b) FIXED — `index.html:101/110/114`** now carry
+  `for="paint-preset|paint-color|paint-weight"` (`<label for>` count 0 → 3). The
+  runtime `aria-label` already covered the a11y tree; the visual label is now
+  programmatically associated too.
+- **The 390px `errors 1` is NOT an app error** — it is a `/favicon.ico` 404 that
+  Chromium requests only at viewport widths ≤390px (same server logs the 404 at
+  390 and nothing at 500). Recorded, not fixed: a favicon is a new asset.
+- verified (raw):
+  ```
+  $ node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+    @ 390   controls 46  underMin 0  noName 0  offViewport 0 (rail 0)  clipped 0  docOverflowX 0
+    @ 500   controls 46  underMin 0  noName 0  offViewport 0 (rail 0)  clipped 0  docOverflowX 0
+    @ 768   controls 46  underMin 0  noName 0  offViewport 0 (rail 0)  clipped 0  docOverflowX 0
+    @ 1024  controls 30  underMin 0  noName 0  offViewport 0 (rail 0)  clipped 0  docOverflowX 0
+    @ 1440  controls 30  underMin 0  noName 0  offViewport 0 (rail 0)  clipped 0  docOverflowX 0
+    @ 1920  controls 30  underMin 0  noName 0  offViewport 0 (rail 0)  clipped 0  docOverflowX 0
+    UNIQUE under-min-target controls: 0 · UNIQUE no accessible name: 0
+    layersRail open=true rowW=302/302/302/232/242/242 underMin=0   (stable across runs)
+  $ gates: engine 164/164 · ref-analyze 29 · primitive-mixer 20 · style-library 50
+           export-panel 90 · wetsim 15 · masks 19 · outlines 16 · order 24
+           shaping 18 · style-polish 11 · style-accuracy 9/9        (all Failed 0)
+  $ node scripts/visual-regression.cjs     -> pass=9 fail=0 error=0  (pins UNMOVED)
+  $ node scripts/rail-overlay-probe.cjs    -> PASS — 0 of 9 sizes failed
+  $ node scripts/primitive-mixer-probe.cjs-> 21 passed / 0 failed
+  $ node scripts/media-panel-probe.cjs    -> 4 PASS lines
+  $ node scripts/export-panel-probe.cjs   -> PASS (0 page errors)
+  $ node scripts/overlay-coverage-probe.cjs-> 42 ok / 0 FAIL (7 widths x 6 surfaces)
+  $ MAESTRO 10 flows at authored sizes: 304 COMPLETED / 0 FAILED
+      mobile 390x844: ui-audit 30 · a11y-sweep-mobile 39 · media-panel 29 · export-panel-mobile 20
+      desktop 1440x900: a11y-sweep 55 · desktop-regression 33 · export-panel 35
+                       media-behaviour 35 · style-picker 14 · primitive-mixer 14
+  ```
+- files: `scripts/a11y-sweep.cjs` (both fixes + the open-state proof + the printed
+  proof line), `index.html` (3 `for` attributes), `docs/checkpoints/M13.md` §9,
+  `AGENTS.md` §7 (this entry). **No ThinkPad-owned file touched. Nothing deleted.**
+- blocker: none.
+- next: the Mac task list (M6a–M16) is now fully closed. Keep the M15 QA seat warm —
+  re-run this set after BE's next push.
 
 ---
 

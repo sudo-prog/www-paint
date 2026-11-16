@@ -495,12 +495,47 @@ const PAGE_OPEN_ALL = async () => {
 
 /** The left-rail panels are mutually exclusive; audit each in its open state. */
 async function PAGE_AUDIT_RAIL(page, buttonId) {
+  // Close whatever the previous pass left open. The rail panels are mutually
+  // exclusive: `btn-library-mode` clears `_mediaMode` and vice-versa, so a
+  // previous rail still occupying the rail leaves this one translated off
+  // screen (`translateX(-340px)`) and the audit measures a CLOSED panel.
+  await page.evaluate(() => {
+    for (const id of ['btn-media-mode', 'btn-library-mode']) {
+      const b = document.getElementById(id);
+      if (!b) continue;
+      // Click only when the mode is active (the buttons are toggles).
+      const active = b.getAttribute('aria-pressed') === 'true'
+        || b.classList.contains('is-active')
+        || b.classList.contains('active');
+      if (active) b.click();
+    }
+  });
+  await new Promise((r) => setTimeout(r, 350));
   await page.evaluate((id) => document.getElementById(id)?.click(), buttonId);
-  await new Promise((r) => setTimeout(r, 300));
+  // 300ms is inside the 280ms slide-in transition for a panel still carrying
+  // `panel--mobile-closed`'s residual transform, and a mid-transition rect is
+  // measured off-screen. Wait past it, then PROVE the surface is really open.
+  await new Promise((r) => setTimeout(r, 600));
+  const opened = await page.evaluate((id) => {
+    const panel = document.getElementById(id === 'btn-media-mode' ? 'media-root' : 'style-library-root');
+    if (!panel) return { missing: true };
+    const cs = getComputedStyle(panel);
+    const r = panel.getBoundingClientRect();
+    return {
+      cls: panel.className,
+      display: cs.display,
+      position: cs.position,
+      transform: cs.transform,
+      rect: { l: Math.round(r.left), r: Math.round(r.right), w: Math.round(r.width) },
+      // A panel parked off-screen by a sibling is NOT open, whatever its class.
+      onScreen: r.right > 0 && r.left < innerWidth && r.width > 0,
+      mobileClosed: panel.classList.contains('panel--mobile-closed'),
+    };
+  }, buttonId);
   const audit = await page.evaluate(PAGE_AUDIT);
   await page.evaluate((id) => document.getElementById(id)?.click(), buttonId);
   await new Promise((r) => setTimeout(r, 200));
-  return audit;
+  return { audit, opened };
 }
 
 /** Audit the LAYERS rail in its own open state.
@@ -534,7 +569,12 @@ async function PAGE_AUDIT_LAYERS(page, width) {
       panel.classList.remove('is-collapsed');
     }
   });
-  await new Promise((r) => setTimeout(r, 300));
+  // The rail expand is ANIMATED. Removing `is-collapsed` mid-transition leaves
+  // the row at a fractional width (measured 38px → 143.9px → 242px over 300ms
+  // at 1920), and a 300ms wait samples the middle of it — the `rowW=38` that
+  // the sweep reported at 1920 is a transition artefact, not a collapsed rail.
+  // Wait past the transition, then assert the rail really is open.
+  await new Promise((r) => setTimeout(r, 600));
   const state = await page.evaluate(() => {
     const panel = document.querySelector('.panel--layers');
     const body = panel && panel.querySelector('.layers-body');
@@ -661,7 +701,12 @@ async function main() {
     // translated off-screen by a sibling being open.
     const rail = {};
     for (const id of ['btn-media-mode', 'btn-library-mode']) {
-      rail[id] = await PAGE_AUDIT_RAIL(page, id);
+      const { audit, opened } = await PAGE_AUDIT_RAIL(page, id);
+      rail[id] = audit;
+      // The proof that the surface really opened. A rail panel audited while
+      // it is still translated off-screen reports a vacuous pass; record the
+      // open-state evidence next to the numbers so that cannot happen silently.
+      rail[`${id}__openState`] = opened;
     }
     // The layers rail needs its own pass: `toggle-layers` COLLAPSES it on
     // desktop, so the allOpen pass measures it shut (see PAGE_AUDIT_LAYERS).
@@ -693,7 +738,7 @@ async function main() {
   for (const [w, data] of Object.entries(report.widths)) {
     // Prefer the rail-specific audits for off-viewport findings: a rail panel
     // measured while a sibling occupies the rail is translated off-screen.
-    const railAudits = Object.values(data.rail || {}).filter(Boolean);
+    const railAudits = Object.values(data.rail || {}).filter((a) => a && Array.isArray(a.interactive));
     const railOff = railAudits.flatMap((a) => (a.interactive || []).filter((c) => c.offViewport));
     const railUnder = railAudits.flatMap((a) => (a.interactive || []).filter((c) => c.underMinW || c.underMinH || c.underMinSlider));
     const railNoName = railAudits.flatMap((a) => (a.interactive || []).filter((c) => !c.name));
@@ -802,6 +847,7 @@ async function main() {
       }
     }
     for (const [k, pass] of Object.entries(data.rail || {})) {
+      // `__openState` records carry the open proof, not an interactive list.
       if (pass && Array.isArray(pass.interactive)) {
         data.rail[k].interactive = pass.interactive.map(strip);
       }
@@ -820,8 +866,16 @@ async function main() {
   line(`widths: ${WIDTHS.join(' / ')}`);
   line('');
   for (const [w, s] of Object.entries(summary.perWidth)) {
+    const railData = report.widths[w].rail || {};
     line(`@ ${w}px  controls ${s.controlCount}  underMin ${s.underMinTarget}  noName ${s.noAccessibleName}  noFocusRule ${s.noFocusVisibleRule}  focusRemoved ${s.removedFocusWithoutReplacement}  offViewport ${s.offViewport} (rail ${s.railOffViewport})  clipped ${s.clipped}  docOverflowX ${s.docOverflowX}  scrollContainers ${s.scrollContainers}  overlays ${s.overlayCount}  live ${s.liveRegionCount}  anims ${s.animationNames}  reducedRules ${s.reducedMotionRules}  errors ${s.errors.length}`);
     line(`        layersRail open=${s.layersRailOpen} rowW=${s.layersRailRowWidth} underMin=${s.layersUnderMin}`);
+    // Prove each rail surface was really open before its numbers are trusted.
+    // A rail audited while a sibling owns the rail is translated off-screen and
+    // its pass is vacuous — the `rail` off-viewport count is the symptom.
+    for (const [k, v] of Object.entries(railData)) {
+      if (!k.endsWith('__openState')) continue;
+      line(`        ${k.replace('__openState', '')} open=${v.onScreen} pos=${v.position} rect=${v.rect.l}..${v.rect.r} mobileClosed=${v.mobileClosed}`);
+    }
     if (s.layersUnderMinList && s.layersUnderMinList.length) {
       for (const c of s.layersUnderMinList) {
         line(`          ${c.tag}.${c.cls}  ${c.w}x${c.h}  "${c.name}"`);
