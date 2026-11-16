@@ -276,13 +276,19 @@ function parseArgs(argv) {
   // A GATE must not dirty the tree: by default the run writes nothing and only
   // verifies. `--update` writes the baseline; `--json=<path>` additionally dumps
   // a run record (evidence), which is the only way a matrix.json is produced.
-  const out = { update: false, tol: 1e-9, json: null, baseline: DEFAULT_BASELINE, replay: null };
+  const out = {
+    update: false, tol: 1e-9, json: null, baseline: DEFAULT_BASELINE, replay: null,
+    // S9 cost-sweep overrides. Defaults are the S10 pin, so a bare run is unchanged.
+    strokes: STROKE_COUNT, refStrokes: REF_STROKES,
+  };
   for (const a of argv.slice(2)) {
     if (a === '--update') out.update = true;
     else if (a.startsWith('--tol=')) out.tol = Number(a.slice(6));
     else if (a.startsWith('--json=')) out.json = a.slice(7);
     else if (a.startsWith('--baseline=')) out.baseline = a.slice(11);
     else if (a.startsWith('--replay=')) out.replay = a.slice(9);
+    else if (a.startsWith('--strokes=')) out.strokes = Number(a.slice(10));
+    else if (a.startsWith('--ref-strokes=')) out.refStrokes = Number(a.slice(14));
   }
   return out;
 }
@@ -347,7 +353,7 @@ async function main() {
     await page.goto(`http://127.0.0.1:${port}/tests/visual/regression.html`, { waitUntil: 'load', timeout: 30000 });
     await page.waitForFunction(() => window.harnessReady === true, { timeout: 20000 });
     r = await page.evaluate(PAGE_FN, {
-      styles: STYLES, contents: CONTENTS, seed: SEED, count: STROKE_COUNT, refStrokes: REF_STROKES, size: SIZE,
+      styles: STYLES, contents: CONTENTS, seed: SEED, count: args.strokes, refStrokes: args.refStrokes, size: SIZE,
     });
     r.pageErrors = pageErrors.slice(0, 5);
 
