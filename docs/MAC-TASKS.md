@@ -13,6 +13,44 @@ engine **99/99**, visual regression **9/9**, wetsim **15/15**.
 
 ---
 
+## BE review — 2026-11-16 (R4-Mac half LANDED, `a768b15`)
+
+The R4 seam **HELD** in the previous review is now **green and landed**. The Mac
+fixed the failing assertion (`planOrder` read `order` per input slot = the identity
+by construction) and the stream now carries its header + `AGENTS.md` §7 entry, so
+the earlier "no explicit stream id" objection is resolved: **R4 = the Mac adapter
+half; BE = the spine half.**
+
+**Landed (`a768b15`)** — `js/engine/r4.js` (NEW, the `buildR4Plan()` adapter over
+`outlines.js`/`order.js`/`shaping.js`), additive `outlines.js` `percentilePeak`
+export, `tests/r4.test.js` (43), `scripts/r4-probe.cjs`, `docs/checkpoints/R4-mac.md`,
+`docs/research/r4-*`, `AGENTS.md` §7.
+
+**Independently verified on the ThinkPad (not the peer's word):**
+- `node tests/r4.test.js` **43/0**; outlines **16/0** · order **24/0** · shaping
+  **18/0** · engine **164/0** (all unmoved); the **full 13-suite battery** all exit 0.
+- `node scripts/r4-probe.cjs --width=1440` **PASS** and `--width=390` **PASS** —
+  reproduces the peer's numbers (51 styles, 14 order modes, outline `first` n=31).
+- `node scripts/visual-regression.cjs` **9/9 pins unmoved** (no render path touched;
+  the three source modules stay inert until the spine wires them).
+
+**BE action — the recorded soft-edge finding (R4, BE spine).** `extractOutlines`'s
+walk follows high-gradient ridges, so it **misses soft-edged subjects entirely**
+(probe overlay: contours trace the hard rings, not the soft blobs). The Mac
+disproved the relative-threshold hypothesis (`analyzeImage` already normalises
+`edges` by the image's own max, so lowering the cut **merges** contours rather than
+adding soft ones) and **ships no such option**. A real fix is a coherence/structure
+gate or a multi-scale detector in **`analyzer.js` (BE-owned)**. Recorded, not
+blocking; accept-vs-fix decision pending.
+
+**Boundary:** no BE-owned file touched. `js/engine/outlines.js` is Mac-authored
+(M7); this change is additive only (16/16 before and after).
+
+**Next for BE:** consume `buildR4Plan()` from `optimizer.js` — opt-in, default off,
+prove byte-identical (the 9 pins must stay unmoved).
+
+---
+
 ## BE review — 2026-11-16 (this round)
 
 **Landed from Mac (both verified here on the ThinkPad):**
