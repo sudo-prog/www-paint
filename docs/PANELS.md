@@ -396,3 +396,9 @@ maestro test --headless --screen-size 1440x900 maestro/www-paint-desktop-regress
    shell.
 6. **Layer rows render in reverse.** `layers.js:103` reverses the array for
    display; index 0 in the DOM is the top layer, not `layers[0]`.
+7. **A library row may carry a reference-confidence chip (Track-S H-S2, added
+   2026-11-16).** `.library-row__ref` renders **only** when the profile carries a
+   fused `provenance.refPacket`; it is a sibling of the select `<button>`, never
+   a child of it, and a profile with no packet renders no chip at all (so the
+   row geometry for ordinary profiles is unchanged). Bands: `consistent` ≥ 0.8,
+   `mixed` ≥ 0.5, else `conflicting`. Probe: `scripts/ref-confidence-probe.cjs`.

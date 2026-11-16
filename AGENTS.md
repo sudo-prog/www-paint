@@ -451,6 +451,21 @@ revert and re-check the branch order.
 
 ---
 
+### 0.14 🔴 OPEN — Track-S hygiene **H-S3** and **H-S4** remain, and both are ThinkPad-owned files
+
+**Raised by Mac, 2026-11-16.** H-S1 and H-S2 are DONE (Mac, this session — see
+`docs/checkpoints/H-S1.md` / `H-S2.md`). The two remaining Track-S hygiene
+items both live in files the Mac may not edit:
+
+| Item | What | File (owner) |
+|---|---|---|
+| **H-S3** | Roadmap truth — keep the status rows true after every stream. `docs/ROADMAP.md` §2 still carries stale phrasing ("Layers: data model only" / "AI: None") in places, and `docs/ROADMAP_STATUS.md`'s **H-S1 / H-S2 rows still read `todo`** though both landed 2026-11-16. | `docs/ROADMAP.md`, `docs/ROADMAP_STATUS.md` (**ThinkPad-owned / shared**) |
+| **H-S4** | The visual harness runs `--disable-gpu`, so stamp/WebGL paths are **not exercised** → false confidence on brush-tip changes. Either document that hard or add a WebGL2 smoke. | `scripts/visual-regression.cjs` (**ThinkPad-owned**) |
+
+Neither was edited by the Mac. **§0.9–§0.12 stay closed** (re-measured clean).
+
+---
+
 ### 0.8 PROCESS — Mac: never run git, and log every turn in §7
 
 Two standing rules for round 2 (requested by the human, 2026-11-12):
@@ -494,8 +509,12 @@ js/engine/renderer.js         js/engine/relief.js
 js/ui/controls.js             js/ui/app.js
 tests/engine.test.js          scripts/parity-bench.cjs
 scripts/visual-regression.cjs tests/parity/harness.html
-docs/CLEANROOM.md  docs/ROADMAP.md  docs/ROADMAP_STATUS.md
-docs/AI_STYLE_HARNESS.md  docs/STYLE_PROFILE.md  .github/**
+| `docs/CLEANROOM.md`  `docs/ROADMAP.md`  `docs/ROADMAP_STATUS.md`
+| `docs/AI_STYLE_HARNESS.md`  `docs/STYLE_PROFILE.md`  `.github/**`
+| `docs/API.md`  `docs/TRACK_S.md`   ← **shared in practice**: both were 0-byte /
+| stale in places and the Mac filled/updated them for H-S1/H-S2. `docs/API.md` is
+| listed ThinkPad-owned and was **empty**; `docs/TRACK_S.md` is in neither list.
+| Do not assume either is off-limits without raising it first.
 ```
 
 **Mac-owned:** `js/engine/wetsim.js`, `js/engine/masks.js`,
@@ -524,6 +543,14 @@ unlisted — it is Mac-authored and BE has re-run those flows read-only.
 These are Mac-authored, Mac-owned, and **absent from the list above** — the same
 omission BE recorded for the `js/ui/*` files. They are the R6 adapter and touch
 no ThinkPad-owned file.
+
+**Added 2026-11-16 (H-S1 / H-S2 Mac streams) — `scripts/ref-confidence-probe.cjs`
+(NEW), `docs/checkpoints/H-S1.md` (NEW), `docs/checkpoints/H-S2.md` (NEW),
+`docs/API.md` (filled from 0 bytes), `docs/TRACK_S.md` (hygiene rows updated).**
+All Mac-authored. `scripts/*-probe.cjs` above already covers the probe by glob,
+but H-S2's probe is worth naming because it is the **only** geometry check for
+the new confidence chip (390/768/1440) — the a11y sweep does not open the
+library panel's rows, and the style-library probe measures it at one width only.
 
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
@@ -563,6 +590,13 @@ NODE_PATH=<...> node scripts/visual-regression.cjs --styles=watercolor,ink   # s
 # plus a `layersRail open=true rowW=…` line per width (rowW=0 means the pass was
 # vacuous — the rail was collapsed, see docs/checkpoints/M13.md §2b)
 NODE_PATH=<...> node scripts/a11y-sweep.cjs --widths=390,500,768,1024,1440,1920
+
+# Reference-confidence chip sweep (Mac H-S2) — the ONLY geometry check for the
+# library row's confidence chip: on-screen / inside panel / unclipped /
+# hit-testable at each width, plus "no chip on a packet-less row".
+# Expect one line per width and `PASS — N width(s), …`
+NODE_PATH=<...> node scripts/ref-confidence-probe.cjs
+NODE_PATH=<...> node scripts/ref-confidence-probe.cjs --widths=390,500,768,1024,1440,1920
 
 # M14 docs probe — live panel inventory + nav wiring + style registry +
 # project structure at a given viewport width (writes docs/research/m14-docs-probe.json)
@@ -1970,6 +2004,153 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
   calibration UX: `ref-analyze.fuseReferences` already emits a `spread` signal
   and nothing surfaces it — the UI half is Mac-owned `js/ui/style-library*.js`).
   Otherwise the M15 QA seat stays warm.
+
+### 2026-11-16 22:50 — Track-S hygiene **H-S2** — the reference-confidence signal is now SURFACED (chip + safe-default advice)
+- did: H-S2 = *"when refs are weak or inconsistent, nothing surfaces a confidence
+  or forces safer defaults."* The signal already existed — `ref-analyze.js`
+  `fuseReferences()` emits `spread.agreement` (= 1 − mean pairwise
+  `refPacketDistance`) — and **nothing read it**. A profile fused from four
+  mutually-contradictory references looked exactly like one built from a single
+  reference. Landed the UI half (all Mac-owned): a **row chip**
+  (`consistent` / `mixed` / `conflicting` + ref count + agreement %) and the
+  **safe-default advice** on apply. Bands are a display convention derived from
+  the fusion's own outlier rule; **nothing re-scores or re-weights**.
+- **THE CHIP IS A TEXT WORD, NOT AN ICON** — colour is the secondary channel, so
+  a colour-blind user and a monochrome screenshot both read it. `tabular-nums`
+  keeps the `%` from jittering. Hover exposes the per-axis spread
+  (scale / orientation / coherence) + outlier count, so the number behind the
+  word is inspectable without a console.
+- **output-neutral by construction.** `refCount === 0` renders **no chip at all**
+  — a library of ordinary profiles keeps the exact row it had. Pinned by test.
+- **THREE DEFECTS, two in my own new code and one probe artifact:**
+  1. **The chip was nested inside the select `<button>`** (`select.appendChild`).
+     A button must not carry labelled/`title` content — nested interactive
+     content, and the accessible name would have swallowed it. Moved to
+     `.library-row__main` as a sibling. The probe now asserts
+     `chipOutsideButton` so it cannot regress.
+  2. **The probe read a stale DOM.** The panel renders rows from
+     `library.list()` on its OWN refresh; a probe writing straight into the
+     library measured the previous run's rows. It now calls `panel.refresh()`.
+  3. **The probe's fixtures could not produce the band under test.** `A,B,S`
+     fuses to agreement **0.53** = `fair`, not `low`, so the probe demanded a
+     `low` chip that its own fixture could not build — a false failure that
+     looks exactly like a product defect. Measured the real landscape and
+     replaced the fixture with `A,B,black,white` = **0.4944**. The fixture's
+     numbers are now RECORDED as probe output (`fixtureAgreementGood/Bad`) and
+     asserted to disagree, so the fixture is part of the contract.
+- **Two probe-environment traps fixed (both would have recurred every run):**
+  the library persists to `localStorage`, so re-runs inherited the previous
+  run's profiles (row lookups by band matched a stale row); and at the probe's
+  1280px viewport the library rail starts **hidden**, so every chip measured
+  **0×0** — a vacuous pass. The probe now clears storage, reloads, opens the
+  panel via `#btn-library-mode`, and asserts the panel is provably open
+  (`panelOpenState`) before trusting any geometry.
+- **NEW `scripts/ref-confidence-probe.cjs`** — the chip is new UI, so per the
+  quality bar it is measured at **390 / 768 / 1440**, not one width: chip
+  on-screen, inside the panel, `scrollWidth - clientWidth === 0`, hit-testable
+  (`elementFromPoint` → the chip), row and action bar inside the panel, no
+  document overflow, and no chip on the packet-less row.
+- files: `js/ui/style-library-core.js` (NEW `REF_CONFIDENCE`,
+  `refConfidenceBand`, `refConfidenceAdvice`, `REF_CONFIDENCE_LABELS`,
+  `referenceConfidence`; `summarizeProfile` + `refCount`/`refConfidence`),
+  `js/ui/style-library.js` (row chip + `_confidenceTitle` + apply-status
+  advice), `css/style.css` (+47 lines, `.library-row__ref[-—good|fair|low]`),
+  `tests/style-library.test.js` (+12 tests), `scripts/style-library-probe.cjs`
+  (§9 + storage isolation + panel-open proof),
+  `scripts/ref-confidence-probe.cjs` (NEW),
+  `docs/research/ref-confidence.json`, `docs/research/ref-confidence-{390,1440}.png`.
+  **No ThinkPad-owned file touched. Nothing deleted. No git run.** 9 pins
+  unmoved (no render path touched).
+- verified (raw):
+  ```
+  $ node tests/style-library.test.js -> Passed: 62  Failed: 0   (was 50, +12)
+  $ node scripts/style-library-probe.cjs
+    chipCountNoPacket 0 · chipCountWithPacket 2 · goodChipBand "good"
+    chipBand "low" · chipText "conflicting · 4 refs 49%"
+    chipTitle "conflicting: 4 references · agreement 49% · scale spread 67% ·
+               orientation spread 3% · coherence spread 96%
+               References disagree strongly — treat this profile as a
+               starting point, not a matched target. Check the reference set."
+    chipOnScreen true · chipInsidePanel true · chipNoClip 0 · chipOutsideButton true
+    fixtureAgreementGood 0.8315 · fixtureAgreementBad 0.4944
+    conflictingAdviceShown true ("References disagree strongly — treat this
+      profile as a starting point, not a matched target. Check the reference set.")
+    goodAdviceAbsent true   ("Applied \"H-S2 Good\" — pencil, seed 1.")
+    PASS
+  $ node scripts/ref-confidence-probe.cjs
+    @390  chip 125.6x13@18 band=low "conflicting · 4 refs 49%" hit=SPAN.library-row__ref rowH=92 docOverflowX=0
+    @768  chip 125.6x13@18 band=low "conflicting · 4 refs 49%" hit=SPAN.library-row__ref rowH=92 docOverflowX=0
+    @1440 chip 125.6x13@18 band=low "conflicting · 4 refs 49%" hit=SPAN.library-row__ref rowH=92 docOverflowX=0
+    PASS — 3 width(s), every chip on-screen, unclipped, inside its panel
+  $ VISION (docs/research/ref-confidence-390.png): both chips "fully visible,
+    unclipped, not truncated"; "no overlap between the chips and the buttons";
+    "no visual defects for these chips at this width"; the packet-less row
+    correctly shows no chip.
+  $ node tests/{engine,ref-analyze,r4,modular-bridge,style-library,export-panel,
+       primitive-mixer,style-polish,style-accuracy,wetsim,masks,outlines,order,shaping}.test.js
+    engine 164 · ref-analyze 29 · r4 43 · modular-bridge 22 · style-library 62
+    export-panel 90 · primitive-mixer 20 · style-polish 11 · style-accuracy 9
+    wetsim 15 · masks 19 · outlines 16 · order 24 · shaping 18    (all Failed 0)
+  $ node scripts/visual-regression.cjs     -> pass=9 fail=0 error=0  (pins UNMOVED)
+  $ node scripts/a11y-sweep.cjs --widths=390,768,1440
+      underMin 0 · noName 0 · offViewport 0 (rail 0) · clipped 0 · docOverflowX 0
+      layersRail open=true rowW=302/302/242
+  $ node scripts/overlay-coverage-probe.cjs --widths=390,768,1440
+      style-library-root hitFail=0 pastViewport=0 clip=0 docOverflowX=0 minControl=44
+  $ node scripts/rail-overlay-probe.cjs       -> PASS — 0 of 9 sizes failed
+  $ node scripts/media-panel-probe.cjs        -> 4 PASS lines
+  $ node scripts/export-panel-probe.cjs       -> PASS (0 page errors)
+  $ MAESTRO 10 flows at AUTHORED sizes: 301 COMPLETED / 0 FAILED
+  ```
+- blocker: none. §0.9–§0.12 stay closed.
+- next: **H-S2 is done.** Remaining Track-S hygiene: **H-S3** (roadmap truth —
+  `docs/ROADMAP.md` §2 still says "Layers: data model only" / "AI: None" in
+  places) and **H-S4** (the visual harness has no WebGL2 → false confidence on
+  brush-tip changes). Say the word and I'll take H-S3 next (docs-only, Mac can
+  write `docs/ROADMAP.md`? — it is ThinkPad-owned, so that one is BE's).
+
+### 2026-11-16 23:40 — Docs update for H-S1/H-S2 — 7 docs, no code
+- did: Propagated the two streams into the docs that describe the surfaces they
+  changed, and raised (not edited) the two that are ThinkPad-owned. **No code,
+  no CSS, no test touched** — this is a docs-only turn, so the 9 pins are
+  unmoved by construction.
+- **UPDATED (Mac-owned / shared-in-practice):**
+  - `docs/checkpoints/H-S1.md` (NEW) — the two-`score` split, the dump method,
+    and the correction that `r4.js` is NOT inert.
+  - `docs/checkpoints/H-S2.md` (NEW) — the chip, the band contract, the measured
+    agreement landscape table, the three defects, the two probe traps.
+  - `docs/TRACK_S.md` — status header + **§4 H-S1/H-S2 rows → DONE** with the
+    deliverable + evidence; §5 execution order updated; H-S3/H-S4 flagged as
+    ThinkPad-owned.
+  - `docs/API.md` — new **§3.17 `js/ui/`** (the Mac-owned UI modules + the H-S2
+    exports), so the API doc covers the surface an agent is most likely to edit.
+  - `docs/checkpoints/M10.md` — a note under the row-geometry table: the chip,
+    its measurements, and that packet-less rows are unchanged.
+  - `docs/PANELS.md` — §8 gotcha 7 (the chip's placement rule + bands + probe).
+  - `docs/MAC-TASKS.md` — §R2.4 records that its own prediction ("when S1–S2
+    lands, the library UI may surface a profile's Style-Match score") came true
+    via H-S2.
+  - `AGENTS.md` — §0.14 (H-S3/H-S4 raised as open, with owners), §1 (the new
+    probe + the H-S1/H-S2 files added to the Mac-owned list; `docs/API.md` and
+    `docs/TRACK_S.md` annotated as **shared in practice**, with the note that
+    `docs/API.md` was 0 bytes and `docs/TRACK_S.md` is in neither list), §3 (the
+    new probe wired into the command list).
+- **NOT edited, raised for BE instead** (ownership rule): `docs/ROADMAP_STATUS.md`
+  (its **H-S1/H-S2 rows still read `todo`** though both landed), `docs/STYLE_PROFILE.md`
+  §3.5 (documents `provenance.refPacket` but not `spread` / the bands),
+  `docs/ROADMAP.md`, `scripts/visual-regression.cjs`.
+- **verified (raw):**
+  ```
+  $ ls -la docs/checkpoints/H-S{1,2}.md   -> 6532 B / 10571 B (NEW)
+  $ grep -c "3.17" docs/API.md             -> 1
+  $ grep -c "DONE (2026-11-16, Mac)" docs/TRACK_S.md -> 2
+  $ git status --short docs/ AGENTS.md    -> only docs/AGENTS.md entries; no .js/.css/.html
+  ```
+  Consistency check: every file the new docs cite exists, and every claim about
+  which file is Mac- vs ThinkPad-owned was re-read from `HANDOFF.md` §6 before
+  being written.
+- blocker: none.
+- next: the M15 QA seat — re-run the set after BE's next push.
 
 ---
 

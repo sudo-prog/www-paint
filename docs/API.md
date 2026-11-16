@@ -317,6 +317,39 @@ is therefore the one path where R4 touches the engine of record today.
   **hash-pinned baselines** are `pencil ink watercolor oil charcoal marker
   cross-hatch halftone graphic` at 256px / seed `3047602159` / 700 strokes.
 
+### 3.17 `js/ui/` — the Mac-owned UI modules (DOM + their pure cores)
+
+The engine half of the API is above; these are the modules an agent is most
+likely to be asked to change. **Each panel is split into a pure core (node
+-testable, no DOM) and a DOM manager**, the same shape as the media panel.
+
+- **`style-library-core.js`** — the profile object + storage boundary. `ProfileLibrary`
+  (`save`/`list`/`get`/`apply`/`delete`/`exportText`/`importText`/`clear`),
+  `defaultProfile()`, `coerceProfileName(name)`, `newProfileId()`,
+  `profileToExportText(p)` / `profileFromExportText(text, {validate})`,
+  `summarizeProfile(p)`, `STORAGE_KEY`, `DEFAULT_SEED`, `MAX_NAME_LENGTH`.
+  **Track-S H-S2:** `referenceConfidence(profile)`,
+  `refConfidenceBand(agreement)`, `refConfidenceAdvice(band)`,
+  `REF_CONFIDENCE_LABELS`, `REF_CONFIDENCE`.
+- **`style-library.js`** — `StyleLibraryPanel` (`refresh()`, `setHost()`,
+  `destroy()`); renders rows, dispatches `style-profile-apply`. Never imports
+  `app.js`.
+- **`style-library-host.js`** — the shim: owns the `#style-library-root`
+  lifecycle, `getSnapshot()`, and `applyToEngine()`.
+- **`primitive-mixer-core.js` / `primitive-mixer.js`** — the S5/M16 stroke-language
+  mixer; `writeMixAtLevel(profile, context, mix)` / `PrimitiveMixerSection`.
+- **`export-panel-core.js` / `export-panel.js` / `export-host.js`** — the Phase 6
+  export & share panel (PNG/JPG × 3 sizes, quality, share text, profile JSON).
+- **`media.js` / `media-host.js`** — the wet/tonal media panel.
+- **`layers.js`** — the layer panel rows (rendered in **reverse** order, §8 of
+  `docs/PANELS.md`).
+- **`a11y-hardening.js`** — runtime a11y fixes (aria-labels, focus restore, focus
+  traps). Additive; safe to fold into `app.js` when the shim pattern is retired.
+
+> The engine-side API is authoritative here; the UI list above is the surface an
+> agent is most likely to edit, and it is **Mac-owned** (`AGENTS.md` §1). The
+> `js/engine/` sections above are the contract those modules call into.
+
 ---
 
 ## 4. Which modules are inert (shipped, tested, no importer)

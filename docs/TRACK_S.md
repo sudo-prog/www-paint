@@ -4,6 +4,13 @@
 (`js/engine/ref-analyze.js`, 16/16), **S2 done as a mechanism**
 (`scoreProfileStyle` + `refPacketDistance` + gate guards, `docs/checkpoints/S2.md`)
 and **S3 done** (multi-reference fusion, `docs/checkpoints/S3.md`, 29/29).
+**Hygiene: H-S1 DONE (Mac, 2026-11-16)** — `docs/API.md` was 0 bytes since the
+initial commit; it is now a full engine reference leading with the
+`scorer.js` vs `score.js` split (`docs/checkpoints/H-S1.md`).
+**Hygiene: H-S2 DONE (Mac, 2026-11-16)** — the fused reference packet's `spread`
+confidence is now surfaced in the library UI (a `consistent`/`mixed`/`conflicting`
+row chip + safe-default advice on apply); 62/62 + a new 3-width probe
+(`docs/checkpoints/H-S2.md`). **H-S3 / H-S4 remain open and are ThinkPad-owned.**
 **⚠ Building S3 exposed TWO DEFECTS IN S2** (`docs/checkpoints/S3.md` §7, hygiene
 **H-S5 / H-S6**) — **both are now FIXED.**
 **H-S6 (2026-11-13, `docs/checkpoints/H-S6.md`):**
@@ -104,8 +111,8 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 
 | Item | Problem | Action |
 |---|---|---|
-| **H-S1 — two "score" concepts** | `scorer.js` (candidate selection inside the generator) vs `score.js` (profile quality for the harness) are easy to confuse. | Document the split clearly in `docs/API.md` (BE). |
-| **H-S2 — confidence / calibration UX** | When refs are weak or inconsistent, nothing surfaces a confidence or forces safer defaults. | Surface a confidence signal from S1/S3 and a safe-default path in the library UI (S6). |
+| **H-S1 — two "score" concepts** | `scorer.js` (candidate selection inside the generator) vs `score.js` (profile quality for the harness) are easy to confuse. | **DONE (2026-11-16, Mac)** — `docs/API.md` was **0 bytes since the initial commit** (`069a777`); it is now a full engine reference whose §1 is the split (a side-by-side table: layer, input, output, consumer, objective), §2 the two render paths, §3.5 the third concept (`style-render.js` is a *render backend*, not a score). Every export list was **dumped** from the live modules (`node --input-type=module` + `Object.keys`), and the raw output is quoted in §6 so BE can diff it. Writing it also **corrected a stale claim on this board**: `r4.js` is NOT inert — `optimizer.js:68` imports `planOrder` and applies it at `:922-938` behind the opt-in `r4` default. `docs/checkpoints/H-S1.md` |
+| **H-S2 — confidence / calibration UX** | When refs are weak or inconsistent, nothing surfaces a confidence or forces safer defaults. | **DONE (2026-11-16, Mac)** — the signal already existed (`ref-analyze.fuseReferences` emits `spread.agreement` = 1 − mean pairwise `refPacketDistance`) and **nothing read it**: a profile fused from four contradictory references looked identical to one built from a single reference. The library now renders a **row chip** — `consistent` / `mixed` / `conflicting` + ref count + agreement %, with the per-axis scale/orientation/coherence spread and outlier count on hover — and surfaces **safe-default advice** on apply ("treat this profile as a starting point, not a matched target"). Bands are a display convention derived from the fusion's own outlier rule; **nothing re-scores or re-weights**, and a profile with no packet renders **no chip at all** (ordinary libraries keep their exact row). `js/ui/style-library-core.js` (+`REF_CONFIDENCE`/`refConfidenceBand`/`refConfidenceAdvice`/`REF_CONFIDENCE_LABELS`/`referenceConfidence`), `js/ui/style-library.js`, `css/style.css`; `tests/style-library.test.js` 50 → **62/62**; NEW `scripts/ref-confidence-probe.cjs` (390/768/1440); `docs/checkpoints/H-S2.md` |
 | **H-S3 — roadmap truth** | `docs/ROADMAP.md` §2 said "Layers: data model only" / "AI: None" long after both shipped — agents could mis-prioritise. | Fixed 2026-11-12 (this update). Keep status rows true after every stream (B7). |
 | **H-S4 — visual harness has no WebGL2** | `scripts/visual-regression.cjs` runs `--disable-gpu`, so stamp/WebGL paths are not exercised → false confidence on brush-tip changes. | Tracked as defect **0.7** (B7); either document hard or add a WebGL2 smoke. |
 | **H-S5 — `orientationMatch` is not a metric** | identity failed on BROAD (i.e. real) histograms: `refPacketDistance(p,p)` was 0.1206, so `styleMatch` had a floor of 0.875 and could never reach 1. Cause: the denominator was a weighted mean of `cos(2Δθ)`, which penalises spread. This was the S2 §6 "term reads ≈0.50" mystery. | **DONE (2026-11-14)** — normalised by the kernel self-products `sqrt(K(a,a)·K(b,b))` (K is PSD ⇒ identity is exactly 1 for any distribution; delta-vs-delta unchanged, so every spike-comparison test still holds). Both pinned `KNOWN DEFECT` tests inverted (engine 137/137, ref-analyze 29/29). Re-measured on the style-aware probe: the corrected kernel **earns its weight** on a genuinely different pair (pencil 0.4317 vs pencil-ref / 0.3374 vs cross-hatch-ref, margin **+0.0943**; ink **+0.193**); the ADJACENT pencil-vs-ink pair measures **−0.0304** and is recorded as a KNOWN LIMITATION (the two references are `orientationMatch` 0.9636 apart — same content, structure-aligned). Probe re-scoped to the discriminating pair with the adjacent pair still reported. `docs/checkpoints/H-S5.md`; new diagnostic `scripts/style-ref-matrix.cjs` |
@@ -116,6 +123,10 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 ## 5. Execution order (next)
 
 1. **Docs hygiene** — this doc + the `ROADMAP.md` / `ROADMAP_STATUS.md` refresh.
+   **H-S1 DONE (Mac, 2026-11-16)** (`docs/API.md`, `docs/checkpoints/H-S1.md`);
+   **H-S2 DONE (Mac, 2026-11-16)** (`docs/checkpoints/H-S2.md`).
+   **H-S3 / H-S4 remain, and both are ThinkPad-owned** (`docs/ROADMAP.md`,
+   `scripts/visual-regression.cjs`) — Mac has raised them, not edited them.
 2. **S1** — RefPacket / analysis grid (`js/engine/ref-analyze.js`).
 3. **S2** — Style-Match Score in `metrics.js` / `score.js`; wire into `propose` + `gate`.
 4. **S6 (Phase 4.2)** — Profile library UI (Mac **M10**; already issued).
