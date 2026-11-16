@@ -31,7 +31,7 @@ For **every** turn:
 - **Never run git** (§0.8). Edits reach the ThinkPad via **Syncthing**; **BE
   verifies and pushes** (BE is the sole GitHub writer). If a `.git` exists on
   your side, do not touch it.
-- **Append one entry to §7** (progress log) each turn, and one `OPS_LOG` line per
+- **Append one entry to §7** (progress log) each turn, and one `MAC_LOG` line per
   finished stream.
 
 **Baseline you must match:** `main = 28e8933`, remote == local. Gates:
@@ -476,8 +476,12 @@ Two standing rules for round 2 (requested by the human, 2026-11-12):
    and delete it only with the human's explicit approval.
 2. **Append to §7 "Round-2 progress log" after EVERY turn** — a dated entry with
    what you did, the files you touched, the raw verification output, any blocker,
-   and what is next. That is how BE stays current with your progress. Report
-   blockers in §0 as well.
+   and what is next. That is how BE stays current with your progress.
+   **The Mac's own log is `~/Documents/Obsidian Vault/MAC_LOG/MAC_LOG.md`**
+   (synced copy `~/SyncthingAutoAccept/MAC_LOG/MAC_LOG.md`). **Never write to
+   `~/SyncthingAutoAccept/OPS_LOG/OPS_LOG.md`** — that is the ThinkPad's log
+   (corrected 2026-11-17; an earlier version of this section was wrong).
+   Report blockers in §0 as well.
 
 Neither rule is optional: BE cannot verify what it cannot see, and a second git
 history breaks the single-push model.
@@ -552,6 +556,22 @@ but H-S2's probe is worth naming because it is the **only** geometry check for
 the new confidence chip (390/768/1440) — the a11y sweep does not open the
 library panel's rows, and the style-library probe measures it at one width only.
 
+**Added 2026-11-17 (ui-sdk round 1, Mac) — human directive *"If it's ui related
+you own it"*:**
+
+- **`js/ui/react/**`** — the whole React/ui-sdk surface: `index.html`,
+  `main.jsx`, `StyleLibrary.jsx`, `styles.css`, and any further
+  `js/ui/react/*` panel (export & share, layers, media, mixer…). Mac writes
+  these freely; they are additive to the static app.
+- **`vite.config.js`** (Mac-authored, untracked).
+- **`index.html` — Mac MAY EDIT for UI wiring.** The human overruled the
+  earlier boundary for UI work. Keep every edit **purely additive** (a link, a
+  mount node, an import-map entry, one script tag): do not restyle or rewrite
+  existing app markup, and never touch the canvas/engine wiring. BE still owns
+  the file for anything non-UI.
+- **`css/style.css`** — Mac may append additive `data-slot` / React-surface
+  rules; do not alter existing app rules.
+
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
 
@@ -561,10 +581,10 @@ library panel's rows, and the style-library probe measures it at one width only.
 
 | Log | Path | Who writes |
 |---|---|---|
-| **OPS_LOG** | `~/SyncthingAutoAccept/OPS_LOG/OPS_LOG.md` (synced, append-only with `>>`) | Both machines. One dated line per event. |
-| **MAC_LOG** | `~/Documents/Obsidian Vault/MAC_LOG/MAC_LOG.md` (synced copy at `~/SyncthingAutoAccept/MAC_LOG/MAC_LOG.md`) | Mac only. |
+| **MAC_LOG** | `~/Documents/Obsidian Vault/MAC_LOG/MAC_LOG.md` (synced copy at `~/SyncthingAutoAccept/MAC_LOG/MAC_LOG.md`) | Mac only — append with `>>`, never overwrite |
+| **OPS_LOG** | `~/SyncthingAutoAccept/OPS_LOG/OPS_LOG.md` | **ThinkPad only.** The Mac never writes here (corrected 2026-11-17 — an earlier version of this table wrongly said "Both machines") |
 
-`OPS_LOG.md` is a **symlink** — append with `>>`, never overwrite, never
+`MAC_LOG.md` is a **symlink** — append with `>>`, never overwrite, never
 `write_file`. Prefix Mac lines with `MAC:`, cross-checks with `[VERIFY]`,
 blockers with `[MAC] BLOCKED:`.
 
@@ -2154,6 +2174,78 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
 
 ---
 
+### 2026-11-17 04:40 — ui-sdk round 1 (React UI SDK) — SHIPPED, browser-verified
+- did: The user relayed BE's brief — *"Set up ui-sdk in this React project. It
+  needs React 19 or newer"* (install `@ui-sdk/react`+`@ui-sdk/core`, AGENTS.md
+  note, `npx skills add vercel-labs/ui --skill ui-sdk`). Found: `package.json`
+  + `skills-lock.json` already declared the deps and the skill was already
+  installed, but **`node_modules/@ui-sdk` was absent** — nothing was actually
+  installed. Installed it (`@ui-sdk/{core,react}` 0.1.0-beta.3, React 19.3.1,
+  vite 7.3.8, `@vitejs/plugin-react` 5.2.0, `@types/react` 19.3.0 — 6.3.0 needs
+  vite ^8, so 5.2.0 rather than bumping vite). Added the **AGENTS.md §ui-sdk
+  note** (it had existed only in a stale `.syncthing.AGENTS.md.tmp`). Built the
+  first React surface — `js/ui/react/` — the Style Profile library on ui-sdk
+  over the **existing pure core** `js/ui/style-library-core.js` (no engine,
+  schema or core change). NEW `vite.config.js`, NEW
+  `scripts/react-ui-probe.cjs` + NEW `scripts/react-agent-probe.cjs`.
+- files: `AGENTS.md` (§ui-sdk note), `vite.config.js`, `js/ui/react/{index.html,
+  main.jsx,StyleLibrary.jsx,styles.css}`, `scripts/react-ui-probe.cjs`,
+  `scripts/react-agent-probe.cjs`, `docs/checkpoints/UI-SDK.md` (NEW),
+  `docs/research/react-ui-{390,768,1440}.{png,json}`, `package.json`/
+  `package-lock.json` (already present, deps now installed). **No ThinkPad-owned
+  file touched. `index.html` / `js/ui/*.js` / `css/style.css` byte-identical.
+  Nothing deleted. No git run.**
+- verified (raw):
+  ```
+  $ npm ls --depth=0
+    @ui-sdk/core 0.1.0-beta.3 · @ui-sdk/react 0.1.0-beta.3 · react 19.3.1
+    react-dom 19.3.1 · vite 7.3.8 · @vitejs/plugin-react 5.2.0 · @types/react 19.3.0
+  $ ./node_modules/.bin/vite build
+    ✓ 203 modules transformed.  built in 3.46s
+  $ node tests/engine.test.js         Passed: 165  Failed: 0
+  $ node tests/{ref-analyze,style-library,primitive-mixer,style-accuracy,
+    wetsim,masks,outlines,order,shaping}.test.js   ✅ all passed
+  $ node tests/export-panel.test.js   Passed: 90  Failed: 0
+  $ node tests/r4.test.js             Passed 43  Failed 0
+  $ node tests/modular-bridge.test.js Passed 22  Failed 0
+  $ node tests/style-polish.test.js   Passed 11  Failed 0
+  $ node scripts/visual-regression.cjs  pass=9 fail=0 error=0 total=9  (pins UNMOVED)
+  $ node scripts/react-ui-probe.cjs http://localhost:5178/js/ui/react/index.html {1440,768,390}
+    @ every width: controls 10  unnamed 0  underMin 0  offscreen 0  docOverflowX 0
+                 listbox true  items 2  chip "conflicting"
+    dialog open=true title="Save style profile" clipped=false field h=44
+  $ node scripts/react-agent-probe.cjs 1440
+    components 13  unnamed 0
+    resolved refs {"trigger":"button:c3","nameField":"input:c16","confirm":"button:c18"}
+    open ok=true · agent act ok=true · rows 2 -> 3 · PASS
+  $ VISION docs/research/react-ui-1440.png -> "There are no defects present in this UI."
+  ```
+- FIVE DEFECTS found, all in my own new code, all fixed:
+  1. **`ListboxItems` cannot wrap children** — it is a data renderer; with no
+     `items` prop it threw `undefined.map` and the panel crashed to a blank
+     root. Build was green throughout; the stack trace found it.
+  2. **`library.save()` returns the PROFILE and THROWS** — I read `result.ok`
+     and `result.errors.map`, so Save silently did nothing.
+  3. **`DialogClose` takes `action`, not `onClick`** — the delete handler never
+     ran (found by reading `DialogCloseProps`).
+  4. **ui-sdk ships no CSS** — every Button was 21px, failing the 44px floor.
+  5. **Duplicate labels** — a DialogTrigger and its Dialog share a label, so an
+     agent step named two components; gave each a distinct `aria-label`.
+  Plus one vision-flagged real defect: `.library-apply` had no band, so the
+  switch sat above its label's first line (label at x 834) — fixed with a grid.
+  One vision flag (hint "clipped") was **disproved by measurement**
+  (`scrollWidth == clientWidth`, clip 0).
+- TRAPS: the agent bridge must be created BEFORE React renders (else
+  `snapshot()` returns `[]` with no error); a closed dialog's contents are not in
+  the bridge; `vite.config.js` `root` must stay the repo or
+  `../style-library-core.js` 404s; read the `.d.ts`, not the docs' snippets.
+- blocker: none. The React surface is additive and served separately — the main
+  app is still the no-build static site.
+- next: **BE** — verify + push; decide whether the React surface should be linked
+  from the shell (that needs `index.html`, which is BE-owned). **Mac** — next
+  ui-sdk panel (export & share, over the existing `export-panel-core.js`), or
+  the M15 QA seat.
+
 ## 6. Reading list
 
 | Doc | Why |
@@ -2172,3 +2264,30 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
 **Governing principle:** *Inspired by the technique, never copied from the
 source.* Ideas come from the papers in `docs/REFERENCES.md`; write your own
 expression of them.
+
+---
+
+## ui-sdk (React UI SDK)
+
+Before using **ui-sdk**, follow the `ui-sdk` skill if it's installed
+(`.agents/skills/ui-sdk`), and read
+`node_modules/@ui-sdk/react/docs/llms.txt`. To build a new component, also search
+`node_modules/@ui-sdk/react/docs/core.md` by heading, and read `rendering.md`
+next to it.
+
+**Installed:** `@ui-sdk/react` + `@ui-sdk/core` `0.1.0-beta.3`, React 19.3.1
+(`package.json`). The React surface lives in `js/ui/react/` and is served by
+`vite.config.js` — `npm run ui` (dev, port 5178) / `npm run ui:build`
+(bundle to `ui-dist/`). **The main app is still the no-build static site**;
+`index.html` is unchanged and Cloudflare Pages still serves the repo root.
+
+**Landed 2026-11-17 (Mac, ui-sdk round 1):** `js/ui/react/{index.html,main.jsx,
+StyleLibrary.jsx,styles.css}` — the Style Profile library rebuilt on ui-sdk
+(Select / Listbox / Switch / Dialog / Field / Input / Tooltip / Button), over
+the **existing** pure core `js/ui/style-library-core.js` (no engine, schema or
+core change). `scripts/react-ui-probe.cjs` (geometry + a11y at 390/768/1440)
+and `scripts/react-agent-probe.cjs` (the skill's agent-readiness test).
+Measured: 0 unnamed controls, 0 under the 44px floor, 0 off-screen,
+`docOverflowX 0`, agent `act` ok and a row added; visual regression **9/9 pins
+unmoved**. Three defects found and fixed — see `docs/checkpoints/UI-SDK.md`.
+

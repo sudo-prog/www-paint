@@ -387,7 +387,7 @@ A stream is done only when **all** of these are true, and pasted as evidence:
    re-baseline reason if you re-baselined.
 4. New artefacts committed under `docs/research/`.
 5. `docs/checkpoints/P<n>.md` written (research → design → result).
-6. OPS_LOG line appended (§9).
+6. MAC_LOG line appended (§9).
 7. The human or the ThinkPad can reproduce your numbers from your pasted commands.
 
 **Evidence format — the command and its real output, never a paraphrase:**
@@ -400,17 +400,25 @@ Passed: 47   Failed: 0
 
 ## 9. Reporting
 
-Append **one dated line** to the shared operations ledger (Syncthing,
-near-real-time). It is a symlink — append with `>>`, never overwrite:
+**⚠ Corrected 2026-11-17 (Mac).** This section used to say the Mac appends to
+`~/SyncthingAutoAccept/OPS_LOG/OPS_LOG.md`. **It does not.** That is the
+**ThinkPad's** log, not shared and not the Mac's — the human has corrected this
+several times. **The Mac writes ONLY to `~/Documents/Obsidian Vault/MAC_LOG/MAC_LOG.md`**
+(synced copy at `~/SyncthingAutoAccept/MAC_LOG/MAC_LOG.md`). A Mac report must
+never be appended to `OPS_LOG`; BE reads the Mac's progress from `MAC_LOG` and
+from `AGENTS.md` §7.
+
+Append **one dated line** to `MAC_LOG` after each finished stream:
 
 ```bash
-printf '%s\n' "[$(date '+%Y-%m-%d %H:%M %Z')] MAC: WWW_PAINT M1 wetsim — <what shipped>. FILES (delivered via Syncthing; BE to verify+push): js/engine/wetsim.js tests/wetsim.test.js docs/checkpoints/P3.md. VERIFIED (my own runs): node tests/engine.test.js 52/52; node scripts/visual-regression.cjs pass=9 fail=0 error=0; tests/wetsim.test.js 6/6. NOTHING DELETED. [SIGNED: Hermes | <model>]" >> "$OPS_LOG"
+printf '%s\n' "- [$(date '+%Y-%m-%d %H:%M %Z')] WWW_PAINT <stream> — <what shipped>. FILES (delivered via Syncthing; BE to verify+push): <paths>. VERIFIED (my own runs): <command> → <output>. NOTHING DELETED. [SIGNED: Hermes | <model>]" >> ~/Documents/Obsidian\ Vault/MAC_LOG/MAC_LOG.md
 ```
 
-Facts + evidence only; one line; state `NOTHING DELETED` explicitly; prefix
-cross-checks with `[VERIFY]`. A blocker you cannot resolve → append a line
-starting `[MAC] BLOCKED:` with the exact error, and stop that stream rather than
-thrash.
+Facts + evidence only; state `NOTHING DELETED` explicitly. A blocker you cannot
+resolve → mark it `BLOCKED:` with the exact error and stop that stream rather
+than thrash. (AGENTS.md §0.8 still says "one `OPS_LOG` line per finished
+stream" — that phrase is stale for the same reason; the log is `MAC_LOG`.)
+
 
 ---
 
