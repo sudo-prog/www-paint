@@ -358,6 +358,99 @@ of defect as 0.10. **Raised, not edited.**
 
 ---
 
+### 0.13 🔴 OPEN — **R6**: retire the legacy painter. The switch is a 2-line wiring in `engine.js` (Mac half is landed)
+
+**Raised by Mac, 2026-11-16.** R6 — *"App + baselines run 100% on the modular
+engine; the legacy painter demoted to a dev-only fixture."* Everything on the
+Mac side is **landed and verified**; the only remaining step is BE's, because it
+lives in a ThinkPad-owned file. **No ThinkPad-owned file was touched to write
+this.**
+
+#### The finding
+
+`js/engine/optimizer.js#optimise()` has **ZERO app-path callers** on this tree —
+only `score.js`, `tests/parity/harness.html` and probes. `engine.js#generate()`
+runs `js/engine/painter.js`. So **none of R1–R5 is reachable from the app**, and
+R6 is a *switch*, not more features. Measured, not inferred:
+
+```
+grep -rn "optimise(" js/ tests/ scripts/  →  score.js, tests/parity/harness.html,
+                                          scripts/primitives-probe.cjs only
+engine.js:487                            →  const painter = new Painter({ ... })
+```
+
+#### What landed (Mac-owned, all NEW)
+
+| File | Role |
+|---|---|
+| `js/engine/modular-bridge.js` | `buildModularPlan(analysis, args)` — runs the **real** `optimise()` over the **real** `analyzeImage()` result, converts to the **same engine shape format** `_convertShape` produces (colour embedding included), applies the R4 seam (per-style shaping + outline lay-in) and Phase 2.2 layer styles. Pure: no DOM, no canvas, no argument mutation. |
+| `tests/modular-bridge.test.js` | 22/22, real optimiser + real analysis (no stubs). |
+| `scripts/modular-bridge-probe.cjs` | real Chromium; pushes planned shapes through the app's **own** `PaintingEngine` + `Renderer` + registered style modules; PASS at 1440 and 390. |
+| `docs/checkpoints/R5R6-mac.md` | the full note. |
+
+**The contract that makes this zero-diff:** `enabled` defaults to `false`, and a
+disabled bridge returns `{used:false, reason:'disabled', shapes:[]}`. So the app
+is byte-identical until an opt-in flips it, and the 9 pins cannot move.
+
+#### The wiring BE owns (two lines, in `engine.js#generate()`)
+
+`js/engine/engine.js` is ThinkPad-owned, so the Mac does not make this edit.
+Both branches below are **already in the file** — the bridge only needs to be
+consulted before the legacy one is taken.
+
+```js
+// engine.js — add the import alongside the existing imports (~line 26):
+import { buildModularPlan } from './modular-bridge.js';
+
+// then, immediately AFTER the `if (!this._pixels) throw …` guard (engine.js:413)
+// and BEFORE `const selected = [];` (engine.js:417):
+const modular = buildModularPlan(this._analysis, {
+  enabled: this.settings.modularEngine === true,   // opt-in; default off
+  style, count, seed, layerStyles, width: this.width, height: this.height,
+});
+if (modular.used) { /* ← assign layers + `return modular.shapes`, exactly as
+                       the Painter branch already does at engine.js:448-471 */ }
+```
+
+Then **mirror the same branch in the worker path** (`engine.js:426-471`). That
+path is not optional: `app.js:89` constructs the engine with `useWorker: true`,
+so the worker branch is the one the product actually runs. `_generateViaWorker`
+would need to call the bridge inside `painter-worker.js` (or fall back to the
+main-thread branch when `modularEngine` is on) — **that decision is BE's**, and
+it is the one design call in this note.
+
+Suggested opt-in: a `modularEngine` boolean on `settings`, default `false`, so
+the switch is a settings flag rather than a code path that can drift.
+
+#### Verify before pushing (all reproducible on the ThinkPad)
+
+```
+node tests/modular-bridge.test.js                        # 22/22
+NODE_PATH=<...> node scripts/modular-bridge-probe.cjs --width=1440   # PASS
+NODE_PATH=<...> node scripts/modular-bridge-probe.cjs --width=390    # PASS
+NODE_PATH=<...> node scripts/visual-regression.cjs        # pass=9 fail=0 error=0
+NODE_PATH=<...> node scripts/parity-bench.cjs            # the R6 gate: modular vs reference
+```
+
+**Byte-identical proof required:** with `modularEngine` unset, the 9 pins must be
+**unmoved**. If any pin moves, the wiring has leaked into the default path —
+revert and re-check the branch order.
+
+#### Honest scope — what this does NOT claim
+
+- **No parity claim.** The bridge makes the comparison *possible from the app*.
+  Whether the modular engine beats `painter.js` is `parity-bench.cjs`'s gate and
+  is a separate decision. R3 measured the modular engine **1.46 points from the
+  reference** on `blobs` (`docs/checkpoints/R3.md`) — i.e. the switch may well
+  need the remaining gap closed first. **Do not treat this note as "R6 done".**
+- **R4 is still partial on the spine side** — region-fill, outlines, order and
+  shaping are reachable now, but BE must still rule on the soft-edge finding
+  (`docs/MAC-TASKS.md`, `docs/checkpoints/R4-mac.md` §4).
+- The legacy `painter.js` is **not** demoted by this note. That step is BE's and
+  should follow the parity gate, not precede it.
+
+---
+
 ### 0.8 PROCESS — Mac: never run git, and log every turn in §7
 
 Two standing rules for round 2 (requested by the human, 2026-11-12):
@@ -425,6 +518,12 @@ this file's write guard, 2026-11-14.)*
 Mac-owned list above (they were built and landed by BE in `37f68ca` while the Mac
 was down, so the list was never extended for them). Also `maestro/*.yaml` is
 unlisted — it is Mac-authored and BE has re-run those flows read-only.
+
+**Added 2026-11-16 (R5/R6 Mac half) — `js/engine/modular-bridge.js` (NEW),
+`tests/modular-bridge.test.js` (NEW), `scripts/modular-bridge-probe.cjs` (NEW).**
+These are Mac-authored, Mac-owned, and **absent from the list above** — the same
+omission BE recorded for the `js/ui/*` files. They are the R6 adapter and touch
+no ThinkPad-owned file.
 
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
@@ -1734,6 +1833,143 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
 - blocker: none.
 - next: BE consumes `buildR4Plan()` from `optimizer.js` (opt-in, default off,
   prove byte-identical) and rules on the soft-edge finding. Mac: M15 QA seat.
+
+### 2026-11-16 18:20 — R5/R6 Mac half — the modular bridge DELIVERED (+ an R4 seam defect fixed)
+- did: NEW `js/engine/modular-bridge.js` — `buildModularPlan(analysis, args)`
+  runs the REAL `optimizer.optimise` over the REAL `analyzeImage()` result and
+  converts the shapes into the SAME engine format `_convertShape` produces
+  (colour embedding included), then applies the R4 seam (per-style shaping +
+  outline lay-in) and Phase 2.2 per-layer styles. `enabled` defaults **false** →
+  `{used:false, shapes:[]}`, so BE can wire it into `engine.js#generate()` as a
+  **two-line, zero-diff** switch and the app stays byte-identical until opt-in.
+  NEW `tests/modular-bridge.test.js` (22/22, real optimiser, no stubs). NEW
+  `scripts/modular-bridge-probe.cjs` — real Chromium, pushes the planned shapes
+  through the app's OWN `PaintingEngine` + `Renderer` + registered style
+  modules, PASS at 1440 and 390, with a **negative control** (disabled plan
+  paints 0 px). ALSO FIXED a real R4 seam defect: `r4.js#planOutlines` defaulted
+  an **unset** mode to `'first'` — a lay-in the caller never asked for. This is
+  why the ThinkPad measured **37 passed / 1 FAILED** on `tests/r4.test.js`
+  (`planOutlines: deterministic and does not leak private fields` — Expected
+  `"first"`, got `"off"`). Now `'off'`, and the test pins BOTH halves.
+- why it matters: `optimise()` has **ZERO app-path callers** on this tree (only
+  `score.js`, the parity harness and probes). `engine.js#generate()` runs the
+  legacy `painter.js`, so **none of R1–R5 is reachable from the app**. R6
+  ("retire the legacy painter") is therefore a *switch*, not more features, and
+  the switch was blocked on a BE-owned wiring point.
+- verified (raw):
+  ```
+  $ node tests/modular-bridge.test.js  -> Passed 22  Failed 0     (NEW)
+  $ node tests/r4.test.js              -> Passed 43  Failed 0      (unmoved)
+  $ node tests/outlines|order|shaping  -> 16 / 24 / 18  Failed 0    (unmoved)
+  $ node tests/engine.test.js          -> Passed 164 Failed 0      (unmoved)
+  $ node scripts/modular-bridge-probe.cjs --width=1440 -> PASS
+  $ node scripts/modular-bridge-probe.cjs --width=390  -> PASS
+  probe @1440: pencil 261 shapes (250 modular + 11 outlines) 18955 px / 32 colours
+               ink    261 shapes (250 modular + 11 outlines) 21878 px / 489 colours
+               watercolor 261 shapes 20610 px / 173 colours
+               disabled -> 0 shapes, 0 px painted (negative control)
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0   (pins UNMOVED)
+  $ node scripts/rail-overlay-probe.cjs -> PASS — 0 of 9 sizes failed
+  $ node scripts/overlay-coverage-probe.cjs --widths=390,768,1440
+      -> every surface hitFail=0 clip=0 docOverflowX=0 (0.9–0.12 all closed)
+  ```
+  Vision review of `docs/research/modular-bridge.png`: the composition is
+  **recognisable** — central dark ring reads as a dense ring of strokes, the
+  purple ring as beads, the blue/terracotta/green blobs as overlapping soft
+  strokes. No blank canvas, no single-colour fill, no clipping.
+- two defects my own tests caught in the bridge: (1) **`maxShapes` is not the
+  optimiser's budget key** — `optimise(an,{maxShapes:10})` returned **400**
+  shapes; the key is `count`. Pinned by a regression test. (2) **`aliasStyle()`
+  must not be applied to a shape's `style` field** — `watercolour` is a Painter
+  alias that is NOT in the registry, so the Renderer would fall back to the flat
+  `drawShape` and silently lose the style.
+- files: `js/engine/modular-bridge.js` (NEW), `tests/modular-bridge.test.js`
+  (NEW), `scripts/modular-bridge-probe.cjs` (NEW), `js/engine/r4.js`
+  (unset-mode default), `tests/r4.test.js` (mode contract pinned),
+  `docs/checkpoints/R5R6-mac.md` (NEW), `docs/research/modular-bridge.{json,png}`.
+  **No ThinkPad-owned file touched. Nothing deleted.** No git run.
+- blocker: none on the Mac side. The R6 switch itself is BE's wiring decision.
+- next: BE wires `buildModularPlan()` into `engine.js#generate()` (opt-in,
+  default off, prove byte-identical on the 9 pins) then runs the parity bench on
+  the app path. Mac: M15 QA seat.
+
+### 2026-11-16 20:10 — Track-S hygiene **H-S1** — `docs/API.md` WRITTEN (was 0 bytes since the initial commit)
+- did: Filled `docs/API.md` — **0 bytes in `HEAD` (`069a777`) until now**; the
+  file `docs/TRACK_S.md` §4 lists as hygiene item **H-S1** and
+  `docs/checkpoints/P0.md` §6 already flagged as pre-existing drift. The doc
+  documents **every** `js/engine/` module + the `js/styles/` registry, and leads
+  with the one thing H-S1 actually asked for: **the `scorer.js` vs `score.js`
+  split** (§1, side-by-side table), plus the **two render paths** (§2, app vs
+  modular) and the **third concept** H-S6 §8 asked be recorded —
+  `style-render.js` is a *render backend*, not a score (§3.5).
+- **METHOD — every export list was DUMPED, not recalled.** `node
+  --input-type=module` imported all 22 engine modules and printed `Object.keys`;
+  the raw output is quoted in the doc §6 so BE can diff it. No signature was
+  written from memory.
+- **TWO CLAIMS CORRECTED by that dump, both of which the old prose would have
+  gotten wrong:**
+  1. **`r4.js` is NOT inert.** `optimizer.js:68` imports `planOrder` and applies
+     it at `optimizer.js:922-938` behind the opt-in `r4` default (`null`), and
+     `modular-bridge.js:51` imports `buildR4Plan`. My first draft said "inert —
+     BE must call it". Corrected to **partially live**: order + shaping wired,
+     `planOutlines` reachable only through the bridge (`modular-bridge.js:228`),
+     which is itself inert. `optimizer.js` does **not** lay in outlines.
+  2. **`ResidualMap` has no `apply()`** — it is `applyStroke(x0,y0,x1,y1,
+     coverage,falloff)`, plus `sampleError`/`sampleCoverage`/`averageError`/
+     `averageCoverage`/`reset`. Corrected before shipping.
+- **§4 is a deliberately falsifiable table** ("which modules are inert") with
+  the exact `grep` to re-run it, because that table goes stale the moment BE
+  wires a stream — the same reason the export lists are quoted raw.
+- files: `docs/API.md` (NEW CONTENT, 0 → 24 890 B), `AGENTS.md` §7 (this entry).
+  **No ThinkPad-owned file touched. Nothing deleted. No git run.** Served-vs-disk
+  hash verified (`b0c32196…` MATCH) so the Maestro set did not run against a
+  stale copy.
+- **NOTE FOR BE — ownership.** `HANDOFF.md` §6 lists `docs/API.md` as
+  ThinkPad-owned. It was **empty**, so nothing was clobbered; filling it was
+  H-S1's deliverable. **If you want it under your pen, take it — the content is
+  facts + a reproducible dump, not prose that needs defending.** Two things you
+  may want to add: `docs/API.md` is referenced by `ARCHITECTURE.md:58`,
+  `docs/TRACK_S.md:47/173` and `docs/checkpoints/H-S6.md:137`, so those links
+  now resolve.
+- verified (raw):
+  ```
+  $ node --input-type=module -e "…Object.keys(await import('./js/engine/'+m+'.js'))…"
+      22 modules, all import clean; styles/index registry count 51
+      (raw output quoted verbatim in docs/API.md §6)
+  $ grep -rn "engine/r4\.js|engine/modular-bridge\.js|styles/shaping\.js" js/ scripts/
+      optimizer.js:68 (planOrder) · modular-bridge.js:51 (buildR4Plan)
+      -> the two corrections above
+  $ for t in engine ref-analyze r4 modular-bridge style-library export-panel \
+             primitive-mixer style-polish style-accuracy wetsim masks outlines order shaping
+      engine 164/164 · ref-analyze 29/29 · r4 43/43 · modular-bridge 22/22
+      style-library 50/50 · export-panel 90/90 · primitive-mixer 20/20
+      style-polish 11/11 · style-accuracy 9/9 · wetsim 15/15 · masks 19/19
+      outlines 16/16 · order 24/24 · shaping 18/18        (all Failed 0)
+  $ node scripts/visual-regression.cjs     -> pass=9 fail=0 error=0  (pins UNMOVED)
+  $ node scripts/a11y-sweep.cjs --widths=390,768,1440
+      @390 controls 46 underMin 0 noName 0 offViewport 0 (rail 0) clipped 0 docOverflowX 0
+           layersRail open=true rowW=302
+      @1440 controls 30 underMin 0 noName 0 offViewport 0 (rail 0) clipped 0 docOverflowX 0
+           layersRail open=true rowW=242
+  $ node scripts/overlay-coverage-probe.cjs --url=http://127.0.0.1:8097/index.html \
+        --widths=390,768,1440
+      18/18 surfaces ok — pastViewport 0 hitFail 0 clip 0 docOverflowX 0 at every width
+      (minControl 32 only on the legacy ThinkPad-owned #export-root; 44 elsewhere,
+       26–30 on the controls rail's deliberately-thin sliders)
+  $ node scripts/rail-overlay-probe.cjs       -> PASS — 0 of 9 sizes failed
+  $ node scripts/primitive-mixer-probe.cjs    -> 21 passed / 0 failed
+  $ MAESTRO 10 flows at AUTHORED sizes, MCP loaded (list_devices -> chromium):
+      mobile 390x844: ui-audit 30/0 · a11y-sweep-mobile 39/0 · media-panel 29/0
+                      export-panel-mobile 20/0
+      desktop 1440x900: desktop-regression 33/0 · a11y-sweep 55/0 · export-panel 35/0
+                        media-behaviour 35/0 · primitive-mixer 14/0 · style-picker 14/0
+      TOTAL 301 COMPLETED / 0 FAILED
+  ```
+- blocker: none. §0.9–§0.12 stay closed; nothing new found.
+- next: **H-S1 is done** — say the word and I'll take **H-S2** (the confidence /
+  calibration UX: `ref-analyze.fuseReferences` already emits a `spread` signal
+  and nothing surfaces it — the UI half is Mac-owned `js/ui/style-library*.js`).
+  Otherwise the M15 QA seat stays warm.
 
 ---
 

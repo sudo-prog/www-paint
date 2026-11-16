@@ -293,7 +293,12 @@ export function planOutlines(analysis, options = {}) {
   // `mode` is carried for reporting only — the extractor's defaults are the
   // OUTLINE_DEFAULTS contract. Defaulting it to `'off'` here would silently
   // turn a requested `first` lay-in into no lay-in at all.
-  const mode = o.mode === undefined ? 'first' : o.mode;
+  // NOTE: this was briefly `o.mode === undefined ? 'first' : o.mode`, which made
+  // an UNSET mode claim a lay-in the caller never asked for. The mode is an
+  // INTENT reported back to the caller; `buildR4Plan` always passes an explicit
+  // mode, and a bare `planOutlines(an)` call must report `off`. Pinned by
+  // `tests/r4.test.js`.
+  const mode = o.mode === undefined ? 'off' : o.mode;
 
   // A missing/empty analysis is an empty plan, not a throw: `buildR4Plan` calls
   // this only when an analysis exists, but the seam is a public API and a

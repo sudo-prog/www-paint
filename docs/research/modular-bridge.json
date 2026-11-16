@@ -1,0 +1,298 @@
+{
+  "width": 200,
+  "height": 200,
+  "registryCount": 51,
+  "edgeMax": 1,
+  "plans": {
+    "pencil": {
+      "used": true,
+      "reason": "ok",
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "regionFill": 0.1,
+      "styleField": [
+        "pencil"
+      ],
+      "firstShape": {
+        "type": "S",
+        "params": [
+          139,
+          73,
+          41.5,
+          52,
+          58,
+          95,
+          1,
+          2.876385536137968,
+          [
+            30,
+            30,
+            30
+          ],
+          [
+            30,
+            30,
+            30
+          ],
+          0.9
+        ],
+        "color0": [
+          30,
+          30,
+          30
+        ],
+        "color1": [
+          30,
+          30,
+          30
+        ],
+        "alpha": 0.9,
+        "order": 0
+      }
+    },
+    "ink": {
+      "used": true,
+      "reason": "ok",
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "regionFill": 0.1,
+      "styleField": [
+        "ink"
+      ],
+      "firstShape": {
+        "type": "S",
+        "params": [
+          139,
+          73,
+          41.5,
+          52,
+          58,
+          95,
+          1,
+          2.876385536137968,
+          [
+            30,
+            30,
+            30
+          ],
+          [
+            30,
+            30,
+            30
+          ],
+          0.9
+        ],
+        "color0": [
+          30,
+          30,
+          30
+        ],
+        "color1": [
+          30,
+          30,
+          30
+        ],
+        "alpha": 0.9,
+        "order": 0
+      }
+    },
+    "watercolor": {
+      "used": true,
+      "reason": "ok",
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "regionFill": 0.35,
+      "styleField": [
+        "watercolor"
+      ],
+      "firstShape": {
+        "type": "S",
+        "params": [
+          139,
+          73,
+          41.5,
+          52,
+          58,
+          95,
+          1,
+          2.876385536137968,
+          [
+            30,
+            30,
+            30
+          ],
+          [
+            30,
+            30,
+            30
+          ],
+          0.9
+        ],
+        "color0": [
+          30,
+          30,
+          30
+        ],
+        "color1": [
+          30,
+          30,
+          30
+        ],
+        "alpha": 0.9,
+        "order": 0
+      }
+    },
+    "oil": {
+      "used": true,
+      "reason": "ok",
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "regionFill": 0.3,
+      "styleField": [
+        "oil"
+      ],
+      "firstShape": {
+        "type": "S",
+        "params": [
+          139,
+          73,
+          41.5,
+          52,
+          58,
+          95,
+          1,
+          2.876385536137968,
+          [
+            30,
+            30,
+            30
+          ],
+          [
+            30,
+            30,
+            30
+          ],
+          0.9
+        ],
+        "color0": [
+          30,
+          30,
+          30
+        ],
+        "color1": [
+          30,
+          30,
+          30
+        ],
+        "alpha": 0.9,
+        "order": 0
+      }
+    },
+    "cross-hatch": {
+      "used": true,
+      "reason": "ok",
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "regionFill": 0.15,
+      "styleField": [
+        "cross-hatch"
+      ],
+      "firstShape": {
+        "type": "S",
+        "params": [
+          139,
+          73,
+          41.5,
+          52,
+          58,
+          95,
+          1,
+          2.876385536137968,
+          [
+            30,
+            30,
+            30
+          ],
+          [
+            30,
+            30,
+            30
+          ],
+          0.9
+        ],
+        "color0": [
+          30,
+          30,
+          30
+        ],
+        "color1": [
+          30,
+          30,
+          30
+        ],
+        "alpha": 0.9,
+        "order": 0
+      }
+    }
+  },
+  "renders": {
+    "pencil": {
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "metrics": {
+        "painted": 18955,
+        "uniqueColours": 32,
+        "bbox": [
+          18,
+          0,
+          182,
+          180
+        ]
+      }
+    },
+    "ink": {
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "metrics": {
+        "painted": 21878,
+        "uniqueColours": 489,
+        "bbox": [
+          17,
+          0,
+          182,
+          181
+        ]
+      }
+    },
+    "watercolor": {
+      "shapes": 261,
+      "rawCount": 250,
+      "outlineCount": 11,
+      "metrics": {
+        "painted": 20610,
+        "uniqueColours": 173,
+        "bbox": [
+          1,
+          1,
+          173,
+          146
+        ]
+      }
+    }
+  },
+  "off": {
+    "shapes": 0,
+    "metrics": {
+      "painted": 0,
+      "uniqueColours": 0,
+      "bbox": null
+    }
+  }
+}

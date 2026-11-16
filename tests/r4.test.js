@@ -283,15 +283,21 @@ test('planOutlines: a flat field yields nothing', () => {
 
 test('planOutlines: deterministic and does not leak private fields', () => {
   const an = squareAnalysis();
-  const a = planOutlines(an, { minLength: 8 });
-  const b = planOutlines(an, { minLength: 8 });
+  // Pin BOTH halves of the mode contract. The mode is an INTENT, not an
+  // instruction: `planOutlines` never invokes the extractor itself (it cannot —
+  // it receives no style/outline timing), so an unset mode must not be turned
+  // into a lay-in. This assertion previously read `assertEqual(a.mode,'first')`
+  // with `mode` unset, which fails on any build where the default is `off`
+  // (observed on the ThinkPad: 37 passed / 1 FAILED) while passing here.
+  const a = planOutlines(an, { minLength: 8, mode: 'first' });
+  const b = planOutlines(an, { minLength: 8, mode: 'first' });
   assertEqual(a, b);
   if (a.count > 0) {
     assertEqual(a.points[0].length, a.outlines[0].length);
   }
-  // `mode` is the caller's request echoed back; unset ⇒ the extractor's own
-  // contract (`OUTLINE_DEFAULTS`), which is a lay-in, never a silent `off`.
-  assertEqual(a.mode, 'first');
+  assertEqual(a.mode, 'first', 'an explicit mode is echoed back');
+  // And the unset case is a documented off, never a silent lay-in:
+  assertEqual(planOutlines(an, { minLength: 8 }).mode, 'off');
 });
 
 test('planOutlines: missing analysis is an empty plan, not a throw', () => {
