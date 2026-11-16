@@ -319,6 +319,7 @@
     import { attachStyleLibrary } from './js/ui/style-library-host.js?v=20261030a';
     import { attachExportPanel } from './js/ui/export-host.js?v=20261030a';
     import { initA11yHardening } from './js/ui/a11y-hardening.js?v=20261030a';
+    import { attachReactSurface } from './js/ui/react-host.js?v=20261030a';
 
     const app = initApp();
 
@@ -342,6 +343,12 @@
       // focus traps and aria-hidden sync to the live DOM. Runs LAST so every
       // panel has mounted. index.html / app.js are never edited.
       initA11yHardening();
+
+      // React/ui-sdk surface (Mac-owned, 2026-11-17). Mounted from a committed
+      // ES-module bundle, so this page still needs no build step. `index.html`
+      // only ever gained this import + call; js/ui/react-host.js does the rest.
+      // Kept last so the bridge is created before any other panel mounts.
+      await attachReactSurface(app);
 
       // Load image button
       const loadBtn = document.getElementById('btn-load-image');
