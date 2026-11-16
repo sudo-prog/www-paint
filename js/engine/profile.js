@@ -553,8 +553,12 @@ export function profileEffectiveStyle(profile, opts = {}) {
 
 /**
  * Everything the engine/UI needs to know about a profile's stroke-language
- * primitives, in one object (Track-S S5). `effectiveStyle` is `null` when the
- * profile declares no primitives at any level — the honest "pre-S5 profile" case.
+ * primitives, in one object (Track-S S5). `effectiveStyle` is the RESOLVED
+ * registry style: the most specific declared mix wins (`pass` > `layer` >
+ * `global`), and with **no** mix anywhere it is the profile's own
+ * `global.style` — the pre-S5 path, NOT `null`. It is `null` only when no mix
+ * resolves AND the profile declares no `global.style`. (See
+ * `profileEffectiveStyle` above for the exact rule.)
  *
  * @param {object} profile
  * @returns {{global: object|null, layers: Record<string,object>,

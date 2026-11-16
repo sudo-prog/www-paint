@@ -96,7 +96,7 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 | **S7** | **Worker automation path (Phase 6)** — `(profileId \| profile, image \| imageBatch, seed?) → { result, score, strokes }` in workers, with progress, cancel and deterministic bake; batch mode for automation. | BE (issued as **B5**) + Mac export UI (**M11**) | `js/engine/worker.js`, `js/engine/exporter.js` | Batch of N images completes with a deterministic result per image; cancel mid-run is clean; same `(profile, seed, image-hash)` → bit-identical PNG. |
 | **S8** | **H3 real-LLM validation** — fixed ref sets + content set; measure % usable first proposals; iterate prompt + clamp + H2 refine until **≥ 70 %**. | BE | `js/engine/vision-propose.js`, `docs/checkpoints/H3.md` | One real end-to-end run recorded (model + images); ≥ 70 %-usable measured, or the shortfall recorded honestly. |
 | **S9** | **Active algorithm refinement** — log which knobs/heuristics correlate with high Style-Match; optional periodic profile optimiser over the memory store; H5 gate guards any code-level change. | BE | `js/engine/memory.js`, `js/engine/propose.js`, `js/engine/gate.js` | A correlation report exists; any code change passes the H5 gate (keep only on measured mean gain). |
-| **S10** | **Style-accuracy eval suite** — fixed (content × ref-set) matrix; a regression must not drop Style-Match; agents treat it as the exit gate for S1–S8. | BE | `scripts/` (new bench), `tests/` | The matrix runs headless; the Phase-0 baselines stay green; a Style-Match regression fails the suite. |
+| **S10** | **Style-accuracy eval suite** — fixed (content × ref-set) matrix; a regression must not drop Style-Match; agents treat it as the exit gate for S1–S8. | BE | `scripts/` (new bench), `tests/` | **done 2026-11-16** — `scripts/style-accuracy-bench.cjs` + `docs/research/style-accuracy/baseline.json` (**243** pinned cells, tolerance 1e-9) + `tests/style-accuracy.test.js` (**9/9**); verified BOTH ways (`--replay` of the pin → PASS; a perturbed copy → FAIL naming the cell). **HEADLINE (reported, not asserted): a style's own reference is the best match in only 3/27 (content, style) rows** — the candidate is 200 strokes vs the 700-stroke references, and that cost confound is what **S9** must remove before re-pinning. `docs/checkpoints/S10.md` |
 
 ---
 
@@ -132,8 +132,10 @@ Verified 2026-11-12: the strings `Track S` / `Style Match` / `RefPacket` /
 6. **S8** — H3 real-LLM validation.
 7. **S7 (Phase 6)** — worker batch deterministic apply (BE **B5** + Mac **M11**).
 8. **R4 finish** — outlines / order / per-style shaping (BE **B4**; Mac **M7–M9**) when not blocking the S-track.
-9. **S5 done (BE half 2026-11-15 + mixer UI M16 2026-11-16 — `docs/checkpoints/S5.md`, `docs/checkpoints/M16.md`);
-   S9, S10** — continuous refinement, full style eval suite.
+9. **S5 done (BE half 2026-11-15 + mixer UI M16 2026-11-16 — `docs/checkpoints/S5.md`, `docs/checkpoints/M16.md`)** and
+   **S10 done (2026-11-16, `docs/checkpoints/S10.md`)** — the suite is pinned and gated, and it reports 3/27 own-style wins;
+   **S9** — active refinement, now with a concrete target (remove the 200-vs-700 cost confound, find the weighting where a
+   style's own reference wins, H5-gated).
 
 Cross-links to issued streams: **S6 = Mac M10**, **S7 = BE B5 + Mac M11**,
 **S8 = BE H3-validation**, "finish R4" = BE B4. The rest (S1–S5, S9, S10) are

@@ -349,7 +349,7 @@ BE-pushed** (`28e8933`); Track-S **S1 is closed** (`js/engine/ref-analyze.js`,
 | **S3** | Multi-reference fusion → one RefPacket on `profile.provenance` (per-ref weights, outlier down-weighting) | `ref-analyze.js` `profile.js` | PARALLEL |
 | **S4** | Explicit `passes[]` in the Style Profile mapped onto the R2 multi-scale machinery (absent = byte-identical) | `docs/STYLE_PROFILE.md` `profile.js` `optimizer.js` | SERIAL-LANE |
 | **S8** | H3 real-LLM validation (vision → profile, ≥ 70 % usable) | `vision-propose.js` | PARALLEL |
-| **S10** | Style-accuracy eval suite (content × ref-set matrix; a Style-Match regression fails) | `scripts/*.cjs` `tests/*` | PARALLEL |
+| **S10** | Style-accuracy eval suite (content × ref-set matrix; a Style-Match regression fails) — **DONE 2026-11-16** (`docs/checkpoints/S10.md`), 243 pinned cells, verified both ways | `scripts/*.cjs` `tests/*` | PARALLEL |
 | **S9** | Active refinement — knob ↔ Style-Match correlation over the memory store | `memory.js` `propose.js` `gate.js` | PARALLEL |
 | **B4 finish** | Wire Mac M7/M8/M9 into `optimizer.js` (outlines-first pass, order modes, per-style shaping) + **reconcile the two `orderShapes`** (`generator.js` vs `order.js`, §0.9) → **R5** exceed → **R6** retire the painter | `optimizer.js` `generator.js` `analyzer.js` `engine.js` `painter.js` | SERIAL-LANE |
 | **B5** | Phase 6 engine — export hardening + 512² perf + worker batch apply (S7 engine half) | `exporter.js` `engine.js` `worker.js` | SERIAL-LANE |

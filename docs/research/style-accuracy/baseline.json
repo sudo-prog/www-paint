@@ -1,0 +1,3954 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-16T01:11:03.029Z",
+  "tolerance": 1e-9,
+  "styles": [
+    "pencil",
+    "ink",
+    "watercolor",
+    "oil",
+    "charcoal",
+    "marker",
+    "cross-hatch",
+    "halftone",
+    "graphic"
+  ],
+  "contents": [
+    "blobs",
+    "rings",
+    "stripes"
+  ],
+  "seed": 3047602159,
+  "strokeCount": 200,
+  "refStrokes": 700,
+  "size": 256,
+  "refStrokesSeen": {
+    "blobs|pencil": 700,
+    "blobs|ink": 700,
+    "blobs|watercolor": 700,
+    "blobs|oil": 700,
+    "blobs|charcoal": 700,
+    "blobs|marker": 700,
+    "blobs|cross-hatch": 700,
+    "blobs|halftone": 700,
+    "blobs|graphic": 700,
+    "rings|pencil": 700,
+    "rings|ink": 700,
+    "rings|watercolor": 700,
+    "rings|oil": 700,
+    "rings|charcoal": 700,
+    "rings|marker": 700,
+    "rings|cross-hatch": 700,
+    "rings|halftone": 700,
+    "rings|graphic": 700,
+    "stripes|pencil": 700,
+    "stripes|ink": 700,
+    "stripes|watercolor": 700,
+    "stripes|oil": 700,
+    "stripes|charcoal": 700,
+    "stripes|marker": 700,
+    "stripes|cross-hatch": 700,
+    "stripes|halftone": 700,
+    "stripes|graphic": 700
+  },
+  "cells": [
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "pencil",
+      "styleMatch": 0.408163,
+      "styleDistance": 0.591837,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.834711,
+        "orientation": 0.461268,
+        "coverage": 0.545386,
+        "bandScale": 0.585532,
+        "coherence": 0.291996
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "ink",
+      "styleMatch": 0.381991,
+      "styleDistance": 0.618009,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.834711,
+        "orientation": 0.585208,
+        "coverage": 0.54153,
+        "bandScale": 0.568681,
+        "coherence": 0.276855
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "watercolor",
+      "styleMatch": 0.376235,
+      "styleDistance": 0.623765,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.85124,
+        "orientation": 0.61835,
+        "coverage": 0.534561,
+        "bandScale": 0.561594,
+        "coherence": 0.226539
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "oil",
+      "styleMatch": 0.436881,
+      "styleDistance": 0.563119,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.628099,
+        "orientation": 0.668506,
+        "coverage": 0.597781,
+        "bandScale": 0.357157,
+        "coherence": 0.344336
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "charcoal",
+      "styleMatch": 0.368998,
+      "styleDistance": 0.631002,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.785124,
+        "orientation": 0.921742,
+        "coverage": 0.239977,
+        "bandScale": 0.568071,
+        "coherence": 0.318234
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "marker",
+      "styleMatch": 0.308552,
+      "styleDistance": 0.691448,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.826446,
+        "orientation": 0.823766,
+        "coverage": 0.622011,
+        "bandScale": 0.526187,
+        "coherence": 0.342419
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "cross-hatch",
+      "styleMatch": 0.361169,
+      "styleDistance": 0.638831,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.768595,
+        "orientation": 0.811153,
+        "coverage": 0.609598,
+        "bandScale": 0.449675,
+        "coherence": 0.160932
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "halftone",
+      "styleMatch": 0.512908,
+      "styleDistance": 0.487092,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.801653,
+        "orientation": 0.202135,
+        "coverage": 0.554289,
+        "bandScale": 0.486804,
+        "coherence": 0.121842
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "reference": "graphic",
+      "styleMatch": 0.394385,
+      "styleDistance": 0.605615,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.859504,
+        "orientation": 0.419821,
+        "coverage": 0.550374,
+        "bandScale": 0.584117,
+        "coherence": 0.451164
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "pencil",
+      "styleMatch": 0.921238,
+      "styleDistance": 0.078762,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.057851,
+        "orientation": 0.084975,
+        "coverage": 0.113589,
+        "bandScale": 0.017141,
+        "coherence": 0.148741
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "ink",
+      "styleMatch": 0.933816,
+      "styleDistance": 0.066184,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.049587,
+        "orientation": 0.029092,
+        "coverage": 0.11346,
+        "bandScale": 0.033033,
+        "coherence": 0.163883
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "watercolor",
+      "styleMatch": 0.954154,
+      "styleDistance": 0.045846,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.024793,
+        "orientation": 0.018799,
+        "coverage": 0.029699,
+        "bandScale": 0.042325,
+        "coherence": 0.214199
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "oil",
+      "styleMatch": 0.712375,
+      "styleDistance": 0.287625,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.504132,
+        "orientation": 0.007234,
+        "coverage": 0.340222,
+        "bandScale": 0.379281,
+        "coherence": 0.096402
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "charcoal",
+      "styleMatch": 0.818695,
+      "styleDistance": 0.181305,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.099174,
+        "orientation": 0.058758,
+        "coverage": 0.518422,
+        "bandScale": 0.139527,
+        "coherence": 0.122503
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "marker",
+      "styleMatch": 0.857036,
+      "styleDistance": 0.142964,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.099174,
+        "orientation": 0.009025,
+        "coverage": 0.44914,
+        "bandScale": 0.075307,
+        "coherence": 0.098318
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "cross-hatch",
+      "styleMatch": 0.819313,
+      "styleDistance": 0.180687,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.214876,
+        "orientation": 0.006199,
+        "coverage": 0.319603,
+        "bandScale": 0.151819,
+        "coherence": 0.279806
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "halftone",
+      "styleMatch": 0.826115,
+      "styleDistance": 0.173885,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.07438,
+        "orientation": 0.296775,
+        "coverage": 0.14142,
+        "bandScale": 0.114691,
+        "coherence": 0.318896
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "reference": "graphic",
+      "styleMatch": 0.926731,
+      "styleDistance": 0.073269,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.057851,
+        "orientation": 0.109681,
+        "coverage": 0.122658,
+        "bandScale": 0.019462,
+        "coherence": 0.010426
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "pencil",
+      "styleMatch": 0.632018,
+      "styleDistance": 0.367982,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.107438,
+        "orientation": 0.996753,
+        "coverage": 0.260739,
+        "bandScale": 0.053562,
+        "coherence": 0.263806
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "ink",
+      "styleMatch": 0.62716,
+      "styleDistance": 0.37284,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.132231,
+        "orientation": 0.995467,
+        "coverage": 0.264086,
+        "bandScale": 0.044137,
+        "coherence": 0.248665
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "watercolor",
+      "styleMatch": 0.656435,
+      "styleDistance": 0.343565,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.115702,
+        "orientation": 0.989786,
+        "coverage": 0.18229,
+        "bandScale": 0.034097,
+        "coherence": 0.198349
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "oil",
+      "styleMatch": 0.455198,
+      "styleDistance": 0.544802,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.413223,
+        "orientation": 0.976585,
+        "coverage": 0.489713,
+        "bandScale": 0.314215,
+        "coherence": 0.316145
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "charcoal",
+      "styleMatch": 0.59051,
+      "styleDistance": 0.40949,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.123967,
+        "orientation": 0.783786,
+        "coverage": 0.596063,
+        "bandScale": 0.187579,
+        "coherence": 0.290044
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "marker",
+      "styleMatch": 0.594678,
+      "styleDistance": 0.405322,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.07438,
+        "orientation": 0.892578,
+        "coverage": 0.598631,
+        "bandScale": 0.058098,
+        "coherence": 0.314229
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "cross-hatch",
+      "styleMatch": 0.599729,
+      "styleDistance": 0.400271,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.181818,
+        "orientation": 0.902479,
+        "coverage": 0.469094,
+        "bandScale": 0.086753,
+        "coherence": 0.132742
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "halftone",
+      "styleMatch": 0.672359,
+      "styleDistance": 0.327641,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.099174,
+        "orientation": 0.890458,
+        "coverage": 0.288086,
+        "bandScale": 0.05528,
+        "coherence": 0.093651
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "reference": "graphic",
+      "styleMatch": 0.603759,
+      "styleDistance": 0.396241,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.14876,
+        "orientation": 0.990276,
+        "coverage": 0.271335,
+        "bandScale": 0.049865,
+        "coherence": 0.422973
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "pencil",
+      "styleMatch": 0.834625,
+      "styleDistance": 0.165375,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.206612,
+        "orientation": 0.062765,
+        "coverage": 0.205745,
+        "bandScale": 0.195565,
+        "coherence": 0.172167
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "ink",
+      "styleMatch": 0.847229,
+      "styleDistance": 0.152771,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.206612,
+        "orientation": 0.016506,
+        "coverage": 0.205617,
+        "bandScale": 0.178714,
+        "coherence": 0.187308
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "watercolor",
+      "styleMatch": 0.872285,
+      "styleDistance": 0.127715,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.173554,
+        "orientation": 0.008993,
+        "coverage": 0.11947,
+        "bandScale": 0.171627,
+        "coherence": 0.237624
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "oil",
+      "styleMatch": 0.79044,
+      "styleDistance": 0.20956,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.31405,
+        "orientation": 0.001812,
+        "coverage": 0.388729,
+        "bandScale": 0.167754,
+        "coherence": 0.119828
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "charcoal",
+      "styleMatch": 0.766077,
+      "styleDistance": 0.233923,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.165289,
+        "orientation": 0.080356,
+        "coverage": 0.562071,
+        "bandScale": 0.248269,
+        "coherence": 0.145929
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "marker",
+      "styleMatch": 0.8334,
+      "styleDistance": 0.1666,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.099174,
+        "orientation": 0.018846,
+        "coverage": 0.497647,
+        "bandScale": 0.13622,
+        "coherence": 0.121744
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "cross-hatch",
+      "styleMatch": 0.859195,
+      "styleDistance": 0.140805,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.07438,
+        "orientation": 0.014662,
+        "coverage": 0.36811,
+        "bandScale": 0.072536,
+        "coherence": 0.303231
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "halftone",
+      "styleMatch": 0.793435,
+      "styleDistance": 0.206565,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.157025,
+        "orientation": 0.258661,
+        "coverage": 0.230173,
+        "bandScale": 0.096837,
+        "coherence": 0.342322
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "reference": "graphic",
+      "styleMatch": 0.833641,
+      "styleDistance": 0.166359,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.239669,
+        "orientation": 0.08452,
+        "coverage": 0.214526,
+        "bandScale": 0.19415,
+        "coherence": 0.013
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "pencil",
+      "styleMatch": 0.825814,
+      "styleDistance": 0.174186,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.123967,
+        "orientation": 0.109051,
+        "coverage": 0.410792,
+        "bandScale": 0.090947,
+        "coherence": 0.139328
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "ink",
+      "styleMatch": 0.843622,
+      "styleDistance": 0.156378,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.115702,
+        "orientation": 0.044336,
+        "coverage": 0.406936,
+        "bandScale": 0.091662,
+        "coherence": 0.154469
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "watercolor",
+      "styleMatch": 0.850123,
+      "styleDistance": 0.149877,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.082645,
+        "orientation": 0.031452,
+        "coverage": 0.399967,
+        "bandScale": 0.111658,
+        "coherence": 0.204785
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "oil",
+      "styleMatch": 0.706987,
+      "styleDistance": 0.293013,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.421488,
+        "orientation": 0.015768,
+        "coverage": 0.503058,
+        "bandScale": 0.355428,
+        "coherence": 0.086988
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "charcoal",
+      "styleMatch": 0.889981,
+      "styleDistance": 0.110019,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.132231,
+        "orientation": 0.041079,
+        "coverage": 0.19263,
+        "bandScale": 0.068296,
+        "coherence": 0.11309
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "marker",
+      "styleMatch": 0.841821,
+      "styleDistance": 0.158179,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.033058,
+        "orientation": 0.002956,
+        "coverage": 0.611976,
+        "bandScale": 0.10825,
+        "coherence": 0.088905
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "cross-hatch",
+      "styleMatch": 0.810933,
+      "styleDistance": 0.189067,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.132231,
+        "orientation": 0.001448,
+        "coverage": 0.482439,
+        "bandScale": 0.170056,
+        "coherence": 0.270392
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "halftone",
+      "styleMatch": 0.749394,
+      "styleDistance": 0.250606,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.090909,
+        "orientation": 0.334637,
+        "coverage": 0.419696,
+        "bandScale": 0.165243,
+        "coherence": 0.309482
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "reference": "graphic",
+      "styleMatch": 0.822186,
+      "styleDistance": 0.177814,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.14876,
+        "orientation": 0.136414,
+        "coverage": 0.415781,
+        "bandScale": 0.092948,
+        "coherence": 0.01984
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "pencil",
+      "styleMatch": 0.933589,
+      "styleDistance": 0.066411,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.07438,
+        "orientation": 0.024814,
+        "coverage": 0.120142,
+        "bandScale": 0.035595,
+        "coherence": 0.08526
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "ink",
+      "styleMatch": 0.940335,
+      "styleDistance": 0.059665,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.057851,
+        "orientation": 0.001141,
+        "coverage": 0.120013,
+        "bandScale": 0.053211,
+        "coherence": 0.100401
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "watercolor",
+      "styleMatch": 0.949293,
+      "styleDistance": 0.050707,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.057851,
+        "orientation": 0,
+        "coverage": 0.048218,
+        "bandScale": 0.057578,
+        "coherence": 0.150718
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "oil",
+      "styleMatch": 0.7136,
+      "styleDistance": 0.2864,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.53719,
+        "orientation": 0.00275,
+        "coverage": 0.317708,
+        "bandScale": 0.384813,
+        "coherence": 0.032921
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "charcoal",
+      "styleMatch": 0.79523,
+      "styleDistance": 0.20477,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.107438,
+        "orientation": 0.139279,
+        "coverage": 0.547489,
+        "bandScale": 0.148792,
+        "coherence": 0.059022
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "marker",
+      "styleMatch": 0.846094,
+      "styleDistance": 0.153906,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.132231,
+        "orientation": 0.053206,
+        "coverage": 0.426626,
+        "bandScale": 0.080839,
+        "coherence": 0.034837
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "cross-hatch",
+      "styleMatch": 0.809438,
+      "styleDistance": 0.190562,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.247934,
+        "orientation": 0.046116,
+        "coverage": 0.297089,
+        "bandScale": 0.157351,
+        "coherence": 0.216325
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "halftone",
+      "styleMatch": 0.855171,
+      "styleDistance": 0.144829,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.090909,
+        "orientation": 0.180268,
+        "coverage": 0.14457,
+        "bandScale": 0.120222,
+        "coherence": 0.255415
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "reference": "graphic",
+      "styleMatch": 0.939165,
+      "styleDistance": 0.060835,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.041322,
+        "orientation": 0.039445,
+        "coverage": 0.128923,
+        "bandScale": 0.036011,
+        "coherence": 0.073907
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "pencil",
+      "styleMatch": 0.573335,
+      "styleDistance": 0.426665,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.123967,
+        "orientation": 0.756711,
+        "coverage": 0.383197,
+        "bandScale": 0.435978,
+        "coherence": 0.582606
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "ink",
+      "styleMatch": 0.546893,
+      "styleDistance": 0.453107,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.140496,
+        "orientation": 0.854458,
+        "coverage": 0.383069,
+        "bandScale": 0.426554,
+        "coherence": 0.567465
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "watercolor",
+      "styleMatch": 0.564898,
+      "styleDistance": 0.435102,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.140496,
+        "orientation": 0.877508,
+        "coverage": 0.296923,
+        "bandScale": 0.416514,
+        "coherence": 0.517149
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "oil",
+      "styleMatch": 0.374637,
+      "styleDistance": 0.625363,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.619835,
+        "orientation": 0.909725,
+        "coverage": 0.565761,
+        "bandScale": 0.235564,
+        "coherence": 0.634946
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "charcoal",
+      "styleMatch": 0.412487,
+      "styleDistance": 0.587513,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.173554,
+        "orientation": 0.999384,
+        "coverage": 0.718521,
+        "bandScale": 0.540079,
+        "coherence": 0.608844
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "marker",
+      "styleMatch": 0.436313,
+      "styleDistance": 0.563687,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.214876,
+        "orientation": 0.984488,
+        "coverage": 0.650449,
+        "bandScale": 0.398061,
+        "coherence": 0.633029
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "cross-hatch",
+      "styleMatch": 0.452638,
+      "styleDistance": 0.547362,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.330579,
+        "orientation": 0.980194,
+        "coverage": 0.533324,
+        "bandScale": 0.342139,
+        "coherence": 0.451542
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "halftone",
+      "styleMatch": 0.649988,
+      "styleDistance": 0.350012,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.173554,
+        "orientation": 0.489269,
+        "coverage": 0.407625,
+        "bandScale": 0.352392,
+        "coherence": 0.412452
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "reference": "graphic",
+      "styleMatch": 0.572826,
+      "styleDistance": 0.427174,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.099174,
+        "orientation": 0.720026,
+        "coverage": 0.391978,
+        "bandScale": 0.432281,
+        "coherence": 0.741774
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "pencil",
+      "styleMatch": 0.928126,
+      "styleDistance": 0.071874,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.090909,
+        "orientation": 0.003219,
+        "coverage": 0.066781,
+        "bandScale": 0.058264,
+        "coherence": 0.217013
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "ink",
+      "styleMatch": 0.934083,
+      "styleDistance": 0.065917,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.082645,
+        "orientation": 0.004567,
+        "coverage": 0.066652,
+        "bandScale": 0.043095,
+        "coherence": 0.201872
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "watercolor",
+      "styleMatch": 0.940467,
+      "styleDistance": 0.059533,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.07438,
+        "orientation": 0.010265,
+        "coverage": 0.052207,
+        "bandScale": 0.060371,
+        "coherence": 0.151555
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "oil",
+      "styleMatch": 0.743186,
+      "styleDistance": 0.256814,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.404959,
+        "orientation": 0.023493,
+        "coverage": 0.2838,
+        "bandScale": 0.305055,
+        "coherence": 0.269352
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "charcoal",
+      "styleMatch": 0.767432,
+      "styleDistance": 0.232568,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.082645,
+        "orientation": 0.216424,
+        "coverage": 0.528037,
+        "bandScale": 0.158242,
+        "coherence": 0.243251
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "marker",
+      "styleMatch": 0.853826,
+      "styleDistance": 0.146174,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.033058,
+        "orientation": 0.10758,
+        "coverage": 0.392718,
+        "bandScale": 0.027165,
+        "coherence": 0.267436
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "cross-hatch",
+      "styleMatch": 0.868001,
+      "styleDistance": 0.131999,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.115702,
+        "orientation": 0.097673,
+        "coverage": 0.263181,
+        "bandScale": 0.077593,
+        "coherence": 0.085948
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "halftone",
+      "styleMatch": 0.922213,
+      "styleDistance": 0.077787,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.057851,
+        "orientation": 0.109383,
+        "coverage": 0.091209,
+        "bandScale": 0.067719,
+        "coherence": 0.046858
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "reference": "graphic",
+      "styleMatch": 0.901613,
+      "styleDistance": 0.098387,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.115702,
+        "orientation": 0.009674,
+        "coverage": 0.075562,
+        "bandScale": 0.056849,
+        "coherence": 0.37618
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "pencil",
+      "styleMatch": 0.773957,
+      "styleDistance": 0.226043,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.586777,
+        "orientation": 0.036388,
+        "coverage": 0.040355,
+        "bandScale": 0.144491,
+        "coherence": 0.111679
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "ink",
+      "styleMatch": 0.78858,
+      "styleDistance": 0.21142,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.570248,
+        "orientation": 0.004554,
+        "coverage": 0.03637,
+        "bandScale": 0.128341,
+        "coherence": 0.12682
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "watercolor",
+      "styleMatch": 0.772696,
+      "styleDistance": 0.227304,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.570248,
+        "orientation": 0.001134,
+        "coverage": 0.081948,
+        "bandScale": 0.145617,
+        "coherence": 0.177137
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "oil",
+      "styleMatch": 0.815104,
+      "styleDistance": 0.184896,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.289256,
+        "orientation": 0.00035,
+        "coverage": 0.275314,
+        "bandScale": 0.246901,
+        "coherence": 0.05934
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "charcoal",
+      "styleMatch": 0.682996,
+      "styleDistance": 0.317004,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.53719,
+        "orientation": 0.116746,
+        "coverage": 0.474068,
+        "bandScale": 0.155348,
+        "coherence": 0.085441
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "marker",
+      "styleMatch": 0.741095,
+      "styleDistance": 0.258905,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.495868,
+        "orientation": 0.039084,
+        "coverage": 0.384232,
+        "bandScale": 0.116009,
+        "coherence": 0.061256
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "cross-hatch",
+      "styleMatch": 0.781516,
+      "styleDistance": 0.218484,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.380165,
+        "orientation": 0.033002,
+        "coverage": 0.254695,
+        "bandScale": 0.139805,
+        "coherence": 0.242744
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "halftone",
+      "styleMatch": 0.717431,
+      "styleDistance": 0.282569,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.545455,
+        "orientation": 0.206926,
+        "coverage": 0.073686,
+        "bandScale": 0.161868,
+        "coherence": 0.281834
+      }
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "reference": "graphic",
+      "styleMatch": 0.766088,
+      "styleDistance": 0.233912,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.61157,
+        "orientation": 0.053624,
+        "coverage": 0.054124,
+        "bandScale": 0.143076,
+        "coherence": 0.047488
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "pencil",
+      "styleMatch": 0.633916,
+      "styleDistance": 0.366084,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.561983,
+        "orientation": 0.081835,
+        "coverage": 0.465455,
+        "bandScale": 0.20099,
+        "coherence": 0.537907
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "ink",
+      "styleMatch": 0.462236,
+      "styleDistance": 0.537764,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.363636,
+        "orientation": 0.99346,
+        "coverage": 0.501561,
+        "bandScale": 0.174853,
+        "coherence": 0.537675
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "watercolor",
+      "styleMatch": 0.57042,
+      "styleDistance": 0.42958,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.239669,
+        "orientation": 0.752429,
+        "coverage": 0.514344,
+        "bandScale": 0.081364,
+        "coherence": 0.544981
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "oil",
+      "styleMatch": 0.486494,
+      "styleDistance": 0.513506,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.297521,
+        "orientation": 0.893667,
+        "coverage": 0.690578,
+        "bandScale": 0.069608,
+        "coherence": 0.522763
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "charcoal",
+      "styleMatch": 0.553874,
+      "styleDistance": 0.446126,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.371901,
+        "orientation": 0.892697,
+        "coverage": 0.153403,
+        "bandScale": 0.180787,
+        "coherence": 0.535828
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "marker",
+      "styleMatch": 0.718269,
+      "styleDistance": 0.281731,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.214876,
+        "orientation": 0.035114,
+        "coverage": 0.665738,
+        "bandScale": 0.142909,
+        "coherence": 0.539058
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "cross-hatch",
+      "styleMatch": 0.557526,
+      "styleDistance": 0.442474,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.297521,
+        "orientation": 0.732012,
+        "coverage": 0.560993,
+        "bandScale": 0.130825,
+        "coherence": 0.383925
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "halftone",
+      "styleMatch": 0.529776,
+      "styleDistance": 0.470224,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.297521,
+        "orientation": 0.860552,
+        "coverage": 0.549691,
+        "bandScale": 0.156177,
+        "coherence": 0.324647
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "reference": "graphic",
+      "styleMatch": 0.414686,
+      "styleDistance": 0.585314,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.504132,
+        "orientation": 0.977426,
+        "coverage": 0.48674,
+        "bandScale": 0.211363,
+        "coherence": 0.606657
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "pencil",
+      "styleMatch": 0.60275,
+      "styleDistance": 0.39725,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.661157,
+        "orientation": 0.063853,
+        "coverage": 0.568271,
+        "bandScale": 0.392134,
+        "coherence": 0.104657
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "ink",
+      "styleMatch": 0.387228,
+      "styleDistance": 0.612772,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.619835,
+        "orientation": 0.997858,
+        "coverage": 0.565802,
+        "bandScale": 0.358361,
+        "coherence": 0.104425
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "watercolor",
+      "styleMatch": 0.472525,
+      "styleDistance": 0.527475,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.721927,
+        "coverage": 0.516543,
+        "bandScale": 0.343465,
+        "coherence": 0.111732
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "oil",
+      "styleMatch": 0.400203,
+      "styleDistance": 0.599797,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.914074,
+        "coverage": 0.605564,
+        "bandScale": 0.33537,
+        "coherence": 0.089513
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "charcoal",
+      "styleMatch": 0.472026,
+      "styleDistance": 0.527974,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.586777,
+        "orientation": 0.870316,
+        "coverage": 0.455784,
+        "bandScale": 0.219648,
+        "coherence": 0.102578
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "marker",
+      "styleMatch": 0.662985,
+      "styleDistance": 0.337015,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.528926,
+        "orientation": 0.023481,
+        "coverage": 0.526224,
+        "bandScale": 0.377605,
+        "coherence": 0.105809
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "cross-hatch",
+      "styleMatch": 0.434636,
+      "styleDistance": 0.565364,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.677686,
+        "orientation": 0.762133,
+        "coverage": 0.53005,
+        "bandScale": 0.403886,
+        "coherence": 0.049324
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "halftone",
+      "styleMatch": 0.392238,
+      "styleDistance": 0.607762,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.883681,
+        "coverage": 0.561607,
+        "bandScale": 0.385836,
+        "coherence": 0.108602
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "reference": "graphic",
+      "styleMatch": 0.367621,
+      "styleDistance": 0.632379,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.661157,
+        "orientation": 0.965991,
+        "coverage": 0.584294,
+        "bandScale": 0.3889,
+        "coherence": 0.173407
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "pencil",
+      "styleMatch": 0.532414,
+      "styleDistance": 0.467586,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.735537,
+        "orientation": 0.003482,
+        "coverage": 0.615771,
+        "bandScale": 0.448115,
+        "coherence": 0.556828
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "ink",
+      "styleMatch": 0.294459,
+      "styleDistance": 0.705541,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.735537,
+        "orientation": 0.977632,
+        "coverage": 0.613302,
+        "bandScale": 0.414342,
+        "coherence": 0.556597
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "watercolor",
+      "styleMatch": 0.419327,
+      "styleDistance": 0.580673,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.727273,
+        "orientation": 0.533502,
+        "coverage": 0.564042,
+        "bandScale": 0.399446,
+        "coherence": 0.563903
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "oil",
+      "styleMatch": 0.265351,
+      "styleDistance": 0.734649,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.793388,
+        "orientation": 0.989818,
+        "coverage": 0.681535,
+        "bandScale": 0.391351,
+        "coherence": 0.541685
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "charcoal",
+      "styleMatch": 0.440454,
+      "styleDistance": 0.559546,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.719008,
+        "orientation": 0.713498,
+        "coverage": 0.343246,
+        "bandScale": 0.275629,
+        "coherence": 0.554749
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "marker",
+      "styleMatch": 0.534149,
+      "styleDistance": 0.465851,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.710744,
+        "orientation": 0.001812,
+        "coverage": 0.656696,
+        "bandScale": 0.433586,
+        "coherence": 0.55798
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "cross-hatch",
+      "styleMatch": 0.318357,
+      "styleDistance": 0.681643,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.768595,
+        "orientation": 0.905159,
+        "coverage": 0.577549,
+        "bandScale": 0.459867,
+        "coherence": 0.402847
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "halftone",
+      "styleMatch": 0.300195,
+      "styleDistance": 0.699805,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.77686,
+        "orientation": 0.977187,
+        "coverage": 0.609106,
+        "bandScale": 0.441817,
+        "coherence": 0.343569
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "reference": "graphic",
+      "styleMatch": 0.305934,
+      "styleDistance": 0.694066,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.743802,
+        "orientation": 0.861107,
+        "coverage": 0.631793,
+        "bandScale": 0.444881,
+        "coherence": 0.625578
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "pencil",
+      "styleMatch": 0.443242,
+      "styleDistance": 0.556758,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.690519,
+        "coverage": 0.623034,
+        "bandScale": 0.362595,
+        "coherence": 0.142232
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "ink",
+      "styleMatch": 0.500467,
+      "styleDistance": 0.499533,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.61157,
+        "orientation": 0.513701,
+        "coverage": 0.620566,
+        "bandScale": 0.328822,
+        "coherence": 0.142
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "watercolor",
+      "styleMatch": 0.397399,
+      "styleDistance": 0.602601,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.61157,
+        "orientation": 0.971395,
+        "coverage": 0.571306,
+        "bandScale": 0.313926,
+        "coherence": 0.149307
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "oil",
+      "styleMatch": 0.543171,
+      "styleDistance": 0.456829,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.661157,
+        "orientation": 0.271331,
+        "coverage": 0.660327,
+        "bandScale": 0.305831,
+        "coherence": 0.127088
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "charcoal",
+      "styleMatch": 0.465075,
+      "styleDistance": 0.534925,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.586777,
+        "orientation": 0.877872,
+        "coverage": 0.484463,
+        "bandScale": 0.190109,
+        "coherence": 0.140153
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "marker",
+      "styleMatch": 0.502674,
+      "styleDistance": 0.497326,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.553719,
+        "orientation": 0.593291,
+        "coverage": 0.581694,
+        "bandScale": 0.348067,
+        "coherence": 0.143384
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "cross-hatch",
+      "styleMatch": 0.602676,
+      "styleDistance": 0.397324,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.652893,
+        "orientation": 0.108666,
+        "coverage": 0.584813,
+        "bandScale": 0.374347,
+        "coherence": 0.011749
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "halftone",
+      "styleMatch": 0.560924,
+      "styleDistance": 0.439076,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.661157,
+        "orientation": 0.227631,
+        "coverage": 0.61637,
+        "bandScale": 0.356297,
+        "coherence": 0.071028
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "reference": "graphic",
+      "styleMatch": 0.422343,
+      "styleDistance": 0.577657,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.735736,
+        "coverage": 0.639057,
+        "bandScale": 0.359361,
+        "coherence": 0.210982
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "pencil",
+      "styleMatch": 0.618144,
+      "styleDistance": 0.381856,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.018902,
+        "coverage": 0.498951,
+        "bandScale": 0.409322,
+        "coherence": 0.101567
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "ink",
+      "styleMatch": 0.388646,
+      "styleDistance": 0.611354,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.644628,
+        "orientation": 0.994933,
+        "coverage": 0.513834,
+        "bandScale": 0.375549,
+        "coherence": 0.101335
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "watercolor",
+      "styleMatch": 0.488414,
+      "styleDistance": 0.511586,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.611464,
+        "coverage": 0.514242,
+        "bandScale": 0.360653,
+        "coherence": 0.108641
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "oil",
+      "styleMatch": 0.35263,
+      "styleDistance": 0.64737,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.967962,
+        "coverage": 0.690343,
+        "bandScale": 0.352558,
+        "coherence": 0.086423
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "charcoal",
+      "styleMatch": 0.535887,
+      "styleDistance": 0.464113,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.78188,
+        "coverage": 0.210884,
+        "bandScale": 0.236835,
+        "coherence": 0.099488
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "marker",
+      "styleMatch": 0.623526,
+      "styleDistance": 0.376474,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.578512,
+        "orientation": 0.001317,
+        "coverage": 0.665503,
+        "bandScale": 0.394793,
+        "coherence": 0.102718
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "cross-hatch",
+      "styleMatch": 0.395178,
+      "styleDistance": 0.604822,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.702479,
+        "orientation": 0.854095,
+        "coverage": 0.560758,
+        "bandScale": 0.421073,
+        "coherence": 0.052414
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "halftone",
+      "styleMatch": 0.365498,
+      "styleDistance": 0.634502,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.710744,
+        "orientation": 0.947804,
+        "coverage": 0.563528,
+        "bandScale": 0.403023,
+        "coherence": 0.111693
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "reference": "graphic",
+      "styleMatch": 0.387467,
+      "styleDistance": 0.612533,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.910957,
+        "coverage": 0.505319,
+        "bandScale": 0.406087,
+        "coherence": 0.170317
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "pencil",
+      "styleMatch": 0.607558,
+      "styleDistance": 0.392442,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.00786,
+        "coverage": 0.591961,
+        "bandScale": 0.346656,
+        "coherence": 0.143008
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "ink",
+      "styleMatch": 0.377775,
+      "styleDistance": 0.622225,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.644628,
+        "orientation": 0.985577,
+        "coverage": 0.589493,
+        "bandScale": 0.335108,
+        "coherence": 0.142776
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "watercolor",
+      "styleMatch": 0.491517,
+      "styleDistance": 0.508483,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.563094,
+        "coverage": 0.540233,
+        "bandScale": 0.358302,
+        "coherence": 0.150082
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "oil",
+      "styleMatch": 0.353453,
+      "styleDistance": 0.646547,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.982984,
+        "coverage": 0.629254,
+        "bandScale": 0.375854,
+        "coherence": 0.127864
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "charcoal",
+      "styleMatch": 0.482686,
+      "styleDistance": 0.517314,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.739994,
+        "coverage": 0.495183,
+        "bandScale": 0.254627,
+        "coherence": 0.140929
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "marker",
+      "styleMatch": 0.650614,
+      "styleDistance": 0.349386,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.578512,
+        "orientation": 0.000165,
+        "coverage": 0.549915,
+        "bandScale": 0.342617,
+        "coherence": 0.144159
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "cross-hatch",
+      "styleMatch": 0.397388,
+      "styleDistance": 0.602612,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.702479,
+        "orientation": 0.887028,
+        "coverage": 0.55374,
+        "bandScale": 0.388441,
+        "coherence": 0.010974
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "halftone",
+      "styleMatch": 0.363993,
+      "styleDistance": 0.636007,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.710744,
+        "orientation": 0.967469,
+        "coverage": 0.585297,
+        "bandScale": 0.378883,
+        "coherence": 0.070252
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "reference": "graphic",
+      "styleMatch": 0.379691,
+      "styleDistance": 0.620309,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.881024,
+        "coverage": 0.607984,
+        "bandScale": 0.343303,
+        "coherence": 0.211758
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "pencil",
+      "styleMatch": 0.436625,
+      "styleDistance": 0.563375,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.826446,
+        "orientation": 0.060144,
+        "coverage": 0.814631,
+        "bandScale": 0.354323,
+        "coherence": 0.843308
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "ink",
+      "styleMatch": 0.201435,
+      "styleDistance": 0.798565,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.826446,
+        "orientation": 0.99851,
+        "coverage": 0.812162,
+        "bandScale": 0.361755,
+        "coherence": 0.843077
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "watercolor",
+      "styleMatch": 0.279066,
+      "styleDistance": 0.720934,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.809917,
+        "orientation": 0.715009,
+        "coverage": 0.762903,
+        "bandScale": 0.410587,
+        "coherence": 0.850383
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "oil",
+      "styleMatch": 0.173698,
+      "styleDistance": 0.826302,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.933884,
+        "orientation": 0.918335,
+        "coverage": 0.851924,
+        "bandScale": 0.422343,
+        "coherence": 0.828165
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "charcoal",
+      "styleMatch": 0.283229,
+      "styleDistance": 0.716771,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.809917,
+        "orientation": 0.865105,
+        "coverage": 0.533914,
+        "bandScale": 0.444092,
+        "coherence": 0.84123
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "marker",
+      "styleMatch": 0.462883,
+      "styleDistance": 0.537117,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.801653,
+        "orientation": 0.021208,
+        "coverage": 0.772584,
+        "bandScale": 0.349042,
+        "coherence": 0.84446
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "cross-hatch",
+      "styleMatch": 0.268178,
+      "styleDistance": 0.731822,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.859504,
+        "orientation": 0.768651,
+        "coverage": 0.776409,
+        "bandScale": 0.383955,
+        "coherence": 0.689327
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "halftone",
+      "styleMatch": 0.236568,
+      "styleDistance": 0.763432,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.867769,
+        "orientation": 0.888567,
+        "coverage": 0.807966,
+        "bandScale": 0.375745,
+        "coherence": 0.630049
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "reference": "graphic",
+      "styleMatch": 0.202441,
+      "styleDistance": 0.797559,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.826446,
+        "orientation": 0.963148,
+        "coverage": 0.830653,
+        "bandScale": 0.343344,
+        "coherence": 0.912058
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "pencil",
+      "styleMatch": 0.621552,
+      "styleDistance": 0.378448,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.61157,
+        "orientation": 0.025884,
+        "coverage": 0.498623,
+        "bandScale": 0.341092,
+        "coherence": 0.376174
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "ink",
+      "styleMatch": 0.426341,
+      "styleDistance": 0.573659,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.578512,
+        "orientation": 0.868729,
+        "coverage": 0.496154,
+        "bandScale": 0.307319,
+        "coherence": 0.375943
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "watercolor",
+      "styleMatch": 0.580529,
+      "styleDistance": 0.419471,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.561983,
+        "orientation": 0.317236,
+        "coverage": 0.446894,
+        "bandScale": 0.292423,
+        "coherence": 0.383249
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "oil",
+      "styleMatch": 0.386629,
+      "styleDistance": 0.613371,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.985776,
+        "coverage": 0.535915,
+        "bandScale": 0.284328,
+        "coherence": 0.361031
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "charcoal",
+      "styleMatch": 0.557151,
+      "styleDistance": 0.442849,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.553719,
+        "orientation": 0.499957,
+        "coverage": 0.445219,
+        "bandScale": 0.168605,
+        "coherence": 0.374095
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "marker",
+      "styleMatch": 0.65606,
+      "styleDistance": 0.34394,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.495868,
+        "orientation": 0.067692,
+        "coverage": 0.4577,
+        "bandScale": 0.326563,
+        "coherence": 0.377326
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "cross-hatch",
+      "styleMatch": 0.396474,
+      "styleDistance": 0.603526,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.628099,
+        "orientation": 0.991482,
+        "coverage": 0.460401,
+        "bandScale": 0.352844,
+        "coherence": 0.222193
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "halftone",
+      "styleMatch": 0.395377,
+      "styleDistance": 0.604623,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.995245,
+        "coverage": 0.491958,
+        "bandScale": 0.334794,
+        "coherence": 0.162915
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "reference": "graphic",
+      "styleMatch": 0.448723,
+      "styleDistance": 0.551277,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.61157,
+        "orientation": 0.678822,
+        "coverage": 0.514645,
+        "bandScale": 0.337858,
+        "coherence": 0.444924
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "pencil",
+      "styleMatch": 0.670676,
+      "styleDistance": 0.329324,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.578512,
+        "orientation": 0.041078,
+        "coverage": 0.445033,
+        "bandScale": 0.291793,
+        "coherence": 0.127251
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "ink",
+      "styleMatch": 0.443973,
+      "styleDistance": 0.556027,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.553719,
+        "orientation": 0.999974,
+        "coverage": 0.442564,
+        "bandScale": 0.258021,
+        "coherence": 0.12702
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "watercolor",
+      "styleMatch": 0.541579,
+      "styleDistance": 0.458421,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.53719,
+        "orientation": 0.674806,
+        "coverage": 0.393304,
+        "bandScale": 0.243125,
+        "coherence": 0.134326
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "oil",
+      "styleMatch": 0.463001,
+      "styleDistance": 0.536999,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.528926,
+        "orientation": 0.940633,
+        "coverage": 0.483489,
+        "bandScale": 0.23503,
+        "coherence": 0.112108
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "charcoal",
+      "styleMatch": 0.522113,
+      "styleDistance": 0.477887,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.528926,
+        "orientation": 0.833908,
+        "coverage": 0.381243,
+        "bandScale": 0.146444,
+        "coherence": 0.125173
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "marker",
+      "styleMatch": 0.731874,
+      "styleDistance": 0.268126,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.404959,
+        "orientation": 0.010464,
+        "coverage": 0.447961,
+        "bandScale": 0.277265,
+        "coherence": 0.128403
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "cross-hatch",
+      "styleMatch": 0.495775,
+      "styleDistance": 0.504225,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.578512,
+        "orientation": 0.804418,
+        "coverage": 0.406811,
+        "bandScale": 0.303545,
+        "coherence": 0.02673
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "halftone",
+      "styleMatch": 0.451275,
+      "styleDistance": 0.548725,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.914539,
+        "coverage": 0.438368,
+        "bandScale": 0.285495,
+        "coherence": 0.086008
+      }
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "reference": "graphic",
+      "styleMatch": 0.432636,
+      "styleDistance": 0.567364,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.586777,
+        "orientation": 0.944944,
+        "coverage": 0.461055,
+        "bandScale": 0.288559,
+        "coherence": 0.196001
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "pencil",
+      "styleMatch": 0.489338,
+      "styleDistance": 0.510662,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.380165,
+        "orientation": 0.907724,
+        "coverage": 0.422455,
+        "bandScale": 0.201317,
+        "coherence": 0.54993
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "ink",
+      "styleMatch": 0.430749,
+      "styleDistance": 0.569251,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.520661,
+        "orientation": 0.919511,
+        "coverage": 0.440009,
+        "bandScale": 0.260288,
+        "coherence": 0.561299
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "watercolor",
+      "styleMatch": 0.412601,
+      "styleDistance": 0.587399,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.578512,
+        "orientation": 0.913523,
+        "coverage": 0.42055,
+        "bandScale": 0.303252,
+        "coherence": 0.558672
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "oil",
+      "styleMatch": 0.485782,
+      "styleDistance": 0.514218,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.231405,
+        "orientation": 0.924965,
+        "coverage": 0.660744,
+        "bandScale": 0.165027,
+        "coherence": 0.566525
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "charcoal",
+      "styleMatch": 0.360337,
+      "styleDistance": 0.639663,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.876033,
+        "orientation": 0.925524,
+        "coverage": 0.073952,
+        "bandScale": 0.504709,
+        "coherence": 0.549756
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "marker",
+      "styleMatch": 0.172215,
+      "styleDistance": 0.827785,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.942149,
+        "orientation": 0.952759,
+        "coverage": 0.937841,
+        "bandScale": 0.529417,
+        "coherence": 0.399695
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "cross-hatch",
+      "styleMatch": 0.51727,
+      "styleDistance": 0.48273,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.297521,
+        "orientation": 0.907438,
+        "coverage": 0.485942,
+        "bandScale": 0.18651,
+        "coherence": 0.414493
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "halftone",
+      "styleMatch": 0.515726,
+      "styleDistance": 0.484274,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.338843,
+        "orientation": 0.926191,
+        "coverage": 0.482695,
+        "bandScale": 0.206661,
+        "coherence": 0.235353
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "reference": "graphic",
+      "styleMatch": 0.453757,
+      "styleDistance": 0.546243,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.438017,
+        "orientation": 0.923031,
+        "coverage": 0.439501,
+        "bandScale": 0.231732,
+        "coherence": 0.614206
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "pencil",
+      "styleMatch": 0.707649,
+      "styleDistance": 0.292351,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.570248,
+        "orientation": 0.003022,
+        "coverage": 0.39966,
+        "bandScale": 0.194891,
+        "coherence": 0.113552
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "ink",
+      "styleMatch": 0.742464,
+      "styleDistance": 0.257536,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.479339,
+        "orientation": 0.001156,
+        "coverage": 0.405822,
+        "bandScale": 0.131926,
+        "coherence": 0.124921
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "watercolor",
+      "styleMatch": 0.777883,
+      "styleDistance": 0.222117,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.454545,
+        "orientation": 0.002009,
+        "coverage": 0.280671,
+        "bandScale": 0.112587,
+        "coherence": 0.122293
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "oil",
+      "styleMatch": 0.649619,
+      "styleDistance": 0.350381,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.619835,
+        "orientation": 0.000567,
+        "coverage": 0.557387,
+        "bandScale": 0.265313,
+        "coherence": 0.130146
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "charcoal",
+      "styleMatch": 0.787204,
+      "styleDistance": 0.212796,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.239669,
+        "orientation": 0.000518,
+        "coverage": 0.529669,
+        "bandScale": 0.156629,
+        "coherence": 0.113378
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "marker",
+      "styleMatch": 0.701484,
+      "styleDistance": 0.298516,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.355372,
+        "orientation": 0.001193,
+        "coverage": 0.805165,
+        "bandScale": 0.179367,
+        "coherence": 0.036684
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "cross-hatch",
+      "styleMatch": 0.708654,
+      "styleDistance": 0.291346,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.545455,
+        "orientation": 0.003076,
+        "coverage": 0.450056,
+        "bandScale": 0.231607,
+        "coherence": 0.021885
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "halftone",
+      "styleMatch": 0.706964,
+      "styleDistance": 0.293036,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.520661,
+        "orientation": 0.000462,
+        "coverage": 0.443932,
+        "bandScale": 0.185554,
+        "coherence": 0.201026
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "reference": "graphic",
+      "styleMatch": 0.706992,
+      "styleDistance": 0.293008,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.528926,
+        "orientation": 0.000755,
+        "coverage": 0.461432,
+        "bandScale": 0.160482,
+        "coherence": 0.177827
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "pencil",
+      "styleMatch": 0.562028,
+      "styleDistance": 0.437972,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.818182,
+        "orientation": 0.004933,
+        "coverage": 0.466082,
+        "bandScale": 0.313562,
+        "coherence": 0.510337
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "ink",
+      "styleMatch": 0.579647,
+      "styleDistance": 0.420353,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.785124,
+        "orientation": 0.002429,
+        "coverage": 0.472243,
+        "bandScale": 0.250597,
+        "coherence": 0.521706
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "watercolor",
+      "styleMatch": 0.613095,
+      "styleDistance": 0.386905,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.77686,
+        "orientation": 0.003611,
+        "coverage": 0.349459,
+        "bandScale": 0.207634,
+        "coherence": 0.519079
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "oil",
+      "styleMatch": 0.509453,
+      "styleDistance": 0.490547,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.834711,
+        "orientation": 0.00153,
+        "coverage": 0.647305,
+        "bandScale": 0.383984,
+        "coherence": 0.526932
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "charcoal",
+      "styleMatch": 0.704168,
+      "styleDistance": 0.295832,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.454545,
+        "orientation": 0.001448,
+        "coverage": 0.485047,
+        "bandScale": 0.073874,
+        "coherence": 0.510163
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "marker",
+      "styleMatch": 0.679879,
+      "styleDistance": 0.320121,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.173554,
+        "orientation": 0.000371,
+        "coverage": 0.924401,
+        "bandScale": 0.313812,
+        "coherence": 0.360102
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "cross-hatch",
+      "styleMatch": 0.544141,
+      "styleDistance": 0.455859,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.867769,
+        "orientation": 0.005003,
+        "coverage": 0.521232,
+        "bandScale": 0.350278,
+        "coherence": 0.374901
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "halftone",
+      "styleMatch": 0.596844,
+      "styleDistance": 0.403156,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.785124,
+        "orientation": 0.001352,
+        "coverage": 0.510354,
+        "bandScale": 0.304225,
+        "coherence": 0.19576
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "reference": "graphic",
+      "styleMatch": 0.551663,
+      "styleDistance": 0.448337,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.809917,
+        "orientation": 0.001828,
+        "coverage": 0.527853,
+        "bandScale": 0.279153,
+        "coherence": 0.574613
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "pencil",
+      "styleMatch": 0.725456,
+      "styleDistance": 0.274544,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.471074,
+        "orientation": 0.040728,
+        "coverage": 0.424132,
+        "bandScale": 0.174227,
+        "coherence": 0.120789
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "ink",
+      "styleMatch": 0.757629,
+      "styleDistance": 0.242371,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.380165,
+        "orientation": 0.049428,
+        "coverage": 0.430293,
+        "bandScale": 0.111262,
+        "coherence": 0.132159
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "watercolor",
+      "styleMatch": 0.80291,
+      "styleDistance": 0.19709,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.338843,
+        "orientation": 0.044841,
+        "coverage": 0.305143,
+        "bandScale": 0.068299,
+        "coherence": 0.129531
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "oil",
+      "styleMatch": 0.66351,
+      "styleDistance": 0.33649,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.520661,
+        "orientation": 0.053937,
+        "coverage": 0.581858,
+        "bandScale": 0.244649,
+        "coherence": 0.137384
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "charcoal",
+      "styleMatch": 0.731637,
+      "styleDistance": 0.268363,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.355372,
+        "orientation": 0.054418,
+        "coverage": 0.559421,
+        "bandScale": 0.161338,
+        "coherence": 0.120616
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "marker",
+      "styleMatch": 0.640587,
+      "styleDistance": 0.359413,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.471074,
+        "orientation": 0.083286,
+        "coverage": 0.799885,
+        "bandScale": 0.228987,
+        "coherence": 0.029446
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "cross-hatch",
+      "styleMatch": 0.727971,
+      "styleDistance": 0.272029,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.446281,
+        "orientation": 0.040533,
+        "coverage": 0.474527,
+        "bandScale": 0.210943,
+        "coherence": 0.014647
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "halftone",
+      "styleMatch": 0.722011,
+      "styleDistance": 0.277989,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.421488,
+        "orientation": 0.054997,
+        "coverage": 0.468403,
+        "bandScale": 0.16489,
+        "coherence": 0.193788
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "reference": "graphic",
+      "styleMatch": 0.72134,
+      "styleDistance": 0.27866,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.429752,
+        "orientation": 0.0523,
+        "coverage": 0.485903,
+        "bandScale": 0.139818,
+        "coherence": 0.185065
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "pencil",
+      "styleMatch": 0.652735,
+      "styleDistance": 0.347265,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.702479,
+        "orientation": 0.000417,
+        "coverage": 0.383931,
+        "bandScale": 0.315894,
+        "coherence": 0.122468
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "ink",
+      "styleMatch": 0.667639,
+      "styleDistance": 0.332361,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.669421,
+        "orientation": 0.001714,
+        "coverage": 0.398917,
+        "bandScale": 0.252929,
+        "coherence": 0.133837
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "watercolor",
+      "styleMatch": 0.702345,
+      "styleDistance": 0.297655,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.661157,
+        "orientation": 0.000935,
+        "coverage": 0.272292,
+        "bandScale": 0.209966,
+        "coherence": 0.13121
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "oil",
+      "styleMatch": 0.574692,
+      "styleDistance": 0.425308,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.735537,
+        "orientation": 0.002659,
+        "coverage": 0.66064,
+        "bandScale": 0.386316,
+        "coherence": 0.139063
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "charcoal",
+      "styleMatch": 0.909818,
+      "styleDistance": 0.090182,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.123967,
+        "orientation": 0.00277,
+        "coverage": 0.155518,
+        "bandScale": 0.059773,
+        "coherence": 0.122294
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "marker",
+      "styleMatch": 0.700808,
+      "styleDistance": 0.299192,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.214876,
+        "orientation": 0.012044,
+        "coverage": 0.937737,
+        "bandScale": 0.275964,
+        "coherence": 0.027767
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "cross-hatch",
+      "styleMatch": 0.623551,
+      "styleDistance": 0.376449,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.752066,
+        "orientation": 0.000397,
+        "coverage": 0.482706,
+        "bandScale": 0.35261,
+        "coherence": 0.012968
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "halftone",
+      "styleMatch": 0.637477,
+      "styleDistance": 0.362523,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.669421,
+        "orientation": 0.002905,
+        "coverage": 0.478878,
+        "bandScale": 0.306557,
+        "coherence": 0.192109
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "reference": "graphic",
+      "styleMatch": 0.640905,
+      "styleDistance": 0.359095,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.694215,
+        "orientation": 0.002297,
+        "coverage": 0.446793,
+        "bandScale": 0.281485,
+        "coherence": 0.186744
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "pencil",
+      "styleMatch": 0.663442,
+      "styleDistance": 0.336558,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.652893,
+        "orientation": 0.0018,
+        "coverage": 0.423195,
+        "bandScale": 0.294297,
+        "coherence": 0.114571
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "ink",
+      "styleMatch": 0.693533,
+      "styleDistance": 0.306467,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.561983,
+        "orientation": 0.00046,
+        "coverage": 0.429356,
+        "bandScale": 0.261945,
+        "coherence": 0.12594
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "watercolor",
+      "styleMatch": 0.726688,
+      "styleDistance": 0.273312,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.53719,
+        "orientation": 0.001041,
+        "coverage": 0.304206,
+        "bandScale": 0.25815,
+        "coherence": 0.123313
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "oil",
+      "styleMatch": 0.615236,
+      "styleDistance": 0.384764,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.68595,
+        "orientation": 0.000127,
+        "coverage": 0.580921,
+        "bandScale": 0.330972,
+        "coherence": 0.131166
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "charcoal",
+      "styleMatch": 0.770309,
+      "styleDistance": 0.229691,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.206612,
+        "orientation": 0.000104,
+        "coverage": 0.571745,
+        "bandScale": 0.279286,
+        "coherence": 0.114397
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "marker",
+      "styleMatch": 0.752564,
+      "styleDistance": 0.247436,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.264463,
+        "orientation": 0.002218,
+        "coverage": 0.786624,
+        "bandScale": 0.044343,
+        "coherence": 0.035664
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "cross-hatch",
+      "styleMatch": 0.66794,
+      "styleDistance": 0.33206,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.628099,
+        "orientation": 0.001842,
+        "coverage": 0.47359,
+        "bandScale": 0.309104,
+        "coherence": 0.020866
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "halftone",
+      "styleMatch": 0.661481,
+      "styleDistance": 0.338519,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.00008,
+        "coverage": 0.467466,
+        "bandScale": 0.293424,
+        "coherence": 0.200006
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "reference": "graphic",
+      "styleMatch": 0.660681,
+      "styleDistance": 0.339319,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.61157,
+        "orientation": 0.000222,
+        "coverage": 0.484966,
+        "bandScale": 0.272764,
+        "coherence": 0.178847
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "pencil",
+      "styleMatch": 0.198259,
+      "styleDistance": 0.801741,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.933884,
+        "orientation": 0.992077,
+        "coverage": 0.622062,
+        "bandScale": 0.423095,
+        "coherence": 0.856802
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "ink",
+      "styleMatch": 0.197524,
+      "styleDistance": 0.802476,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.92562,
+        "orientation": 0.995365,
+        "coverage": 0.628223,
+        "bandScale": 0.423249,
+        "coherence": 0.868171
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "watercolor",
+      "styleMatch": 0.219193,
+      "styleDistance": 0.780807,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.92562,
+        "orientation": 0.993778,
+        "coverage": 0.503072,
+        "bandScale": 0.450049,
+        "coherence": 0.865544
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "oil",
+      "styleMatch": 0.143825,
+      "styleDistance": 0.856175,
+      "strokes": 200,
+      "parts": {
+        "scale": 1,
+        "orientation": 0.996645,
+        "coverage": 0.779788,
+        "bandScale": 0.424777,
+        "coherence": 0.873397
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "charcoal",
+      "styleMatch": 0.26883,
+      "styleDistance": 0.73117,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.628099,
+        "orientation": 0.996767,
+        "coverage": 0.641027,
+        "bandScale": 0.531199,
+        "coherence": 0.856628
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "marker",
+      "styleMatch": 0.357357,
+      "styleDistance": 0.642643,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.338843,
+        "orientation": 1,
+        "coverage": 0.938019,
+        "bandScale": 0.218197,
+        "coherence": 0.706567
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "cross-hatch",
+      "styleMatch": 0.182145,
+      "styleDistance": 0.817855,
+      "strokes": 200,
+      "parts": {
+        "scale": 1,
+        "orientation": 0.99199,
+        "coverage": 0.672457,
+        "bandScale": 0.421532,
+        "coherence": 0.721366
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "halftone",
+      "styleMatch": 0.207079,
+      "styleDistance": 0.792921,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.975207,
+        "orientation": 0.99691,
+        "coverage": 0.666333,
+        "bandScale": 0.424279,
+        "coherence": 0.542225
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "reference": "graphic",
+      "styleMatch": 0.182231,
+      "styleDistance": 0.817769,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.92562,
+        "orientation": 0.99621,
+        "coverage": 0.683833,
+        "bandScale": 0.414371,
+        "coherence": 0.921078
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "pencil",
+      "styleMatch": 0.693127,
+      "styleDistance": 0.306873,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.570248,
+        "orientation": 0.00259,
+        "coverage": 0.330644,
+        "bandScale": 0.200333,
+        "coherence": 0.389724
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "ink",
+      "styleMatch": 0.727899,
+      "styleDistance": 0.272101,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.479339,
+        "orientation": 0.000895,
+        "coverage": 0.336805,
+        "bandScale": 0.137368,
+        "coherence": 0.401093
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "watercolor",
+      "styleMatch": 0.768647,
+      "styleDistance": 0.231353,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.446281,
+        "orientation": 0.001659,
+        "coverage": 0.211654,
+        "bandScale": 0.099179,
+        "coherence": 0.398465
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "oil",
+      "styleMatch": 0.639788,
+      "styleDistance": 0.360212,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.603306,
+        "orientation": 0.000389,
+        "coverage": 0.48939,
+        "bandScale": 0.270754,
+        "coherence": 0.406318
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "charcoal",
+      "styleMatch": 0.760001,
+      "styleDistance": 0.239999,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.239669,
+        "orientation": 0.000349,
+        "coverage": 0.528667,
+        "bandScale": 0.155487,
+        "coherence": 0.38955
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "marker",
+      "styleMatch": 0.672885,
+      "styleDistance": 0.327115,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.421488,
+        "orientation": 0.001492,
+        "coverage": 0.737151,
+        "bandScale": 0.192775,
+        "coherence": 0.239489
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "cross-hatch",
+      "styleMatch": 0.698394,
+      "styleDistance": 0.301606,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.545455,
+        "orientation": 0.00264,
+        "coverage": 0.381618,
+        "bandScale": 0.237049,
+        "coherence": 0.254287
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "halftone",
+      "styleMatch": 0.732579,
+      "styleDistance": 0.267421,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.520661,
+        "orientation": 0.000303,
+        "coverage": 0.374915,
+        "bandScale": 0.190995,
+        "coherence": 0.075146
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "reference": "graphic",
+      "styleMatch": 0.692414,
+      "styleDistance": 0.307586,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.528926,
+        "orientation": 0.000547,
+        "coverage": 0.392415,
+        "bandScale": 0.165924,
+        "coherence": 0.453999
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "pencil",
+      "styleMatch": 0.810503,
+      "styleDistance": 0.189497,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.355372,
+        "orientation": 0.006062,
+        "coverage": 0.270666,
+        "bandScale": 0.100693,
+        "coherence": 0.121325
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "ink",
+      "styleMatch": 0.858977,
+      "styleDistance": 0.141023,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.214876,
+        "orientation": 0.003239,
+        "coverage": 0.276827,
+        "bandScale": 0.047439,
+        "coherence": 0.132694
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "watercolor",
+      "styleMatch": 0.885889,
+      "styleDistance": 0.114111,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.206612,
+        "orientation": 0.004586,
+        "coverage": 0.152426,
+        "bandScale": 0.049924,
+        "coherence": 0.130067
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "oil",
+      "styleMatch": 0.728836,
+      "styleDistance": 0.271164,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.454545,
+        "orientation": 0.002185,
+        "coverage": 0.473975,
+        "bandScale": 0.171115,
+        "coherence": 0.13792
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "charcoal",
+      "styleMatch": 0.709207,
+      "styleDistance": 0.290793,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.520661,
+        "orientation": 0.002087,
+        "coverage": 0.454768,
+        "bandScale": 0.206693,
+        "coherence": 0.121151
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "marker",
+      "styleMatch": 0.616599,
+      "styleDistance": 0.383401,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.636364,
+        "orientation": 0.000135,
+        "coverage": 0.751071,
+        "bandScale": 0.262355,
+        "coherence": 0.02891
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "cross-hatch",
+      "styleMatch": 0.804991,
+      "styleDistance": 0.195009,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.355372,
+        "orientation": 0.006139,
+        "coverage": 0.3242,
+        "bandScale": 0.137409,
+        "coherence": 0.014112
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "halftone",
+      "styleMatch": 0.814235,
+      "styleDistance": 0.185765,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.297521,
+        "orientation": 0.001972,
+        "coverage": 0.314937,
+        "bandScale": 0.091355,
+        "coherence": 0.193252
+      }
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "reference": "graphic",
+      "styleMatch": 0.842392,
+      "styleDistance": 0.157608,
+      "strokes": 200,
+      "parts": {
+        "scale": 0.206612,
+        "orientation": 0.002539,
+        "coverage": 0.332437,
+        "bandScale": 0.066284,
+        "coherence": 0.185601
+      }
+    }
+  ],
+  "discrimination": [
+    {
+      "content": "blobs",
+      "candidate": "pencil",
+      "own": 0.408163,
+      "bestOther": 0.512908,
+      "bestOtherStyle": "halftone",
+      "margin": -0.104745,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "ink",
+      "own": 0.933816,
+      "bestOther": 0.954154,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.020338,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "watercolor",
+      "own": 0.656435,
+      "bestOther": 0.672359,
+      "bestOtherStyle": "halftone",
+      "margin": -0.015924,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "oil",
+      "own": 0.79044,
+      "bestOther": 0.872285,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.081845,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "charcoal",
+      "own": 0.889981,
+      "bestOther": 0.850123,
+      "bestOtherStyle": "watercolor",
+      "margin": 0.039858,
+      "ownIsBest": true
+    },
+    {
+      "content": "blobs",
+      "candidate": "marker",
+      "own": 0.846094,
+      "bestOther": 0.949293,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.103199,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "cross-hatch",
+      "own": 0.452638,
+      "bestOther": 0.649988,
+      "bestOtherStyle": "halftone",
+      "margin": -0.19735,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "halftone",
+      "own": 0.922213,
+      "bestOther": 0.940467,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.018254,
+      "ownIsBest": false
+    },
+    {
+      "content": "blobs",
+      "candidate": "graphic",
+      "own": 0.766088,
+      "bestOther": 0.815104,
+      "bestOtherStyle": "oil",
+      "margin": -0.049016,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "pencil",
+      "own": 0.633916,
+      "bestOther": 0.718269,
+      "bestOtherStyle": "marker",
+      "margin": -0.084353,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "ink",
+      "own": 0.387228,
+      "bestOther": 0.662985,
+      "bestOtherStyle": "marker",
+      "margin": -0.275757,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "watercolor",
+      "own": 0.419327,
+      "bestOther": 0.534149,
+      "bestOtherStyle": "marker",
+      "margin": -0.114822,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "oil",
+      "own": 0.543171,
+      "bestOther": 0.602676,
+      "bestOtherStyle": "cross-hatch",
+      "margin": -0.059505,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "charcoal",
+      "own": 0.535887,
+      "bestOther": 0.623526,
+      "bestOtherStyle": "marker",
+      "margin": -0.087639,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "marker",
+      "own": 0.650614,
+      "bestOther": 0.607558,
+      "bestOtherStyle": "pencil",
+      "margin": 0.043056,
+      "ownIsBest": true
+    },
+    {
+      "content": "rings",
+      "candidate": "cross-hatch",
+      "own": 0.268178,
+      "bestOther": 0.462883,
+      "bestOtherStyle": "marker",
+      "margin": -0.194705,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "halftone",
+      "own": 0.395377,
+      "bestOther": 0.65606,
+      "bestOtherStyle": "marker",
+      "margin": -0.260683,
+      "ownIsBest": false
+    },
+    {
+      "content": "rings",
+      "candidate": "graphic",
+      "own": 0.432636,
+      "bestOther": 0.731874,
+      "bestOtherStyle": "marker",
+      "margin": -0.299238,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "pencil",
+      "own": 0.489338,
+      "bestOther": 0.51727,
+      "bestOtherStyle": "cross-hatch",
+      "margin": -0.027932,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "ink",
+      "own": 0.742464,
+      "bestOther": 0.787204,
+      "bestOtherStyle": "charcoal",
+      "margin": -0.04474,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "watercolor",
+      "own": 0.613095,
+      "bestOther": 0.704168,
+      "bestOtherStyle": "charcoal",
+      "margin": -0.091073,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "oil",
+      "own": 0.66351,
+      "bestOther": 0.80291,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.1394,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "charcoal",
+      "own": 0.909818,
+      "bestOther": 0.702345,
+      "bestOtherStyle": "watercolor",
+      "margin": 0.207473,
+      "ownIsBest": true
+    },
+    {
+      "content": "stripes",
+      "candidate": "marker",
+      "own": 0.752564,
+      "bestOther": 0.770309,
+      "bestOtherStyle": "charcoal",
+      "margin": -0.017745,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "cross-hatch",
+      "own": 0.182145,
+      "bestOther": 0.357357,
+      "bestOtherStyle": "marker",
+      "margin": -0.175212,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "halftone",
+      "own": 0.732579,
+      "bestOther": 0.768647,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.036068,
+      "ownIsBest": false
+    },
+    {
+      "content": "stripes",
+      "candidate": "graphic",
+      "own": 0.842392,
+      "bestOther": 0.885889,
+      "bestOtherStyle": "watercolor",
+      "margin": -0.043497,
+      "ownIsBest": false
+    }
+  ],
+  "ownIsBestCount": 3,
+  "deterministic": true,
+  "equalCost": true,
+  "range": {
+    "min": 0.143825,
+    "max": 0.954154
+  },
+  "pageErrors": []
+}
