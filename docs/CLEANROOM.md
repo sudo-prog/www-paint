@@ -70,7 +70,7 @@ matching it.
 | R1 | Optimiser core | Residual/error-driven stroke placement + per-stroke local refinement (our own hill-climb), on the modular engine. Beats R0 baseline. |
 | R2 | Structure-guided multi-scale | Coarse→fine; strokes follow the shared structure tensor (roadmap 1.2/1.3). |
 | R3 | Better init | CCL + PCA stroke init (roadmap 1.4). Fidelity ≥ reference at equal stroke count. |
-| R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. **PARTIAL**: region-fill landed (opt-in `optimizer.regionFill`; small measured gain, default off) — see `docs/checkpoints/R4.md`. Outlines / order / per-style shaping open. |
+| R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. **3 of 4 landed** (all opt-in, default off): region-fill (`regionFill`; small measured gain), order (`r4`), outlines (`r4Outline`; **costs** fidelity on the parity targets → no gain claimed). **per-style shaping open** (applied by `modular-bridge.js`, not the optimiser). See `docs/checkpoints/R4.md` + `docs/checkpoints/R4-outline.md`. |
 | R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. |
 | R6 | Retire the legacy painter | App + baselines run 100% on the modular engine; the legacy painter demoted to a dev-only fixture. |
 

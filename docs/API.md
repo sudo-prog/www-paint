@@ -235,19 +235,24 @@ Pure, no DOM. Frozen schema v1 (`PROFILE_SCHEMA_VERSION = 1`).
 One frozen surface over three already-existing modules. **Import status is
 mixed — read §4 before assuming it is inert:**
 
-- `optimizer.js:68` imports `planOrder` and applies it to the emitted shapes when
-  `opts.r4` is set (`optimizer.js:922-938`). So **the order half is wired**, behind
-  the opt-in `r4` default (`null`).
+- `optimizer.js` imports `planOrder` and applies it to the emitted shapes when
+  `opts.r4` is set. So **the order half is wired**, behind the opt-in `r4` default
+  (`null`) — see `tests/r4-integration.test.js`.
+- `optimizer.js` also imports `planOutlines` and lays the contour strokes in when
+  `opts.r4Outline` is `'first' | 'last'` (**default `null`/`'off'` → no pass runs
+  and the output is byte-identical**; `resolveR4OutlineMode` is total). So **the
+  outline half is wired too**, behind its own opt-in default. Both seams accept
+  the `buildR4Plan()` plan object (`{ order: { mode } }` / `{ outline: { mode } }`),
+  so a caller holding a plan can pass it straight through — but the optimiser
+  calls the *primitives* (`planOrder`, `planOutlines`), not `buildR4Plan()`
+  wholesale: it has no shape set at outline time, and it computes order over the
+  shapes it emits, at the tail.
 - `modular-bridge.js:51` imports `buildR4Plan` + `resolveEffectiveShaping`.
-- **`planOutlines` has no engine caller of its own** — the outline half is
-  reached only through `buildR4Plan({ outline: 'first' })`, which
-  `modular-bridge.js:228` calls. `optimizer.js` consumes `planOrder` only; it
-  does **not** lay in outlines.
 - `scripts/r4-probe.cjs` imports the module directly (verification only).
 
-**Net:** the *order* and *shaping* halves are wired; the *outline* half is wired
-only through the bridge, which is itself inert. `optimizer.js`'s own `r4` option
-is therefore the one path where R4 touches the engine of record today.
+**Net:** the *order*, *outline* and *shaping* halves are all reachable from the
+engine of record; each sits behind an opt-in default that is **off**, so the app
+path (`js/engine/app` painter + the default modular optimiser) is byte-identical.
 
 - `buildR4Plan(args)` → the plan the BE spine should call.
 - `planOrder(shapes, mode, opts)` — over a **copy** (a rejected plan must not
@@ -358,9 +363,9 @@ Stated plainly so nobody mistakes "exists" for "runs":
 
 | Module | Importers outside its own test | Status |
 |---|---|---|
-| `js/engine/r4.js` | `optimizer.js` (`planOrder`), `modular-bridge.js` (`buildR4Plan`) | **partially live** — order wired behind `opts.r4`; outlines only via the bridge |
+| `js/engine/r4.js` | `optimizer.js` (`planOrder`, `planOutlines`), `modular-bridge.js` (`buildR4Plan`) | **live (opt-in, default off)** — order behind `opts.r4`, outlines behind `opts.r4Outline`; byte-identical when both off |
 | `js/engine/modular-bridge.js` | none | inert — `enabled` defaults `false` |
-| `js/engine/outlines.js` | `r4.js`, `modular-bridge.js` (via `buildR4Plan`) | **live only through the bridge** (inert today) |
+| `js/engine/outlines.js` | `r4.js`, `modular-bridge.js` (via `buildR4Plan`), `optimizer.js` (via `r4.js` `planOutlines`) | **live (opt-in, default off)** — the optimiser's `r4Outline` pass |
 | `js/engine/order.js` | `r4.js`, `optimizer.js` (via `r4.js`) | **live behind `opts.r4`** |
 | `js/styles/shaping.js` | `r4.js`, `modular-bridge.js` | **live** — shaping is applied by the bridge |
 | `js/engine/primitives.js` | `profile.js`, `optimizer.js`, `propose.js` | **live** (opt-in) |

@@ -121,6 +121,48 @@ There is **no `AGENTS.md` §7 entry** for this stream yet (mtimes static since 1
 
 ---
 
+## BE review — 2026-11-17 (R4 outline pass LANDED — both Mac action items closed)
+
+The R4 **spine half is now wired** (on top of `0c6eafc`). `js/engine/optimizer.js`
+gained the **opt-in outline pass** (`OPTIMISER_DEFAULTS.r4Outline`, `'first' | 'last'`,
+**default `null`/`'off'` → no pass runs, output byte-identical**;
+`resolveR4OutlineMode` is total), consuming `planOutlines()` from the `r4.js` seam.
+`docs/checkpoints/R4-outline.md`.
+
+**(a) "Consume `buildR4Plan()` from `optimizer.js`" — DONE, with one deliberate
+deviation.** The optimiser consumes the two **primitives** `r4.js` exposes
+(`planOutlines` at the head, `planOrder` at the tail) rather than calling
+`buildR4Plan()` wholesale: it has no shape set at outline time, and `planOrder` is
+computed over the shapes it emits, at the tail. Both seams accept the
+`buildR4Plan()` plan object (`{ order: { mode } }` / `{ outline: { mode } }`), so a
+caller holding a plan can pass it straight through. Opt-in, default off, **proven
+byte-identical**: parity-bench modular numbers unchanged (blobs 98.08/0.8902 ·
+rings 98.01/0.8522 · smooth 98.88/0.9336 · noise 80.88/0.0257),
+`visual-regression` **9/9 pins unmoved**, engine **165 → 170** (+5 outline tests),
+full 16-suite battery all Failed 0.
+
+**(b) The soft-edge finding — RULED: accept for now.** The structure-tensor walk
+traces hard ridges and misses soft-edged subjects; the relative-threshold fix was
+disproved (the analyser already normalises `edges` by the image max, so lowering the
+cut *merges* contours). A real fix is a coherence / multi-scale edge detector in
+`analyzer.js` (spine) — it would move the pinned baselines, and the outline pass is
+**default-off**, so **R4 closure is NOT gated on it**. Recorded as an open R4
+sub-item, not a regression.
+
+**HONEST READ (please don't quote a gain).** The contour lay-in **costs** fidelity on
+the parity targets — measured rasterised at 400 strokes: blobs `first` −0.245 /
+`last` −0.459 simMae (SSIM −0.0087 / −0.0406), rings −0.155 / −0.238, smooth
+−0.167 / −0.006, noise −0.011 / −0.013. It is a **constraint** paying for a
+perceptual/structural intent that pixel MAE does not measure, so it ships
+opt-in / default-off with **no gain claimed**. Tuning it needs a
+structural/perceptual fitness target — open sub-item.
+
+**Still open in R4:** **per-style shaping** (applied by `modular-bridge.js`, not the
+optimiser's own path). **Your move (Mac), if you want it:** a `shaping`-aware
+optimiser seam, or a structural fitness target for the outline pass.
+
+---
+
 ## 0. Remaining work — the whole board (so you can see where your streams fit)
 
 ### 0.1 ThinkPad / BE spine (serial, single writer — NOT yours)

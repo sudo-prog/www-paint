@@ -65,7 +65,7 @@ import { sampleEdge, sampleStructure } from './analyzer.js';
 import { buildRegions } from './regions.js';
 import { computeTonalMasks } from './masks.js';
 import { mixStrokeLanguage } from './primitives.js';
-import { planOrder } from './r4.js';
+import { planOrder, planOutlines } from './r4.js';
 
 /**
  * The three scale keywords an explicit pass may declare (Track-S S4). They map
@@ -180,8 +180,22 @@ export const OPTIMISER_DEFAULTS = {
   // COPY, so no shape's own fields are touched). Accepts the plan object from
   // `buildR4Plan()` (`{ order: { mode } }`), a `{ order }` object, or a bare
   // mode string (`free|down|up|left|right|diag|spiral|spiralin|rings|ringsin|
-  // clock`). An unknown / extension mode is a safe no-op.
+  // clock). An unknown / extension mode is a safe no-op.
   r4: null,
+
+  // ── R4 outlines (feature parity: edge-following outline lay-in) ──────────
+  // Opt-in — `null`/`'off'` (default) → no outline pass runs and the R3 output
+  // is byte-identical. `'first'` lays the contour strokes BEFORE the region /
+  // schedule passes (the classical "draw the contours, then the masses" step);
+  // `'last'` reserves the same budget but paints them AFTER the schedule.
+  // Accepts a bare mode string, a `{ mode }` object, or the plan object from
+  // `buildR4Plan()` (`{ outline: { mode } }`). The contours come from
+  // `js/engine/r4.js` `planOutlines()` over the same `analysis`.
+  r4Outline: null,
+  r4OutlineShare: 0.08,    // outline strokes as a fraction of `count`
+  r4OutlineRadius: 0.6,    // dab radius, as a fraction of the pass's base radius
+  r4OutlineAlpha: 0.9,     // opacity of an outline dab
+  r4OutlineOptions: null,  // forwarded to `planOutlines()` (threshold, scale, …)
 };
 
 /**
@@ -191,6 +205,22 @@ export const OPTIMISER_DEFAULTS = {
  */
 export function resolveOptions(o = {}) {
   return { ...OPTIMISER_DEFAULTS, ...o };
+}
+
+/**
+ * Resolve the R4 outline mode from the `r4Outline` option.
+ *
+ * Accepts a bare mode string (`'first' | 'last' | 'off'`), a `{ mode }` object,
+ * or the plan object from `js/engine/r4.js` `buildR4Plan()` (`{ outline: { mode } }`).
+ * Anything unrecognised resolves to `'off'`, so a stale or future value is a
+ * safe no-op rather than a silent lay-in.
+ *
+ * @param {*} v
+ * @returns {'off'|'first'|'last'}
+ */
+export function resolveR4OutlineMode(v) {
+  const raw = typeof v === 'string' ? v : (v && (v.outline?.mode ?? v.mode));
+  return raw === 'first' || raw === 'last' ? raw : 'off';
 }
 
 /**
@@ -740,6 +770,55 @@ export function optimise(analysis, options = {}) {
   }
 
   /**
+   * R4 outline pass — lay contour strokes along the extracted edges.
+   *
+   * Feature parity with the legacy painter's edge-following outline lay-in,
+   * re-derived from the clean-room seam: `r4.planOutlines()` walks the
+   * structure-tensor edge field into polylines (longest / strongest first) and
+   * this pass samples them into small dabs of the LOCAL colour, establishing the
+   * contours before (mode `first`) or after (mode `last`) the masses.
+   *
+   * The sample is spread evenly across EVERY contour (a stride over the
+   * concatenated walk) rather than clustered on the first one, the budget is
+   * capped, and the pass is deterministic — no RNG.
+   *
+   * @param {number} budget - Max strokes this pass may emit.
+   * @param {Array<Array<[number,number]>>} points - polylines from `planOutlines`.
+   * @returns {number} Strokes actually emitted.
+   */
+  function outlinePass(budget, points) {
+    if (budget <= 0 || !Array.isArray(points) || points.length === 0) return 0;
+    levelTarget = target;
+    elongMul = 1;
+    let total = 0;
+    for (const pl of points) total += Array.isArray(pl) ? pl.length : 0;
+    if (total === 0) return 0;
+    const stride = Math.max(1, Math.ceil(total / budget));
+    const r = clamp(baseR * opts.r4OutlineRadius, opts.minSize / 2, opts.maxSize);
+    const sampleR = Math.max(1, r * 0.75);
+    let emitted = 0;
+    let seen = 0;
+    for (const pl of points) {
+      if (!Array.isArray(pl)) continue;
+      for (let k = 0; k < pl.length && emitted < budget; k++, seen++) {
+        if (seen % stride !== 0) continue;
+        const x = pl[k][0];
+        const y = pl[k][1];
+        if (!(x >= 0 && x < W && y >= 0 && y < H)) continue;
+        const c = localColor(x, y, sampleR);
+        commitShape({
+          x, y,
+          rx: r, ry: r, rot: 0,
+          r: clamp(c[0], 0, 255), g: clamp(c[1], 0, 255), b: clamp(c[2], 0, 255),
+          alpha: opts.r4OutlineAlpha,
+        });
+        emitted++;
+      }
+    }
+    return emitted;
+  }
+
+  /**
    * Paint one coarse→fine pass: place up to `budget` dabs of radius
    * `baseR·radiusMul` against `levelTarget`, refining each with the local
    * hill-climb, committing into the shared `paint` buffer.
@@ -864,6 +943,26 @@ export function optimise(analysis, options = {}) {
     return emitted;
   }
 
+  // ── R4 outlines — the edge-following contour lay-in (opt-in, default off) ──
+  // `first` lays the contours here, before the region passes and the coarse→fine
+  // schedule; `last` reserves the same budget now but paints them after the
+  // schedule. Either way the budget is carved out of `count` so the total stays
+  // exact, and the default (`off`) runs nothing at all — output is byte-identical.
+  const r4OutlineMode = resolveR4OutlineMode(opts.r4Outline);
+  const outlineActive = r4OutlineMode === 'first' || r4OutlineMode === 'last';
+  const outlineBudget = outlineActive
+    ? Math.round(opts.count * clamp(opts.r4OutlineShare, 0, 1))
+    : 0;
+  let outlineUsed = 0;
+  let outlinePoints = null;
+  if (outlineActive) {
+    outlinePoints = planOutlines(analysis, {
+      ...(opts.r4OutlineOptions || {}),
+      mode: r4OutlineMode,
+    }).points;
+    if (r4OutlineMode === 'first') outlineUsed = outlinePass(outlineBudget, outlinePoints);
+  }
+
   // ── R4 region fill — block in the big flat areas first (opt-in) ───────────
   const fillBudget = opts.regionFill > 0
     ? Math.round(opts.count * clamp(opts.regionFill, 0, 1))
@@ -890,7 +989,12 @@ export function optimise(analysis, options = {}) {
   const passMasks = plan.some((p) => p.bands && p.bands.length > 0)
     ? plan.map((p) => buildPassMask(analysis, p.bands))
     : null;
-  let remaining = opts.count - fillUsed - regionUsed;
+  // The outline budget is reserved up front for BOTH modes, so `last` still has
+  // capacity left after the greedy schedule has taken its share of `count`.
+  const outlineReserved = outlineActive
+    ? (r4OutlineMode === 'first' ? outlineUsed : outlineBudget)
+    : 0;
+  let remaining = opts.count - outlineReserved - fillUsed - regionUsed;
   // The schedule's own total (what the init left) drives the budget split, so
   // the pass weights still describe the schedule and the sum stays exact.
   const scheduleTotal = Math.max(1, remaining);
@@ -916,6 +1020,16 @@ export function optimise(analysis, options = {}) {
     const used = paintPass(passTarget, baseR * level.radiusMul, level.elongMul, budget,
       passMasks ? passMasks[k] : null, level.alpha, level.detail);
     remaining -= used;
+  }
+
+  // ── R4 outlines `last` — lay the reserved contour strokes after the masses ─
+  // The budget was reserved before the schedule, so this keeps the total at
+  // `count` whenever the schedule was greedy.
+  if (r4OutlineMode === 'last') {
+    outlineUsed = outlinePass(
+      Math.min(outlineBudget, Math.max(0, opts.count - shapes.length)),
+      outlinePoints,
+    );
   }
 
   // ── R4 paint order — consume the plan's order mode (opt-in, default off) ──
@@ -951,12 +1065,13 @@ export function optimise(analysis, options = {}) {
       finalError: +finalError.toFixed(4),
       mae: +finalError.toFixed(4),
       simMae: +(100 * (1 - finalError / 255)).toFixed(2),
+      ...(outlineActive ? { outline: outlineUsed, outlineMode: r4OutlineMode } : {}),
       ...(paintOrder ? { paintOrder } : {}),
     },
   };
 }
 
 export default {
-  OPTIMISER_DEFAULTS, resolveOptions, buildScalePlan, applyPrimitiveLanguage,
+  OPTIMISER_DEFAULTS, resolveOptions, resolveR4OutlineMode, buildScalePlan, applyPrimitiveLanguage,
   PASS_SCALES, resolvePassPlan, optimise,
 };

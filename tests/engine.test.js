@@ -36,7 +36,8 @@ import {
   orderShapes, estimateShapeCount
 } from '../js/engine/generator.js';
 import { selectBest, selectGreedyResidual, scoreShape } from '../js/engine/scorer.js';
-import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, buildScalePlan, resolvePassPlan, PASS_SCALES, applyPrimitiveLanguage } from '../js/engine/optimizer.js';
+import { optimise, OPTIMISER_DEFAULTS, resolveOptions as resolveOptimiserOptions, resolveR4OutlineMode, buildScalePlan, resolvePassPlan, PASS_SCALES, applyPrimitiveLanguage } from '../js/engine/optimizer.js';
+import { planOutlines } from '../js/engine/r4.js';
 import {
   REGION_DEFAULTS, quantizeBins, labelComponents, pcaFromStats, buildRegions, fitEllipse
 } from '../js/engine/regions.js';
@@ -1713,6 +1714,75 @@ test('region-fill: resolveOptions passes regionFill through; 0 on a noisy target
   const r = optimise(an, { count: 120, seed: 7, regionFill: 0.3 });
   assertEqual(r.shapes.length, 120);
   assertEqual(r.stats.fill, 0, 'pure noise has no region large enough to block in');
+});
+
+// ─── Track R4 — outlines ──────────────────────────────────────────
+console.log('\nOutlines (Track R4):');
+
+test('outlines: default off adds no outline strokes and matches an explicit off', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const def = optimise(an, { count: 200, seed: 7 });
+  const off = optimise(an, { count: 200, seed: 7, r4Outline: 'off' });
+  assertEqual(def.stats.outline, undefined, 'no outline stats when the pass is off');
+  assertEqual(def.shapes.length, 200);
+  assertEqual(JSON.stringify(def.shapes), JSON.stringify(off.shapes), 'opt-out is byte-identical');
+});
+
+test('outlines: first lays contour strokes first, keeps the budget, is deterministic', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const a = optimise(an, { count: 200, seed: 7, r4Outline: 'first' });
+  const b = optimise(an, { count: 200, seed: 7, r4Outline: 'first' });
+  if (!(a.stats.outline > 0)) throw new Error('expected outline strokes on a structured target');
+  assertEqual(a.stats.outlineMode, 'first');
+  assertEqual(a.shapes.length, 200, 'the total budget is respected exactly');
+  assertEqual(JSON.stringify(a.shapes), JSON.stringify(b.shapes), 'deterministic');
+});
+
+test('outlines: last paints the reserved strokes at the end of the set', () => {
+  const S = 64, px = r4Target(S);
+  const an = analyzeImage(px, S, S);
+  const first = optimise(an, { count: 200, seed: 7, r4Outline: 'first' });
+  const last = optimise(an, { count: 200, seed: 7, r4Outline: 'last' });
+  if (!(last.stats.outline > 0)) throw new Error('expected outline strokes');
+  assertEqual(last.stats.outlineMode, 'last');
+  assertEqual(last.shapes.length, 200, 'the reserved budget is spent exactly');
+  // The two modes must differ: `first` establishes contours before the masses,
+  // `last` after. Same shape COUNT, different sequence (and the paint buffer the
+  // schedule refined against differs).
+  assertEqual(last.shapes.length, first.shapes.length);
+  if (JSON.stringify(last.shapes) === JSON.stringify(first.shapes)) {
+    throw new Error('mode first and mode last produced an identical sequence');
+  }
+});
+
+test('outlines: resolveR4OutlineMode accepts string, {mode} and plan object', () => {
+  assertEqual(resolveR4OutlineMode('first'), 'first');
+  assertEqual(resolveR4OutlineMode('last'), 'last');
+  assertEqual(resolveR4OutlineMode({ mode: 'first' }), 'first');
+  assertEqual(resolveR4OutlineMode({ outline: { mode: 'last' } }), 'last');
+  assertEqual(resolveR4OutlineMode(null), 'off');
+  assertEqual(resolveR4OutlineMode('bogus'), 'off', 'unknown mode is a safe no-op');
+  assertEqual(resolveOptimiserOptions({ r4Outline: 'first' }).r4Outline, 'first');
+  assertEqual(resolveOptimiserOptions({ r4OutlineShare: 0.2 }).r4OutlineShare, 0.2);
+});
+
+test('outlines: a flat field has no contours, so the pass adds nothing', () => {
+  const S = 48;
+  const flat = makeRGBImage(S, S, () => [128, 128, 128]);
+  const an = analyzeImage(flat, S, S);
+  // The stated claim — the structure-tensor walk finds no contours on a flat
+  // field — is checked DIRECTLY on the planner, not inferred from a stroke count.
+  const walked = planOutlines(an, { mode: 'first' });
+  const walkedPts = (walked.points || []).reduce((a, pl) => a + (pl.length || 0), 0);
+  assertEqual(walkedPts, 0, 'a flat field has no contours to walk');
+  // A flat field also holds zero residual error (the canvas already sits on the
+  // average colour), so the schedule emits nothing either — and the opt-in
+  // outline pass must not fabricate strokes to make the budget up.
+  const r = optimise(an, { count: 120, seed: 7, r4Outline: 'first' });
+  assertEqual(r.shapes.length, 0, 'a flat field needs no strokes at all');
+  assertEqual(r.stats.outline, 0, 'the outline pass adds nothing on a flat field');
 });
 
 // ─── Style match (Track-S S2) ─────────────────────────────────────
