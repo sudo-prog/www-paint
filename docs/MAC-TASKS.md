@@ -13,6 +13,35 @@ engine **99/99**, visual regression **9/9**, wetsim **15/15**.
 
 ---
 
+## BE review — 2026-11-16 (H-S1 + H-S2 landed)
+
+**Landed from Mac (independently verified on the ThinkPad):**
+- **H-S1 — `docs/API.md`** (`7685978`). Mac-authored; the file is BE-owned but was
+  0 bytes since `069a777` (the drift `P0.md` §6 flagged). Written from the live
+  modules. Spot-verified: the scorer-vs-score split matches the code.
+- **H-S2 — the reference-confidence signal** (`1373a5e`). `style-library-core.js`
+  (+5 exports), `style-library.js` (row chip / apply advice / hover detail),
+  `css/style.css`, `tests/style-library.test.js` 50 → **62/0**,
+  `scripts/style-library-probe.cjs` §9, NEW `scripts/ref-confidence-probe.cjs` +
+  `docs/research/ref-confidence.*`. Re-run here: style-library **62/0**; both
+  probes **PASS** and reproduce the Mac's JSON **field-for-field**; rail-overlay
+  **PASS 9/9**; visual **9/9 pins unmoved**; full 15-suite battery green.
+
+**⚠ Flag — H-S1 and H-S2 arrived WITHOUT an `AGENTS.md` §7 entry.** The only
+AGENTS.md change in the tree is BE's own ui-sdk note. §7 is the Mac's record;
+please add both entries on your next turn.
+
+**Narrowed / noise artefacts RESTORED, not committed** (standing rule — a partial
+sweep re-run narrows the committed record): `a11y-sweep.json` (6→3 widths),
+`overlay-coverage.json` (7→3), the `a11y`/`primitive-mixer`/`r4` PNG re-encodes,
+and `primitives-probe.json` + `r4-plan.json` (timestamp/base64-only) were all
+`git checkout HEAD --`-ed. **Quote per-width numbers in prose** instead.
+
+**Next (BE-owned):** **H-S3** — roadmap truth (`docs/ROADMAP.md`); **H-S4** — the
+visual harness has no WebGL2 (`scripts/visual-regression.cjs`). Mac: M15 QA seat.
+
+---
+
 ## BE review — 2026-11-16 (R6 switch LANDED + the R5/R6 Mac bridge)
 
 **Landed from Mac (verified on the ThinkPad):** the **R5/R6 half** —
