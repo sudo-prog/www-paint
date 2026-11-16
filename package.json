@@ -1,0 +1,22 @@
+{
+  "name": "www-paint",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WWW_PAINT (20.36) — stroke-based image-to-art engine. Static ES-module app with NO build step; this package.json exists only to manage the ui-sdk (React) integration.",
+  "scripts": {
+    "ui": "vite",
+    "ui:build": "vite build",
+    "ui:preview": "vite preview"
+  },
+  "dependencies": {
+    "@ui-sdk/core": "^0.1.0-beta.3",
+    "@ui-sdk/react": "^0.1.0-beta.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "vite": "^7.3.8"
+  }
+}

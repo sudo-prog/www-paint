@@ -23,3 +23,6 @@ test-images/
 # Local probe pages
 _probe_brush.html
 .vite/
+
+# ui-sdk (React) surface build output (npm run ui:build)
+ui-dist/

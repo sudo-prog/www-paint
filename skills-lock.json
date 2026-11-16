@@ -1,12 +1,19 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
     "maestro": {
       "source": "TerminalSkills/skills",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/maestro/SKILL.md",
-      "computedHash": "92e16abb89e974369b0308c36a6ded352bb805f50d9310f8bde2c4a2a92a57ec"
+      "computedHash": "fe329d736d5e85fe10fa54ca3c2161f908508fef8bc286c2aadd2994d5d26af0"
+    },
+    "ui-sdk": {
+      "source": "vercel-labs/ui",
+      "commit": "282f44729ce08282ef1dc37fa093b1997bbeb848",
+      "sourceType": "github",
+      "skillPath": "packages/core/skills/ui-sdk/SKILL.md",
+      "computedHash": "7353586d36e12a3895bcec7d6d589ad26a18e7acff95b014ea63ccb12cfafc38"
     }
   }
 }
