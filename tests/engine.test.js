@@ -1561,6 +1561,35 @@ test('memory: profileSignature is order-independent; warm start seeds searchProf
   assertEqual(r.knobs.strokeCount, 120, 'the fixed knob is still held at the base value');
 });
 
+test('5.5: the proposer warm-starts from the feedback store, opt-in and unchanged by default', () => {
+  const base = h2Base(120);
+  const img = h2Target(48);
+  // Default (no memory): no hash is computed, no warm start, output unchanged.
+  const plain = searchProfile(base, img, { evaluations: 8, seed: 5 });
+  assertEqual(plain.warmStart.used, false, 'no memory ⇒ no warm start');
+  assertEqual(plain.warmStart.hash, null, 'no memory ⇒ no hash computed');
+
+  // A store seeded with the query's own perceptual hash seeds the search.
+  const h = averageHash(img.pixels, 48, 48);
+  const m = createMemory();
+  m.record({ imageHash: h, knobs: { coverage: 1.2, elongation: 1.5 }, score: { simMae: 90 } });
+  const warm = searchProfile(base, img, { evaluations: 8, seed: 5, memory: m });
+  assertEqual(warm.warmStart.used, true, 'memory ⇒ warm start applied');
+  assertEqual(warm.warmStart.hash, h, 'the query hash is the image average hash');
+  assertEqual(warm.warmStart.from, 0, 'the entry it started from is recorded');
+  assertEqual(warm.knobs.strokeCount, 120, 'the fixed knob is still held at the base value');
+
+  // Deterministic with a memory store, exactly as without one.
+  const warm2 = searchProfile(base, img, { evaluations: 8, seed: 5, memory: m });
+  assertEqual(JSON.stringify(warm.knobs), JSON.stringify(warm2.knobs));
+  assertEqual(warm.score.simMae, warm2.score.simMae);
+
+  // An EMPTY store (nothing near enough) leaves the search exactly as the default.
+  const empty = searchProfile(base, img, { evaluations: 8, seed: 5, memory: createMemory() });
+  assertEqual(empty.warmStart.used, false, 'an empty store must not count as a warm start');
+  assertEqual(JSON.stringify(empty.knobs), JSON.stringify(plain.knobs), 'an empty store changes nothing');
+});
+
 // ─── Benchmark gate — Harness H5 ──────────────────────────────────
 console.log('\nBenchmark gate (Harness H5):');
 

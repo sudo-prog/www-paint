@@ -26,6 +26,7 @@
 import { rng } from '../utils/rng.js';
 import { KNOB_SET, getKnobDefaults, clampKnobs, scoreProfile } from './score.js';
 import { PRIMITIVE_IDS, PRIMITIVES, normalizePrimitiveMix } from './primitives.js';
+import { averageHash } from './memory.js';
 
 /** Default search configuration. @type {object} */
 export const SEARCH_DEFAULTS = {
@@ -41,6 +42,8 @@ export const SEARCH_DEFAULTS = {
   init: null,           // starting knob vector; defaults to getKnobDefaults()
   primitives: false,    // S5 — also search the stroke-language primitive weights
   primitiveInit: 0.25,  // starting weight for each primitive knob (uniform mix)
+  memory: null,         // 5.5 — optional feedback store (memory.js) for a warm start
+  warmStart: {},        // 5.5 — options forwarded to `memory.warmStart()`
 };
 
 /**
@@ -182,8 +185,25 @@ export function searchProfile(baseProfile, image, options = {}) {
   // any explicit `init`. Primitive weights start at a uniform mix.
   const primStart = {};
   for (const k of primKnobs) primStart[k.name] = opts.primitiveInit;
+  // 5.5 — optional warm start (Harness H4 memory). When a feedback store is
+  // supplied, seed the search from the best prior result for a perceptually-near
+  // image (`memory.warmStart`); an explicit `opts.init` still wins. Absent → the
+  // search is bit-for-bit the old one (no memory ⇒ no hash computed).
+  const warmInfo = { used: false, hash: null, from: null, distance: null };
+  let init = opts.init || null;
+  if (opts.memory && typeof opts.memory.warmStart === 'function') {
+    const hash = averageHash(image.pixels, image.width, image.height);
+    const warm = opts.memory.warmStart(hash, opts.warmStart || {});
+    warmInfo.hash = hash;
+    if (warm && warm.init) {
+      init = { ...warm.init, ...(init || {}) };
+      warmInfo.used = true;
+      warmInfo.from = warm.from;
+      warmInfo.distance = warm.distance;
+    }
+  }
   const start = clampKnobs(
-    { ...getKnobDefaults(), ...profileKnobValues(baseProfile), ...primStart, ...(opts.init || {}) },
+    { ...getKnobDefaults(), ...profileKnobValues(baseProfile), ...primStart, ...(init || {}) },
     primKnobs,
   );
   // Hold fixed knobs at their base value so the mapping never drops them.
@@ -213,7 +233,7 @@ export function searchProfile(baseProfile, image, options = {}) {
 
   let best = baseline;
   if (active.length === 0 || opts.evaluations <= 1) {
-    return finish(best, baseline, history, evals, baseProfile, opts, primKnobs);
+    return finish(best, baseline, history, evals, baseProfile, opts, primKnobs, warmInfo);
   }
 
   const range = (k) => (k.type === 'boolean' ? 1 : (k.max - k.min));
@@ -266,10 +286,10 @@ export function searchProfile(baseProfile, image, options = {}) {
     }
   }
 
-  return finish(best, baseline, history, evals, baseProfile, opts, primKnobs);
+  return finish(best, baseline, history, evals, baseProfile, opts, primKnobs, warmInfo);
 }
 
-function finish(best, baseline, history, evals, baseProfile, opts, primKnobs = []) {
+function finish(best, baseline, history, evals, baseProfile, opts, primKnobs = [], warmInfo = { used: false, hash: null, from: null, distance: null }) {
   // `primKnobs` must be passed through here too: clampKnobs drops unknown keys,
   // so without them the winning primitive weights would be silently stripped.
   const knobs = clampKnobs(best.knobs, primKnobs);
@@ -283,6 +303,8 @@ function finish(best, baseline, history, evals, baseProfile, opts, primKnobs = [
     // S5 — the winning stroke-language mix, or null when the search did not use
     // primitive weights (or every weight landed at zero).
     primitives: knobsToPrimitiveMix(knobs),
+    // 5.5 — whether an optional memory warm start was applied (and its source).
+    warmStart: warmInfo,
     history,
   };
 }
