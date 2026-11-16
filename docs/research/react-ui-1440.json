@@ -1,0 +1,32 @@
+{
+  "width": 1440,
+  "report": {
+    "controls": 10,
+    "unnamed": [],
+    "underMin": [],
+    "offscreen": [],
+    "docOverflowX": 0,
+    "listbox": true,
+    "listboxItems": 2,
+    "chip": "conflicting"
+  },
+  "dialog": {
+    "open": true,
+    "title": "Save style profile",
+    "clipped": false,
+    "rect": {
+      "w": 821,
+      "h": 238
+    },
+    "fields": [
+      {
+        "name": "Profile name",
+        "w": 787,
+        "h": 44
+      }
+    ]
+  },
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

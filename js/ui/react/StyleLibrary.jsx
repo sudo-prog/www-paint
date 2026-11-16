@@ -19,7 +19,6 @@ import {
   ListboxGroupLabel,
   ListboxItem,
   ListboxItemIndicator,
-  ListboxItems,
 } from "@ui-sdk/react/listbox";
 import {
   Select,
@@ -35,87 +34,112 @@ import {
   ProfileLibrary,
   coerceProfileName,
   defaultProfile,
-  profileToExportText,
   refConfidenceAdvice,
-  refConfidenceBand,
+  referenceConfidence,
   summarizeProfile,
 } from "../style-library-core.js";
 
-const BAND_LABEL = { none: "no reference", good: "consistent", fair: "mixed", low: "conflicting" };
-const BAND_TONE = { none: "ref-none", good: "ref-good", fair: "ref-fair", low: "ref-low" };
+const BAND_LABEL = {
+  none: "no reference",
+  good: "consistent",
+  fair: "mixed",
+  low: "conflicting",
+};
 
 function storage() {
   try {
     if (typeof localStorage !== "undefined") return localStorage;
   } catch {
-    /* private mode — the library falls back to its own in-memory store */
+    /* private mode — the library keeps its own in-memory store */
   }
   return undefined;
 }
 
 function ProfileChip({ profile }) {
-  const confidence = summarizeProfile(profile).refConfidence;
-  if (confidence === "none") return null;
+  const confidence = referenceConfidence(profile);
+  if (confidence.band === "none") return null;
 
-  const advice = refConfidenceAdvice(confidence);
+  const spread =
+    confidence.agreement === null
+      ? `${confidence.refCount} references`
+      : `${confidence.refCount} references · ${Math.round(confidence.agreement * 100)}% agreement`;
+
   return (
     <Tooltip>
       <TooltipTrigger
-        className={`library-ref ${BAND_TONE[confidence]}`}
-        data-band={confidence}
+        className="library-ref"
+        data-band={confidence.band}
+        aria-label={`${BAND_LABEL[confidence.band]} references`}
       >
-        {BAND_LABEL[confidence]}
+        {BAND_LABEL[confidence.band]}
       </TooltipTrigger>
       <TooltipContent>
-        <p className="library-ref__tooltip">{advice}</p>
+        <p>
+          {BAND_LABEL[confidence.band]}: {spread}
+        </p>
+        <p>{refConfidenceAdvice(confidence.band)}</p>
       </TooltipContent>
     </Tooltip>
   );
 }
 
-function ProfileDialog({ library, onChanged, children }) {
+function useDialogField(initial = "") {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
+  const [value, setValue] = useState(initial);
   const [error, setError] = useState("");
 
   const close = useCallback(() => {
     setOpen(false);
-    setName("");
+    setValue(initial);
     setError("");
-  }, []);
+  }, [initial]);
+
+  return { open, setOpen, value, setValue, error, setError, close };
+}
+
+function SaveDialog({ library, onChanged, children }) {
+  const field = useDialogField();
 
   const save = () => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError("Give the profile a name before saving.");
+    const name = field.value;
+    if (!name.trim()) {
+      field.setError("Give the profile a name before saving.");
       return;
     }
-    const profile = { ...defaultProfile(), name: coerceProfileName(trimmed) };
-    const result = library.save(profile);
-    if (!result.ok) {
-      setError(result.errors.map((e) => e.message).join(" "));
+    // `save()` returns the stored PROFILE and THROWS on an invalid one — it
+    // does not return `{ok, errors}`. Treating the return as a result object
+    // is what threw `undefined.map` inside the press.
+    let saved;
+    try {
+      saved = library.save({ ...defaultProfile(), name: coerceProfileName(name) });
+    } catch (error) {
+      field.setError(error.message);
       return;
     }
-    close();
+    if (!saved || !saved.id) {
+      field.setError("The profile could not be saved.");
+      return;
+    }
+    field.close();
     onChanged();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={children} />
+    <Dialog open={field.open} onOpenChange={field.setOpen}>
+      <DialogTrigger render={children} aria-label="Save current settings as a profile" />
       <DialogContent>
         <DialogTitle>Save style profile</DialogTitle>
         <DialogDescription>
           A profile stores the whole recipe: style, density, colour, path order,
           seed and media. Applying one re-bakes the same image with it.
         </DialogDescription>
-        <Field name="profile-name" invalid={Boolean(error)}>
+        <Field name="profile-name" invalid={Boolean(field.error)}>
           <FieldLabel>Profile name</FieldLabel>
           <Input
-            value={name}
-            onChange={(event) => {
-              setName(event.currentTarget.value);
-              if (error) setError("");
+            value={field.value}
+            onValueChange={(value) => {
+              field.setValue(value);
+              if (field.error) field.setError("");
             }}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -124,10 +148,9 @@ function ProfileDialog({ library, onChanged, children }) {
               }
             }}
             placeholder="e.g. Ink and wash"
-            autoFocus
           />
           <FieldDescription>Names are unique in the library.</FieldDescription>
-          <FieldError>{error}</FieldError>
+          <FieldError>{field.error}</FieldError>
         </Field>
         <div className="dialog-actions">
           <DialogClose>Cancel</DialogClose>
@@ -139,47 +162,50 @@ function ProfileDialog({ library, onChanged, children }) {
 }
 
 function ImportDialog({ library, onChanged, children }) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [error, setError] = useState("");
-
-  const close = useCallback(() => {
-    setOpen(false);
-    setText("");
-    setError("");
-  }, []);
+  const field = useDialogField();
 
   const run = () => {
-    const result = library.importText(text);
-    if (!result.ok) {
-      setError(result.errors.map((e) => e.message).join(" "));
+    if (!field.value.trim()) {
+      field.setError("Paste a profile JSON object first.");
       return;
     }
-    close();
+    let parsed;
+    try {
+      parsed = JSON.parse(field.value);
+    } catch (error) {
+      field.setError(`Could not parse the profile JSON: ${error.message}`);
+      return;
+    }
+    const results = library.importText(JSON.stringify(parsed));
+    const failed = results.filter((entry) => !entry.ok);
+    if (failed.length) {
+      field.setError(failed.map((entry) => entry.error).join(" "));
+      return;
+    }
+    field.close();
     onChanged();
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={children} />
+    <Dialog open={field.open} onOpenChange={field.setOpen}>
+      <DialogTrigger render={children} aria-label="Import a profile from JSON" />
       <DialogContent>
         <DialogTitle>Import a profile</DialogTitle>
         <DialogDescription>
           Paste a profile JSON object. A profile already in the library is
           updated in place rather than duplicated.
         </DialogDescription>
-        <Field name="profile-json" invalid={Boolean(error)}>
+        <Field name="profile-json" invalid={Boolean(field.error)}>
           <FieldLabel>Profile JSON</FieldLabel>
           <Input
-            value={text}
-            onChange={(event) => {
-              setText(event.currentTarget.value);
-              if (error) setError("");
+            value={field.value}
+            onValueChange={(value) => {
+              field.setValue(value);
+              if (field.error) field.setError("");
             }}
             placeholder='{"name":"Ink and wash","global":{"style":"ink"}}'
-            autoFocus
           />
-          <FieldError>{error}</FieldError>
+          <FieldError>{field.error}</FieldError>
         </Field>
         <div className="dialog-actions">
           <DialogClose>Cancel</DialogClose>
@@ -192,6 +218,7 @@ function ImportDialog({ library, onChanged, children }) {
 
 function ExportDialog({ library, profileId, children }) {
   const [copied, setCopied] = useState(false);
+  const profile = library.get(profileId);
 
   const copy = async () => {
     const text = library.exportText(profileId);
@@ -200,11 +227,10 @@ function ExportDialog({ library, profileId, children }) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
     } catch {
-      const blob = new Blob([text], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `${coerceProfileName(library.get(profileId).name)}.json`;
+      anchor.download = `${coerceProfileName(profile.name)}.json`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -219,7 +245,7 @@ function ExportDialog({ library, profileId, children }) {
       <DialogContent>
         <DialogTitle>Export profile</DialogTitle>
         <DialogDescription>
-          The profile JSON below is the contract: portable, schema-valid and
+          The profile JSON is the contract: portable, schema-valid and
           round-trips byte-identically.
         </DialogDescription>
         <pre className="export-json">{library.exportText(profileId)}</pre>
@@ -233,21 +259,23 @@ function ExportDialog({ library, profileId, children }) {
 }
 
 function DeleteDialog({ library, profileId, onDeleted, children }) {
+  const profile = library.get(profileId);
+
   return (
     <Dialog>
       <DialogTrigger render={children} />
       <DialogContent>
         <DialogTitle>Delete this profile?</DialogTitle>
         <DialogDescription>
-          {library.get(profileId)?.name ?? "This profile"} is removed from the
-          library. This cannot be undone.
+          {profile?.name ?? "This profile"} is removed from the library. This
+          cannot be undone.
         </DialogDescription>
         <div className="dialog-actions">
           <DialogClose>Cancel</DialogClose>
           <DialogClose
             value="confirm"
             data-agent-confirm="Deletes this style profile from the library"
-            onClick={() => {
+            action={() => {
               library.delete(profileId);
               onDeleted();
             }}
@@ -269,7 +297,9 @@ export function StyleLibrary({ host = null }) {
   const refresh = useCallback(() => {
     const rows = library.list();
     setProfiles(rows);
-    setSelectedId((current) => (rows.some((row) => row.id === current) ? current : rows[0]?.id ?? null));
+    setSelectedId((current) =>
+      rows.some((row) => row.id === current) ? current : rows[0]?.id ?? null
+    );
   }, [library]);
 
   useEffect(() => {
@@ -286,8 +316,7 @@ export function StyleLibrary({ host = null }) {
 
   const apply = () => {
     if (!selected) return;
-    const result = library.apply(selected.id);
-    host?.styleProfileApplied?.(result);
+    host?.styleProfileApplied?.(library.apply(selected.id));
   };
 
   return (
@@ -302,11 +331,11 @@ export function StyleLibrary({ host = null }) {
         </div>
         <div className="surface__actions">
           <ImportDialog library={library} onChanged={refresh}>
-            <Button variant="ghost">Import</Button>
+            <Button>Import</Button>
           </ImportDialog>
-          <ProfileDialog library={library} onChanged={refresh}>
-            <Button render={<button type="button" />}>Save current</Button>
-          </ProfileDialog>
+          <SaveDialog library={library} onChanged={refresh}>
+            <Button>Save current</Button>
+          </SaveDialog>
         </div>
       </header>
 
@@ -329,7 +358,7 @@ export function StyleLibrary({ host = null }) {
 
           <Listbox
             aria-label="Saved style profiles"
-            value={selectedId ?? undefined}
+            value={selectedId}
             onValueChange={(value) => setSelectedId(value ?? null)}
             className="library-listbox"
           >
@@ -338,18 +367,16 @@ export function StyleLibrary({ host = null }) {
             ) : (
               <ListboxGroup>
                 <ListboxGroupLabel>Saved profiles</ListboxGroupLabel>
-                <ListboxItems>
-                  {visible.map((row) => (
-                    <ListboxItem key={row.id} value={row.id} className="library-row">
-                      <span className="library-row__name">{row.name}</span>
-                      <span className="library-row__meta">
-                        {summarizeProfile(row.profile).style}
-                      </span>
-                      <ProfileChip profile={row.profile} />
-                      <ListboxItemIndicator />
-                    </ListboxItem>
-                  ))}
-                </ListboxItems>
+                {visible.map((row) => (
+                  <ListboxItem key={row.id} value={row.id} className="library-row">
+                    <span className="library-row__name">{row.name}</span>
+                    <span className="library-row__meta">
+                      {summarizeProfile(row.profile).style}
+                    </span>
+                    <ProfileChip profile={row.profile} />
+                    <ListboxItemIndicator />
+                  </ListboxItem>
+                ))}
               </ListboxGroup>
             )}
           </Listbox>
@@ -361,18 +388,16 @@ export function StyleLibrary({ host = null }) {
               <div className="library-detail__head">
                 <h3>{selected.name}</h3>
                 <div className="surface__actions">
-                  <Button onClick={apply}>Apply</Button>
+                  <Button onClick={apply} aria-label="Apply the selected profile">Apply</Button>
                   <ExportDialog library={library} profileId={selected.id}>
-                    <Button variant="ghost">Export</Button>
+                    <Button aria-label="Export the selected profile">Export</Button>
                   </ExportDialog>
                   <DeleteDialog
                     library={library}
                     profileId={selected.id}
                     onDeleted={refresh}
                   >
-                    <Button variant="ghost" data-band="danger">
-                      Delete
-                    </Button>
+                    <Button aria-label="Delete the selected profile">Delete</Button>
                   </DeleteDialog>
                 </div>
               </div>
@@ -404,8 +429,8 @@ export function StyleLibrary({ host = null }) {
                 </div>
               </dl>
 
-              <Field name={`apply-${selected.id}`} className="library-apply">
-                <Switch name={`apply-${selected.id}`} onCheckedChange={apply}>
+              <Field name="apply-profile" className="library-apply">
+                <Switch name="apply-profile" onCheckedChange={apply}>
                   <SwitchThumb />
                 </Switch>
                 <FieldLabel>Apply this profile to the canvas</FieldLabel>
