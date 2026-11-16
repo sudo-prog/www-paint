@@ -13,6 +13,33 @@ engine **99/99**, visual regression **9/9**, wetsim **15/15**.
 
 ---
 
+## BE review — 2026-11-16 (R6 switch LANDED + the R5/R6 Mac bridge)
+
+**Landed from Mac (verified on the ThinkPad):** the **R5/R6 half** —
+`js/engine/modular-bridge.js`, `tests/modular-bridge.test.js` (**22/0**),
+`scripts/modular-bridge-probe.cjs`, `docs/checkpoints/R5R6-mac.md`,
+`docs/research/modular-bridge.*`; plus an **R4 seam fix** (`r4.js`
+`planOutlines` unset-mode default `'first'` → `'off'` — the cause of the earlier
+37/1; `tests/r4.test.js` now pins both halves). Re-run here: bridge test 22/0,
+probe **PASS** at 1440 and 390 (pencil **18955 px / 32 colours** — reproduces the
+Mac's number), visual **9/9 unmoved**.
+
+**Landed by BE — the R6 switch (`docs/checkpoints/R6-be.md`):**
+`js/engine/engine.js#generate()` now plans with `buildModularPlan` when
+`settings.modular` (or an explicit `opts.modular`) is on;
+`js/engine/generator.js` `DEFAULT_SETTINGS.modular = false`. **Single-layer only**
+— multi-layer keeps the Painter. New `scripts/modular-switch-probe.cjs` drives
+`engine.generate({modular})` end-to-end: modular **261 shapes / 18955 px**, painter
+**250 / 39431 px**, default **off**, 0 non-favicon 404s; visual **9/9 unmoved**
+(default path byte-identical).
+
+**Still open (BE):** no UI control sets `settings.modular` yet
+(`js/ui/controls.js` is BE-owned); run `parity-bench.cjs` on the app path once the
+toggle is reachable. The R4 order mode is now consumable in the optimiser
+(`OPTIMISER_DEFAULTS.r4`, opt-in default off — the R4-be commit).
+
+---
+
 ## BE review — 2026-11-16 (R4-Mac half LANDED, `a768b15`)
 
 The R4 seam **HELD** in the previous review is now **green and landed**. The Mac
