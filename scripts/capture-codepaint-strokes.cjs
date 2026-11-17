@@ -16,6 +16,13 @@
  *   /tmp/cp-strokes.ndjson        one JSON op per line
  *   /tmp/cp-shots/mid-*.png       progressive stage screenshots
  *   /tmp/cp-shots/final-stage.png final stage canvas
+ *
+ * NOTE (measured): the paint canvas is 1920×1080 OFFSCREEN; the visible
+ * #stage is a scaled view. The site ALSO prints its stroke plan to an
+ * on-page console CANVAS — S(line#, x0,y0, x1,y1, x2,y2, polyPts, width,
+ * colA, colB, alpha) per stroke — via fillText. That is the RICHER signal:
+ * see capture-codepaint-console-text.cjs + decode-codepaint-console.cjs
+ * (996 decoded strokes on the frog, /tmp/cp-console-full.txt).
  */
 const { chromium } = require('playwright-core');
 const fs = require('fs');
