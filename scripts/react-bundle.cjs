@@ -38,4 +38,24 @@ const bytes = fs.statSync(OUT).size;
 const lines = fs.readFileSync(OUT, "utf8").split("\n").length;
 
 console.log(`\nreact bundle → ${OUT}  ${(bytes / 1024).toFixed(1)} kB  ${lines} line(s)`);
+
+// Self-contained CSS: the page must mount the panel with no build step, so a
+// missing bundle.css must never leave the panel unstyled. esbuild emits the
+// CSS as a sibling chunk; inline it as a <style> prepended to the bundle so
+// the committed artefact is one file.
+const cssFile = path.join(OUT_DIR, "bundle.css");
+if (fs.existsSync(cssFile)) {
+  const css = fs.readFileSync(cssFile, "utf8");
+  let js = fs.readFileSync(OUT, "utf8");
+  const inject = `(()=>{const s=document.createElement("style");s.id="react-surface-styles";s.textContent=${JSON.stringify(css)};document.head.appendChild(s);})();`;
+  if (!js.includes("react-surface-styles")) {
+    js = inject + "\n" + js;
+    fs.writeFileSync(OUT, js);
+    fs.unlinkSync(cssFile);
+    console.log(
+      `inlined ${(css.length / 1024).toFixed(1)} kB CSS → ${OUT}  ${(fs.statSync(OUT).size / 1024).toFixed(1)} kB`
+    );
+  }
+}
+
 if (result.errors.length) process.exit(1);

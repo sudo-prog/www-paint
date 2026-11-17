@@ -421,7 +421,7 @@ export function StyleLibrary({ host = null }) {
                 </div>
                 <div>
                   <dt>Seed</dt>
-                  <dd>{summary.seed}</dd>
+                  <dd>{summary.seed ?? "engine default"}</dd>
                 </div>
                 <div>
                   <dt>References</dt>

@@ -46,11 +46,12 @@ export const DEFAULT_SETTINGS = {
   useResidual: true,
   // Track R6 — the modular-engine switch. When true, `engine.js#generate()`
   // paints with the modular engine (the engine of record, Track R) via
-  // `js/engine/modular-bridge.js` instead of the legacy `painter.js`. Off by
-  // default → output is byte-identical to the Painter path (the 9 pinned
-  // baselines stay). The app can now reach R1–R5; wiring the UI toggle is a
-  // separate step.
-  modular: false,
+  // `js/engine/modular-bridge.js` instead of the legacy `painter.js`. ON by
+  // default → output uses the clean-room engine (R1–R5). The app can reach
+  // R1–R5; the R6 gate (parity within 2 points, modular beats legacy on all
+  // four benchmarks) is met. The legacy painter.js is demoted to a dev-only
+  // fixture (no deletion); wiring the UI toggle is a separate step.
+  modular: true,
 };
 
 /**

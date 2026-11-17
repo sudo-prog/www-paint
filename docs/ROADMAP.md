@@ -1,6 +1,6 @@
 # WWW_PAINT — Project Brief & Development Roadmap
 
-Version 1.4 · 2026-11-17
+Version 1.5 · 2026-11-17
 
 > **This is the living brief.** Update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 > Work strictly in order (see §8 Agent Protocol). Do not start Phase N+1 until Phase N exit criteria are checked.
@@ -40,7 +40,7 @@ Build a pure-web, stroke-based image-to-art engine that can:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R R0–R3 done, R4 partial; the app still paints via the legacy `painter.js` **by default** — the R6 modular switch exists but is opt-in (`settings.modular`, default off). Track-S S7 added `js/engine/bake.js` (deterministic bake + worker batch/cancel) |
+| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R R0–R3 done, R4 **complete** (outlines / order / per-style shaping, each opt-in default-off → byte-identical); the app still paints via the legacy `painter.js` **by default** — the R6 modular switch is landed and proven under `useWorker:true` but opt-in (`settings.modular`, default off); the default flip + 9-baseline re-baseline need sign-off. Track-S S7 added `js/engine/bake.js` (deterministic bake + worker batch/cancel) |
 | Shape vocabulary (E/B/T/R/S) | Complete | Five primitives — ellipse, blob, triangle, rect, stroke |
 | Styles | 50+ registered | Quality varies; 10 on the enhanced p5.brush stamp path (WebGL2) with a working fallback |
 | p5.brush integration | Working (stamp path) | `js/engine/brush-stamp-engine.js` + `js/engine/brush-media.js`; harness has no WebGL2 → the 9 baselines stay put |

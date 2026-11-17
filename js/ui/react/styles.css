@@ -10,7 +10,7 @@
   --ui-foreground: #f2f2f2;
   --ui-muted: #232323;
   --ui-muted-foreground: #b4b4b4;
-  --ui-border: #2e2e2e;
+  --ui-border: #707070;
   --ui-input: #3a3a3a;
   --ui-primary: #4d8dff;
   --ui-primary-foreground: #08132b;
@@ -204,13 +204,11 @@ body {
   padding: 24px;
 }
 
-/* Shell mount (js/ui/react-host.js). The host appends `#react-root` CLOSED
-   (`data-closed`) and a shell nav control opens it by removing that attribute.
-   Keeping the closed state non-rendering means the no-build app page stays
-   byte-unchanged (no stray DOM below the fold) until the surface is opened. */
-.react-surface-root[data-closed] {
-  display: none;
-}
+/* The closed state is owned by css/style.css §17 (`.react-surface-root`
+   `[data-closed="true"]`): transform + opacity + visibility + pointer-events.
+   It must NOT be `display: none` here — the ui-sdk sheet is injected into the
+   page and a display:none rule would also hide the panel on a fresh mount,
+   before §17 applies. */
 
 .surface {
   background: var(--ui-background);

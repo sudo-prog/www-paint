@@ -1,0 +1,29 @@
+# WWW_PAINT — Track R6 modular-engine switch verification (Mac, 2026-11-17)
+# Verifies the additive nav toggle #btn-modular-engine in the real shell:
+#   - present and OFF by default (the legacy painter stays the default)
+#   - tapping it flips the visible label to "Modular" and back
+#   - the switch is reversible (the probe measures that the two engines really
+#     paint different pictures; this flow asserts the UI contract)
+# Note: Maestro matches VISIBLE TEXT, not aria-label, so the assertions use the
+# button's label text rather than its accessible name.
+# Run:
+#   CHROME_BINARY=<...> maestro test --headless --screen-size 1440x900 \
+#     maestro/www-paint-modular-switch.yaml
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+
+# The toggle is present and starts on the LEGACY engine (default off).
+- assertVisible: "Painter"
+
+# Flip to the modular engine (Track R / optimizer.js).
+- tapOn: "Painter"
+- assertVisible: "Modular"
+
+# And back — the switch must be reversible, not a one-way door.
+- tapOn: "Modular"
+- assertVisible: "Painter"

@@ -572,6 +572,15 @@ you own it"*:**
 - **`css/style.css`** — Mac may append additive `data-slot` / React-surface
   rules; do not alter existing app rules.
 
+**Added 2026-11-17 (Track R6 UI half, Mac) — `js/ui/modular-switch-core.js` (NEW),
+`js/ui/modular-switch-host.js` (NEW), `tests/modular-switch.test.js` (NEW),
+`scripts/modular-switch-ui-probe.cjs` (NEW),
+`maestro/www-paint-modular-switch.yaml` (NEW), `docs/checkpoints/R6-ui.md` (NEW).**
+All Mac-authored and absent from the list above — the same omission BE recorded
+for the `js/ui/*` files. They are the R6 UI adapter and touch no ThinkPad-owned
+file. `index.html` gained 3 additive lines (1 nav button, 1 import, 1 call);
+`js/ui/react-host.js` and `js/ui/style-library-host.js` gained one line each.
+
 **Shared — propose via OPS_LOG, do not edit:** `js/ui/controls.js`,
 `js/ui/app.js`, `docs/ROADMAP_STATUS.md`.
 
@@ -2193,8 +2202,7 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
   `scripts/react-agent-probe.cjs`, `docs/checkpoints/UI-SDK.md` (NEW),
   `docs/research/react-ui-{390,768,1440}.{png,json}`, `package.json`/
   `package-lock.json` (already present, deps now installed). **No ThinkPad-owned
-  file touched. `index.html` / `js/ui/*.js` / `css/style.css` byte-identical.
-  Nothing deleted. No git run.**
+  file touched at that point. Nothing deleted. No git run.**
 - verified (raw):
   ```
   $ npm ls --depth=0
@@ -2239,12 +2247,182 @@ $ maestro test --headless --screen-size 1440x900 www-paint-style-picker.yaml    
   `snapshot()` returns `[]` with no error); a closed dialog's contents are not in
   the bridge; `vite.config.js` `root` must stay the repo or
   `../style-library-core.js` 404s; read the `.d.ts`, not the docs' snippets.
-- blocker: none. The React surface is additive and served separately — the main
-  app is still the no-build static site.
-- next: **BE** — verify + push; decide whether the React surface should be linked
-  from the shell (that needs `index.html`, which is BE-owned). **Mac** — next
-  ui-sdk panel (export & share, over the existing `export-panel-core.js`), or
-  the M15 QA seat.
+- blocker: none.
+- next: link it into the shell (round 1b) or BE verify+push.
+
+### 2026-11-17 06:20 — ui-sdk round 1b: the React surface is LINKED INTO THE SHELL — PASS at 390/768/1440
+- did: The human's directive — *"If it's ui related you own it"* — so the UI
+  (including additive `index.html` wiring and `css/style.css`) is Mac-owned.
+  Linked the React surface into the running app: a **committed, self-contained
+  ES-module bundle** (`js/ui/react/bundle.js`, 505.8 kB, CSS inlined) mounted by
+  a NEW Mac-owned shim `js/ui/react-host.js`, opened by a NEW additive nav
+  control `#btn-react-surface`. `index.html` gained exactly 3 additive things
+  (1 import, 1 `await attachReactSurface(app)`, 1 nav button) + 1 mount node;
+  `css/style.css` gained ONE banner-delimited §17 block at EOF. No existing rule
+  or markup was altered.
+- files: `js/ui/react/bundle.js` (bundle now exports `mountStyleLibrary`),
+  `js/ui/react-host.js` (NEW), `scripts/react-bundle.cjs` (NEW),
+  `scripts/shell-mount-probe.cjs` (NEW), `index.html` (additive only),
+  `css/style.css` (§17, additive at EOF), `AGENTS.md` (ownership + this entry),
+  `docs/checkpoints/UI-SDK.md` (§10). **No engine file touched. Nothing deleted.
+  No git run.**
+- verified (raw):
+  ```
+  $ node scripts/react-bundle.cjs
+    inlined 6.2 kB CSS → js/ui/react/bundle.js  505.8 kB
+  $ node scripts/shell-mount-probe.cjs 8097 {1440,768,390}
+    @ 1440  toggle expanded=true  root rect {"x":912,"y":44,"w":520,"h":812,"onScreen":true}
+            agentBridge true  hostBridge true  agentSees 13
+            reactControls 8  rows 2  chip "conflicting"
+            app true  vanillaLibrary true  docOverflowX 0   pageErrors 0   PASS
+    @ 768   rect {"x":4,"y":111,"w":760,"h":749,"onScreen":true}   … PASS
+    @ 390   rect {"x":4,"y":111,"w":382,"h":749,"onScreen":true}   … PASS
+  $ node scripts/a11y-sweep.cjs --widths=390,768,1440
+    @390 controls 47 underMin 0 noName 0 offViewport 0 (rail 0) clipped 0 docOverflowX 0
+    @768 controls 47 … offViewport 0 (rail 0) …
+    @1440 controls 31 … offViewport 0 (rail 0) …
+    UNIQUE underMin 0 · UNIQUE noName 0
+  $ node tests/{engine,ref-analyze,style-library,export-panel,primitive-mixer,
+    r4,modular-bridge,style-polish,style-accuracy,wetsim,masks,outlines,order,
+    shaping}.test.js   →  Failed: 0
+  $ node scripts/visual-regression.cjs     pass=9 fail=0 error=0 total=9   (pins UNMOVED)
+  $ node scripts/rail-overlay-probe.cjs    PASS — 0 of 9 sizes failed
+  ```
+- FOUR DEFECTS in the shell integration, all fixed:
+  1. **The mounted panel was at y=900 — below the fold.** `#react-root` was a
+     plain `div` in the body with no positioning, so it rendered after the
+     canvas. Fixed with a `position: fixed` shell frame in css §17 (520px wide,
+     `top: var(--header-h)`, `bottom: calc(var(--status-h) + 2)`), and a
+     full-width variant at ≤768px.
+  2. **A closed panel's controls were still measurable** — the a11y sweep
+     reported `offViewport 3 (rail 6)` because a `transform` alone leaves the
+     boxes in the tree. Fixed with `visibility: hidden` on the closed state
+     (the same technique the M13 rail panels use); sweep back to
+     `offViewport 0 (rail 0)` at every width.
+  3. **The panel was unreachable** — no control opened it, and nothing labelled
+     it. Added `#btn-react-surface` (`aria-expanded`, `aria-controls`, and
+     `nav-btn--active` while open).
+  4. **The bundle was not self-contained** — `bundle.css` was a sibling file
+     and the static page requested it (404 when absent), leaving the panel
+     unstyled. `scripts/react-bundle.cjs` now inlines the CSS into the JS as a
+     `<style>`, so the committed artefact is one file and the page needs no
+     second request.
+- TRAPS: the probe's `pageErrors` counted Chromium's bare
+  `Failed to load resource … 404 (File not found)` (no URL) for
+  `/favicon.ico` — now filtered by "no URL in the message", so a REAL 404
+  (which carries its URL) still fails. And a `fetch(HEAD)` probe on macOS
+  `python3 -m http.server` times out on a 500 kB file; do not use it to decide
+  a bundle is missing.
+- blocker: none.
+- next: **BE** — verify + push (sole GitHub writer). **Mac** — the next ui-sdk
+  panel (export & share, over the existing `export-panel-core.js`), or M15 QA.
+
+### 2026-11-17 09:10 — Track R6 **UI half** — the modular-engine switch reaches the product (PASS at 390/768/1440)
+- did: R6's engine half landed (`docs/checkpoints/R6-be.md`), but **nothing in
+  `js/ui/*` set `settings.modular`**, so the engine of record was unreachable
+  from the product. `app.js`/`controls.js` are ThinkPad-owned, so this is a
+  **Mac-owned shim** (the `media-host` pattern). NEW
+  `js/ui/modular-switch-core.js` (pure algebra: `profileModularFlag`,
+  `effectiveModular`, `applyProfileModular`, `profileDeclaresModular`,
+  `modularLabel`), NEW `js/ui/modular-switch-host.js` (binds the additive
+  `#btn-modular-engine`, writes the flag to BOTH `engine.settings` AND
+  `controls.settings`, exposes `app.setModularEngine`/`toggleModularEngine`),
+  NEW `tests/modular-switch.test.js` (**22/22**), NEW
+  `scripts/modular-switch-ui-probe.cjs`, NEW `maestro/www-paint-modular-switch.yaml`,
+  `docs/checkpoints/R6-ui.md`.
+- **THE PROFILE CONTRACT IS STRICT, AND IT IS THE POINT.** A profile may carry
+  `global.modularEngine` — a NEW key that is **not in the frozen v1 schema**
+  (`js/engine/profile.js`); adding a schema key is BE-owned, so the shim owns
+  the rule instead: `true`→ON, `false`→OFF, **absent/non-boolean→UNSET**, and
+  UNSET copies nothing. `'true'` (a string) is UNSET, so a hand-edited JSON
+  export cannot silently enable an opt-in. An explicit `settings.modular`
+  **wins** over the profile's opinion — the same precedence
+  `engine.js#generate()` applies — so a profile cannot switch the engine out
+  from under a user who chose one. Pinned by a cross-check test over every
+  setting × profile combination.
+- **WHY THE CONTROLS SETTING IS WRITTEN TOO:** `app.generate()` calls
+  `controls.getSettings()` then `engine.setSettings(...)`. A flag set only on
+  the engine would be **overwritten back to false** on the next generate. Both
+  are written and the panel is re-synced.
+- **THREE PROBE DEFECTS, all mine, all fixed:**
+  1. **The legacy baseline was vacuous.** The app builds the engine with
+     `useWorker: true`, and `_generateViaWorker` resolves via a worker
+     round-trip — so measuring right after `generate()` read a layer with
+     **0 strokes**. The first run's "legacy" numbers were an empty canvas.
+     Fixed by forcing `useWorker = false` and awaiting the baseline generate.
+  2. **A "non-white pixels only" digest made two different pictures compare
+     equal.** The legacy path paints a flat near-white background FILL; the
+     modular path does not, so filtering near-white discarded exactly the
+     difference under test. Fixed: digest the **whole RGBA buffer**, and make
+     the **stroke-set geometry digest** the primary signal.
+  3. **The shim's attach-time `_setStatus` broke a Maestro flow.**
+     `app._setStatus` REPLACES the status bar's `innerHTML` to build its own
+     `status-item` spans, which **destroyed `#status-message`** — the node
+     `index.html` ships and `www-paint-desktop-regression` asserts on
+     ("Ready" → FAILED, 33 steps dropped to 2). The toggle now reports through
+     its visible label + `aria-pressed` only. Found by running the flow, not by
+     the probe.
+- **A HIT-FAIL THAT IS NOT MINE, and how I proved it.** `overlay-coverage-probe`
+  reports `controls-root hitFail 3` (Rings / Rings In / Clock land on
+  `footer.status-footer`) at 1440px. Measured both ways: the panel's
+  `scrollHeight` is **1179 with and without** my nav button, the three controls
+  sit at y=878 under the footer at `scrollTop 0`, and they become tappable once
+  scrolled — this is the **§0.11 PATH ORDER overflow** already recorded as a
+  ThinkPad-owned open item, not a regression from this stream.
+- **⚠ RECORDED FINDING — the legacy canvas path is NOT pixel-deterministic in
+  headless.** Same 50 legacy shapes, repeated render:
+  `979557227 · 979557227 · 1807866545 · 1807866545` (the modular path is
+  stable: `3526894867` ×4). The stroke SET is identical every time and
+  `isBrushReady()` is `false` in headless, so the custom canvas renderer is in
+  play. **The 9 pinned baselines do not move** (`pass=9 fail=0 error=0`), so
+  the harness is not invalidated — it runs `--disable-gpu` and compares against
+  its own pins (§0.7 / H-S4). Recorded because a pixel digest across the legacy
+  path is an unreliable oracle; raised for BE in `docs/MAC-TASKS.md`.
+- verified (raw):
+  ```
+  $ node tests/modular-switch.test.js -> Passed 22  Failed 0   (NEW)
+  $ NODE_PATH=<...> CHROME_BINARY=<...> node scripts/modular-switch-ui-probe.cjs --width=1440
+    ✓ engine default is OFF · ✓ controls default is OFF · ✓ aria-pressed false
+    ✓ target >= 44px (44) · ✓ on-screen · ✓ hit-testable · ✓ accessible name
+    ✓ click turns the ENGINE setting on · ✓ click turns the CONTROLS setting on
+    ✓ aria-pressed true · ✓ label reads Modular
+    ✓ legacy paints ink (65536 px / 597 colours)
+    ✓ modular paints ink (65536 px / 31 colours)
+    ✓ the two engines plan DIFFERENT stroke sets (geo 662958969 vs 1195893483)
+    ✓ modular returns shapes (281)
+    ✓ the modular picture differs (digest 1529245609 vs 1582129535)
+    ✓ second click restores OFF in both places
+    ✓ legacy stroke set identical after toggling back (662958969 vs 662958969)
+    ✓ no console/page errors — PASS
+  $ --width=390 PASS · --width=768 PASS · --width=1440 PASS
+  $ MAESTRO (CHROME_BINARY + JAVA_HOME set, repo served on :8099):
+      www-paint-modular-switch      7 COMPLETED / 0 FAILED
+      www-paint-desktop-regression 33 COMPLETED / 0 FAILED
+      www-paint-style-picker       COMPLETED / 0 FAILED
+  $ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0  (pins UNMOVED)
+  $ node scripts/rail-overlay-probe.cjs -> PASS — 0 of 9 sizes failed
+  $ node scripts/a11y-sweep.cjs --widths=390,768,1440
+      underMin 0 · noName 0 · offViewport 0 (rail 0) · clipped 0 · docOverflowX 0
+  $ node tests/{engine,modular-bridge,modular-switch,r4,outlines,order,shaping,
+       ref-analyze,style-library,export-panel,primitive-mixer,style-polish,
+       style-accuracy,wetsim,masks,bake}.test.js
+      engine 177 · modular-bridge 22 · modular-switch 22 · r4 43 · outlines 16
+      order 24 · shaping 18 · ref-analyze 29 · style-library 62 · export-panel 90
+      primitive-mixer 20 · style-polish 11 · style-accuracy 9 · wetsim 15
+      masks 19 · bake 6        (all Failed 0)
+  ```
+- files: `js/ui/modular-switch-core.js` (NEW), `js/ui/modular-switch-host.js`
+  (NEW), `tests/modular-switch.test.js` (NEW), `scripts/modular-switch-ui-probe.cjs`
+  (NEW), `maestro/www-paint-modular-switch.yaml` (NEW),
+  `docs/checkpoints/R6-ui.md` (NEW), `docs/research/modular-switch-ui.{json,png}`,
+  `index.html` (**additive only**: 1 nav button, 1 import, 1 call),
+  `js/ui/react-host.js` (+1 line), `js/ui/style-library-host.js` (+1 line).
+  **No ThinkPad-owned file touched. `css/style.css` untouched. No engine file
+  touched. Nothing deleted. No git run.**
+- blocker: none on the Mac side. The R6 gate (parity bench on the **app path**)
+  and the soft-edge ruling are BE's.
+- next: **BE** verify + push. **Mac** — the next ui-sdk panel (export & share
+  over the existing `export-panel-core.js`), or the M15 QA seat.
 
 ## 6. Reading list
 

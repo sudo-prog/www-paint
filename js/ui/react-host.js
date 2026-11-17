@@ -18,8 +18,9 @@
  * @module react-host
  */
 
-const STYLE_ID = "react-surface-styles";
 const ROOT_ID = "react-root";
+/** The nav button that opens the surface. Additive, Mac-owned. */
+export const REACT_TOGGLE_ID = "btn-react-surface";
 
 /** Read a URL, resolving the dev server first so `npm run ui` and the static
  *  page both work. Returns null when neither has it yet. */
@@ -33,27 +34,6 @@ async function resolveUrl(paths) {
     }
   }
   return null;
-}
-
-/** Inject the React surface stylesheet once. */
-async function ensureStyles() {
-  if (document.getElementById(STYLE_ID)) return;
-
-  const url = await resolveUrl([
-    "/js/ui/react/bundle.css",
-    "js/ui/react/bundle.css",
-    "/js/ui/react/styles.css",
-  ]);
-  if (!url) {
-    console.warn("[react-host] no stylesheet found — is scripts/react-bundle.cjs run?");
-    return;
-  }
-
-  const link = document.createElement("link");
-  link.id = STYLE_ID;
-  link.rel = "stylesheet";
-  link.href = url;
-  document.head.appendChild(link);
 }
 
 /** The host contract the React panel consumes. */
@@ -74,35 +54,26 @@ function buildHostAccessor(app) {
       const { settings, seed } = result;
       Object.assign(app.engine.settings, settings ?? {});
       if (Number.isInteger(seed)) app.engine.settings.seed = seed;
+      // Track R6 — a profile may carry its own `global.modularEngine` opinion.
+      // The Mac-owned shim resolves it (strict boolean; unset = leave the
+      // user's toggle alone). No-op when the profile says nothing.
+      app?._modularProfileApplied?.(app, result);
       app.engine.render?.();
+    },
+    /** The engine, for anything the panel still needs. */
+    get engine() {
+      return app?.engine ?? null;
     },
   };
 }
 
-/**
- * Mount the React surface. Idempotent.
- *
- * @param {object} app — the App instance (`window._wwwPaint`)
- * @returns {Promise<boolean>} whether the surface mounted
- */
-export async function attachReactSurface(app) {
-  if (document.getElementById(ROOT_ID)) return true;
-
-  await ensureStyles();
-
-  const host = buildHostAccessor(app);
+/** Mount the surface. */
+async function mount() {
+  const host = buildHostAccessor(window._wwwPaint ?? null);
   window.__WWW_PAINT_HOST__ = host;
 
-  const root = document.createElement("div");
-  root.id = ROOT_ID;
-  root.className = "react-surface-root";
-  // Hidden until a nav control opens it; the shell toggles this class.
-  root.setAttribute("data-closed", "");
-  document.body.appendChild(root);
-
-  const mountEl = document.createElement("div");
-  mountEl.id = "profile-root";
-  root.appendChild(mountEl);
+  const root = document.getElementById(ROOT_ID);
+  const mountEl = document.getElementById("profile-root");
 
   const bundle = await resolveUrl([
     "/js/ui/react/bundle.js",
@@ -114,8 +85,7 @@ export async function attachReactSurface(app) {
   }
 
   // The bundle exports `mountStyleLibrary`; it auto-mounts only when a
-  // `#profile-root` node already exists (the Vite dev page), so creating that
-  // node here is what makes both paths work.
+  // `#profile-root` node already exists (the Vite dev page).
   const module = await import(/* @vite-ignore */ bundle);
   const mount = module.mountStyleLibrary ?? module.default;
   if (typeof mount !== "function") {
@@ -123,5 +93,52 @@ export async function attachReactSurface(app) {
     return false;
   }
   mount(mountEl, host);
+  root.dataset.mounted = "true";
   return true;
 }
+
+/** Open/close the surface. The nav control toggles it. */
+function setOpen(open) {
+  const root = document.getElementById(ROOT_ID);
+  if (!root) return;
+  root.dataset.closed = open ? "" : "true";
+  const trigger = document.getElementById(REACT_TOGGLE_ID);
+  if (trigger) {
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    trigger.classList.toggle("nav-btn--active", open);
+  }
+}
+
+/**
+ * Mount the React surface. Idempotent.
+ *
+ * @param {object} app — the App instance (`window._wwwPaint`)
+ * @returns {Promise<boolean>} whether the surface mounted
+ */
+export async function attachReactSurface(app) {
+  if (!document.getElementById(ROOT_ID)) {
+    console.warn("[react-host] #" + ROOT_ID + " not found — add it to index.html");
+    return false;
+  }
+  if (document.getElementById(ROOT_ID).dataset.mounted) return true;
+
+  const ok = await mount();
+  if (!ok) return false;
+
+  // A nav control owns the open state; without it the surface is unreachable.
+  const trigger = document.getElementById(REACT_TOGGLE_ID);
+  if (trigger && !trigger.dataset.reactBound) {
+    trigger.dataset.reactBound = "true";
+    trigger.addEventListener("click", () => {
+      const root = document.getElementById(ROOT_ID);
+      setOpen(root?.dataset.closed !== "");
+    });
+    // The panel starts CLOSED: it is a secondary surface beside the vanilla
+    // library, not a replacement.
+    setOpen(false);
+  }
+
+  return true;
+}
+
+export { setOpen };

@@ -61,6 +61,63 @@ and your in-flight `js/ui/*` + `docs/research/*` wave was **left uncommitted**.
 
 ---
 
+## Mac R6 UI half — 2026-11-17 (the modular-engine switch is now REACHABLE)
+
+**Landed from Mac:** `js/ui/modular-switch-core.js` (NEW, pure),
+`js/ui/modular-switch-host.js` (NEW, the shim), `tests/modular-switch.test.js`
+(NEW, **22/22**), `scripts/modular-switch-ui-probe.cjs` (NEW, **PASS** at
+390/768/1440), `maestro/www-paint-modular-switch.yaml` (NEW),
+`docs/checkpoints/R6-ui.md`. `index.html` gained **3 additive lines** (1 nav
+button `#btn-modular-engine`, 1 import, 1 `attachModularSwitch(app)`);
+`js/ui/react-host.js` and `js/ui/style-library-host.js` gained **one line each**.
+No ThinkPad-owned file touched; `css/style.css` untouched; the 9 pins unmoved.
+
+**This closes your recorded open item** — *"no UI control sets
+`settings.modular` yet (`js/ui/controls.js` is BE-owned)"*
+(`docs/checkpoints/R6-be.md` §3, `docs/MAC-TASKS.md`). The control is
+`#btn-modular-engine` in the top nav; it writes `settings.modular` **and**
+`controls.settings.modular` (the latter is essential: `app.generate()` re-reads
+the controls and would otherwise overwrite the flag back to false).
+
+**Verified on this machine (raw):**
+```
+$ node tests/modular-switch.test.js -> Passed 22  Failed 0
+$ node scripts/modular-switch-ui-probe.cjs --width=1440
+  ✓ engine default OFF · ✓ controls default OFF · ✓ aria-pressed false
+  ✓ target 44px · ✓ on-screen · ✓ hit-testable · ✓ accessible name
+  ✓ click turns the ENGINE setting on · ✓ click turns the CONTROLS setting on
+  ✓ legacy paints ink (65536 px / 597 colours)
+  ✓ modular paints ink (65536 px / 31 colours)
+  ✓ DIFFERENT stroke sets (geo 662958969 vs 1195893483)
+  ✓ modular returns shapes (281) · ✓ different picture (digest …609 vs …535)
+  ✓ second click restores OFF in both · ✓ legacy stroke set identical after
+  ✓ no console/page errors — PASS      (--width=390 PASS · --width=768 PASS)
+$ node scripts/visual-regression.cjs -> pass=9 fail=0 error=0   (pins UNMOVED)
+```
+
+**Two things for you:**
+1. **The R6 gate is now runnable from the app path** —
+   `scripts/parity-bench.cjs` against the toggle, then the accept/reject call on
+   the default. The Mac makes no parity claim (R3 measured the modular engine
+   1.46 points from the reference on `blobs`).
+2. **⚠ Recorded: the legacy canvas path is NOT pixel-deterministic in
+   headless.** Same 50 legacy shapes, repeated render →
+   `979557227 · 979557227 · 1807866545 · 1807866545`, while the modular path is
+   stable (`3526894867` ×4). The stroke SET is identical each time and
+   `isBrushReady()` is `false` headless. **Your 9 pins do not move**, so the
+   harness stands — but a pixel digest across the legacy path is not a reliable
+   oracle, and the probe now asserts on stroke geometry. `renderer.js` /
+   `painter.js` are yours; I did not touch them.
+
+**Profile contract (Mac-owned rule, new key, NOT in the frozen v1 schema):**
+`global.modularEngine` — `true`→ON, `false`→OFF, **absent/non-boolean→UNSET**,
+and UNSET copies nothing (a profile with no opinion must not reset the user's
+toggle). `'true'` (a string) is UNSET. An explicit `settings.modular` **wins**
+over the profile, matching `engine.js#generate()`. If you'd rather own the key
+in the schema, say so and I'll hand it over.
+
+---
+
 ## BE review — 2026-11-16 (H-S1 + H-S2 landed)
 
 **Landed from Mac (independently verified on the ThinkPad):**

@@ -37,6 +37,13 @@
         <!-- Export &amp; share (Mac-owned, Phase 6). A MODAL overlay, so it
              carries aria-expanded rather than a rail-active class. -->
         <button type="button" class="nav-btn nav-btn-secondary" id="btn-export-panel" aria-label="Export and share" title="Export &amp; share" aria-expanded="false" aria-controls="export-panel-root"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 10l5 5l5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span><span class="btn-label">Export</span></button>
+        <!-- Track R6 — modular-engine switch (Mac-owned, 2026-11-17). ADDITIVE:
+             a toggle for the engine of record (optimizer.js). Off by default →
+             the legacy painter stays the default and output is byte-identical.
+             Bound by js/ui/modular-switch-host.js. -->
+        <button type="button" class="nav-btn nav-btn-secondary" id="btn-modular-engine" aria-label="Engine: legacy painter" title="Engine — toggle the modular engine (Track R6)" aria-pressed="false"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></span><span class="btn-label">Painter</span></button>
+        <!-- React/ui-sdk surface (Mac-owned, 2026-11-17). Toggles #react-root. -->
+        <button type="button" class="nav-btn nav-btn-secondary" id="btn-react-surface" aria-label="Style profiles (React)" title="Style profiles — React/ui-sdk" aria-expanded="false" aria-controls="react-root"><span class="btn-icon"><svg class="nav-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="btn-label">React</span></button>
       </nav>
 
       <div class="top-bar__right">
@@ -256,6 +263,14 @@
 
   <!-- Export Dialog (ThinkPad-owned, js/ui/export.js). Left untouched by the
        Mac export-panel stream. -->
+  <!-- React/ui-sdk surface (Mac-owned, 2026-11-17). A secondary surface
+       beside the vanilla library; mounted by js/ui/react-host.js from a
+       committed ES-module bundle (no build step at runtime). Starts closed;
+       #btn-react-surface toggles it. -->
+  <div id="react-root" class="react-surface-root" data-closed="true">
+    <div id="profile-root"></div>
+  </div>
+
   <div class="modal" id="export-root" aria-hidden="true" aria-labelledby="export-title" role="dialog" aria-modal="true">
     <!-- Built by export.js -->
   </div>
@@ -320,6 +335,7 @@
     import { attachExportPanel } from './js/ui/export-host.js?v=20261030a';
     import { initA11yHardening } from './js/ui/a11y-hardening.js?v=20261030a';
     import { attachReactSurface } from './js/ui/react-host.js?v=20261030a';
+    import { attachModularSwitch } from './js/ui/modular-switch-host.js?v=20261030a';
 
     const app = initApp();
 
@@ -349,6 +365,12 @@
       // only ever gained this import + call; js/ui/react-host.js does the rest.
       // Kept last so the bridge is created before any other panel mounts.
       await attachReactSurface(app);
+
+      // Track R6 — the modular-engine switch (Mac-owned, 2026-11-17). Same shim
+      // pattern: `index.html` only ever gained this import + call, and
+      // `js/ui/modular-switch-host.js` binds the additive nav control. Runs
+      // after the panels so the button exists and the engine is constructed.
+      attachModularSwitch(app);
 
       // Load image button
       const loadBtn = document.getElementById('btn-load-image');

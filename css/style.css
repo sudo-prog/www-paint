@@ -3619,3 +3619,59 @@ input[type="range"]:focus-visible {
   height: var(--touch-a11y, 44px);
   margin: 0;
 }
+
+/* ===========================================================================
+   §17 — React / ui-sdk surface (Mac-owned, 2026-11-17, ui-sdk round 1)
+
+   The React panel lives in #react-root, mounted by js/ui/react-host.js from a
+   committed ES-module bundle. ADDITIVE: no rule above this banner is touched.
+   It is a secondary surface beside the vanilla library — it starts CLOSED and
+   #btn-react-surface toggles it, so it must never cover the canvas by default.
+   =========================================================================== */
+
+.react-surface-root {
+  position: fixed;
+  top: var(--header-h);
+  right: var(--space-2);
+  bottom: calc(var(--status-h) + var(--space-2));
+  width: min(520px, calc(100vw - var(--space-4)));
+  z-index: var(--z-panel, 90);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r-shell, 16px);
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease;
+}
+
+/* Closed: slid out to the right, and NOT in the tab order or the a11y tree.
+   `visibility: hidden` is what the M13 rail panels use — a transform alone
+   leaves the controls measurable (and the a11y sweep counts them as
+   off-viewport). */
+.react-surface-root[data-closed="true"] {
+  transform: translateX(calc(100% + var(--space-4)));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.react-surface-root > #profile-root {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* The React surface ships its own tokens; only the shell frame is styled here. */
+.react-surface-root .surface {
+  height: 100%;
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .react-surface-root {
+    top: var(--header-h);
+    right: var(--space-1);
+    left: var(--space-1);
+    width: auto;
+    bottom: calc(var(--status-h) + var(--space-2));
+  }
+}

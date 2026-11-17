@@ -216,6 +216,12 @@ async function applyToEngine(app, result) {
       app.controls.setSettings(merged);
     }
 
+    // 2b. Track R6 — a profile may carry its own `global.modularEngine`
+    //     opinion. Resolved by the Mac-owned shim AFTER the settings land, so a
+    //     profile that declares it wins and a profile that does not leaves the
+    //     user's toggle exactly where it was.
+    app._modularProfileApplied?.(app, result);
+
     // 3. Bake. `app.generate()` streams every stroke to the DOM; the engine's
     //    own generate is used here for a fast, deterministic re-bake, and the
     //    render is refreshed afterwards.

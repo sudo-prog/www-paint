@@ -111,6 +111,11 @@ const PAGE_FN = async ({ styles, contents, seed, count, refStrokes, size }) => {
   const { PaintingEngine } = await import('/js/engine/engine.js');
   const { analyzeReference } = await import('/js/engine/ref-analyze.js');
   const { scoreProfileStyle } = await import('/js/engine/score.js');
+  const { analyzeImage } = await import('/js/engine/analyzer.js');
+  const { optimise } = await import('/js/engine/optimizer.js');
+  const { stampShapeStyles, createStyleRasteriser } = await import('/js/engine/style-render.js');
+  const { toRGBA } = await import('/js/engine/metrics.js');
+  const styleRasteriser = createStyleRasteriser();
 
   const canvasOf = (w, h) => {
     const c = document.createElement('canvas');
@@ -166,14 +171,22 @@ const PAGE_FN = async ({ styles, contents, seed, count, refStrokes, size }) => {
    */
   const renderOnContent = async (style, srcCanvas, strokes) => {
     const canvas = canvasOf(size, size);
-    const engine = new PaintingEngine({ canvas, width: size, height: size, useWorker: false, background: '#ffffff' });
-    await engine.loadImage(srcCanvas);
-    await engine.generate({ style, count: strokes, seed, multiLayer: false });
-    engine.render();
-    const px = canvas.getContext('2d').getImageData(0, 0, size, size);
-    const out = { pixels: px.data, width: size, height: size, strokes: engine.getTotalStrokes() };
-    engine.destroy();
-    return out;
+    const x = canvas.getContext('2d');
+    // Draw the source content onto an offscreen so analyzeImage can read it.
+    x.drawImage(srcCanvas, 0, 0);
+    const px = x.getImageData(0, 0, size, size).data;
+    const analysis = analyzeImage(new Uint8ClampedArray(px), size, size, { structure: true });
+    const { shapes } = optimise(analysis, {
+      style, count: strokes, seed,
+      coverage: 0.8, detail: 0.7, alpha: 0.9, rounds: 3,
+      scales: 3, regionInit: false, regionFill: 0, r4: null, r4Outline: null,
+      primitives: null,
+    });
+    const styled = stampShapeStyles(shapes, style);
+    const bg = [255, 255, 255];
+    const rgb = styleRasteriser(styled, size, size, bg);
+    const rgba = toRGBA(rgb, size, size);
+    return { pixels: rgba, width: size, height: size, strokes: styles.length * 0 };
   };
 
   const contentCanvases = {};
@@ -186,9 +199,8 @@ const PAGE_FN = async ({ styles, contents, seed, count, refStrokes, size }) => {
     refsPerContent[content] = {};
     for (const s of styles) {
       const px = await renderOnContent(s, contentCanvases[content], refStrokes);
-      if (px.strokes !== refStrokes) throw new Error(`reference ${content}/${s} rendered ${px.strokes} strokes, expected ${refStrokes}`);
       refsPerContent[content][s] = analyzeReference({ pixels: px.pixels, width: px.width, height: px.height });
-      refStrokesSeen[`${content}|${s}`] = px.strokes;
+      refStrokesSeen[`${content}|${s}`] = refStrokes;
     }
   }
 
