@@ -133,11 +133,33 @@ async function main() {
     const offShapes = await eng.generate({ modular: false, style: 'pencil', count: 250, seed: 12345 });
     const offMetrics = measure();
 
+    // ── the APP's REAL configuration — `useWorker: true` (js/ui/app.js:89) ────
+    // The app constructs the engine with the worker enabled, so the switch must
+    // be proven THERE and not only on the main-thread engine above. It works
+    // because the modular branch in `engine.js#generate()` sits BEFORE the worker
+    // branch and returns early — this case is what pins that ordering.
+    const canvasW = document.createElement('canvas');
+    canvasW.width = S; canvasW.height = S;
+    const engW = new PaintingEngine({ canvas: canvasW, width: S, height: S, background: '#ffffff', useWorker: true });
+    await engW.loadImage(src);
+    const workerShapes = await engW.generate({ modular: true, style: 'pencil', count: 250, seed: 12345 });
+    engW.renderer.renderAll({ progress: 1, clear: true });
+    const dW = canvasW.getContext('2d').getImageData(0, 0, S, S).data;
+    let paintedW = 0;
+    for (let p = 0; p < dW.length; p += 4) {
+      if (dW[p + 3] < 8) continue;
+      if (dW[p] > 250 && dW[p + 1] > 250 && dW[p + 2] > 250) continue;
+      paintedW++;
+    }
+    const workerShapeOk = workerShapes.length > 0
+      && workerShapes.every((s) => Array.isArray(s.params) && s.params.length >= 5 && Array.isArray(s.color0));
+
     return {
       S, registry: (await import(`${origin}/js/styles/index.js`)).getAllStyles().length,
       defaultModular,
       on: { shapes: onShapes.length, metrics: onMetrics, styleFields: onStyleFields, shapeOk: onShapeOk },
       off: { shapes: offShapes.length, metrics: offMetrics },
+      worker: { shapes: workerShapes.length, painted: paintedW, shapeOk: workerShapeOk },
       shot: canvas.toDataURL('image/png'),
     };
   }, { origin: `http://127.0.0.1:${port}` });
@@ -158,6 +180,11 @@ async function main() {
   ok(result.on.shapeOk, `every modular shape is engine-format (params + color0)`);
   ok(result.on.metrics.painted > 0, `modular path paints ink (${result.on.metrics.painted} px / ${result.on.metrics.uniqueColours} colours)`);
   ok(result.off.metrics.painted > 0, `painter path paints ink (${result.off.metrics.painted} px / ${result.off.metrics.uniqueColours} colours)`);
+  // The app runs `useWorker: true`, so the switch has to work from THAT engine:
+  // the modular branch precedes the worker branch and returns early.
+  ok(result.worker.shapes > 0, `modular works under the APP config (useWorker:true) — ${result.worker.shapes} shapes`);
+  ok(result.worker.shapeOk, 'every shape is engine-format under useWorker:true');
+  ok(result.worker.painted > 0, `the worker-configured modular path paints ink (${result.worker.painted} px)`);
   const realErrors = consoleErrors.filter((t) => !/status of 404/.test(t));
   ok(realErrors.length === 0, `0 non-404 console errors (got ${realErrors.length})`);
   ok(notFound.every((u) => /favicon\.ico/.test(u)), `every 404 is the favicon (${notFound.length} 404(s))`);
