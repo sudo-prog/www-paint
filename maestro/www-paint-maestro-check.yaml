@@ -1,5 +1,14 @@
-# WWW_PAINT — minimal Maestro check
-url: http://localhost:8099/index.html
+# WWW_PAINT — minimal Maestro smoke check (desktop 1440x900)
+# Run: CHROME_BINARY=<chrome> maestro test --headless --screen-size 1440x900 \
+#     maestro/www-paint-maestro-check.yaml
+#
+# `btn-gener` is an ICON-ONLY round button: index.html:51 gives it
+# aria-label="Generate painting" and NO visible text, and Maestro matches
+# visible text (not aria-label). So this flow asserts the control by id.
+# The old `assertVisible: "Generate Painting"` could only ever match the
+# in-panel generate button inside #controls-root, which is below the fold on
+# a fresh load — hence the false FAILED.
+url: http://127.0.0.1:8099/index.html
 
 ---
 - launchApp
@@ -11,5 +20,12 @@ url: http://localhost:8099/index.html
 - assertVisible: "Layers"
 - assertVisible: "Paint"
 - assertVisible: "Open"
-- assertVisible: "Generate Painting"
+- assertVisible:
+    id: "btn-gener"
+- assertVisible:
+    id: "btn-load-image"
+- assertVisible:
+    id: "btn-export"
+- assertVisible:
+    id: "btn-ui-settings"
 - takeScreenshot: maestro-check-desktop

@@ -46,11 +46,17 @@ const COLOR_KEYS = [
 
 /* ─── State ────────────────────────────────────────────────────── */
 
+/**
+ * LAYERS defaults to the graphite DARK theme, so dark is the default here too.
+ * @type {{dark: object, light: object, activeMode: 'dark'|'light'}}
+ */
+const DEFAULT_THEME = "dark";
+
 /** @type {{dark: object, light: object, activeMode: 'dark'|'light'}} */
 let _settings = {
   dark:  { ...DEFAULT_DARK },
   light: { ...DEFAULT_LIGHT },
-  activeMode: "light",
+  activeMode: DEFAULT_THEME,
 };
 let _overlay = null;
 let _onSettingsKeyDown = null;
@@ -68,14 +74,14 @@ function _loadSettings() {
       _settings = {
         dark:  { ...DEFAULT_DARK,  ...(parsed.dark  || {}) },
         light: { ...DEFAULT_LIGHT, ...(parsed.light || {}) },
-        activeMode: parsed.activeMode || "light",
+        activeMode: parsed.activeMode || DEFAULT_THEME,
       };
     }
   } catch (e) {
     _settings = {
       dark:  { ...DEFAULT_DARK },
       light: { ...DEFAULT_LIGHT },
-      activeMode: "light",
+      activeMode: DEFAULT_THEME,
     };
   }
 }

@@ -106,7 +106,9 @@ test('an enabled plan runs the REAL optimiser and returns shapes', () => {
   assertOk(p.shapes.length > 0, 'no shapes');
   assertOk(p.rawCount > 0, 'rawCount should be > 0');
   assertOk(p.options && typeof p.options === 'object', 'options should be resolved');
-  assertEqual(p.options.count, 40);
+  // The bridge scales the user-facing budget for coverage (dab→stroke, see
+  // `strokeBudgetScale`) — `options.count` is the SCALED internal budget.
+  assertEqual(p.options.count, 40 * BRIDGE_DEFAULTS.strokeBudgetScale);
 });
 
 test('the plan is deterministic: same input twice → identical shapes', () => {
@@ -123,15 +125,24 @@ test('a different seed produces a different painting', () => {
   assert.notDeepEqual(a.shapes, b.shapes);
 });
 
-test('the stroke budget is honoured (modular shapes <= count)', () => {
+test('the stroke budget is honoured (modular shapes <= count × budgetScale)', () => {
+  // Since the dab→stroke conversion (see `dabToStrokeShape`), the bridge scales
+  // the optimiser budget by `strokeBudgetScale` (default 8 — measured knee):
+  // thinner strokes cover less, so more are needed for the same coverage. The
+  // user-facing contract stays `count` — the INTERNAL optimiser budget is
+  // count × scale.
+  const scale = BRIDGE_DEFAULTS.strokeBudgetScale;
   for (const count of [10, 25, 60]) {
     const p = buildModularPlan(analysis(), { enabled: true, style: 'oil', count, seed: 5 });
     assertOk(p.used, `count=${count} produced nothing`);
-    assertOk(p.rawCount <= count,
-      `count=${count}: optimiser returned ${p.rawCount} shapes`);
-    assertOk(p.shapes.length <= count + p.outlineCount,
+    assertOk(p.rawCount <= count * scale,
+      `count=${count}: optimiser returned ${p.rawCount} shapes (> count×${scale})`);
+    assertOk(p.shapes.length <= count * scale + p.outlineCount,
       `count=${count}: got ${p.shapes.length} shapes (modular ${p.rawCount} + outlines ${p.outlineCount})`);
   }
+  // With the budget scale disabled the old contract holds exactly.
+  const p1 = buildModularPlan(analysis(), { enabled: true, style: 'oil', count: 25, seed: 5, strokeBudgetScale: 1 });
+  assertOk(p1.rawCount <= 25, `scale=1: optimiser returned ${p1.rawCount} shapes`);
 });
 
 /* ── shape conversion ─────────────────────────────────────────────────── */
@@ -266,7 +277,10 @@ test('the bridge matches a direct optimise() call on the same resolved options',
   const an = analysis();
   const args = { enabled: true, style: 'oil', count: 20, seed: 77 };
   const p = buildModularPlan(an, args);
-  const direct = optimise(an, resolveOptions(modularOptions({ style: 'oil', count: 20, seed: 77 })));
+  // The bridge scales the budget (dab→stroke coverage fix, default ×8) —
+  // mirror that here so "same resolved options" really is the same call.
+  const scaled = Math.round(20 * BRIDGE_DEFAULTS.strokeBudgetScale);
+  const direct = optimise(an, resolveOptions(modularOptions({ style: 'oil', count: scaled, seed: 77 })));
   assertOk(p.used, 'plan should be used');
   assertEqual(p.rawCount, (direct.shapes || []).length, 'rawCount must equal a direct optimise() run');
 });

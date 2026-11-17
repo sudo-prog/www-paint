@@ -143,6 +143,12 @@ export class LayersManager {
     visibilityBtn.type = "button";
     visibilityBtn.className = "layer-visibility-btn";
     visibilityBtn.dataset.action = "toggle-visibility";
+    // `title` alone is not an accessible name for a button whose only child is
+    // an aria-hidden SVG. The a11y sweep reported these two buttons as nameless.
+    visibilityBtn.setAttribute(
+      "aria-label",
+      layer.visible === false ? "Show layer" : "Hide layer",
+    );
     visibilityBtn.title = layer.visible === false ? "Show" : "Hide";
     visibilityBtn.textContent = "";
     visibilityBtn.innerHTML = layer.visible === false

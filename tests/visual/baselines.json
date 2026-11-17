@@ -8,82 +8,82 @@
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 96024,
-      "hash": "140f52bd221d06a2c7b78273687787dd10601c594ad53e22d478ced025ee07f1"
+      "strokes": 5604,
+      "bytes": 76356,
+      "hash": "63163c26589d4562d240ab5d8ffd3d5acd3ab757c5e16332fe75fd613d3397e0"
     },
     "ink": {
       "style": "ink",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 127763,
-      "hash": "9e14365f35cd34f3012cb0cc2e664c01cf544fd3319a9106a44e85a83135fe20"
+      "strokes": 5604,
+      "bytes": 117334,
+      "hash": "5123862d8530e7437db279013e7a6699b822f2376cd75e5cb3b50c603a1c41d4"
     },
     "oil": {
       "style": "oil",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 159611,
-      "hash": "1818df7bdf59f31a01c07a80fd48b476bdc9bfb1652594754c8bb0a5b4e1e084"
+      "strokes": 5604,
+      "bytes": 97449,
+      "hash": "d928cd6501b9851300ce8d09e7cfc0e40b705431d27074fe70321b4f3ae7779b"
     },
     "charcoal": {
       "style": "charcoal",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 90163,
-      "hash": "46ccb4c9a4bcfe3e53590c68b348cc243a52eed31aae37b5e27ea85a9bb7b225"
+      "strokes": 5604,
+      "bytes": 113697,
+      "hash": "6abbac60d635a9fc873b2bb256d7faffb39ddce5bb186633a76fbbf81ac6faf0"
     },
     "marker": {
       "style": "marker",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 73771,
-      "hash": "21c5f1e9a6cd6abc92d734a2737d30ff8baf698e46355b5b3ab43b155f8980fc"
+      "strokes": 5604,
+      "bytes": 88956,
+      "hash": "f762c37bff5254dc829a747a03bb04f3c4107d433b837889f013aa394a8826e5"
     },
     "cross-hatch": {
       "style": "cross-hatch",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 187239,
-      "hash": "a16d162b119bea8f744f1e3f6274e497710a7452425f7e5561199837a3419b1e"
+      "strokes": 5604,
+      "bytes": 73332,
+      "hash": "66203b33b8eef4016bb185d7dd00dacc56b8da26e0e2cf4558a18caa052a5e31"
     },
     "halftone": {
       "style": "halftone",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 126541,
-      "hash": "eaf34ce423f8424570306a548adc4d344ab29f429646b443b3ccead163b503f3"
+      "strokes": 5604,
+      "bytes": 130009,
+      "hash": "70bddee47692303624c4c9c98202f28da1421bc44c5e2d3ab295aa01c9e94631"
     },
     "graphic": {
       "style": "graphic",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 122532,
-      "hash": "877f0dcd2b7eeeade88de37392caef3d4601c2e33def1d9578a501d155e691f5"
+      "strokes": 5604,
+      "bytes": 102356,
+      "hash": "32ded10da337268e96ea2a9d40ff928d2c8a3dda4fbdee469d107e82eb5fd85b"
     },
     "watercolor": {
       "style": "watercolor",
       "seed": 3047602159,
       "count": 700,
       "size": 256,
-      "strokes": 704,
-      "bytes": 119505,
-      "hash": "d2ba3f77cdb7df0a28cf819bd98ec3ace23c92377e81cd89c6f8c0b690d01da7"
+      "strokes": 5604,
+      "bytes": 140202,
+      "hash": "3d37021f215db6f2f822cc4df6a00d3d37523dd4cd6ab55aab294eb9ed58c988"
     }
   },
-  "updatedAt": "2026-11-17T04:02:38.855Z"
+  "updatedAt": "2026-11-17T22:12:13.337Z"
 }

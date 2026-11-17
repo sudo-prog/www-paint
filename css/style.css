@@ -35,32 +35,36 @@
      Color ramp: neutral light scale + studio blue accent
      Surfaces use alpha compositing so the canvas (bright or dark) shows through. */
 
-  /* Light theme (default) */
-  --bg-primary:        #ffffff;
-  --bg-secondary:      #f5f5f5;
-  --bg-tertiary:       #e8e8e8;
-  --surface-panel:     #f5f5f5;                     /* overridden per-theme below */
-  --surface-chrome:    #ffffff;
-  --surface-raised:    #f5f5f5;
-  --text-primary:      #0a0a0a;
-  --text-secondary:    #555555;
-  --text-tertiary:     #6f6f6f;
-  --accent:            #0066ff;
-  --accent-hover:      #0052cc;
-  --success:           #00aa44;
-  --warning:           #ff8800;
-  --error:             #dd2200;
-  --border:            #d4d4d4;
-  --border-strong:     #b8b8b8;
+  /* Non-colour tokens + dark default values (LAYERS graphite).
+     Colour tokens live in the THEME block further down; these duplicate
+     the dark column so this block can never override it. */
+  --bg-primary:        #0a0b0d;
+  --bg-secondary:      #101215;
+  --bg-tertiary:       #16191d;
+  --surface-panel:     rgb(16 18 21 / 0.74);                     /* overridden per-theme below */
+  --surface-chrome:    rgb(10 11 13 / 0.80);
+  --surface-raised:    rgb(22 25 29 / 0.74);
+  --text-primary:      #f2f4f7;
+  --text-secondary:    #9aa3af;
+  --text-tertiary:     #8b95a3;
+  --accent:            #7aa2ff;
+  --accent-hover:      #9ab8ff;
+  --success:           #4ade80;
+  --warning:           #fbbf24;
+  --error:             #f87171;
+  --border:            #262b33;
+  --border-strong:     #363c46;
 
   /* Canvas / editor background (read by JS for canvas init) */
-  --editor-bg:         #f5f5f5;
+  --editor-bg:         #0a0b0d;
 
   /* Panel alpha (light: 88%, dark: 74% under [data-theme="dark"]) */
-  --panel-alpha:       0.88;
-  --chrome-alpha:      0.92;
-  --glass-blur:        20px;
-  --glass-saturate:    1.15;
+  --panel-alpha:       0.74;
+  --chrome-alpha:      0.80;
+  --glass-blur:        32px;
+  --glass-saturate:    1.25;
+  --glass-brightness:  0.45;
+  --wash-alpha:        0.06;
 
   /* Typography — system font stack (LAYERS pattern) */
   --f-display:         'Doto', ui-monospace, monospace;
@@ -135,11 +139,43 @@
   --z-motion:          80;
 }
 
-/* Dark theme — LAYERS pattern ([data-theme="dark"]) */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME — GRAPHITE DARK IS THE DEFAULT (LAYERS verbatim)
+
+   LAYERS ships light-first in its own stylesheet, but its app defaults to the
+   graphite dark theme and the instruction is "match LAYERS exactly". So dark
+   is the default here.
+
+   Values are LAYERS' colorTokens / glassTokens dark column, transcribed
+   verbatim from packages/ui/src/tokens.ts:
+     bg-primary #0a0b0d   bg-secondary #101215   bg-tertiary #16191d
+     bg-raised  #1c2026
+     text-primary #f2f4f7  text-secondary #9aa3af  text-tertiary #8b95a3
+     accent #7aa2ff  accent-hover #9ab8ff
+     success #4ade80  warning #fbbf24  error #f87171
+     border #262b33  border-strong #363c46
+     panel-alpha 0.74  chrome-alpha 0.80  wash-alpha 0.06
+     glass-blur 32px  glass-saturate 1.25  glass-brightness 0.45
+
+   brightness(0.45) is load-bearing, not decoration: it darkens the backdrop
+   BEFORE the translucent panel composites over it, so text on the panel keeps
+   AA contrast even over a pure-white canvas.
+
+   --surface-* are DERIVED exactly as tokens.ts generateCSSVariables() does:
+     panel  = bg-secondary @ panel-alpha
+     chrome = bg-primary   @ chrome-alpha
+     raised = bg-tertiary @ panel-alpha
+   They are repeated under both selectors rather than declared once, because a
+   plain `html:not([data-theme="dark"])` rule outranks `:root` and would kill
+   the dark palette entirely (the ui-quality-bar trap).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root,
 [data-theme="dark"] {
   --bg-primary:        #0a0b0d;
   --bg-secondary:      #101215;
   --bg-tertiary:       #16191d;
+  --bg-raised:         #1c2026;
   --surface-panel:     rgb(16 18 21 / 0.74);
   --surface-chrome:    rgb(10 11 13 / 0.80);
   --surface-raised:    rgb(22 25 29 / 0.74);
@@ -153,23 +189,47 @@
   --error:             #f87171;
   --border:            #262b33;
   --border-strong:     #363c46;
+
+  /* Canvas / editor background (read by JS for canvas init) */
   --editor-bg:         #0a0b0d;
-  /* Glass: dark mode darkens the backdrop before compositing so text on the
-     translucent panel clears AA contrast over a bright canvas. */
+
+  /* Glass — see the tokens.ts note above. */
   --panel-alpha:       0.74;
   --chrome-alpha:      0.80;
+  --wash-alpha:        0.06;
   --glass-blur:        32px;
   --glass-saturate:    1.25;
   --glass-brightness:  0.45;
 }
 
-/* Light theme glass — the surfaces need alpha compositing too, so the canvas
-   shows through the panel.  We emit the derived rgb()/alpha values directly
-   so theme-switching is instant and needs no JS. */
-html:not([data-theme="dark"]) {
+/* Light theme — LAYERS light column, verbatim. Reachable only via an explicit
+   data-theme="light" (settings.js); kept so the toggle still means something.
+   glass-brightness 1 = no darkening: on a near-white backdrop there is nothing
+   to darken, so the glass is carried by the alpha alone. */
+html[data-theme="light"] {
+  --bg-primary:        #ffffff;
+  --bg-secondary:      #f5f5f5;
+  --bg-tertiary:       #e8e8e8;
+  --bg-raised:         #ffffff;
   --surface-panel:     rgb(245 245 245 / 0.88);
   --surface-chrome:    rgb(255 255 255 / 0.92);
   --surface-raised:    rgb(232 232 232 / 0.88);
+  --text-primary:      #0a0a0a;
+  --text-secondary:    #555555;
+  --text-tertiary:     #6f6f6f;
+  --accent:            #0066ff;
+  --accent-hover:      #0052cc;
+  --success:           #00aa44;
+  --warning:           #ff8800;
+  --error:             #dd2200;
+  --border:            #d4d4d4;
+  --border-strong:     #b8b8b8;
+  --editor-bg:         #f5f5f5;
+  --panel-alpha:       0.88;
+  --chrome-alpha:      0.92;
+  --wash-alpha:        0.05;
+  --glass-blur:        20px;
+  --glass-saturate:    1.15;
   --glass-brightness:  1;
 }
 
@@ -237,27 +297,11 @@ body {
    slab).  Light theme: faint blue tint.  Dark theme: brighter blue glow.
    The wash is strongest at the corners and gone by mid-canvas so it never
    competes with the work. */
-.main::before {
+html[data-theme="light"] .main::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(
-      130% 100% at 4% -12%,
-      rgb(0 102 255 / 0.30) 0%,
-      rgb(0 102 255 / 0.08) 34%,
-      transparent 64%
-    ),
-    radial-gradient(
-      100% 85% at 102% 110%,
-      rgb(0 102 255 / 0.20) 0%,
-      transparent 62%
-    ),
-    var(--bg-primary);
-  z-index: 0;
-}
-[data-theme="dark"] .main::before {
   background:
     radial-gradient(
       130% 100% at 4% -12%,
@@ -275,6 +319,22 @@ body {
       70% 60% at 50% 50%,
       rgb(255 255 255 / 0.05) 0%,
       transparent 70%
+    ),
+    var(--bg-primary);
+  z-index: 0;
+}
+.main::before {
+  background:
+    radial-gradient(
+      130% 100% at 4% -12%,
+      rgb(0 102 255 / 0.30) 0%,
+      rgb(0 102 255 / 0.08) 34%,
+      transparent 64%
+    ),
+    radial-gradient(
+      100% 85% at 102% 110%,
+      rgb(0 102 255 / 0.20) 0%,
+      transparent 62%
     ),
     var(--bg-primary);
 }
@@ -435,7 +495,7 @@ body {
   min-width: 0;
   justify-self: stretch;
   text-align: center;
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: 7px;
   font-weight: 500;
   color: var(--text-secondary);
@@ -476,7 +536,7 @@ body {
 
 .media-preview__note {
   margin: 0;
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: 8px;
   line-height: 1.4;
   color: var(--text-secondary);
@@ -495,7 +555,7 @@ body {
 }
 .strip-sep { width: 1px; height: 14px; background: var(--border); }
 .strip-name {
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: 10px;
   color: var(--text-secondary);
   padding: 2px var(--space-2);
@@ -504,7 +564,7 @@ body {
 }
 .strip-name:hover { background: var(--surface-raised); color: var(--text-primary); }
 .strip-chip {
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: 10px;
   color: var(--text-tertiary);
   padding: 2px var(--space-2);
@@ -599,7 +659,9 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-family: var(--f-display);
+  /* Wordmark, not a label: --f-display is the dot-matrix face and reads as a
+     novelty at 14px. LAYERS uses a bold UI wordmark. */
+  font-family: var(--f-ui);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -766,7 +828,7 @@ body {
 .canvas-placeholder__icon { font-size: 2rem; opacity: 0.35; display: flex; align-items: center; justify-content: center; }
 .canvas-placeholder__icon svg { width: 48px; height: 48px; }
 .canvas-placeholder__title { font-size: 13px; color: var(--text-primary); }
-.canvas-placeholder__hint { font-size: 9px; color: var(--text-secondary); font-family: var(--f-mono); letter-spacing: 0.05em; }
+.canvas-placeholder__hint { font-size: 9px; color: var(--text-secondary); font-family: var(--f-ui); letter-spacing: 0.05em; }
 
 /* ── Motion Controls — flat, hairline ── */
 /* The playback bar is a PILL on the canvas (layer 4 in the LAYERS design), not a
@@ -791,7 +853,7 @@ body {
   max-width: calc(100% - var(--space-8));
 }
 
-.motion-bar { display: flex; align-items: center; gap: var(--space-3); width: 100%; font-family: var(--f-mono); }
+.motion-bar { display: flex; align-items: center; gap: var(--space-3); width: 100%; font-family: var(--f-ui); }
 .motion-btn-group { display: flex; align-items: center; gap: var(--space-1); }
 
 .motion-btn {
@@ -845,18 +907,18 @@ body {
 }
 
 .motion-speed { display: flex; align-items: center; gap: var(--space-2); }
-.motion-speed-label { font-size: 10px; color: var(--text-tertiary); font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.05em; min-width: 44px; white-space: nowrap; }
+.motion-speed-label { font-size: 10px; color: var(--text-tertiary); font-family: var(--f-ui); text-transform: uppercase; letter-spacing: 0.05em; min-width: 44px; white-space: nowrap; }
 
 .motion-speed select {
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   background: var(--surface-raised);
-  color: var(--text-primary); font-size: 11px; font-family: var(--f-mono);
+  color: var(--text-primary); font-size: 11px; font-family: var(--f-ui);
   cursor: pointer;
 }
 
-.motion-counter { display: flex; align-items: center; font-size: 12px; color: var(--text-tertiary); font-family: var(--f-mono); white-space: nowrap; }
+.motion-counter { display: flex; align-items: center; font-size: 12px; color: var(--text-tertiary); font-family: var(--f-ui); white-space: nowrap; }
 .motion-controls-root.disabled { opacity: 0.5; pointer-events: none; }
 
 /* ── Status Footer ── */
@@ -874,8 +936,9 @@ body {
   border-top: 1px solid var(--border);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
   font-family: var(--f-mono);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
   z-index: 4;
   flex-shrink: 0;
   overflow: hidden;
@@ -941,7 +1004,7 @@ body {
    separation under its own title. */
 .control-section + .control-section { margin-top: var(--space-2); margin-bottom: var(--space-2); }
 .control-section__title {
-  font-family: var(--f-mono); font-size: 10px; font-weight: 500;
+  font-family: var(--f-ui); font-size: 10px; font-weight: 500;
   color: var(--text-secondary); letter-spacing: 0.08em; text-transform: uppercase;
   margin-bottom: var(--space-1);
 }
@@ -950,7 +1013,7 @@ body {
 
 /* Short helper text under a section title (e.g. STRUCTURE, MEDIA). */
 .control-hint {
-  margin: 0; font-family: var(--f-mono, monospace); font-size: 10px; line-height: 1.55;
+  margin: 0; font-family: var(--f-ui); font-size: 10px; line-height: 1.55;
   color: var(--text-secondary); opacity: 0.8;
 }
 /* Dark theme: --text-secondary (#9aa3af) at opacity .8 over the dark glass
@@ -966,7 +1029,7 @@ body {
   padding: var(--space-3) var(--space-2);
   background: var(--surface-raised); border: 1px solid var(--border-strong);
   border-radius: var(--r-sm); cursor: pointer; transition: var(--t-fast);
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   -webkit-tap-highlight-color: transparent; user-select: none;
 }
 
@@ -1041,7 +1104,7 @@ body {
 /* ── Sliders ── */
 .control-slider { display: flex; flex-direction: column; gap: var(--space-2); }
 .slider-label {
-  font-family: var(--f-mono); font-size: 9px; font-weight: 500;
+  font-family: var(--f-ui); font-size: 9px; font-weight: 500;
   color: var(--text-secondary); letter-spacing: 0.08em; text-transform: uppercase;
 }
 
@@ -1070,18 +1133,18 @@ body {
   background: var(--text-primary); border: 2px solid var(--bg-primary); cursor: pointer;
 }
 
-.slider-value { font-family: var(--f-mono); font-size: 9px; font-weight: 500; color: var(--text-primary); min-width: 32px; text-align: right; }
+.slider-value { font-family: var(--f-ui); font-size: 9px; font-weight: 500; color: var(--text-primary); min-width: 32px; text-align: right; }
 
 /* ── Smart Toggle ── */
 .smart-toggle-container { display: flex; flex-direction: column; gap: var(--space-1); }
 .smart-toggle-label {
   display: flex; align-items: center; gap: var(--space-2); cursor: pointer;
-  font-family: var(--f-mono); font-size: 9px; font-weight: 500;
+  font-family: var(--f-ui); font-size: 9px; font-weight: 500;
   color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;
 }
 
 .smart-toggle-input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
-.smart-toggle-hint { font-family: var(--f-mono); font-size: 8px; color: var(--text-tertiary); }
+.smart-toggle-hint { font-family: var(--f-ui); font-size: 8px; color: var(--text-tertiary); }
 
 /* ── Generate Button ── */
 .generate-btn-container { margin-top: var(--space-3); }
@@ -1149,7 +1212,7 @@ body {
   width: 100px; padding: var(--space-1) var(--space-2);
   background: var(--surface-raised);
   border: 1px solid var(--border-strong); border-radius: var(--r-sm);
-  font-family: var(--f-mono); font-size: 8px; color: var(--text-primary);
+  font-family: var(--f-ui); font-size: 8px; color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -1165,7 +1228,7 @@ body {
   padding: var(--space-1) var(--space-2);
   background: var(--surface-raised);
   border: 1px solid var(--border-strong); border-radius: var(--r-sm);
-  font-family: var(--f-mono); font-size: 8px; color: var(--text-primary);
+  font-family: var(--f-ui); font-size: 8px; color: var(--text-primary);
   cursor: pointer;
 }
 .layer-style-select:focus { outline: 1px solid var(--accent); }
@@ -1186,7 +1249,7 @@ body {
 .layer-action-btn--danger:hover { color: var(--accent); background: var(--bg-secondary); }
 
 .layer-opacity-row { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-1); }
-.layer-opacity-label { font-family: var(--f-mono); font-size: 8px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+.layer-opacity-label { font-family: var(--f-ui); font-size: 8px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .layer-opacity-input {
   flex: 1; height: 3px; -webkit-appearance: none;
@@ -1200,7 +1263,7 @@ body {
 
 .layers-placeholder {
   padding: var(--space-7) var(--space-4); text-align: center; color: var(--text-tertiary);
-  font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.05em;
+  font-family: var(--f-ui); font-size: 9px; letter-spacing: 0.05em;
 }
 
 .layer-row__drag {
@@ -3674,4 +3737,888 @@ input[type="range"]:focus-visible {
     width: auto;
     bottom: calc(var(--status-h) + var(--space-2));
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYERS ALIGNMENT PASS — 2026-11-17
+
+   Each rule below is a defect found by VISION REVIEW of the live 1440x900
+   screenshots, not a guess. The green Maestro suite passed all of these:
+   Maestro asserts the accessibility tree, and every one of them is a pixel
+   problem (ui-quality-bar requirement 3).
+
+   1. The canvas-header "Generate"/"Paint" label was an unstyled bare <span> —
+      14px --text-primary on the bright window, indistinguishable from dead
+      text and carrying no affordance. Now a real mode chip.
+   2. Slider labels were 9px uppercase monospace with 0.08em tracking — the
+      "monospace for UI text" anti-pattern. 11px --f-ui, sentence case,
+      weight/colour carry the hierarchy.
+   3. The status footer was light-grey-on-light-grey in the old light theme
+      (now moot in dark, but the contrast is still under 4.5:1 for the
+      metadata labels). Bumped to --text-secondary with tabular figures.
+   4. Layer blend / style <select> and the opacity range were effectively
+      unstyled native controls (8px mono, no custom arrow, no focus ring
+      beyond a 1px outline). Now themed from the palette.
+   5. The control-hint paragraphs were ragged monospace walls. Now --f-ui,
+      justified left, with a real measure.
+   6. The primary in-panel "Generate Painting" button had a hover rule that
+      was IDENTICAL to its resting state (no feedback at all), and an
+      uppercase 10px mono treatment. Given a real lift.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Canvas-header mode chip ───────────────────────────────────────────── */
+.canvas-head #canvas-mode {
+  font-family: var(--f-ui);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  line-height: 1;
+  align-self: center;
+  /* The chip sits on the bright canvas window, so it needs the glass blur to
+     read as chrome rather than as a label glued to the artwork. */
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+}
+.canvas-head #canvas-mode:empty { display: none; }
+
+/* ── 2. Slider labels — not monospace, not shouty ─────────────────────────── */
+.slider-label {
+  font-family: var(--f-ui);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+}
+.slider-value {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 3. Status footer contrast + tabular figures ──────────────────────────── */
+.status-footer {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.status-footer .status-label {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.status-footer .status-value { color: var(--text-secondary); }
+.status-footer .status__message { color: var(--text-primary); font-weight: 500; }
+.status-footer .status__loading { color: var(--accent); }
+.status-footer .status__error { color: var(--error); }
+
+/* ── 4. Themed form controls ──────────────────────────────────────────────── */
+.layer-blend-select,
+.layer-style-select,
+.paint-toolbar__select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--surface-raised);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6l6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--text-primary);
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 500;
+  padding-right: 22px;
+  cursor: pointer;
+}
+.layer-blend-select:hover,
+.layer-style-select:hover,
+.paint-toolbar__select:hover { border-color: var(--text-tertiary); }
+
+.layer-blend-select:focus-visible,
+.layer-style-select:focus-visible,
+.paint-toolbar__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+.layer-blend-select option,
+.layer-style-select option,
+.paint-toolbar__select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* The native colour swatch is a hard-edged browser control. Round it and give
+   it the same border language as every other control. */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
+  padding: 2px;
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
+input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
+
+/* ── 5. Control hints — a real measure, not a mono wall ───────────────────── */
+.control-hint {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  opacity: 1;
+  max-width: 34em;
+}
+
+/* ── 6. The primary generate button gets a real hover ─────────────────────── */
+.generate-btn {
+  font-family: var(--f-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--bg-primary);
+  background: var(--text-primary);
+  border: 1px solid var(--text-primary);
+  border-radius: var(--r-sm);
+  padding: var(--space-2) var(--space-3);
+  min-height: var(--touch);
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+}
+.generate-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.35);
+}
+.generate-btn:active { transform: translateY(0); box-shadow: none; }
+.generate-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.generate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── 7. Smart-mode pill — invert on, not accent-on ────────────────────────── */
+.pill-toggle {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.pill-toggle:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
+.pill-toggle--on,
+.pill-toggle[aria-checked="true"] {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+/* ── 8. Focus ring parity ─────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── 9. Motion bar values — tabular, quiet ────────────────────────────────── */
+.motion-counter__text,
+.motion-speed-label {
+  font-family: var(--f-ui);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 10. Respect reduced motion ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .generate-btn,
+  .pill-toggle,
+  .layer-blend-select,
+  .layer-style-select { transition: none; }
+  .generate-btn:hover { transform: none; }
+}
+
+
+.panel--controls .segmented__btn,
+.controls-scroll .segmented__btn {
+  min-height: var(--touch);
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: var(--space-1) var(--space-3);
+}
+
+/* ── 12. Hit-area floor WITHOUT adding layout height ────────────────────────
+   Measured: .pill-toggle renders 94x23, under the 32px floor. Padding was the
+   first fix and it worked for the target size — but it also added ~15px of
+   scroll height to the media panel (5 sliders x 3px), which pushed
+   #media-masks-preview below the fold and broke two Maestro flows.
+
+   The fix that satisfies both: keep the visual height and extend the HIT AREA
+   with an absolutely-positioned pseudo-element. The painted box is unchanged,
+   so no layout moves; pointer events land on the enlarged area.
+
+   `position: relative` on the button is required for the pseudo to anchor. */
+
+.pill-toggle {
+  position: relative;
+  /* Cap the pseudo-element's hit band at the painted box: an unbounded ::after
+     would also intercept clicks on whatever sits directly above the pill. */
+  overflow: hidden;
+  min-height: 23px;
+}
+.pill-toggle::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: var(--touch);
+  transform: translateY(-50%);
+  /* pointer-events inherit from the button; this only enlarges the target. */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   §18 — LAYERS STANDARD PASS — 2026-11-18 (Mac)
+
+   WHY THIS BLOCK EXISTS
+   ─────────────────────
+   The previous pass ("LAYERS ALIGNMENT PASS", §17) changed the COLOURS only.
+   It transcribed the LAYERS token values into :root/[data-theme] and left the
+   component CSS alone. So the app was a dark-mode version of its old dense
+   desktop tool, not the LAYERS design. Measured on the live page at 1440 and
+   390 (scripts/ui-geometry-audit.cjs), the defects were:
+
+   1.  The canvas window is a TRANSLUCENT SLAB. .canvas-wrapper resolves to
+       rgba(22 25 29 / 0.74) — the panel token — sitting on a #0a0b0d base. It
+       is darker than the panels, so the "bright window" reads as a hole. In
+       LAYERS the canvas-area is the workspace; the artwork ground is opaque.
+   2.  26 `text-transform: uppercase` rules and 9-10px labels throughout. The
+       ui-quality-bar anti-pattern ("uppercase + letter-spacing on every label
+       is a lazy way to fake hierarchy"). 7px and 8px text is below the 11px
+       floor. Measured live: 12 nodes under 11px at 390, including the whole
+       status strip at 7px.
+   3.  390px: the nav row overflows the viewport (nav rect right = 394 vs 390)
+       and the playback pill's counter is clipped (rect 366→407). The mobile
+       toolbar rules at §13/§14 fight each other and the later a11y block wins.
+   4.  Buttons are flat: .btn has no shadow and its :hover is a background
+       swap only. ui-quality-bar: "flat buttons with no shadow read as
+       unstyled HTML".
+   5.  The generate button's :hover was byte-identical to its rest state (no
+       feedback). §17 restyled the button but the a11y block at line ~3905
+       re-declares a hover that still matches.
+   6.  .segmented__btn / .media-band-toggle / .style-btn__label carry 7-9px
+       uppercase mono — the "monospace for UI text" anti-pattern, in the
+       controls that are on screen at all times.
+   7.  Panel titles (9px), strip chips (10px), layer opacity labels (8px),
+       library status (8px), export status (9px), modal titles (10px mono
+       uppercase), the paint toolbar labels (9px mono uppercase) — all read as
+       a developer tool rather than a designed product.
+
+   THE RULE
+   ────────
+   LAYERS' own language (apps/web/src/styles.css, props.css, tokens.ts):
+     · one UI face for every label: --f-ui, sentence case, no tracking
+     · hierarchy by WEIGHT and COLOUR, not by size or case
+     · values (numbers) get --f-mono + tabular-nums, and nothing else
+     · 44px hit areas, 28-32px visual controls, 4px rhythm
+     · borders are structural, never elevation; elevation is a real shadow
+   Nothing above this banner is edited. Every rule below is a later,
+   higher-or-equal-specificity restatement, which is how this file has always
+   resolved its own conflicts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 18.1 The canvas is an opaque surface, not a translucent slab ─────────── */
+.canvas-wrapper {
+  background: var(--bg-secondary);
+  border-radius: var(--r-canvas);
+  /* LAYERS canvas-as-window: the window is defined by its own luminance
+     against the base, so no border and no inset highlight line. */
+  border: none;
+  box-shadow: 0 2px 24px -8px rgb(0 0 0 / 0.55);
+}
+/* The artwork ground is opaque too, so the picture never sits on glass. */
+.canvas-frame {
+  background: var(--bg-tertiary);
+}
+
+/* ── 18.2 Labels: one face, sentence case, real size ─────────────────────── */
+.slider-label,
+.slider-value,
+.smart-toggle-label,
+.smart-toggle-hint,
+.control-section__title,
+.control-hint,
+.panel-title,
+.strip-name,
+.strip-chip,
+.media-controls .media-band-toggle,
+.media-preview__note,
+.segmented__btn,
+.style-btn__label,
+.style-thumb__label,
+.style-cat-btn,
+.style-picker__trigger-label,
+.layer-opacity-label,
+.layer-opacity-value,
+.layers-placeholder,
+.paint-toolbar__label,
+.paint-toolbar__value,
+.primitive-mixer .mixer-field__label,
+.primitive-mixer .mixer-readout,
+.primitive-mixer .mixer-error,
+.form-label,
+.form-value,
+.export-panel__status,
+.library-status,
+.library-storage-note,
+.library-row__meta,
+.library-row__ref,
+.library-row-btn,
+.modal__title,
+.export-panel__title,
+.export-dialog__title,
+.motion-speed-label,
+.motion-counter,
+.motion-counter__text {
+  font-family: var(--f-ui);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Values keep the mono face and tabular figures — that is their job. */
+.slider-value,
+.form-value,
+.paint-toolbar__value,
+.layer-opacity-value,
+.library-row__meta,
+.library-row__ref,
+.export-panel__summary,
+.media-preview__note,
+.primitive-mixer .mixer-readout,
+.primitive-mixer .mixer-error,
+.motion-counter,
+.motion-counter__text {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The 11px floor. Anything that carries a LABEL is 11px or larger.
+   `.slider-value` is here as well as in the mono list: the two rules set
+   different properties, and an earlier draft omitted it from this one, which
+   left the numeric readouts at 9px while their labels went to 11px. */
+.slider-label,
+.slider-value,
+.smart-toggle-label,
+.smart-toggle-hint,
+.control-section__title,
+.control-hint,
+.panel-title,
+.strip-name,
+.strip-chip,
+.media-controls .media-band-toggle,
+.media-preview__note,
+.segmented__btn,
+.style-btn__label,
+.style-thumb__label,
+.style-cat-btn,
+.style-picker__trigger-label,
+.layer-opacity-label,
+.layer-opacity-value,
+.layers-placeholder,
+.paint-toolbar__label,
+.paint-toolbar__value,
+.primitive-mixer .mixer-field__label,
+.primitive-mixer .mixer-readout,
+.primitive-mixer .mixer-error,
+.form-label,
+.export-panel__status,
+.export-panel__title,
+.library-status,
+.library-storage-note,
+.library-row__meta,
+.library-row__ref,
+.library-row-btn,
+.modal__title,
+.export-dialog__title,
+.motion-speed-label,
+.motion-counter,
+.motion-counter__text {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Weight/colour carry the hierarchy instead of size and case. */
+.control-section__title,
+.panel-title,
+.layers-title,
+.modal__title,
+.export-panel__title,
+.export-dialog__title {
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0;
+}
+.control-hint,
+.media-preview__note,
+.smart-toggle-hint,
+.library-status,
+.library-storage-note,
+.export-panel__status,
+.primitive-mixer .mixer-readout,
+.primitive-mixer .mixer-error,
+.layers-placeholder {
+  font-weight: 400;
+  color: var(--text-secondary);
+  opacity: 1;
+}
+.slider-label,
+.strip-name,
+.strip-chip,
+.form-label,
+.paint-toolbar__label,
+.layer-opacity-label,
+.primitive-mixer .mixer-field__label,
+.motion-speed-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.slider-value,
+.paint-toolbar__value,
+.layer-opacity-value,
+.library-row__meta,
+.library-row__ref {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ── 18.3 Buttons get real depth ─────────────────────────────────────────── */
+.btn,
+.round-btn,
+.nav-btn,
+.motion-btn,
+.generate-btn,
+.pill-toggle,
+.style-btn,
+.style-cat-btn,
+.style-picker__trigger,
+.library-row-btn,
+.media-action-btn,
+.rail-icon-btn,
+.collapse-btn,
+.mobile-toggle {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+.btn:hover,
+.round-btn:hover,
+.nav-btn:hover,
+.motion-btn:hover,
+.pill-toggle:hover,
+.style-btn:hover,
+.style-cat-btn:hover,
+.library-row-btn:hover,
+.mobile-toggle:hover {
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.07);
+  transform: translateY(-1px);
+}
+.btn:active,
+.round-btn:active,
+.nav-btn:active,
+.motion-btn:active,
+.pill-toggle:active,
+.style-btn:active,
+.generate-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+/* The primary generate button: a real lift, not a no-op hover. */
+.generate-btn {
+  font-family: var(--f-ui);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--bg-primary);
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+.generate-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.6);
+}
+.generate-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgb(0 0 0 / 0.4); }
+
+/* The accent primary used by the export/library actions. */
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #ffffff; }
+
+/* ── 18.4 Active state is a ring + fill, not a colour swap ───────────────── */
+.nav-btn--active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accent), 0 1px 2px rgb(0 0 0 / 0.35);
+}
+.pill-toggle--on,
+.pill-toggle[aria-checked="true"],
+.segmented__btn--active,
+.media-controls .media-band-toggle--on,
+.style-btn--active,
+.style-cat-btn--active,
+.style-thumb--active {
+  color: var(--bg-primary);
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--text-primary), 0 2px 8px rgb(0 0 0 / 0.45);
+}
+
+/* ── 18.5 The nav pill is a segmented control, not a row of boxes ─────────── */
+.top-bar__center {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--space-1);
+}
+.top-bar__center .nav-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  font-weight: 500;
+  box-shadow: none;
+}
+.top-bar__center .nav-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  transform: none;
+  box-shadow: none;
+}
+.top-bar__center .nav-btn--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+/* ── 18.6 Status strip: readable, tabular, no 7px text ───────────────────── */
+.status-footer {
+  font-family: var(--f-ui);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.status-item {
+  font-family: var(--f-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+}
+.status-footer .status-label {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-tertiary);
+}
+.status-footer .status-value {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.status-footer .status__message { color: var(--text-primary); font-weight: 600; }
+
+/* ── 18.7 Panels: the glass reads as glass, with a structural hairline ───── */
+.panel {
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 8px 28px -12px rgb(0 0 0 / 0.6);
+}
+.top-bar {
+  border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.03);
+}
+.panel-strip {
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── 18.8 Sliders: a real track, not a 1px hairline ──────────────────────── */
+.slider-row input[type="range"],
+.layer-opacity-input,
+.motion-scrubber,
+.paint-toolbar__slider,
+.form-range {
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+}
+[data-theme="dark"] .slider-row input[type="range"] {
+  background: var(--border-strong);
+}
+
+/* ── 18.9 Motion pill: one row at every width, no clipping at 390 ────────── */
+.motion-controls-root {
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  max-width: calc(100% - var(--space-6));
+}
+.motion-bar { gap: var(--space-2); flex-wrap: nowrap; }
+.motion-speed-label { min-width: 0; }
+.motion-counter { flex: 0 0 auto; }
+.motion-scrubber-wrap { flex: 1 1 auto; min-width: 40px; }
+
+/* ── 18.10 Mobile: the nav fits and the pill does not clip ───────────────── */
+@media (max-width: 768px) {
+  :root { --header-h: 96px; }
+
+  .top-bar {
+    height: auto;
+    min-height: var(--header-h);
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+  }
+  .top-bar__center {
+    order: 3;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1);
+  }
+  .top-bar__center .nav-btn {
+    flex: 0 1 auto;
+    min-width: 40px;
+    min-height: 40px;
+    padding: var(--space-1) var(--space-2);
+    font-size: 12px;
+  }
+  .top-bar__center .nav-btn__icon { width: 14px; height: 14px; }
+  .top-bar__right { gap: var(--space-1); flex: 0 0 auto; margin-left: auto; }
+  .top-bar__right .round-btn {
+    width: 40px; height: 40px; min-width: 40px; min-height: 40px;
+  }
+
+  .motion-controls-root {
+    flex-wrap: nowrap;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    left: var(--space-1);
+    right: var(--space-1);
+    transform: none;
+    max-width: none;
+    width: auto;
+    justify-content: space-between;
+  }
+  .motion-bar { gap: var(--space-1); flex-wrap: nowrap; }
+  .motion-btn { width: 32px; height: 32px; }
+  .motion-btn svg { width: 15px; height: 15px; }
+  .motion-btn-group { gap: 2px; }
+  .motion-speed-label { display: none; }
+  .motion-speed select { font-size: 10px; padding: 2px 4px; min-height: 32px; }
+  .motion-scrubber-wrap { flex: 1 1 auto; min-width: 32px; }
+  .motion-counter { font-size: 10px; }
+  .motion-counter__text { font-size: 10px; }
+
+  .status-footer { font-size: 11px; gap: var(--space-2); padding: 0 var(--space-2); }
+  .status-item { font-size: 11px; }
+  .status-footer .status-label { font-size: 10px; }
+  .status-footer .status-value { font-size: 11px; }
+
+  .media-controls .media-band-toggle { font-size: 10px; min-height: 36px; }
+  .segmented__btn { font-size: 10px; min-height: 40px; }
+  .style-btn__label { font-size: 10px; }
+  .style-thumb__label { font-size: 10px; }
+  .strip-name { font-size: 11px; }
+  .strip-chip { font-size: 11px; }
+  .panel-title { font-size: 12px; }
+  .canvas-placeholder__hint { font-size: 11px; }
+  .canvas-placeholder__title { font-size: 14px; }
+  .canvas-placeholder__icon svg { width: 40px; height: 40px; }
+}
+
+/* ── 18.11 The canvas placeholder is a designed empty state ─────────────── */
+.canvas-placeholder__icon svg { width: 44px; height: 44px; }
+.canvas-placeholder__title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.canvas-placeholder__hint { font-size: 12px; color: var(--text-secondary); font-family: var(--f-ui); }
+
+/* ── 18.12 Icon-only controls keep a compact visible label ───────────────── */
+.layer-visibility-btn,
+.layer-action-btn,
+.collapse-btn,
+.rail-icon-btn,
+.btn--icon {
+  color: var(--text-secondary);
+}
+.layer-visibility-btn:hover,
+.layer-action-btn:hover,
+.collapse-btn:hover,
+.rail-icon-btn:hover {
+  color: var(--text-primary);
+}
+
+/* ── 18.13 Layer rows: legible names, no 8px metadata ────────────────────── */
+.layer-row__name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.layers-header { background: transparent; border-bottom: 1px solid var(--border); }
+
+/* ── 18.14 The paint toolbar is a panel, not a bare list ─────────────────── */
+.paint-toolbar { background: var(--surface-panel); gap: var(--space-3); }
+.paint-toolbar__row { font-size: 12px; }
+
+/* ── 18.15 Library rows ──────────────────────────────────────────────────── */
+.library-row__name { font-size: 13px; font-weight: 600; }
+.library-action-btn { font-size: 11px; }
+.library-name-input { font-size: 12px; }
+
+/* ── 18.16 Export panel: real type, real buttons ─────────────────────────── */
+.export-panel__summary { font-size: 11px; }
+.export-panel__row { font-size: 12px; }
+
+/* ── 18.17 Settings modal ────────────────────────────────────────────────── */
+.settings-content { font-size: 12px; }
+.settings-body { font-size: 12px; }
+
+/* ── 18.18 Focus ring parity (repeated at the end so it wins) ────────────── */
+.btn:focus-visible, .nav-btn:focus-visible, .round-btn:focus-visible,
+.collapse-btn:focus-visible, .rail-icon-btn:focus-visible,
+.layer-action-btn:focus-visible, .layer-visibility-btn:focus-visible,
+.motion-btn:focus-visible, .generate-btn:focus-visible, .pill-toggle:focus-visible,
+.style-btn:focus-visible, .style-cat-btn:focus-visible, .style-thumb:focus-visible,
+.library-row-btn:focus-visible, .mobile-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* ── 18.19 Reduced motion: the new transforms must not run ───────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .btn, .round-btn, .nav-btn, .motion-btn, .generate-btn, .pill-toggle,
+  .style-btn, .style-cat-btn, .library-row-btn, .mobile-toggle {
+    transition: none !important;
+  }
+  .btn:hover, .round-btn:hover, .nav-btn:hover, .motion-btn:hover,
+  .pill-toggle:hover, .style-btn:hover, .style-cat-btn:hover,
+  .library-row-btn:hover, .mobile-toggle:hover,
+  .generate-btn:hover {
+    transform: none !important;
+  }
+}
+
+/* ── 18.20 The controls panel's scroll host must CLIP. ──────────────────────
+   Measured after 18.1-18.19: the last 22 controls of #controls-root report
+   `elementFromPoint(centre)` === .status-footer, i.e. they are painted under
+   the status strip. `.controls-scroll` is a flex child with
+   `overflow-y: auto`, but the panel's `transition: width, transform` creates a
+   containing block and the scroll box was not clipping at the bottom edge,
+   so the tail of the section list (PATH ORDER pills, the smart-mode pill and
+   the Generate / Stop / Reset row) rendered over the footer.
+   `min-height: 0` + `overflow: hidden` on the cross axis is the fix: the
+   scroll host keeps its own box and clips its content to it. Same contract
+   as .media-scroll / .library-scroll. */
+.panel > .controls-scroll,
+.panel > .media-scroll,
+.panel > .library-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── 18.21 The canvas window must be a STEP UP in luminance, not a match. ────
+   Measured after 18.1: .canvas-wrapper resolved to rgb(16,18,21) — the SAME
+   value as the panel's effective composite (bg-secondary @ 0.74 over the base),
+   so the window vanished into the chrome and vision review read the whole
+   middle as one flat slab. LAYERS puts the artwork on --bg-tertiary
+   (#16191d, the "opaque by design" ramp step) and the canvas-area itself on
+   --bg-primary, with the panel glass over it. Copy that: the artwork ground is
+   a step brighter than the panels, and the window is defined by its own
+   luminance against the darker base. */
+.canvas-wrapper { background: var(--bg-primary); }
+.canvas-frame { background: var(--bg-tertiary); }
+
+/* ── 18.22 The canvas header is chrome on the window, not text on the art ─── */
+.canvas-head {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.canvas-head #canvas-mode {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
+/* ── 18.23 The empty state is centred in the window, above the art ground ─── */
+.canvas-placeholder__title { font-size: 15px; font-weight: 500; }
+.canvas-placeholder__hint { font-size: 12px; }
+
+/* ── 18.24 Section rhythm: 8px between sections, not 4 ──────────────────────
+   Vision review read the left rail as cramped. LAYERS uses --space-2 (8px)
+   between prop groups; the panel's `.control-section + .control-section`
+   margin was 8px top/bottom but the section padding was 8px, so consecutive
+   sections touched at 16px total while the row gap inside was also 8px. */
+.control-section { padding: var(--space-3); margin-bottom: 0; }
+.control-section + .control-section { margin-top: 0; padding-top: var(--space-2); border-top: 1px solid var(--border); }
+.control-section__title { margin-bottom: var(--space-2); }
+
+/* ── 18.25 Layer rows: name and controls on one baseline ──────────────────── */
+.layer-row__main { gap: var(--space-2); }
+.layer-row__name { font-size: 13px; font-weight: 600; }
+.layer-opacity-label { font-size: 11px; }
+.layer-opacity-value { font-size: 11px; }
+
+/* ── 18.26 The playback pill: one baseline, no misaligned group ───────────── */
+.motion-bar { align-items: center; }
+.motion-speed { gap: var(--space-1); }
+.motion-speed-label { min-width: 0; }
+.motion-counter { align-items: center; }
+
+/* ── 18.27 The mobile right-side labels are 9px; the status labels 10px. ──────
+   Both are below the 11px floor the desktop end already meets. The mobile
+   `.top-bar__right .btn-label` rule (line ~1893) and the mobile status rules
+   are later in the file than §18.2, so they win; restate them here. */
+@media (max-width: 768px) {
+  .top-bar__right .btn-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .status-footer .status-label { font-size: 11px; }
+  .motion-counter__text { font-size: 11px; }
 }

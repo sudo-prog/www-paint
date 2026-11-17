@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WWW_PAINT — Real app-path probe (PaintingEngine, useWorker:true)</title>
+<style>
+  body { background:#111; color:#ddd; font-family:monospace; margin:0; padding:20px; }
+  h1 { font-size:15px; margin:0 0 6px; }
+  .sub { font-size:11px; color:#888; margin:0 0 14px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  .panel { background:#1a1a1a; border:1px solid #333; border-radius:6px; padding:10px; }
+  .panel h3 { font-size:12px; color:#74c0fc; margin:0 0 8px; }
+  canvas { width:100%; height:auto; display:block; border:1px solid #222; background:#000; }
+  .info { font-size:11px; color:#aaa; margin-top:5px; white-space:pre-wrap; }
+  #status { font-size:12px; color:#ffd43b; margin-bottom:12px; }
+</style>
+</head>
+<body>
+<h1>WWW_PAINT — REAL app-path probe</h1>
+<p class="sub">Uses PaintingEngine (js/engine/engine.js) with useWorker:true — the EXACT config app.js:89 uses. Not the legacy Painter harness.</p>
+<div id="status">Loading...</div>
+<div class="grid">
+  <div class="panel">
+    <h3>1. SOURCE</h3>
+    <canvas id="c-src" width="512" height="384"></canvas>
+    <div class="info" id="i-src">—</div>
+  </div>
+  <div class="panel">
+    <h3>2. WWW_PAINT (modular ON)</h3>
+    <canvas id="c-mod" width="512" height="384"></canvas>
+    <div class="info" id="i-mod">—</div>
+  </div>
+  <div class="panel">
+    <h3>3. WWW_PAINT (legacy painter)</h3>
+    <canvas id="c-leg" width="512" height="384"></canvas>
+    <div class="info" id="i-leg">—</div>
+  </div>
+</div>
+
+<script type="module">
+import { PaintingEngine } from './js/engine/engine.js';
+
+const W = 512, H = 384;
+const IMG_URL = './test-images/frog-source.jpg';
+const SEED = 12345;
+const COUNT = 700;
+
+const statusEl = document.getElementById('status');
+const log = m => { statusEl.textContent = m; };
+
+const cSrc = document.getElementById('c-src');
+const cMod = document.getElementById('c-mod');
+const cLeg = document.getElementById('c-leg');
+
+function ctxOf(c) { return c.getContext('2d', { willReadFrequently: true }); }
+
+/** Rough perceptual digest + ink stats of a canvas. */
+function stats(canvas) {
+  const ctx = ctxOf(canvas);
+  const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let ink = 0, lum = 0, colours = new Set(), hash = 2166136261;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i+1], b = d[i+2];
+    const L = (r*0.299 + g*0.587 + b*0.114);
+    lum += L;
+    if (L < 245) ink++;
+    if ((i % 400) === 0) colours.add(`${r>>3},${g>>3},${b>>3}`);
+    hash ^= (r << 16) | (g << 8) | b;
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  const n = d.length / 4;
+  return {
+    inkPct: +(100 * ink / n).toFixed(2),
+    meanLum: +(lum / n).toFixed(2),
+    colourBuckets: colours.size,
+    digest: hash >>> 0,
+  };
+}
+
+async function loadImage() {
+  const img = new Image();
+  img.src = IMG_URL;
+  await img.decode();
+  return img;
+}
+
+async function run() {
+  const img = await loadImage();
+  const ctx = ctxOf(cSrc);
+  ctx.drawImage(img, 0, 0, W, H);
+  const px = ctx.getImageData(0, 0, W, H);
+  document.getElementById('i-src').textContent =
+    `${img.naturalWidth}x${img.naturalHeight} → ${W}x${H}\n` + JSON.stringify(stats(cSrc));
+
+  // ── Build the engine exactly as app.js does ──────────────────────────
+  const makeEngine = async (useWorker) => {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const e = new PaintingEngine({
+      canvas: c,
+      width: W,
+      height: H,
+      useWorker: useWorker,
+      background: '#ffffff',
+    });
+    // Use the REAL loadImage path (engine.js:224) — it sets _pixels AND
+    // runs analyzeImage() into _analysis. Setting _pixels by hand leaves
+    // _analysis null and generate() throws "No image loaded".
+    await e.loadImage(cSrc);
+    return e;
+  };
+
+  // ── 2. MODULAR (default settings.modular = true) ────────────────────
+  log('Running MODULAR path (useWorker:true, settings.modular=true)...');
+  const eMod = await makeEngine(true);
+  eMod.settings.modular = true;
+  const t0 = performance.now();
+  let modShapes = [];
+  try {
+    modShapes = await eMod.generate({ style: 'pencil', count: COUNT, seed: SEED });
+  } catch (e) {
+    document.getElementById('i-mod').textContent = 'ERROR: ' + e.message;
+    console.error(e);
+  }
+  const tMod = performance.now() - t0;
+  // Render through the engine's own renderer
+  const modLayer = eMod.getLayer(0);
+  const eModCanvas = eMod.renderer.ctx.canvas;
+  eMod.renderer.setLayers(eMod.layers);
+  eMod.renderer.clear();
+  eMod.renderer.renderAll({ progress: 1, clear: false });
+  ctxOf(cMod).drawImage(eModCanvas, 0, 0, W, H);
+  document.getElementById('i-mod').textContent =
+    `shapes ${modShapes.length} · ${tMod.toFixed(0)}ms\n` +
+    `modular=${eMod.settings.modular} useWorker=${eMod.useWorker}\n` +
+    JSON.stringify(stats(cMod));
+
+  // ── 3. LEGACY (modular off → worker path → painter.js) ───────────────
+  log('Running LEGACY path (useWorker:true, settings.modular=false)...');
+  const eLeg = await makeEngine(true);
+  eLeg.settings.modular = false;
+  const t1 = performance.now();
+  let legShapes = [];
+  try {
+    legShapes = await eLeg.generate({ style: 'pencil', count: COUNT, seed: SEED });
+  } catch (e) {
+    document.getElementById('i-leg').textContent = 'ERROR: ' + e.message;
+    console.error(e);
+  }
+  const tLeg = performance.now() - t1;
+  const eLegCanvas = eLeg.renderer.ctx.canvas;
+  eLeg.renderer.setLayers(eLeg.layers);
+  eLeg.renderer.clear();
+  eLeg.renderer.renderAll({ progress: 1, clear: false });
+  ctxOf(cLeg).drawImage(eLegCanvas, 0, 0, W, H);
+  document.getElementById('i-leg').textContent =
+    `shapes ${legShapes.length} · ${tLeg.toFixed(0)}ms\n` +
+    `modular=${eLeg.settings.modular} useWorker=${eLeg.useWorker}\n` +
+    JSON.stringify(stats(cLeg));
+
+  // Dump canvases for external inspection
+  window.__probe = {
+    mod: { shapes: modShapes.length, ms: tMod, stats: stats(cMod) },
+    leg: { shapes: legShapes.length, ms: tLeg, stats: stats(cLeg) },
+    modShapesSample: modShapes.slice(0, 3),
+    legShapesSample: legShapes.slice(0, 3),
+    // Dab geometry — how big is each modular stroke, really?
+    modGeom: (() => {
+      const rx = [], ry = [], len = [], wid = [];
+      for (const s of modShapes) {
+        const p = s.params;
+        if (s.type === 'S' && p.length >= 7) {
+          const d = Math.hypot(p[4] - p[0], p[5] - p[1]);
+          len.push(d); wid.push(p[6]);
+        }
+      }
+      const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+      const pct = (a, q) => { const s = a.slice().sort((x, y) => x - y); return s[Math.floor(q * (s.length - 1))] ?? 0; };
+      return {
+        strokeCount: len.length,
+        lenMean: +mean(len).toFixed(2), lenP10: +pct(len, 0.1).toFixed(2),
+        lenP50: +pct(len, 0.5).toFixed(2), lenP90: +pct(len, 0.9).toFixed(2),
+        widMean: +mean(wid).toFixed(2), widP50: +pct(wid, 0.5).toFixed(2),
+      };
+    })(),
+  };
+  log('DONE — both paths rendered.');
+}
+
+run().catch(e => { log('FATAL: ' + e.message); console.error(e); });
+</script>
+</body>
+</html>

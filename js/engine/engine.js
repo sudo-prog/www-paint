@@ -415,6 +415,14 @@ export class PaintingEngine {
       throw new Error('No pixel data available. Call loadImage first.');
     }
 
+    const selected = [];
+
+    // Map engine order string to Painter order (or null for 'free'/unrecognized)
+    const painterOrder =
+      this._order && PAINTER_ORDER_KINDS.includes(this._order)
+        ? this._order
+        : null;
+
     // ── R6 — modular-engine path (opt-in, default off) ──────────────────────
     // The modular engine (`optimizer.js`) is the engine of record (Track R), but
     // the app has always generated with the legacy `painter.js`. This is the R6
@@ -423,6 +431,17 @@ export class PaintingEngine {
     // whenever `enabled` is false, so the DEFAULT path is untouched and output
     // stays byte-identical (the 9 pinned baselines cannot move). Single-layer
     // only for now — multi-layer still routes through the Painter.
+    //
+    // ⚠ FIXED 2026-11-17 (BE): the modular engine now emits STROKE shapes.
+    // Originally it emitted brush DABS (filled ellipse, type 'E'), which the
+    // style renderers (pencil, charcoal, …) draw as close parallel HATCHING —
+    // ~700 dabs became ~700 hatch patches = black scribble mud (frog fixture:
+    // inkPct 89.7 / 32 colour buckets vs the legacy path's 44.7 / 400).
+    // `modular-bridge.js` now converts every dab to a real brush stroke via
+    // `dabToStrokeShape` (elongation 1.0 × widthScale 0.55 × budget 2×,
+    // measured by `scripts/elongation-sweep.cjs`). Frog fixture after the fix:
+    // modular inkPct 48.4 / 314 colour buckets vs legacy 44.7 / 400
+    // (source: 45.9 / 228). See docs/checkpoints/R6.md.
     const modular = opts.modular !== undefined ? !!opts.modular : !!this.settings.modular;
     if (modular && !multiLayer) {
       const plan = buildModularPlan(this._analysis, {
@@ -446,14 +465,6 @@ export class PaintingEngine {
         return plan.shapes;
       }
     }
-
-    const selected = [];
-
-    // Map engine order string to Painter order (or null for 'free'/unrecognized)
-    const painterOrder =
-      this._order && PAINTER_ORDER_KINDS.includes(this._order)
-        ? this._order
-        : null;
 
     // ── Worker path ───────────────────────────────────────────────
     if (this.useWorker && typeof Worker !== 'undefined') {
