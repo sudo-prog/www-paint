@@ -60,6 +60,12 @@ Plus a side-by-side PNG per run for eyeballing.
 on the benchmark before the port is retired; "exceed" means beating it, not
 matching it.
 
+**Gate status 2026-11-17 — MET on all four images** (measured, `docs/checkpoints/R5.md`
+§3): reference − modular simMae gap **−1.46** (blobs) · **−1.51** (rings) ·
+**−0.79** (smooth) · **−0.29** (noise) — every one inside the 2-point bar. The
+modular engine also **beats the legacy port** on all four (+0.02…+0.33 simMae).
+R6 is therefore a switch + a re-baseline, not more features.
+
 ---
 
 ## 4. Track R — milestones
@@ -71,7 +77,7 @@ matching it.
 | R2 | Structure-guided multi-scale | Coarse→fine; strokes follow the shared structure tensor (roadmap 1.2/1.3). |
 | R3 | Better init | CCL + PCA stroke init (roadmap 1.4). Fidelity ≥ reference at equal stroke count. |
 | R4 | Feature parity | Outlines, region-fill, path/order modes, per-style shaping — re-derived, not copied. **DONE — 4 of 4 landed, all opt-in/default-off**: region-fill (`regionFill`; small measured gain), order (`r4`), outlines (`r4Outline`; **costs** fidelity → no gain claimed), per-style shaping (`r4Shaping`, via the `r4.js` seam; **costs** fidelity → no gain claimed). See `docs/checkpoints/R4.md`, `R4-outline.md`, `R4-shaping.md`. |
-| R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. |
+| R5 | **Exceed** | Per-layer styles, smudge/blend + impasto, wet media, Style Profiles, AI refinement (roadmap Phases 2–5) — features the reference does not have. **DONE (2026-11-17)** — every item landed by its own stream, each opt-in: per-layer styles (2.2), smudge/blend + height buffer (1.5), impasto/relief (`relief.js`, 16 of 51 styles), wet media (3.3), Style Profiles (4.1/4.2 complete), the AI loop (H1–H5 + Track S), stroke primitives (S5), worker batch (S7). `painter.js` has **none** of them (`grep -c 'layerStyles\|mediaModel\|profile' js/engine/painter.js` → 0). Honest deviation from the "beats the port on the bench" wording: the bench measures content fidelity, so the capability half is evidenced by each item's own instrument; the measurable half is recorded — the modular engine **beats the legacy port on all four bench images** (+0.02…+0.33 simMae) and is **inside the R6 gate** (§3) on every one. H3's real-LLM validation remains open. See `docs/checkpoints/R5.md`. |
 | R6 | Retire the legacy painter | App + baselines run 100% on the modular engine; the legacy painter demoted to a dev-only fixture. |
 
 **Status:** R0 ✔ (harness + baseline gap) · **R1 ✔** — the optimiser core
