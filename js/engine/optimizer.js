@@ -270,8 +270,26 @@ export const OPTIMISER_DEFAULTS = {
   saliencySkin: 0.20,
   /** Weight for centre bias in the focus map [0..1]. */
   saliencyCentre: 0.10,
-  /** Subject bonus multiplier for anchors inside the detected subject. */
-  saliencySubjectBonus: 1.15,
+  /**
+   * Subject bonus multiplier for anchors inside the detected subject.
+   *
+   * MEASURED (frog fixture, 2026-11-19): the subject mask is a HARD 0/1
+   * gate on the anchor score, so a bonus pushes strokes out of the
+   * masked-out region entirely - and that is where the residual error lives.
+   * With the focus map at strength 0 (so only the mask is acting), the
+   * bonus alone costs r 0.9215 -> 0.8680 (-0.0535) and mark 0.8990 -> 0.8898.
+   * At full focus-map strength the bonus is redundant (bonus 1.15 and 1.0
+   * give IDENTICAL output: r 0.8627, mark 0.8616) because the focus map
+   * already dominates the anchor choice.
+   *
+   * So the default is 1.0 = OFF: the focus map (a soft weight) does the
+   * work, and the hard gate is opt-in for callers that want it.
+   *
+   * NOTE: `saliencyWeighted` itself still defaults FALSE, so this change
+   * does not alter the default output at all - it only changes what the
+   * lever does when a caller opts IN.
+   */
+  saliencySubjectBonus: 1.0,
   /** Subject area clamp: min fraction of frame that counts as subject. */
   saliencySubjectMin: 0.12,
   /** Subject area clamp: max fraction of frame that counts as subject. */

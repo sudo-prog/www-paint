@@ -201,16 +201,49 @@ contribution) and varying only the subject bonus:
 | saliency, strength 0, subject bonus 1.0 | 42.93 | **0.9215** | 0.6994 | **0.8990** |
 
 The third row is **byte-identical to no-saliency** (r 0.9215, inkPct 42.93,
-mark 0.8990). So:
+mark 0.8990). So the subject mask is a real contributor.
 
-- the focus map at strength 0 is harmless;
-- **the subject mask alone** causes saliency's entire regression (r −0.0535).
+**But it is not the WHOLE story — the focus map hurts too, and the two
+contributions are separable.** Sweeping `saliencyStrength` with the subject
+bonus neutralised (`saliencySubjectBonus: 1.0`):
 
-Why: `detectSubject()` binary-masks the frame (border k-means + Otsu, clamped
-to 12–65 %) and the bonus multiplies the anchor score inside that mask. It is
-a HARD 0/1 gate, so strokes are pushed out of the masked-out region entirely —
-which is exactly where the residual error lives. The focus map, by contrast, is
-a soft weight and can be blended.
+| config (style `graphic`) | inkPct | r | Δr | ssim | mark |
+|---|---|---|---|---|---|
+| no saliency | 42.93 | 0.9215 | — | 0.6994 | 0.8990 |
+| focus only, s 0.0 | 42.93 | 0.9215 | 0.0000 | 0.6994 | 0.8990 |
+| focus only, s 0.1 | 43.30 | 0.9172 | −0.0043 | 0.6938 | 0.8911 |
+| focus only, s 0.25 | 42.25 | 0.9014 | −0.0201 | 0.6734 | **0.9042** |
+| focus only, s 0.5 | 43.37 | 0.8673 | −0.0542 | 0.6188 | 0.8680 |
+| focus only, s 0.75 | 43.59 | 0.8850 | −0.0365 | 0.6573 | 0.8957 |
+| focus only, s 1.0 | 42.56 | 0.8627 | −0.0588 | 0.6230 | 0.8616 |
+| s 1.0, subject bonus 1.15 | 42.56 | 0.8627 | −0.0588 | 0.6230 | 0.8616 |
+
+Read:
+- `s 0.0` is byte-identical to no-saliency → the wiring is correct and the
+  blend is well-behaved at zero.
+- The **focus map alone** costs r monotonically-ish as strength rises
+  (−0.004 at s 0.1 → −0.059 at s 1.0). So the focus map is ALSO harmful to
+  pixel fidelity.
+- **The subject bonus adds nothing on top of a strong focus map** (s 1.0 with
+  bonus 1.15 and with bonus 1.0 are IDENTICAL: r 0.8627, mark 0.8616) — at
+  full strength the focus map already dominates the anchor choice, so the
+  mask is redundant *there*.
+- Where the subject mask DOES bite is at LOW strength: at s 0 the focus map is
+  off entirely and the bonus alone costs r −0.0535 (r 0.8680 vs 0.9215).
+
+**The interesting result is the mark/fidelity split.** At `s 0.25` the mark
+match is **0.9042 — the highest value in the whole sweep** (no-saliency is
+0.8990) while r is −0.0201. Saliency-weighted placement makes the painting
+read more like a *stroke drawing* and less like a *pixel copy of the source*.
+That is exactly the intent of the lever (bias strokes toward salient regions)
+and it is why `r`/`ssim` alone are the wrong gate for it: they measure
+content reconstruction, which is the thing saliency deliberately trades away.
+
+**Honest verdict: saliency is not a fidelity win and must not ship claiming to
+be.** It is a *style* lever. Its usable setting on this fixture is
+`s ≈ 0.1–0.25` (r cost −0.004…−0.020, mark gain +0.006 at s 0.25), and the
+subject bonus should default to 1.0 (off) — the hard 0/1 gate is the more
+destructive of the two mechanisms.
 
 **Consequence for the deliverable:** saliency is excluded from the "all three"
 render (it is the one lever that measurably and visibly damages the output),
