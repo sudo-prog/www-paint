@@ -266,6 +266,23 @@ export const OPTIMISER_DEFAULTS = {
   saliencySubjectMin: 0.12,
   /** Subject area clamp: max fraction of frame that counts as subject. */
   saliencySubjectMax: 0.65,
+
+  // ── Palette-locked colour pair (Track-S, worker lever 3) ───────────────────
+  // Opt-in — `false` (default) → post-hoc quantise snap (quantiseColour),
+  // byte-identical to the legacy schedule. When `true`, the best-fitting
+  // PAIR of palette colours is solved analytically from the SAME LSQ sums
+  // that `solveStrokeGradientLSQ` computes (the worker's `PAL` branch).
+  // This replaces our post-hoc quantise: instead of solving a continuous
+  // c0/c1 then snapping each to the nearest palette entry, we evaluate
+  // every pair of palette entries against the LSQ normal equations and
+  // pick the pair that minimises the weighted error. This keeps every
+  // stroke strictly on-palette and avoids the "two-tone blob" failure mode
+  // where endpoint sampling jumped between distant palette buckets.
+  //
+  // Requires `gradientLSQ: true` and `quantiseColours: true` + a palette.
+  // When enabled, `solveStrokeGradientLSQ` returns the palette-locked pair
+  // directly, bypassing the continuous solve + quantise round-trip.
+  paletteLockedPair: false,
 };
 
 /**
@@ -1073,11 +1090,18 @@ export function optimise(analysis, options = {}) {
    * the Code Paint worker's `evaluate()` (which solves it analytically).
    * Runs once per stroke AFTER geometry is fixed (post hill-climb).
    *
+   * When `opts.paletteLockedPair` is true AND a palette is provided via the
+   * closure scope, the best-fitting PAIR of palette colours is solved
+   * analytically from the SAME LSQ sums (the worker's `PAL` branch). This
+   * replaces the continuous solve + post-hoc quantise round-trip, keeping
+   * every stroke strictly on-palette.
+   *
    * @param {object} p - the committed dab {x, y, rx, ry, rot, alpha}
    * @param {object} win - windowOf(p, 1)
+   * @param {Array<Array<number>>|null} palette - optional palette for locked pair
    * @returns {[number,number,number][]} [[c0r,c0g,c0b], [c1r,c1g,c1b]]
    */
-  function solveStrokeGradientLSQ(p, win) {
+  function solveStrokeGradientLSQ(p, win, palette = null) {
     const cos = Math.cos(p.rot), sin = Math.sin(p.rot);
     const rx = p.rx, ry = p.ry, alpha = p.alpha;
     const mR = Math.max(0.5, Math.min(rx, ry));
@@ -1157,6 +1181,44 @@ export function optimise(analysis, options = {}) {
     const c0 = [clamp(r_m - r_d, 0, 255), clamp(g_m - g_d, 0, 255), clamp(b_m - b_d, 0, 255)];
     const c1 = [clamp(r_m + r_d, 0, 255), clamp(g_m + g_d, 0, 255), clamp(b_m + b_d, 0, 255)];
 
+    // ── Palette-locked pair (worker lever 3): evaluate all palette pairs
+    // against the LSQ normal equations and pick the pair that minimises
+    // the weighted error. This uses the SAME normal-equation coefficients
+    // (Sw0, Sw1, Sw2, Sr0, Sr1, ...) so it's exact and avoids the
+    // continuous-solve + quantise round-trip that produced two-tone blobs.
+    if (palette && Array.isArray(palette) && palette.length >= 2 && opts.paletteLockedPair) {
+      // The LSQ error for a given (c0, c1) is:
+      // Σ w [ (m + t·d - L)² ] + ridge·d²  where m=(c0+c1)/2, d=(c1-c0)/2
+      // For a palette pair (pA, pB) we can compute m,d and the error directly.
+      // Since channels are independent, we evaluate per-channel and sum.
+      let bestPair = null, bestErr = Infinity;
+      for (let i = 0; i < palette.length; i++) {
+        const pA = palette[i];
+        for (let j = i + 1; j < palette.length; j++) {
+          const pB = palette[j];
+          // m = (pA+pB)/2, d = (pB-pA)/2
+          const m0 = (pA[0] + pB[0]) * 0.5;
+          const m1 = (pA[1] + pB[1]) * 0.5;
+          const m2 = (pA[2] + pB[2]) * 0.5;
+          const d0 = (pB[0] - pA[0]) * 0.5;
+          const d1 = (pB[1] - pA[1]) * 0.5;
+          const d2 = (pB[2] - pA[2]) * 0.5;
+          // Weighted error: Σ w (m + t·d - L)² + ridge·d²
+          // = Sw0·m² + 2·Sw1·m·d + (Sw2+ridge)·d² - 2·(Sr0·m + Sr1·d) + const
+          // (const = Σ w·L² doesn't depend on the pair, so we can drop it)
+          const errR = Sw0 * m0 * m0 + 2 * Sw1 * m0 * d0 + (Sw2 + ridge) * d0 * d0 - 2 * (Sr0 * m0 + Sr1 * d0);
+          const errG = Sw0 * m1 * m1 + 2 * Sw1 * m1 * d1 + (Sw2 + ridge) * d1 * d1 - 2 * (Sg0 * m1 + Sg1 * d1);
+          const errB = Sw0 * m2 * m2 + 2 * Sw1 * m2 * d2 + (Sw2 + ridge) * d2 * d2 - 2 * (Sb0 * m2 + Sb1 * d2);
+          const totalErr = errR + errG + errB;
+          if (totalErr < bestErr) {
+            bestErr = totalErr;
+            bestPair = [pA.slice(), pB.slice()];
+          }
+        }
+      }
+      if (bestPair) return bestPair;
+    }
+
     return [c0, c1];
   }
 
@@ -1174,7 +1236,8 @@ export function optimise(analysis, options = {}) {
     const win = windowOf(p, 1);
     let c0, c1;
     if (opts.gradientLSQ) {
-      const [g0, g1] = solveStrokeGradientLSQ(p, win);
+      const palette = opts.palette || null;
+      const [g0, g1] = solveStrokeGradientLSQ(p, win, palette);
       c0 = [Math.round(clamp(g0[0], 0, 255)), Math.round(clamp(g0[1], 0, 255)), Math.round(clamp(g0[2], 0, 255))];
       c1 = [Math.round(clamp(g1[0], 0, 255)), Math.round(clamp(g1[1], 0, 255)), Math.round(clamp(g1[2], 0, 255))];
     } else {
@@ -1478,7 +1541,8 @@ export function optimise(analysis, options = {}) {
       const win = windowOf(p, 1);
       let c0, c1;
       if (opts.gradientLSQ) {
-        const [g0, g1] = solveStrokeGradientLSQ(p, win);
+        const palette = opts.palette || null;
+        const [g0, g1] = solveStrokeGradientLSQ(p, win, palette);
         c0 = [Math.round(clamp(g0[0], 0, 255)), Math.round(clamp(g0[1], 0, 255)), Math.round(clamp(g0[2], 0, 255))];
         c1 = [Math.round(clamp(g1[0], 0, 255)), Math.round(clamp(g1[1], 0, 255)), Math.round(clamp(g1[2], 0, 255))];
       } else {

@@ -831,6 +831,12 @@ export function buildModularPlan(analysis, args = {}) {
   // R4 per-style shaping: the style's own row, or an explicit override.
   const shaping = resolveEffectiveShaping(o.style, o.shapingOverride);
 
+  // Colour quantisation — build the palette FIRST (before optimise) so it can
+  // be passed through for palette-locked pairs (worker lever 3).
+  const palette = (o.dabsAsStrokes !== false && o.quantiseColours)
+    ? buildPalette(analysis, o.paletteSize)
+    : null;
+
   const options = modularOptions({
     style: o.style,
     // The optimiser sizes its dabs for COVERAGE (`r ≈ √(W·H/count)`), so a
@@ -848,6 +854,11 @@ export function buildModularPlan(analysis, args = {}) {
   // `resolveOptions` is the optimiser's own normaliser — use it so the bridge
   // and a direct `optimise()` call cannot drift apart.
   const resolved = resolveOptions(options);
+
+  // Pass the palette through options so the optimiser can use it for
+  // palette-locked pairs (worker lever 3). `optimise` reads it from
+  // `opts.palette` when `gradientLSQ` and `paletteLockedPair` are enabled.
+  if (palette) resolved.palette = palette;
 
   const raw = optimise(analysis, resolved);
   const list = Array.isArray(raw?.shapes) ? raw.shapes : [];
@@ -869,14 +880,6 @@ export function buildModularPlan(analysis, args = {}) {
   // once each as single-dab strokes. Starts EMPTY (initialising it with
   // `usable` double-emitted every dab — caught by the budget test).
   const chainHandled = new Set();
-
-  // Colour quantisation — snap every dab's colour to a k-colour palette of
-  // the source (see `buildPalette`). Collapses the per-dab sampling noise
-  // that renders as a mottled fill. OFF unless `quantise` is set; the plan
-  // turns it on (see BRIDGE_DEFAULTS.quantiseColours).
-  const palette = (o.dabsAsStrokes !== false && o.quantiseColours)
-    ? buildPalette(analysis, o.paletteSize)
-    : null;
 
   // Source sampler for the endpoint colour gradient (see `dabToStrokeShape`):
   // bilinear-ish nearest sample of the analysis pixels at a canvas point.
