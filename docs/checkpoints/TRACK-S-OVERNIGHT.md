@@ -469,3 +469,33 @@ enough.** "Degenerate" (zero-length, all-zero) is the opposite of the case
 that broke here (a LONG stroke). A bounds bug needs both extremes in the
 fixture set — and the test that proves it is the one that fails when the fix
 is reverted, not the one that passes.
+
+## 13. Convergence check — the subagent's saliency claim vs the fix
+
+The aspect-ratio subagent (deleg_14c84307) reported: *"even
+`saliencyWeighted: true` with `saliencyStrength: 0` changes output vs no
+saliency — the subject-mask path is the damage, not the strength."*
+
+That was TRUE on its tree, and its number reproduces exactly on the old
+default:
+
+| config | inkPct | r | ssim | mark |
+|---|---|---|---|---|
+| no saliency | 42.93 | 0.9215 | 0.6994 | 0.8990 |
+| saliency, strength 0, **bonus 1.15** (old default) | 41.68 | 0.8680 | 0.6361 | 0.8898 |
+| saliency, strength 0, **bonus 1.0** (current default) | 42.93 | **0.9215** | 0.6994 | **0.8990** |
+
+The third row is byte-identical to no-saliency. So the subagent's
+measurement was accurate and its conclusion ("the subject mask is the
+damage") was right — but it was diagnosing a state that `1af0f43` has since
+changed. With `saliencySubjectBonus` defaulting to 1.0, the subject mask is
+off and strength 0 is a genuine no-op.
+
+**Two independent measurements, one conclusion, arrived at from opposite
+directions:** the subagent found the mask was the damage while the default
+was 1.15; BE found it by separating the mask from the focus map with a
+strength sweep. Both say the same thing, and the fix is the same.
+
+`saliencyStrength 1` with the current default still costs fidelity
+(r 0.9215 → 0.8627, mark 0.8990 → 0.8616) — that is the FOCUS MAP, which is
+a separate mechanism (§8). The lever stays off by default.
