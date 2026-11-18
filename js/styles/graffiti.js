@@ -112,9 +112,17 @@ export class GraffitiStyle {
   render(ctx, shape, progress = 1, dir = 1) {
     const a = shape.params;
     const R = rngFor(a);
-    let colour = a[shape.type === 'S' ? 8 : 6];
+    // Prefer the shape's own colour fields. The legacy param slot
+    // (a[8] for strokes, a[6] for areas) only exists on the 11-element
+    // legacy shape format; the engine's modular path emits 8-element stroke
+    // params with the colours in shape.color0 / shape.color1 / shape.alpha.
+    // Reading a[8] unconditionally left 1600 of 1664 strokes UNDEFINED and
+    // they all painted BLACK - the same class of bug as confetti's
+    // out-of-bounds walk, but silent instead of throwing.
+    let colour = shape.color0 !== undefined ? shape.color0
+      : (a[shape.type === 'S' ? 8 : 6]);
     colour = Array.isArray(colour) ? rgbToHex(colour) : (typeof colour === 'string' ? colour : '#000000');
-    const o = a[a.length - 1];
+    const o = typeof shape.alpha === 'number' ? shape.alpha : a[a.length - 1];
 
     // g(): skewed gaussian for speckle distribution (favors center)
     const g = () => (R() + R() + R() - 1.5) / 1.5;
@@ -259,7 +267,8 @@ export class GraffitiStyle {
     ctx.scale(rx / m, ry / m);
 
     const G = ctx.createRadialGradient(0, 0, 0, 0, 0, m * 1.25);
-    const blobCol = Array.isArray(a[6]) ? rgbToHex(a[6]) : (typeof a[6] === 'string' ? a[6] : '#000000');
+    const blobSrc = shape.color0 !== undefined ? shape.color0 : a[6];
+    const blobCol = Array.isArray(blobSrc) ? rgbToHex(blobSrc) : (typeof blobSrc === 'string' ? blobSrc : '#000000');
     G.addColorStop(0, blobCol);
     G.addColorStop(0.62, blobCol);
     G.addColorStop(1, blobCol + '00');

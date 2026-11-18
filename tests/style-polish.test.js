@@ -21,6 +21,11 @@
  *                 Found by the 51-style gradient-visibility probe
  *                 (scratch/frog-gradvis.cjs): confetti was the ONE style
  *                 that failed to render at all.
+ *   7. graffiti — read the stroke colour from the LEGACY param slot
+ *                 (a[8]) with no fallback to shape.color0. The engine's
+ *                 modular path emits 8-element stroke params, so a[8] was
+ *                 undefined and 1600 of 1664 strokes painted BLACK. Same
+ *                 class of bug as (6), but SILENT instead of throwing.
  *
  * The pixel-level metrics live in docs/research/m12/{before,after}/metrics.json
  * and are produced by scripts/style-polish.cjs (needs Chromium).
@@ -274,6 +279,49 @@ test('confetti renders a real engine stroke without throwing', () => {
     threw = e;
   }
   assertEqual(threw, null, `confetti threw on a real engine stroke: ${threw && threw.message}`);
+});
+
+test('graffiti reads the stroke colour from shape.color0, not the legacy param slot', () => {
+  // The engine's modular path emits 8-element stroke params
+  // [x0,y0,cx,cy,x1,y1,width,angle] with the colours in shape.color0 /
+  // shape.color1 / shape.alpha. The legacy 11-element format carried the
+  // colours INSIDE params at index 8 (strokes) / 6 (areas).
+  //
+  // graffiti read a[8] unconditionally, so on the modern format it got
+  // undefined and painted every stroke BLACK — silently. Measured on the
+  // frog fixture: 28,728 pure-black pixels before the fix, 148 after.
+  //
+  // The live half of the guard: assert the colour the style actually
+  // computes, for a shape in the modern format.
+  const st = styleInstance('graffiti');
+  const modern = engineStroke({
+    params: [170, 157, 102.5, -141, 185, 169, 1, 0.674],   // 8 elements: NO colour slots
+    color0: [30, 60, 90],
+    color1: [30, 60, 90],
+    alpha: 0.9,
+  });
+  assertEqual(modern.params.length, 8, 'the fixture must be in the modern 8-element format');
+  assertEqual(modern.params[8], undefined, 'the modern format must have no colour at a[8]');
+
+  // Assert the colour the style ACTUALLY SETS on the context — not a
+  // reimplementation of its logic, which would pass even with the bug
+  // present.
+  const ctx = makeRecordingCtx();
+  let threw = null;
+  try {
+    st.render(ctx, modern, 1);
+  } catch (e) {
+    threw = e;
+  }
+  assertEqual(threw, null, `graffiti threw: ${threw && threw.message}`);
+
+  const want = '#1e3c5a';                       // rgbToHex([30, 60, 90])
+  assert(ctx.fillStyle !== null && ctx.fillStyle !== undefined,
+    'graffiti must set a fillStyle');
+  assertEqual(String(ctx.fillStyle).toLowerCase(), want,
+    `graffiti painted ${ctx.fillStyle}, expected ${want} from shape.color0 — ` +
+    'it read the legacy param slot (a[8]) instead, which is undefined on the ' +
+    "engine's 8-element stroke params, so every stroke painted BLACK");
 });
 
 // ── 4. glitch: the stray clip defect ────────────────────────────────────────

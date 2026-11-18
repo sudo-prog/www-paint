@@ -499,3 +499,64 @@ strength sweep. Both say the same thing, and the fix is the same.
 `saliencyStrength 1` with the current default still costs fidelity
 (r 0.9215 → 0.8627, mark 0.8990 → 0.8616) — that is the FOCUS MAP, which is
 a separate mechanism (§8). The lever stays off by default.
+
+## 14. `graffiti` painted 1600 of its 1664 strokes BLACK — silently
+
+§3b's gradient-visibility probe listed exactly ONE style where the gradient
+was invisible: `graffiti`. That was not a property of the style's design. It
+was a bug, and it was **silent** — no exception, just black.
+
+**Root cause.** `js/styles/graffiti.js` line 115 read the stroke colour from
+the LEGACY param slot:
+
+```js
+let colour = a[shape.type === 'S' ? 8 : 6];
+```
+
+The engine's modular path emits 8-element stroke params
+(`[x0,y0,cx,cy,x1,y1,width,angle]`) with the colours in `shape.color0` /
+`shape.color1` / `shape.alpha`. The legacy 11-element format carried the
+colours INSIDE params at index 8 (strokes) / 6 (areas).
+
+Measured on the frog fixture, `graffiti` produces a **mix** of both formats:
+
+| param length | count | legacy colour slot | what it paints |
+|---|---|---|---|
+| 11 (legacy) | 64 | `a[8]` = `[30,30,30]` | correct |
+| **8 (modern)** | **1600** | `a[8]` = **undefined** | **`#000000`** |
+
+So 96 % of the strokes painted pure black.
+
+**Fix:** prefer `shape.color0` and fall back to the legacy slot, the same
+order the working styles use (`pencil.js` L156 is
+`shape.color0 || a[8] || [0,0,0]`). `graffiti` was the only style with no
+such fallback — every other style that reads a param index also tries
+`shape.color0` first.
+
+**Measured effect** (256×192, 200 strokes, seed 12345):
+
+| graffiti | pureBlack | nearBlack | coloured |
+|---|---|---|---|
+| before | **28,728** | 2,002 | 9,759 |
+| after | **148** | 622 | **25,625** |
+
+**99.5 % of the black pixels eliminated.**
+
+**Guarded by a new assertion**, verified to FAIL with the fix reverted (it
+paints `#000000` instead of `#1e3c5a`) and PASS with it in place. The first
+version of that test asserted on a *reimplementation* of the colour logic
+and passed even with the bug present — it had to be rewritten to assert the
+colour the style **actually sets on the context** (`ctx.fillStyle`).
+
+**This is the same defect class as `confetti` (§12), one level quieter:**
+both are "the style assumes the legacy shape format". `confetti` threw; this
+painted black. The general rule:
+
+> Every style that reads a colour (or any field) out of `shape.params` by
+> index must prefer the shape's top-level fields, because the modular path
+> and the legacy path emit DIFFERENT param layouts for the same shape type.
+
+**`graffiti` is now the only style where the gradient is invisible**, and that
+is now a genuine design property rather than a bug: it derives its colours
+from its own spray/palette logic (`blobCol` from `a[6]`, radial gradients
+per blob) rather than from the stroke's colour pair.
