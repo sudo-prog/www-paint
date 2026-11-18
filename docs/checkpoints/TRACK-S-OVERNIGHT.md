@@ -63,7 +63,7 @@ Swept every registry style on the modular path. Best by `r`:
 
 **That single style choice is worth more than all three levers combined.**
 
-### 3b. CORRECTED: the gradient is visible in 49 of 50 styles
+### 3b. CORRECTED: the gradient is visible in ALL 51 styles
 
 **This section originally claimed "25 of 48 styles ignore `color1`". That was
 WRONG, and the way it was measured was wrong.** The original probe rendered a
@@ -81,9 +81,17 @@ pixels change:
 
 | | count |
 |---|---|
-| styles tested | 50 (1 error: `hatch` is not registered) |
-| **gradient VISIBLE** | **49** |
-| gradient invisible | **1** (`graffiti` only) |
+| styles tested | **51** (0 errors) |
+| **gradient VISIBLE** | **51** |
+| gradient invisible | **0** |
+
+> **FINAL, after the `confetti` crash fix (§12) and the `graffiti` black-stroke
+> fix (§14).** The first run of this probe reported "50 tested, 1 error" and
+> `graffiti` as the only invisible style. Both were BUGS, not properties:
+> `confetti` crashed outright, and `graffiti` painted 1600 of its 1664 strokes
+> black, so no gradient could show. After the fixes, `graffiti` reads
+> **72.51 %** — the sixth-highest of all 51, just above `graphic` (72.40 %),
+> and `confetti` reads 43.10 %.
 
 Visible, by percentage of pixels changed:
 
@@ -95,6 +103,7 @@ Visible, by percentage of pixels changed:
 | sumi | 75.83 | | glitch | 45.09 |
 | watercolor | 74.42 | | dots | 46.10 |
 | **graphic** | **72.40** | | linocut | 52.74 |
+| **graffiti** | **72.51** | | confetti | 43.10 |
 | halftone | 68.55 | | string | 55.01 |
 | pen | 66.26 | | … | … |
 | thread | 59.86 | | tape | 61.30 |
@@ -556,7 +565,7 @@ painted black. The general rule:
 > index must prefer the shape's top-level fields, because the modular path
 > and the legacy path emit DIFFERENT param layouts for the same shape type.
 
-**`graffiti` is now the only style where the gradient is invisible**, and that
-is now a genuine design property rather than a bug: it derives its colours
-from its own spray/palette logic (`blobCol` from `a[6]`, radial gradients
-per blob) rather than from the stroke's colour pair.
+**After the fix the gradient is visible in ALL 51 styles** — the final probe
+run reports `styles tested: 51, errors: 0` and an EMPTY invisible list.
+`graffiti` reads **72.51 %**, the sixth-highest of the 51, immediately above
+`graphic` (72.40 %). It was never a design property.

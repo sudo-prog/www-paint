@@ -57,7 +57,11 @@ const SEED = 12345;
 //   shapes and from inferring behaviour from source-code property reads.
 //   The authoritative test (render the real fixture with the gradient off and
 //   on, diff the actual pixels, per style) shows the gradient is VISIBLE in
-//   49 of 50 styles; only `graffiti` is invisible.
+//   ALL 51 styles (the final probe reports "styles tested: 51, errors: 0" and
+//   an empty invisible list). Two earlier readings were BUGS, not properties:
+//   `confetti` crashed outright, and `graffiti` painted 1600 of its 1664
+//   strokes black so no gradient could show. After the fixes `graffiti` reads
+//   72.51% - the sixth-highest of the 51, just above `graphic` (72.40%).
 // GEOMETRY: strokeWidthScale 0.7 + strokeAlpha 0.9 — the source has
 //   meanDensity 0.2398 while every default render sits at 0.188–0.200, i.e.
 //   we UNDER-cover. These values close most of that gap and improve EVERY
