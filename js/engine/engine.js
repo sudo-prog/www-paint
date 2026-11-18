@@ -444,6 +444,32 @@ export class PaintingEngine {
     // (source: 45.9 / 228). See docs/checkpoints/R6.md.
     const modular = opts.modular !== undefined ? !!opts.modular : !!this.settings.modular;
     if (modular) {
+      // ── Forward the bridge's own shape-language options ──────────────────
+      // `buildModularPlan` merges its args over `BRIDGE_DEFAULTS` with a plain
+      // object spread, so a key present-but-`undefined` would CLOBBER a default
+      // (`quantiseColours: undefined` would turn the palette off and change the
+      // painting). Only copy keys the caller actually set, so an absent option
+      // keeps the bridge's own default — and the DEFAULT path stays
+      // byte-identical. Without this the options were inert: sweeping
+      // `strokeElongation` × `strokeWidthScale` through `generate()` produced
+      // identical output for all 15 combinations (measured 2026-11-19).
+      const BRIDGE_FORWARDED = [
+        // stroke geometry
+        'strokeElongation', 'strokeWidthScale', 'strokeBudgetScale',
+        'strokeStructureAlign', 'strokeAlpha',
+        // colour pipeline
+        'paletteSize', 'quantiseColours',
+        // dab → stroke conversion + chaining
+        'dabsAsStrokes', 'chainDabs', 'chainColourTol',
+        // outline budget
+        'outlineBudgetFrac', 'outlineMax',
+        // opt-in gradient shaping (default off → byte-identical)
+        'strokeGradientCap', 'strokeGradientCentred',
+      ];
+      const bridgeOpts = {};
+      for (const k of BRIDGE_FORWARDED) {
+        if (opts[k] !== undefined) bridgeOpts[k] = opts[k];
+      }
       // Phase 2.2 — multi-layer generation now runs on the MODULAR engine:
       // the plan is banded by our own soft tonal masks (`layerBands: 'bands'`)
       // and the shapes are sorted into the five named band layers, exactly as
@@ -458,6 +484,23 @@ export class PaintingEngine {
         layerBands: multiLayer ? 'bands' : false,
         width: this.width,
         height: this.height,
+        ...bridgeOpts,
+        // Forward lever flags so engine.generate({modular:true, gradientLSQ:true})
+        // reaches the optimiser through buildModularPlan → modularOptions →
+        // resolveOptions → optimise(). All default to undefined (→ optimiser
+        // default false) so existing output stays byte-identical when absent.
+        gradientLSQ: opts.gradientLSQ,
+        gradientLSQRidge: opts.gradientLSQRidge,
+        saliencyWeighted: opts.saliencyWeighted,
+        saliencyStrength: opts.saliencyStrength,
+        saliencyContrast: opts.saliencyContrast,
+        saliencyEdges: opts.saliencyEdges,
+        saliencySkin: opts.saliencySkin,
+        saliencyCentre: opts.saliencyCentre,
+        saliencySubjectBonus: opts.saliencySubjectBonus,
+        saliencySubjectMin: opts.saliencySubjectMin,
+        saliencySubjectMax: opts.saliencySubjectMax,
+        paletteLockedPair: opts.paletteLockedPair,
       });
       if (plan.shapes.length) {
         if (multiLayer) {

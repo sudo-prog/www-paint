@@ -47,6 +47,7 @@
  */
 
 import { optimise, resolveOptions } from './optimizer.js';
+import { clamp } from '../utils/math.js';
 import { applyLayerStyles } from './layer-styles.js';
 import { computeTonalMasks } from './masks.js';
 import { buildR4Plan, resolveEffectiveShaping } from './r4.js';
@@ -344,20 +345,64 @@ export function dabToStrokeShape(raw, order, layerIdx = 0, seed = 0, opts = {}) 
 
   let c0 = Array.isArray(raw.color0) ? raw.color0.slice() : [0, 0, 0];
   let c1 = Array.isArray(raw.color1) ? raw.color1.slice() : c0.slice();
-  // ── Endpoint colour gradient (the Code Paint teacher formula) ────────
-  // MEASURED from Code Paint's own stroke console (capture-codepaint-*.cjs,
-  // frog fixture): EVERY stroke carries colA ≠ colB — a colour gradient along
-  // the mark (median pair distance 34.6 RGB). Flat single-colour marks are
-  // the single biggest "ours looks different" tell.
+
+  // ── Gradient-preservation fix (worker lever 1: gradientLSQ) ──────────
+  // The LSQ solver (optimizer.js solveStrokeGradientLSQ) emits a real per-stroke
+  // gradient: c0 ≠ c1 by more than a few RGB units. When the incoming dab ALREADY
+  // carries such a gradient (color0 != color1 by > 1 RGB), the dab came from the
+  // LSQ solver — PRESERVE c0/c1 as-is. Only quantise c0 to the palette (so the
+  // mid-stroke colour stays region-coherent), and KEEP c1's relationship: derive
+  // c1 as an OFFSET from the quantised c0, scaled by the original delta, so the
+  // gradient survives to the rendered stroke.
   //
-  // MEASURED REGRESSION (first attempt): sampling the SOURCE at both
-  // endpoints lets the pair jump between distant palette buckets (white
-  // background ↔ dark fill) → two-tone blobs, inkPct 39.6, lumErr +10.4.
-  // The gradient must stay WITHIN the dab's own colour neighbourhood:
-  // colA = the dab's own colour; colB = the same hue shifted a measured
-  // median pair-distance (34.6 RGB) toward the darker palette neighbour —
-  // bounded, subtle, never crosses regions.
-  if (opts.palette && Array.isArray(opts.palette) && opts.palette.length > 1) {
+  // When the incoming dab is FLAT (color0 == color1), the no-lever path is
+  // byte-identical: keep the 35%-blend heuristic (quantise c0, then blend 35%
+  // toward the second-nearest palette entry for c1).
+  const incomingDist = Math.hypot(c0[0] - c1[0], c0[1] - c1[1], c0[2] - c1[2]);
+  const hasGradient = incomingDist > 1.0;
+
+  // The gradient-preservation branch is gated on the gradientLSQ lever
+  // (`preserveStrokeGradient`). In the DEFAULT path the incoming dab is FLAT
+  // (c0 == c1, the optimiser emits flat dabs when gradientLSQ is off), so
+  // `hasGradient` is false and this branch is not taken — but the gate makes
+  // that a property of the option, not an accident: a future caller that
+  // feeds a gradient-carrying dab through the default path gets the old
+  // 35%-blend behaviour, byte-identical to HEAD.
+  if (hasGradient && opts.preserveStrokeGradient) {
+    // LSQ-solver dab — preserve the gradient.
+    // Quantise c0 to the palette (region-coherent mid-stroke colour), then
+    // reconstruct c1 as an offset from the quantised c0 so the original
+    // gradient magnitude and direction survive.
+    let qc0 = c0;
+    if (opts.palette && Array.isArray(opts.palette) && opts.palette.length > 0) {
+      qc0 = quantiseColour(c0, opts.palette);
+    }
+    // The gradient delta (c1 - c0) scaled by the palette snapping offset.
+    // This keeps the RELATIONSHIP (direction + relative magnitude) while
+    // snapping the absolute position to the palette.
+    const dc0 = qc0[0] - c0[0];
+    const dc1 = qc0[1] - c0[1];
+    const dc2 = qc0[2] - c0[2];
+    c0 = qc0;
+    c1 = [
+      Math.max(0, Math.min(255, c1[0] + dc0)),
+      Math.max(0, Math.min(255, c1[1] + dc1)),
+      Math.max(0, Math.min(255, c1[2] + dc2)),
+    ];
+  } else if (opts.palette && Array.isArray(opts.palette) && opts.palette.length > 1) {
+    // ── Flat dab (no-lever path): 35%-blend heuristic (byte-identical) ────
+    // MEASURED from Code Paint's own stroke console (capture-codepaint-*.cjs,
+    // frog fixture): EVERY stroke carries colA ≠ colB — a colour gradient along
+    // the mark (median pair distance 34.6 RGB). Flat single-colour marks are
+    // the single biggest "ours looks different" tell.
+    //
+    // MEASURED REGRESSION (first attempt): sampling the SOURCE at both
+    // endpoints lets the pair jump between distant palette buckets (white
+    // background ↔ dark fill) → two-tone blobs, inkPct 39.6, lumErr +10.4.
+    // The gradient must stay WITHIN the dab's own colour neighbourhood:
+    // colA = the dab's own colour; colB = the same hue shifted a measured
+    // median pair-distance (34.6 RGB) toward the darker palette neighbour —
+    // bounded, subtle, never crosses regions.
     const base = quantiseColour(c0, opts.palette);
     c0 = base.slice();
     // Second-nearest palette entry = the subtle gradient partner.
@@ -758,6 +803,10 @@ export function toEngineShape(raw, order, layerIdx = 0, seed = 0) {
  * unknown key would be ignored silently, which is how a "wired but inert"
  * option ships. Only documented `resolveOptions` keys are set.
  *
+ * Lever flags (worker levers 1-3) are forwarded through here so that
+ * engine.generate({modular:true, gradientLSQ:true}) reaches optimise().
+ * All default to false/undefined to preserve byte-identical output when off.
+ *
  * @param {object} args
  * @returns {object}
  */
@@ -768,6 +817,21 @@ export function modularOptions({
   regionFill = 0,
   passes = null,
   primitives = null,
+  // Worker lever 1: per-stroke gradient by weighted least squares
+  gradientLSQ = undefined,
+  gradientLSQRidge = undefined,
+  // Worker lever 2: saliency-weighted placement
+  saliencyWeighted = undefined,
+  saliencyStrength = undefined,
+  saliencyContrast = undefined,
+  saliencyEdges = undefined,
+  saliencySkin = undefined,
+  saliencyCentre = undefined,
+  saliencySubjectBonus = undefined,
+  saliencySubjectMin = undefined,
+  saliencySubjectMax = undefined,
+  // Worker lever 3: palette-locked colour pair
+  paletteLockedPair = undefined,
 } = {}) {
   const opts = {
     style: style,
@@ -780,6 +844,22 @@ export function modularOptions({
   };
   if (Array.isArray(passes) && passes.length) opts.passes = passes;
   if (primitives && typeof primitives === 'object') opts.primitives = primitives;
+
+  // Forward lever flags — only when explicitly provided (undefined means "use
+  // optimiser default"). This preserves byte-identical output when levers are off.
+  if (gradientLSQ !== undefined) opts.gradientLSQ = !!gradientLSQ;
+  if (gradientLSQRidge !== undefined) opts.gradientLSQRidge = Number(gradientLSQRidge);
+  if (saliencyWeighted !== undefined) opts.saliencyWeighted = !!saliencyWeighted;
+  if (saliencyStrength !== undefined) opts.saliencyStrength = clamp(Number(saliencyStrength), 0, 1);
+  if (saliencyContrast !== undefined) opts.saliencyContrast = Number(saliencyContrast);
+  if (saliencyEdges !== undefined) opts.saliencyEdges = Number(saliencyEdges);
+  if (saliencySkin !== undefined) opts.saliencySkin = Number(saliencySkin);
+  if (saliencyCentre !== undefined) opts.saliencyCentre = Number(saliencyCentre);
+  if (saliencySubjectBonus !== undefined) opts.saliencySubjectBonus = Number(saliencySubjectBonus);
+  if (saliencySubjectMin !== undefined) opts.saliencySubjectMin = Number(saliencySubjectMin);
+  if (saliencySubjectMax !== undefined) opts.saliencySubjectMax = Number(saliencySubjectMax);
+  if (paletteLockedPair !== undefined) opts.paletteLockedPair = !!paletteLockedPair;
+
   return opts;
 }
 
@@ -850,6 +930,21 @@ export function buildModularPlan(analysis, args = {}) {
     regionFill: shaping.shaping.regionFill || 0,
     passes: o.passes,
     primitives: o.primitives,
+    // Forward lever flags from the call so they reach optimise() via
+    // resolveOptions + optimiser defaults. Undefined → defaults (which are
+    // false / off). Explicit true/false passed through unchanged.
+    gradientLSQ: o.gradientLSQ,
+    gradientLSQRidge: o.gradientLSQRidge,
+    saliencyWeighted: o.saliencyWeighted,
+    saliencyStrength: o.saliencyStrength,
+    saliencyContrast: o.saliencyContrast,
+    saliencyEdges: o.saliencyEdges,
+    saliencySkin: o.saliencySkin,
+    saliencyCentre: o.saliencyCentre,
+    saliencySubjectBonus: o.saliencySubjectBonus,
+    saliencySubjectMin: o.saliencySubjectMin,
+    saliencySubjectMax: o.saliencySubjectMax,
+    paletteLockedPair: o.paletteLockedPair,
   });
   // `resolveOptions` is the optimiser's own normaliser — use it so the bridge
   // and a direct `optimise()` call cannot drift apart.
@@ -1007,12 +1102,38 @@ export function buildModularPlan(analysis, args = {}) {
       sampleSource,
       palette,
       strokeAlpha: o.strokeAlpha,
+      // Opt-in: only the gradientLSQ lever preserves a per-stroke gradient.
+      preserveStrokeGradient: !!o.gradientLSQ,
     });
     if (asStroke) {
       asStroke.style = o.style;
-      // Quantise to the source palette (fills read as regions, not noise).
-      asStroke.color0 = quantiseColour(asStroke.color0, palette);
-      asStroke.color1 = quantiseColour(asStroke.color1, palette);
+      // ── Quantise to the source palette (fills read as regions, not noise) ──
+      // `preserveStrokeGradient` (derived from the gradientLSQ lever) gates
+      // whether the gradient survives this quantise step:
+      //   • OFF (default): HEAD byte-identical — quantise c0 AND c1
+      //     independently, both snapping onto their own palette bucket
+      //     (flat result preserved).
+      //   • ON: quantise c0, then reconstruct c1 as an offset from the
+      //     quantised c0 so the LSQ solver's gradient survives to the render.
+      const preserveStrokeGradient = !!o.gradientLSQ;
+      if (palette && Array.isArray(palette) && palette.length > 0) {
+        if (preserveStrokeGradient) {
+          const c0q = quantiseColour(asStroke.color0, palette);
+          const dc0 = c0q[0] - asStroke.color0[0];
+          const dc1 = c0q[1] - asStroke.color0[1];
+          const dc2 = c0q[2] - asStroke.color0[2];
+          asStroke.color0 = c0q;
+          asStroke.color1 = [
+            Math.max(0, Math.min(255, asStroke.color1[0] + dc0)),
+            Math.max(0, Math.min(255, asStroke.color1[1] + dc1)),
+            Math.max(0, Math.min(255, asStroke.color1[2] + dc2)),
+          ];
+        } else {
+          // HEAD behaviour: independent quantise of both endpoints → byte-identical.
+          asStroke.color0 = quantiseColour(asStroke.color0, palette);
+          asStroke.color1 = quantiseColour(asStroke.color1, palette);
+        }
+      }
       // toEngineShape-embedded params carry colour at renderer indices for
       // filled shapes; 'S' strokes do NOT embed colour in params, so mutating
       // the fields is enough here.

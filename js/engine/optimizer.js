@@ -252,6 +252,16 @@ export const OPTIMISER_DEFAULTS = {
   // Re-derived from the Code Paint worker's `focus` + `subject` logic;
   // never translates identifiers.
   saliencyWeighted: false,
+  /**
+   * Saliency strength [0..1]. 0 = no saliency bias (current behaviour
+   * when `saliencyWeighted` is false, so byte-identical). 1 = full
+   * saliency bias (the original behaviour when `saliencyWeighted` is
+   * true and this is 1.0). Values between 0 and 1 blend the focus map
+   * with uniform placement: `score *= (1 - s) + s * focus[i]`.
+   * This lets low-saliency regions receive strokes, preserving structure
+   * in the background where residual error lives.
+   */
+  saliencyStrength: 1.0,
   /** Weight for local contrast in the focus map [0..1]. */
   saliencyContrast: 0.35,
   /** Weight for edge magnitude in the focus map [0..1]. */
@@ -1453,7 +1463,12 @@ export function optimise(analysis, options = {}) {
       for (let i = 0; i < n; i++) {
         let score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1);
         if (opts.saliencyWeighted && focusMap) {
-          score *= focusMap[i];
+          // Blend rather than replace: `saliencyStrength` (default 1.0 =
+          // current behaviour) scales the focus map toward uniform
+          // placement, so low-saliency regions keep receiving strokes and
+          // the background's residual error still gets resolved.
+          const s = clamp(opts.saliencyStrength, 0, 1);
+          score *= (1 - s) + s * focusMap[i];
           if (subjectMask && subjectMask[i]) score *= opts.saliencySubjectBonus;
         }
         if (score > maxScore) { maxScore = score; best = i; }
@@ -1464,7 +1479,8 @@ export function optimise(analysis, options = {}) {
         const i = Math.floor(random.next() * n);
         let score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1);
         if (opts.saliencyWeighted && focusMap) {
-          score *= focusMap[i];
+          const s = clamp(opts.saliencyStrength, 0, 1);
+          score *= (1 - s) + s * focusMap[i];
           if (subjectMask && subjectMask[i]) score *= opts.saliencySubjectBonus;
         }
         if (score >= thr) { best = i; break; }
