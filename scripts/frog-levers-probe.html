@@ -48,10 +48,16 @@ const SEED = 12345;
 // frog fixture with scripts/frog-fidelity-harness.mjs (see
 // docs/checkpoints/TRACK-S-OVERNIGHT.md).
 //
-// STYLE: 'graphic' — the only style in the TOP 5 of BOTH the fidelity list
-//   (r 0.9218 / ssim 0.7008) and the gradient-aware list. 25 of 48 styles
-//   ignore `color1` entirely, so a per-stroke gradient is structurally
-//   invisible in them.
+// STYLE: 'graphic' — chosen because it is among the BEST on fidelity
+//   (r 0.9376 / ssim 0.7296 / mark 0.9179 with the geometry below) AND shows
+//   a strong per-stroke gradient (72.4 % of pixels change between the
+//   gradient-off and gradient-on renders).
+//   NOTE: an earlier claim that "25 of 48 styles ignore color1" was WRONG —
+//   it came from a probe that measured a MEAN channel difference on synthetic
+//   shapes and from inferring behaviour from source-code property reads.
+//   The authoritative test (render the real fixture with the gradient off and
+//   on, diff the actual pixels, per style) shows the gradient is VISIBLE in
+//   49 of 50 styles; only `graffiti` is invisible.
 // GEOMETRY: strokeWidthScale 0.7 + strokeAlpha 0.9 — the source has
 //   meanDensity 0.2398 while every default render sits at 0.188–0.200, i.e.
 //   we UNDER-cover. These values close most of that gap and improve EVERY

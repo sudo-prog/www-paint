@@ -63,22 +63,61 @@ Swept every registry style on the modular path. Best by `r`:
 
 **That single style choice is worth more than all three levers combined.**
 
-### 3b. 25 of 48 styles ignore `color1` — the gradient is invisible in them
+### 3b. CORRECTED: the gradient is visible in 49 of 50 styles
 
-`pencil.js` reads only `shape.color0` (lines 156, 175, 296); it never reads
-`color1`. Measured by rendering identical shapes with and without a gradient and
-diffing pixels (`meanDiff > 0.05` ⇒ the style honours it):
+**This section originally claimed "25 of 48 styles ignore `color1`". That was
+WRONG, and the way it was measured was wrong.** The original probe rendered a
+fixed set of synthetic shapes and compared a *mean* channel difference, which
+cannot distinguish "the style ignores color1" from "the style's own grain and
+texture dominate the mean". It also inferred style behaviour from which
+`shape.color0`/`shape.color1` properties a style file *reads* in source —
+which is not how the renderer works.
 
-- **Honour the gradient:** `graphic` (meanDiff 5.97, r 0.9072), `riso`, `crystal`,
-  `lens`, `glass`, `watercolour`, `calligraphy`, `halftone`, `frost`, `bokeh`,
-  `charcoal`, `stitch`, `string`, `oil`, `hylics`, the metals…
-- **Ignore it (gradient is invisible):** `pencil`, `ink`, `graffiti`, `marker`,
-  `cross-hatch`, `hatch`, `mosaic`, `scribble`, `sumi`, `gouache`, `knife`,
-  `pastel`, `pen`, `wash`, `dots`, `linocut`, `tape`, `thread`, `neon`, `paper`,
-  `glitch`, `embroid`, `plast`.
+**The authoritative test** renders the SAME frog fixture twice through the
+REAL app path — once with `gradientLSQ` off, once on — and diffs the actual
+rendered pixels, per style, at 256×192 / 200 strokes / seed 12345
+(`scratch/frog-gradvis.cjs`). A style "honours the gradient" if > 0.05 % of
+pixels change:
 
-`graphic` is both a top-fidelity style AND gradient-aware — the only style
-that is in the top 5 of BOTH lists.
+| | count |
+|---|---|
+| styles tested | 50 (1 error: `hatch` is not registered) |
+| **gradient VISIBLE** | **49** |
+| gradient invisible | **1** (`graffiti` only) |
+
+Visible, by percentage of pixels changed:
+
+| best | % | | worst visible | % |
+|---|---|---|---|---|
+| neon | 88.03 | | embroid | 27.38 |
+| bokeh | 85.94 | | pastel | 37.43 |
+| wash | 83.38 | | oil | 40.01 |
+| sumi | 75.83 | | glitch | 45.09 |
+| watercolor | 74.42 | | dots | 46.10 |
+| **graphic** | **72.40** | | linocut | 52.74 |
+| halftone | 68.55 | | string | 55.01 |
+| pen | 66.26 | | … | … |
+| thread | 59.86 | | tape | 61.30 |
+| pencil | 56.04 | | marker | 63.63 |
+
+So `pencil` DOES show the gradient (56 % of pixels change) despite reading
+only `shape.color0` — the style's grain/hatch path still samples the stroke's
+colour, and a gradient changes the *sampled* colour enough to alter the
+render.
+
+**What this changes:**
+
+- The conclusion that drove the deliverable — "use `graphic`" — is **still
+  right, but for a different reason**. `graphic` is not special for
+  honouring the gradient; it is simply among the best on fidelity
+  (r 0.9376 / ssim 0.7296 / mark 0.9179 with the measured geometry) and it
+  shows a strong gradient (72.4 % of pixels).
+- The "gradient is structurally invisible in most styles" framing was wrong
+  and must not be repeated.
+- **Lesson (generalisable):** never infer renderer behaviour from source-code
+  property reads. Measure the RENDERED OUTPUT. The `meanDiff` metric and the
+  "reads `color0` only" heuristic both produced a confident, specific, and
+  wrong number.
 
 ## 4. The lever results, honestly
 
@@ -333,3 +372,51 @@ slot, so the 30 s DEFAULT timeout applies and the wait fails on a slow
 render. It only ever worked because the render happened to be fast enough;
 the slower (better) geometry made it fail. Fixed to the 3-arg form, the same
 one `scripts/ab-palette.cjs` already uses.
+
+## 11. Which bridge defaults are still MEASURED against the current pipeline?
+
+The bridge defaults carry their own measurement notes. Re-running the sweeps
+against the CURRENT pipeline (post gradient-preservation, post option
+forwarding) checks whether those notes still hold:
+
+| default | note says | re-measured now | still valid? |
+|---|---|---|---|
+| `strokeBudgetScale: 8` | peaks at 8× | bs4 r 0.8981 · bs6 0.8789 · **bs8 0.9376** · bs10 0.9355 · bs12 0.9258 | **YES** — 8 is still the knee |
+| `strokeWidthScale: 0.55` | "0.55 with a doubled count is the best combination (inkErr +2.46…)" | ws 0.7 / sa 0.9 gives r 0.9376, inkErr −1.73, lumErr 0.15 — vs the default's r 0.9215, inkErr −2.97, lumErr 4.26 | **NO** — see §10 |
+| `strokeAlpha: 0.8` | "every stroke paints at alpha 0.8 (Code Paint teacher value)" | alpha 0.9 improves r +0.016, ssim +0.030, lumErr 4.26 → 0.15 | **NO** — see §10 |
+
+So two of the three geometry defaults were measured against a pipeline that
+has since changed materially (the gradient-preservation fix changed how every
+stroke's colours are quantised, and the option-forwarding fix made these
+knobs reachable at all). `strokeBudgetScale: 8` survives re-measurement.
+
+**This is the general lesson of the night:** a measurement note attached to a
+default is only as good as the pipeline it was measured on. When the pipeline
+changes materially, the note has to be re-derived — and the note should say
+WHICH pipeline version it was measured on.
+
+### 11a. Why the defaults were still not changed
+
+`BRIDGE_DEFAULTS` changes move all 9 pinned visual baselines (measured in a
+pristine `git archive HEAD` tree: pass 0 / fail 9). Re-baselining the pins is
+a deliberate act and needs sign-off, so:
+
+- the measured geometry is passed EXPLICITLY by `scripts/frog-levers-probe.html`
+  (the deliverable), and
+- the default change is RECORDED here (§10a, §11) for BE's decision.
+
+### 11b. The deliverable style, re-checked with the measured geometry
+
+With ws 0.7 / sa 0.9, the three candidate styles across all three lever states:
+
+| style | base r / ssim / mark | +gradient r | all-three r |
+|---|---|---|---|
+| **graphic** | 0.9376 / **0.7296** / **0.9179** | 0.9206 | **0.9245** |
+| thread | **0.9524** / 0.7289 / 0.9061 | 0.9197 | 0.9248 |
+| tape | 0.9417 / 0.7229 / 0.9151 | 0.9182 | 0.9179 |
+
+`graphic` wins on ssim and mark across the board, and — importantly — the
+**all-three** state IMPROVES on the gradient state (r 0.9206 → 0.9245), i.e.
+the palette lock recovers some of the gradient's fidelity cost. `thread` has
+the best base r but the worst gradient row (0.9197) and a much worse lumErr
+(9.16 vs 2.72). `graphic` stays.
