@@ -15,6 +15,12 @@
  *   4. glitch  — a bare `ctx.clip()` outside save/restore wiped the canvas clip.
  *   5. all     — a style module must not throw on a degenerate shape
  *                (zero-length stroke, missing width, NaN-free params).
+ *   6. confetti — the trailing `j++` in the stroke walk was unbounded, so it
+ *                 ran past the end of the polyline and the render threw
+ *                 "Cannot read properties of undefined (reading '0')".
+ *                 Found by the 51-style gradient-visibility probe
+ *                 (scratch/frog-gradvis.cjs): confetti was the ONE style
+ *                 that failed to render at all.
  *
  * The pixel-level metrics live in docs/research/m12/{before,after}/metrics.json
  * and are produced by scripts/style-polish.cjs (needs Chromium).
@@ -221,6 +227,55 @@ test('pastel stamp walk stays in bounds for a degenerate (zero-length) stroke', 
   assert(Number.isFinite(degenerate.params[6]), 'degenerate stroke must still carry a width');
 });
 
+test('confetti stroke walk never indexes past the end of the polyline', () => {
+  // The trailing `j++` at the end of the piece loop was UNBOUNDED. The inner
+  // `while (j < n - 2 ...)` caps the advance, but the increment after each
+  // piece is not capped, so on a long stroke (steps > n) j walks past the last
+  // point and `P[j]` is undefined -> the render throws.
+  //
+  // Measured on the frog fixture (real app path, style 'confetti'):
+  //   n = 31 points, steps = 33 pieces, crash on iteration 28 with j = 31.
+  const st = styleInstance('confetti');
+  const P = [];
+  for (let i = 0; i <= 30; i++) P.push([i * 10, i * 3]);
+  const n = P.length;
+  const cum = [0];
+  for (let i = 1; i < n; i++) {
+    cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  }
+  const L = cum[n - 1];
+  const w = 2;
+  const d = Math.max(st.defaults.pieceSizeMin * 4, w * 0.8);
+  const steps = Math.ceil(L / d);
+  assert(steps > n, `the fixture must have more pieces than points (steps=${steps}, n=${n})`);
+
+  let j = 1;
+  for (let k = 0; k <= steps; k++) {
+    const target = (k / steps) * L;
+    while (j < n - 2 && cum[j] < target) j++;
+    // The fix: the increment must stay inside the polyline.
+    if (j < n - 2) j++;
+    assert(Number.isInteger(j) && j >= 1 && j < P.length, `j out of bounds: ${j}`);
+    assert(Array.isArray(P[j]) && Array.isArray(P[j - 1]), `P[${j}] must exist`);
+  }
+});
+
+test('confetti renders a real engine stroke without throwing', () => {
+  // The live half of the guard: the defect only appeared at RENDER time, so a
+  // source-shape assertion alone would not have caught it.
+  const st = styleInstance('confetti');
+  const shape = engineStroke({
+    params: [170, 157, 102.5, -141, 185, 169, 1, 0.674, [30, 30, 30], [30, 30, 30], 0.9],
+  });
+  let threw = null;
+  try {
+    st.render(makeRecordingCtx(), shape, 1);
+  } catch (e) {
+    threw = e;
+  }
+  assertEqual(threw, null, `confetti threw on a real engine stroke: ${threw && threw.message}`);
+});
+
 // ── 4. glitch: the stray clip defect ────────────────────────────────────────
 
 test('glitch does not call clip() outside a save/restore pair', () => {
@@ -265,6 +320,12 @@ test('every non-pinned style renders a degenerate stroke without throwing', () =
     engineStroke({ params: [5, 5, 5, 5, 5, 5, 8, 0, [1, 2, 3], [1, 2, 3], 1] }), // zero length
     engineStroke({ params: [0, 0, 0, 0, 0, 0, 0, 0, [0, 0, 0], [0, 0, 0], 0] }), // all zero
     engineStroke({ params: [1, 2, 3, 4, 5, 6, 2, 0, [10, 20, 30], [10, 20, 30], 1] }), // tiny
+    // LONG: steps > n. The four shapes above are all short enough that the
+    // piece count never exceeds the polyline length, which is why the
+    // unbounded `j++` in confetti's stroke walk survived them: the crash
+    // needs steps (33) > n (31), i.e. a stroke long enough to lay down more
+    // pieces than the polyline has points.
+    engineStroke({ params: [170, 157, 102.5, -141, 185, 169, 1, 0.674, [30, 30, 30], [30, 30, 30], 0.9] }),
   ];
   const failures = [];
   for (const { instance, name } of getAllStyles()) {

@@ -420,3 +420,52 @@ With ws 0.7 / sa 0.9, the three candidate styles across all three lever states:
 the palette lock recovers some of the gradient's fidelity cost. `thread` has
 the best base r but the worst gradient row (0.9197) and a much worse lumErr
 (9.16 vs 2.72). `graphic` stays.
+
+## 12. A latent render crash in `confetti` — found by the style sweep
+
+The 51-style gradient-visibility probe (§3b) reported "styles tested: 50,
+errors: 1". The error was not in the gradient logic — `confetti` failed to
+render **at all**.
+
+**Root cause** (`js/styles/confetti.js`, `_renderStroke`): the piece loop walks
+the polyline with an index `j`, advances it inside the loop with
+`while (j < n - 2 && cum[j] < target) j++;`, and then does an **unconditional
+`j++` at the bottom of the iteration**. The inner `while` caps the advance,
+but the trailing increment is not capped, so on a stroke long enough to lay
+down more pieces than the polyline has points, `j` walks off the end and
+`P[j]` is undefined:
+
+```
+const px = P[j - 1][0] + (P[j][0] - P[j - 1][0]) * f;
+```
+
+Measured on the frog fixture (real app path, style `confetti`):
+`n = 31` points, `steps = 33` pieces, crash on iteration 28 with `j = 31`.
+
+**Fix:** `if (j < n - 2) j++;` — the increment now stays inside the polyline.
+
+**Why it survived the existing test suite:** `tests/style-polish.test.js`
+already had a "no style throws on a degenerate shape" check that included
+`confetti`, but every shape in it was SHORT (the longest was a 5-pixel
+stroke), so `steps <= n` and the walk never reached the end. The bug needs
+`steps > n`. The long shape that triggers it is now in that list.
+
+**The fix is guarded by two new assertions** (both verified to FAIL with the
+fix reverted, with the identical error message):
+
+- `confetti stroke walk never indexes past the end of the polyline` — the
+  index walk is replayed with `steps > n` and `j` is asserted in bounds on
+  every iteration.
+- `confetti renders a real engine stroke without throwing` — a live render of
+  a real engine stroke shape.
+
+**`confetti` is the ONLY style with this defect.** Every other style that
+reads `P[j]` (`bokeh`, `charcoal`, `cross-hatch`, `dots`, `neon`, `oil`,
+`pastel`, `pencil`, `stitch`, `watercolor`) has no trailing `j++`, and
+`pastel` had its own equivalent clamp added earlier.
+
+**Generalisation: the existing degenerate-shape test was not degenerate
+enough.** "Degenerate" (zero-length, all-zero) is the opposite of the case
+that broke here (a LONG stroke). A bounds bug needs both extremes in the
+fixture set — and the test that proves it is the one that fails when the fix
+is reverted, not the one that passes.

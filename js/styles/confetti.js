@@ -190,7 +190,12 @@ export class ConfettiStyle {
         ctx.restore();
       }
 
-      j++;
+      // The trailing `j++` must stay inside the polyline: `P` has `n` points
+      // (indices 0..n-1) and the walk above can leave `j` at `n - 2`, so an
+      // unbounded increment reaches `j === n` and `P[j]` is undefined -> the
+      // render throws "Cannot read properties of undefined (reading '0')".
+      // Measured: n = 31, steps = 33, crash on iteration 28 with j = 31.
+      if (j < n - 2) j++;
     }
 
     ctx.restore();
