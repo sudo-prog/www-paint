@@ -145,3 +145,91 @@ class as the lever flags had been — the option reaches the API and dies there.
 - `scripts/visual-regression.cjs` → **pass=9 fail=0**
 - unit battery → **17/17 files exit 0**
 - harness `baseline` row → byte-identical to HEAD (gradD 0.16, r 0.9029, ssim 0.6876)
+
+## 7. The aspect-ratio chase — measured, and the answer is NO (2026-11-19, later)
+
+With the bridge's geometry options finally forwarded (engine.generate() had been
+dropping them on the floor — see §6), the teacher's 44:1 aspect ratio was swept.
+
+`scripts/frog-fidelity-harness.mjs` now also reports `lenP50` / `widP50` /
+`aspectP50` (p50 of the emitted S-strokes) and `mark` (a stroke-language match
+vs the source, computed with the repo's own `analyzeReference` +
+`refPacketDistance`).
+
+Baseline (modular, `graphic`, 400 strokes):
+
+| config | lenP50 | aspect | r | ssim | mark |
+|---|---|---|---|---|---|
+| legacy Painter | 95.9 | 18.8 | 0.9646 | 0.7439 | 0.8773 |
+| modular base | 15.5 | 3.4 | 0.9215 | 0.6994 | 0.8990 |
+| el 3.0 | 45.8 | 10.3 | 0.8344 | 0.5884 | 0.8887 |
+| el 6.0 | 91.1 | 20.5 | 0.6962 | 0.4550 | 0.8769 |
+| el 3.0 / ws 0.15 | 36.3 | 31.9 | 0.7113 | 0.4537 | **0.9335** |
+| el 6.0 / ws 0.2 / bs 16 | 59.0 | 47.9 | 0.7790 | 0.3822 | 0.8987 |
+| el 3.0 / align 1.0 | 45.8 | 10.3 | 0.8401 | 0.5890 | 0.8731 |
+
+**Conclusion: elongating the bridge's dabs CANNOT improve fidelity.** Even a
+configuration that matches the teacher's aspect (el6/ws0.2/bs16 → aspect 47.9)
+scores r 0.7790 against the base's 0.9215.
+
+The reason is structural: the bridge's dabs are placed by a **residual-error
+schedule** (highest-error pixel first), not along image contours. Lengthening a
+dab that sits in the wrong place only spreads the wrong colour further.
+`strokeStructureAlign` (which snaps a dab toward the local structure tangent)
+does not rescue it either — el3+align1.0 is still r 0.8401.
+
+Note the split in the metrics: long strokes raise the **mark** match (0.9335 at
+aspect 31.9) while lowering **r** (0.7113). Mark quality and pixel fidelity
+disagree here, which is exactly why the teacher's own approach is NOT "make the
+dabs longer" — the teacher's 156 structure strokes come from a *different
+placement* (contour-following curves), not from longer residual dabs.
+
+**So the 44:1 gap is a PLACEMENT gap, not a geometry gap.** The right lever is
+contour-following stroke emission (the teacher's `polyPts` multi-point curves),
+not `strokeElongation`. That is the next Track-S item, and it is NOT solvable by
+tuning `BRIDGE_DEFAULTS`.
+
+## 8. Saliency's damage is the SUBJECT MASK, not the focus map
+
+Isolated by setting `saliencyStrength: 0` (which zeroes the focus map's
+contribution) and varying only the subject bonus:
+
+| config (style `graphic`) | inkPct | r | ssim | mark |
+|---|---|---|---|---|
+| no saliency | 42.93 | 0.9215 | 0.6994 | 0.8990 |
+| saliency, strength 0 | 41.68 | 0.8680 | 0.6361 | 0.8898 |
+| saliency, strength 0, subject bonus 1.0 | 42.93 | **0.9215** | 0.6994 | **0.8990** |
+
+The third row is **byte-identical to no-saliency** (r 0.9215, inkPct 42.93,
+mark 0.8990). So:
+
+- the focus map at strength 0 is harmless;
+- **the subject mask alone** causes saliency's entire regression (r −0.0535).
+
+Why: `detectSubject()` binary-masks the frame (border k-means + Otsu, clamped
+to 12–65 %) and the bonus multiplies the anchor score inside that mask. It is
+a HARD 0/1 gate, so strokes are pushed out of the masked-out region entirely —
+which is exactly where the residual error lives. The focus map, by contrast, is
+a soft weight and can be blended.
+
+**Consequence for the deliverable:** saliency is excluded from the "all three"
+render (it is the one lever that measurably and visibly damages the output),
+and the subject bonus should default to 1.0 (i.e. OFF) with the focus map
+doing the work. That is a candidate default change, reported here for BE's
+decision — NOT applied by this commit.
+
+## 9. The deliverable, re-rendered
+
+`scripts/frog-levers-probe.cjs` now renders at the `graphic` style (the only
+style in the TOP 5 of BOTH the fidelity list and the gradient-aware list):
+
+| render | gradD | nonFlat | inkPct | r | ssim |
+|---|---|---|---|---|---|
+| baseline | 0.16 | 8.1 % | 42.93 | 0.921 | 0.699 |
+| gradient | 80.03 | 98 % | 46.73 | 0.907 | 0.684 |
+| all-three (grad + palette lock) | 84.06 | 98 % | 46.30 | 0.912 | 0.679 |
+
+All three pixel digests differ. Vision-checked: all three are **recognisable
+frogs** (green head, two eyes with pupils, yellow mouth, orange tongue, the
+pale mint foot bottom-right, heavy dark outlines) — the earlier "blobs of
+mess" render is gone.

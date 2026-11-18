@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WWW_PAINT — Frog lever probe (real app path, useWorker:true)</title>
+<style>
+  body { background:#111; color:#ddd; font-family:monospace; margin:0; padding:16px; }
+  .row { display:flex; gap:16px; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; }
+  .col canvas { border:1px solid #333; background:#222; }
+  .col .label { font-size:12px; color:#74c0fc; margin:6px 0 4px; }
+  .col .info { font-size:10px; color:#aaa; }
+  #status { font-size:13px; color:#ffd43b; margin-bottom:12px; }
+</style>
+</head>
+<body>
+<div id="status">Loading...</div>
+<div class="row">
+  <div class="col">
+    <span class="label">SOURCE (frog-source.jpg → 512×384)</span>
+    <canvas id="c-src" width="512" height="384"></canvas>
+    <span class="info" id="i-src">—</span>
+  </div>
+  <div class="col">
+    <span class="label">BASELINE (all levers OFF)</span>
+    <canvas id="c-baseline" width="512" height="384"></canvas>
+    <span class="info" id="i-baseline">—</span>
+  </div>
+  <div class="col">
+    <span class="label">GRADIENT (gradientLSQ ON)</span>
+    <canvas id="c-gradient" width="512" height="384"></canvas>
+    <span class="info" id="i-gradient">—</span>
+  </div>
+  <div class="col">
+    <span class="label">ALL-THREE (grad + saliency + palLock)</span>
+    <canvas id="c-allThree" width="512" height="384"></canvas>
+    <span class="info" id="i-allThree">—</span>
+  </div>
+</div>
+
+<script type="module">
+import { PaintingEngine } from '../js/engine/engine.js';
+
+const W = 512, H = 384;
+const COUNT = 400;
+const SEED = 12345;
+const STYLE = 'graphic'; // graphic: honours per-stroke gradient + top-5 fidelity
+const statusEl = document.getElementById('status');
+const log = m => { statusEl.textContent = m; };
+
+function ctxOf(c) { return c.getContext('2d', { willReadFrequently: true }); }
+
+function stats(canvas) {
+  const ctx = ctxOf(canvas);
+  const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let ink = 0, lum = 0, colors = new Set(), gradSum = 0, colorPairs = new Set();
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i+1], b = d[i+2];
+    const L = (r*0.299 + g*0.587 + b*0.114);
+    lum += L;
+    if (L < 245) ink++;
+    if ((i % 400) === 0) colors.add(`${r>>3},${g>>3},${b>>3}`);
+  }
+  const n = d.length / 4;
+  return {
+    inkPct: +(100 * ink / n).toFixed(2),
+    meanLum: +(lum / n).toFixed(2),
+    colourBuckets: colors.size,
+  };
+}
+
+/** Load frog-source.jpg onto a 512×384 canvas. */
+async function loadImage() {
+  const img = new Image();
+  img.src = '../test-images/frog-source.jpg';
+  await img.decode();
+  return img;
+}
+
+async function main() {
+  // ── 1. Draw source ──────────────────────────────────────────────────────
+  const img = await loadImage();
+  const cSrc = document.getElementById('c-src');
+  ctxOf(cSrc).drawImage(img, 0, 0, W, H);
+  document.getElementById('i-src').textContent = `${img.naturalWidth}×${img.naturalHeight}→${W}×${H}`;
+
+  // ── Helper: render through real app path ───────────────────────────────
+  async function renderVariant(leverOpts) {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const e = new PaintingEngine({ canvas: c, width: W, height: H, useWorker: true, background: '#ffffff' });
+    await e.loadImage(cSrc);
+    // Build generate opts: modular on + count + seed + style + levers
+    const genOpts = { modular: true, style: STYLE, count: COUNT, seed: SEED, ...leverOpts };
+    const shapes = await e.generate(genOpts);
+    // Render via engine renderer
+    e.renderer.setLayers(e.layers);
+    e.renderer.clear();
+    e.renderer.renderAll({ progress: 1, clear: false });
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    // Copy engine canvas to output canvas
+    const out = document.getElementById('c-' + leverOpts._label);
+    ctxOf(out).drawImage(c, 0, 0, W, H);
+
+    // Shape-level colour stats: the gradient lever's own signal.
+    let gradSum = 0, gradN = 0;
+    const colSet = new Set();
+    for (const s of shapes) {
+      const a = s.color0, b = s.color1;
+      if (Array.isArray(a) && Array.isArray(b)) {
+        gradSum += Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+        gradN++;
+      }
+      if (Array.isArray(a)) colSet.add(a.join(','));
+    }
+    return {
+      shapes: shapes.length,
+      stats: stats(out),
+      meanGradDist: gradN ? +(gradSum / gradN).toFixed(2) : 0,
+      colour0Unique: colSet.size,
+      typeCounts: shapes.reduce((m, s) => (m[s.type] = (m[s.type] || 0) + 1, m), {}),
+      firstColours: shapes.slice(0, 3).map(s => `${JSON.stringify(s.color0)}→${JSON.stringify(s.color1)}`),
+    };
+  }
+
+  // ── 2. BASELINE — all levers OFF ────────────────────────────────────────
+  log('Rendering BASELINE (all levers OFF, graphic style)...');
+  const baseline = await renderVariant({
+    _label: 'baseline',
+    gradientLSQ: false,
+    saliencyWeighted: false,
+    paletteLockedPair: false,
+  });
+
+  // ── 3. GRADIENT — gradientLSQ ON only ──────────────────────────────────
+  log('Rendering GRADIENT (gradientLSQ ON, graphic style)...');
+  const gradient = await renderVariant({
+    _label: 'gradient',
+    gradientLSQ: true,
+    gradientLSQRidge: 1e-3,
+    saliencyWeighted: false,
+    paletteLockedPair: false,
+  });
+
+  // ── 4. ALL-THREE — grad + paletteLockedPair (saliency removed — degrades) ──
+  log('Rendering ALL-THREE (gradient + paletteLockedPair, graphic style)...');
+  const allThree = await renderVariant({
+    _label: 'allThree',
+    gradientLSQ: true,
+    gradientLSQRidge: 1e-3,
+    saliencyWeighted: false,
+    paletteLockedPair: true,
+  });
+
+  // Stats
+  const srcStats = stats(cSrc);
+  document.getElementById('i-src').textContent += `\n${JSON.stringify(srcStats)}`;
+  document.getElementById('i-baseline').textContent = `shapes ${baseline.shapes}\n${JSON.stringify(baseline.stats)}`;
+  document.getElementById('i-gradient').textContent = `shapes ${gradient.shapes}\n${JSON.stringify(gradient.stats)}`;
+  document.getElementById('i-allThree').textContent = `shapes ${allThree.shapes}\n${JSON.stringify(allThree.stats)}`;
+
+  window.__probe = {
+    source: { stats: srcStats },
+    baseline: baseline,
+    gradient: gradient,
+    allThree: allThree,
+  };
+
+  // Verify renders differ via pixel digest
+  function pixelHash(id) {
+    const d = ctxOf(document.getElementById(id)).getImageData(0, 0, W, H).data;
+    let h = 2166136261;
+    for (let i = 0; i < d.length; i += 4) { h ^= (d[i]<<16)|(d[i+1]<<8)|d[i+2]; h = Math.imul(h, 16777619)>>>0; }
+    return h>>>0;
+  }
+  const hashes = {
+    baseline: pixelHash('c-baseline'),
+    gradient: pixelHash('c-gradient'),
+    allThree: pixelHash('c-allThree'),
+  };
+  window.__probe.hashes = hashes;
+  window.__probe.differ = {
+    baseline_vs_gradient: hashes.baseline !== hashes.gradient,
+    gradient_vs_allThree: hashes.gradient !== hashes.allThree,
+    baseline_vs_allThree: hashes.baseline !== hashes.allThree,
+  };
+
+  log('DONE');
+}
+
+main().catch(e => { log('FATAL: ' + e.message); console.error(e); });
+</script>
+</body>
+</html>

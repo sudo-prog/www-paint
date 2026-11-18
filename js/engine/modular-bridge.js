@@ -190,6 +190,32 @@ export const BRIDGE_DEFAULTS = {
    * washes instead of hard seams. `null` = keep the optimiser's own alpha.
    */
   strokeAlpha: 0.8,
+  /**
+   * Cap on the per-stroke colour gradient (RGB distance between color0 and
+   * color1), applied AFTER the LSQ solve / palette pair is chosen. `null` =
+   * no cap (the solver's own magnitude).
+   *
+   * WHY: the gradient lever's fidelity damage scales with its MAGNITUDE.
+   * The Code Paint teacher's measured median per-stroke pair distance is
+   * 34.6 RGB (996 strokes); our unbounded LSQ solve reaches gradD ≈ 80 on
+   * the frog fixture, and the over-strong gradient washes the stroke's own
+   * structure out. Capping to the teacher's band bounds the damage.
+   *
+   * OPT-IN: `null` (default) leaves the gradient exactly as the solver
+   * produced it, so the default path is byte-identical.
+   */
+  strokeGradientCap: null,
+  /**
+   * Re-centre a capped gradient on the stroke's own mean colour. When a
+   * gradient is capped, both endpoints shift toward/away from each other;
+   * re-centring keeps their MEAN at the original solve's mean, so the cap
+   * changes the stroke's COLOUR RANGE without biasing it lighter or darker.
+   * Only read when `strokeGradientCap` is a finite number.
+   *
+   * OPT-IN: `false` (default) leaves the capped endpoints where the cap
+   * put them (byte-identical when the cap is off).
+   */
+  strokeGradientCentred: false,
 };
 
 /**
@@ -424,6 +450,28 @@ export function dabToStrokeShape(raw, order, layerIdx = 0, seed = 0, opts = {}) 
   // uniform soft layering is what makes overlaps read as washes, not seams.
   const a = Number.isFinite(opts.strokeAlpha) ? opts.strokeAlpha
     : (typeof raw.alpha === 'number' ? raw.alpha : 1);
+
+  // ── Optional gradient cap (opt-in, default off) ──────────────────────
+  // Applied HERE, after the palette quantise, because that step is what
+  // determines the final pair: quantising c0 and re-deriving c1 from it can
+  // both shift the pair and change its distance, so a cap applied before the
+  // quantise is not the distance the renderer ends up drawing.
+  const cap = Number.isFinite(opts.strokeGradientCap) ? Math.max(0, opts.strokeGradientCap) : null;
+  if (cap !== null) {
+    const dist = Math.hypot(c0[0] - c1[0], c0[1] - c1[1], c0[2] - c1[2]);
+    if (dist > cap) {
+      // Preserve the midpoint: the cap shrinks the RANGE without biasing the
+      // stroke lighter or darker.
+      const mx = (c0[0] + c1[0]) / 2, my = (c0[1] + c1[1]) / 2, mz = (c0[2] + c1[2]) / 2;
+      const s = cap / dist;
+      c0 = [Math.max(0, Math.min(255, Math.round(mx - (mx - c0[0]) * s))),
+        Math.max(0, Math.min(255, Math.round(my - (my - c0[1]) * s))),
+        Math.max(0, Math.min(255, Math.round(mz - (mz - c0[2]) * s)))];
+      c1 = [Math.max(0, Math.min(255, Math.round(mx + (c1[0] - mx) * s))),
+        Math.max(0, Math.min(255, Math.round(my + (c1[1] - my) * s))),
+        Math.max(0, Math.min(255, Math.round(mz + (c1[2] - mz) * s)))];
+    }
+  }
 
   return {
     id: `stroke_${layerIdx}_${order}`,
@@ -1104,6 +1152,9 @@ export function buildModularPlan(analysis, args = {}) {
       strokeAlpha: o.strokeAlpha,
       // Opt-in: only the gradientLSQ lever preserves a per-stroke gradient.
       preserveStrokeGradient: !!o.gradientLSQ,
+      // Opt-in gradient cap (default null → no cap → byte-identical).
+      strokeGradientCap: o.strokeGradientCap,
+      strokeGradientCentred: o.strokeGradientCentred,
     });
     if (asStroke) {
       asStroke.style = o.style;

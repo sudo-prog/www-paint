@@ -285,6 +285,107 @@ test('the bridge matches a direct optimise() call on the same resolved options',
   assertEqual(p.rawCount, (direct.shapes || []).length, 'rawCount must equal a direct optimise() run');
 });
 
+/* ── wiring proof: options forwarded to buildModularPlan must NOT be inert ── */
+
+/**
+ * Helper: run the REAL bridge on the frog-like analysis with an explicit
+ * bridge option and confirm it changes the emitted stroke geometry. This
+ * catches the exact failure class fixed here — options passed through
+ * engine.generate() that never reach buildModularPlan (proven inert by the
+ * elongation × widthScale sweep that produced identical output for all 15
+ * combinations).
+ */
+function runPlan(extra) {
+  return buildModularPlan(analysis(), {
+    enabled: true, style: 'pencil', count: 40, seed: 42,
+    width: 128, height: 128,
+    ...extra,
+  });
+}
+
+test('strokeElongation changes emitted stroke length (wiring is live)', () => {
+  const short = runPlan({ strokeElongation: 1.0, strokeWidthScale: 1.0 }).shapes;
+  const long = runPlan({ strokeElongation: 3.0, strokeWidthScale: 1.0 }).shapes;
+  assertOk(short.length > 0 && long.length > 0, 'both plans emitted shapes');
+  // Stroke length = distance between the two endpoints of the 'S' curve.
+  const len = (s) => Math.hypot(s.params[4] - s.params[0], s.params[5] - s.params[1]);
+  const p50 = (arr) => {
+    const v = arr.map(len).sort((a, b) => a - b);
+    return v[Math.floor(v.length / 2)];
+  };
+  assertOk(p50(long) > p50(short),
+    `elongation 3.0 should lengthen strokes (p50 ${p50(long).toFixed(1)}px vs ${p50(short).toFixed(1)}px)`);
+});
+
+test('strokeWidthScale changes emitted stroke width (wiring is live)', () => {
+  const fat = runPlan({ strokeElongation: 1.0, strokeWidthScale: 1.0 }).shapes;
+  const thin = runPlan({ strokeElongation: 1.0, strokeWidthScale: 0.25 }).shapes;
+  assertOk(fat.length > 0 && thin.length > 0, 'both plans emitted shapes');
+  // 'S' stroke width is params[6].
+  const w50 = (arr) => {
+    const v = arr.map((s) => s.params[6]).sort((a, b) => a - b);
+    return v[Math.floor(v.length / 2)];
+  };
+  assertOk(w50(thin) < w50(fat),
+    `widthScale 0.25 should thin strokes (p50 ${w50(thin).toFixed(2)}px vs ${w50(fat).toFixed(2)}px)`);
+});
+
+test('quantiseColours:false keeps c0==c1 flat (wiring is live)', () => {
+  const on = runPlan({ quantiseColours: true, paletteSize: 6 }).shapes;
+  const off = runPlan({ quantiseColours: false }).shapes;
+  assertOk(on.length > 0 && off.length > 0, 'both plans emitted shapes');
+  // With quantise off there is no palette → colors stay raw (not snapped).
+  const distinctOff = new Set(off.map((s) => s.color0.join(','))).size;
+  assertOk(distinctOff > 1, 'quantiseColours:false should leave raw colours, not collapse to one bucket');
+});
+
+test('dabsAsStrokes:false restores raw dab emission (wiring is live)', () => {
+  const raw = runPlan({ dabsAsStrokes: false }).shapes.filter((s) => s.type !== 'S' || s.alpha !== 0.9);
+  // Non-outline shapes should all be type E dabs (outlines are type S, alpha 0.9).
+  const nonOutline = raw.filter((s) => !(s.alpha === 0.9 && s.color0[0] === 30));
+  assertOk(nonOutline.length > 0, 'should emit non-outline shapes');
+  assertOk(nonOutline.every((s) => s.type === 'E'),
+    `dabsAsStrokes:false should emit type E dabs, got ${JSON.stringify([...new Set(nonOutline.map(s => s.type))])}`);
+});
+
+test('strokeStructureAlign changes emitted rotation (wiring is live)', () => {
+  // Build a structure-carrying analysis: the fixture already has structure
+  // from analyzeImage(). Compare align=0 vs align=1 on emitted rotations.
+  const an = analysis();
+  const p0 = buildModularPlan(an, { enabled: true, style: 'pencil', count: 40, seed: 42, strokeStructureAlign: 0, width: 128, height: 128 });
+  const p1 = buildModularPlan(an, { enabled: true, style: 'pencil', count: 40, seed: 42, strokeStructureAlign: 1, width: 128, height: 128 });
+  assertOk(p0.used && p1.used, 'both plans should be used');
+  const rot = (arr) => arr.map((s) => s.params[7]);
+  const d0 = rot(p0.shapes), d1 = rot(p1.shapes);
+  const same = d0.length === d1.length && d0.every((v, i) => Math.abs(v - d1[i]) < 1e-9);
+  assertOk(!same, 'structureAlign should change emitted rotation when structure is present');
+});
+
+test('strokeGradientCap reduces per-stroke gradient distance (wiring is live)', () => {
+  // The cap is applied inside dabToStrokeShape, BEFORE the leftover-dab
+  // palette re-quantise (which can re-expand the pair). So the cap bounds
+  // the distance the solver produced, not the distance the renderer draws —
+  // but it MUST reduce the mean gradD vs the uncapped run. Measured on the
+  // frog fixture: uncapped gradD 80.03 → cap 34.6 gradD 26.09.
+  const uncapped = runPlan({ gradientLSQ: true }).shapes.filter((s) => s.color0 && s.color1);
+  const capped = runPlan({ gradientLSQ: true, strokeGradientCap: 34.6 }).shapes.filter((s) => s.color0 && s.color1);
+  assertOk(uncapped.length > 0 && capped.length > 0, 'both plans emitted gradient strokes');
+  const dist = (s) => Math.hypot(s.color0[0] - s.color1[0], s.color0[1] - s.color1[1], s.color0[2] - s.color1[2]);
+  const meanUncapped = uncapped.reduce((a, s) => a + dist(s), 0) / uncapped.length;
+  const meanCapped = capped.reduce((a, s) => a + dist(s), 0) / capped.length;
+  assertOk(meanCapped < meanUncapped,
+    `cap 34.6 should reduce mean gradient distance (${meanCapped.toFixed(1)} vs ${meanUncapped.toFixed(1)})`);
+});
+
+test('paletteSize changes the number of palette buckets used (wiring is live)', () => {
+  const k6 = runPlan({ quantiseColours: true, paletteSize: 6 }).shapes;
+  const k24 = runPlan({ quantiseColours: true, paletteSize: 24 }).shapes;
+  assertOk(k6.length > 0 && k24.length > 0, 'both plans emitted shapes');
+  const buckets = (arr) => new Set(arr.map((s) => s.color0.join(','))).size;
+  assertOk(buckets(k6) <= buckets(k24),
+    `paletteSize 24 should allow at least as many buckets as 6 (${buckets(k6)} vs ${buckets(k24)})`);
+});
+
 /* ── run ──────────────────────────────────────────────────────────────── */
 
 console.log(`\n=== Track R modular bridge: Passed ${passed}  Failed ${failed} ===`);

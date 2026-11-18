@@ -125,6 +125,8 @@ async function main() {
   const result = await page.evaluate(async ({ origin, configs }) => {
     const { PaintingEngine } = await import(`${origin}/js/engine/engine.js`);
     const { ssimLuma } = await import(`${origin}/js/engine/metrics.js`);
+    const { analyzeReference } = await import(`${origin}/js/engine/ref-analyze.js`);
+    const { refPacketDistance } = await import(`${origin}/js/engine/metrics.js`);
 
     const W = 512, H = 384, GW = 64, GH = 48;
 
@@ -180,6 +182,12 @@ async function main() {
     }
 
     const srcGrid = lumaGrid(srcData);
+    // ── Stroke-language match (the repo-native "does it look like the reference"
+    // metric, Track-S S1/S10): analyse the SOURCE and each RENDER into a
+    // RefPacket and compare. Unlike r/ssim this measures MARK QUALITY (stroke
+    // scale, orientation field, band coverage), so a shapeless dab-mass cannot
+    // score well by accident.
+    const srcPacket = analyzeReference({ pixels: srcData, width: W, height: H });
     function structural(grid) {
       let ma = 0, mb = 0;
       for (let i = 0; i < srcGrid.length; i++) { ma += srcGrid[i]; mb += grid[i]; }
@@ -240,6 +248,22 @@ async function main() {
       const typeCounts = {};
       for (const s of shapes) typeCounts[s.type] = (typeCounts[s.type] || 0) + 1;
 
+      // Stroke geometry (the teacher's 44:1 aspect target). Only 'S' strokes
+      // carry [x0,y0,cx,cy,x1,y1,width,angle]; length = endpoint distance.
+      const lens = [], wids = [], aspects = [];
+      for (const s of shapes) {
+        if (s.type !== 'S' || !Array.isArray(s.params) || s.params.length < 7) continue;
+        const len = Math.hypot(s.params[4] - s.params[0], s.params[5] - s.params[1]);
+        const wid = s.params[6];
+        if (!(len > 0) || !(wid > 0)) continue;
+        lens.push(len); wids.push(wid); aspects.push(len / wid);
+      }
+      const pct = (arr, q) => {
+        if (!arr.length) return 0;
+        const v = arr.slice().sort((a, b) => a - b);
+        return v[Math.min(v.length - 1, Math.floor(v.length * q))];
+      };
+
       let gd = 0, gn = 0, nonFlat = 0;
       for (const s of shapes) {
         if (s.color0 && s.color1) {
@@ -254,6 +278,14 @@ async function main() {
       try {
         ssim = +(ssimLuma(rgbFull(rdata), srcRgb, W, H) || 0).toFixed(4);
       } catch (e) { ssim = 'ERR:' + String(e).substring(0, 80); }
+      // Stroke-language match vs the source (1 = perfect match).
+      let markMatch = null, markParts = null;
+      try {
+        const rPacket = analyzeReference({ pixels: rdata, width: W, height: H });
+        const d = refPacketDistance(srcPacket, rPacket);
+        markMatch = +(1 - d.distance).toFixed(4);
+        markParts = Object.fromEntries(Object.entries(d.parts).map(([k, v]) => [k, +(v).toFixed(3)]));
+      } catch (e) { markMatch = 'ERR:' + String(e).substring(0, 60); }
 
       out.push({
         name: cfg.name,
@@ -266,6 +298,14 @@ async function main() {
         stats: stats(rdata),
         structural: st,
         ssim,
+        geometry: {
+          lenP50: +pct(lens, 0.5).toFixed(1),
+          widP50: +pct(wids, 0.5).toFixed(2),
+          aspectP50: +pct(aspects, 0.5).toFixed(1),
+          strokes: lens.length,
+        },
+        markMatch,
+        markParts,
         dataUrl: rc.toDataURL('image/png'),
       });
     }
@@ -303,14 +343,18 @@ async function main() {
     r: r.structural.r,
     mad: r.structural.mad,
     ssim: r.ssim,
+    lenP50: r.geometry?.lenP50,
+    widP50: r.geometry?.widP50,
+    aspectP50: r.geometry?.aspectP50,
+    markMatch: r.markMatch,
     digest: r.stats.digest,
   }));
 
   // ── report ──────────────────────────────────────────────────────────────
   console.log(`SOURCE  inkPct=${src.inkPct} meanLum=${src.meanLum} buckets=${src.colourBuckets}`);
   console.log('');
-  const hdr = ['config', 'shapes', 'ms', 'gradD', 'nonFlat%', 'inkPct', 'inkErr', 'lumErr', 'buckets', 'r', 'mad', 'ssim'];
-  const widths = [12, 7, 5, 6, 9, 7, 7, 7, 8, 8, 7, 7];
+  const hdr = ['config', 'shapes', 'ms', 'gradD', 'nonFlat%', 'inkPct', 'inkErr', 'lumErr', 'buckets', 'r', 'mad', 'ssim', 'lenP50', 'widP50', 'aspect', 'mark'];
+  const widths = [12, 7, 5, 6, 9, 7, 7, 7, 8, 8, 7, 7, 7, 7, 7, 7];
   const line = (cells) => cells.map((c, i) => String(c).padEnd(widths[i])).join(' ');
   console.log(line(hdr));
   console.log(widths.map((w) => '-'.repeat(w - 1)).join(' '));
@@ -318,6 +362,7 @@ async function main() {
     console.log(line([
       r.name, r.shapes, r.ms, r.gradDist, r.nonFlatPct, r.inkPct,
       r.inkErr, r.lumErr, r.buckets, r.r, r.mad, r.ssim ?? '—',
+      r.lenP50, r.widP50, r.aspectP50, r.markMatch ?? '—',
     ]));
   }
 
