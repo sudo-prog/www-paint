@@ -230,6 +230,42 @@ export const OPTIMISER_DEFAULTS = {
   gradientLSQ: false,
   /** Ridge toward flat (c0 == c1). Larger = more reluctant to add a gradient. */
   gradientLSQRidge: 1e-3,
+
+  // ── Saliency-weighted placement (Track-S, worker lever 2) ──────────────────
+  // Opt-in — `false` (default) → anchors are residual-error-driven only,
+  // byte-identical to the legacy schedule. When `true`, a FOCUS MAP multiplies
+  // the scoring weights in the anchor selection, so strokes are biased toward
+  // visually salient regions. The focus map combines:
+  //   - local contrast (standard deviation in a 15×15 window)
+  //   - edge magnitude (Sobel from analyzer)
+  //   - skin-tone likelihood (Cb≈102, Cr≈153 Gaussians, identical to the worker)
+  //   - gentle centre bias (cosine falloff, normalised to mean weight 1)
+  // All four channels are min-max normalised to [0,1] then weighted and
+  // renormalised so the map's mean weight is exactly 1 — the total number
+  // of strokes and the error reduction per stroke are preserved.
+  //
+  // PLUS subject detection: a border k-means (k=2) on the focus map splits
+  // the image into "subject" vs "background" using Otsu's method on the
+  // border distribution, then clamps the subject to 12–65% of the frame.
+  // Strokes inside the subject get a small bonus weight (1.15×).
+  //
+  // Re-derived from the Code Paint worker's `focus` + `subject` logic;
+  // never translates identifiers.
+  saliencyWeighted: false,
+  /** Weight for local contrast in the focus map [0..1]. */
+  saliencyContrast: 0.35,
+  /** Weight for edge magnitude in the focus map [0..1]. */
+  saliencyEdges: 0.35,
+  /** Weight for skin-tone likelihood in the focus map [0..1]. */
+  saliencySkin: 0.20,
+  /** Weight for centre bias in the focus map [0..1]. */
+  saliencyCentre: 0.10,
+  /** Subject bonus multiplier for anchors inside the detected subject. */
+  saliencySubjectBonus: 1.15,
+  /** Subject area clamp: min fraction of frame that counts as subject. */
+  saliencySubjectMin: 0.12,
+  /** Subject area clamp: max fraction of frame that counts as subject. */
+  saliencySubjectMax: 0.65,
 };
 
 /**
@@ -713,6 +749,18 @@ export function optimise(analysis, options = {}) {
   let levelTarget = target;
   let elongMul = 1;
 
+  // ── Saliency focus map + subject detection (worker lever 2) ────────────────
+  // Computed ONCE at the start when `saliencyWeighted` is on. The focus map
+  // combines local contrast + edges + skin-tone likelihood + centre bias,
+  // normalised to mean weight 1. The subject mask is a binary region from
+  // border k-means on the focus map (Otsu threshold), clamped to 12–65%.
+  let focusMap = null;
+  let subjectMask = null;
+  if (opts.saliencyWeighted) {
+    focusMap = buildFocusMap(pixels, W, H, edges, opts);
+    subjectMask = detectSubject(focusMap, W, H, opts);
+  }
+
   /**
    * Signed error delta produced by compositing a candidate dab, evaluated over
    * its own (padded) footprint window against the current scale's reference:
@@ -800,6 +848,214 @@ export function optimise(analysis, options = {}) {
       return [levelTarget[i * 3], levelTarget[i * 3 + 1], levelTarget[i * 3 + 2]];
     }
     return [sr / wsum, sg / wsum, sb / wsum];
+  }
+
+  /**
+   * Build the saliency FOCUS MAP (worker lever 2).
+   *
+   * Combines four channels (all min-max normalised to [0,1], then weighted and
+   * renormalised so the map's mean weight is exactly 1):
+   *   1. Local contrast — std dev of luminance in a 15×15 window
+   *   2. Edge magnitude — Sobel from `edges` (analyzer)
+   *   3. Skin-tone likelihood — Cb≈102, Cr≈153 Gaussians (identical to worker)
+   *   4. Centre bias — cosine falloff from image centre
+   *
+   * Pure, deterministic, O(N) using integral images for the local contrast.
+   *
+   * @param {Uint8Array|Uint8ClampedArray} pixels - RGBA source
+   * @param {number} W - image width
+   * @param {number} H - image height
+   * @param {Float32Array|null} edges - Sobel magnitude from analyzer (or null)
+   * @param {object} opts - resolved optimiser options
+   * @returns {Float32Array} focus map, length W×H, mean weight = 1
+   */
+  function buildFocusMap(pixels, W, H, edges, opts) {
+    const n = W * H;
+    const lum = new Float32Array(n);
+    const cb = new Float32Array(n);
+    const cr = new Float32Array(n);
+
+    // 1. Luminance + YCbCr (for skin tone)
+    for (let i = 0; i < n; i++) {
+      const o = i * 4;
+      const r = pixels[o], g = pixels[o + 1], b = pixels[o + 2];
+      // BT.601 luminance
+      lum[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+      // YCbCr (full-range) for skin-tone Gaussians
+      cb[i] = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+      cr[i] = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+    }
+
+    // 2. Local contrast via integral image of luminance and luminance²
+    // 15×15 window → radius 7
+    const winR = 7;
+    const intL = new Float32Array((W + 1) * (H + 1));
+    const intL2 = new Float32Array((W + 1) * (H + 1));
+    for (let y = 0; y < H; y++) {
+      let rowSum = 0, rowSum2 = 0;
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        rowSum += lum[i];
+        rowSum2 += lum[i] * lum[i];
+        intL[(y + 1) * (W + 1) + (x + 1)] = intL[y * (W + 1) + (x + 1)] + rowSum;
+        intL2[(y + 1) * (W + 1) + (x + 1)] = intL2[y * (W + 1) + (x + 1)] + rowSum2;
+      }
+    }
+    const contrast = new Float32Array(n);
+    for (let y = 0; y < H; y++) {
+      const y0 = Math.max(0, y - winR);
+      const y1 = Math.min(H, y + winR + 1);
+      for (let x = 0; x < W; x++) {
+        const x0 = Math.max(0, x - winR);
+        const x1 = Math.min(W, x + winR + 1);
+        const area = (y1 - y0) * (x1 - x0);
+        const getSum = (arr) =>
+          arr[y1 * (W + 1) + x1] - arr[y0 * (W + 1) + x1] - arr[y1 * (W + 1) + x0] + arr[y0 * (W + 1) + x0];
+        const sum = getSum(intL);
+        const sum2 = getSum(intL2);
+        const mean = sum / area;
+        const variance = Math.max(0, sum2 / area - mean * mean);
+        contrast[y * W + x] = Math.sqrt(variance);
+      }
+    }
+
+    // 3. Edge magnitude (from analyzer's Sobel)
+    const edgeMag = edges || new Float32Array(n);
+
+    // 4. Skin-tone likelihood (Cb≈102, Cr≈153 Gaussians, σ≈15 each)
+    // Identical to the Code Paint worker's constants
+    const skin = new Float32Array(n);
+    const cbMu = 102, crMu = 153, sigma = 15;
+    const inv2s2 = 1 / (2 * sigma * sigma);
+    for (let i = 0; i < n; i++) {
+      const dcb = cb[i] - cbMu;
+      const dcr = cr[i] - crMu;
+      skin[i] = Math.exp(-(dcb * dcb + dcr * dcr) * inv2s2);
+    }
+
+    // 5. Centre bias (cosine falloff, normalised to [0,1])
+    const centre = new Float32Array(n);
+    const cx = (W - 1) * 0.5;
+    const cy = (H - 1) * 0.5;
+    const maxDist = Math.hypot(cx, cy);
+    for (let y = 0; y < H; y++) {
+      const dy = y - cy;
+      for (let x = 0; x < W; x++) {
+        const dx = x - cx;
+        const d = Math.hypot(dx, dy) / maxDist;
+        centre[y * W + x] = Math.max(0, Math.cos(d * Math.PI * 0.5));
+      }
+    }
+
+    // 6. Min-max normalise each channel to [0,1]
+    function minmaxNorm(arr) {
+      let mn = Infinity, mx = -Infinity;
+      for (let i = 0; i < n; i++) {
+        if (arr[i] < mn) mn = arr[i];
+        if (arr[i] > mx) mx = arr[i];
+      }
+      if (mx <= mn) return new Float32Array(n); // flat → zero
+      const scale = 1 / (mx - mn);
+      const out = new Float32Array(n);
+      for (let i = 0; i < n; i++) out[i] = (arr[i] - mn) * scale;
+      return out;
+    }
+    const cContrast = minmaxNorm(contrast);
+    const cEdge = minmaxNorm(edgeMag);
+    const cSkin = minmaxNorm(skin);
+    const cCentre = minmaxNorm(centre);
+
+    // 7. Weighted sum → renormalise to mean = 1
+    const wC = opts.saliencyContrast, wE = opts.saliencyEdges, wS = opts.saliencySkin, wCe = opts.saliencyCentre;
+    const wSum = wC + wE + wS + wCe || 1;
+    const focus = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      focus[i] = (wC * cContrast[i] + wE * cEdge[i] + wS * cSkin[i] + wCe * cCentre[i]) / wSum;
+    }
+    // Renormalise so mean weight = 1 (preserves total stroke count / error budget)
+    let mean = 0;
+    for (let i = 0; i < n; i++) mean += focus[i];
+    mean /= n;
+    if (mean > 0) {
+      const inv = 1 / mean;
+      for (let i = 0; i < n; i++) focus[i] *= inv;
+    }
+    return focus;
+  }
+
+  /**
+   * Detect the SUBJECT region from the focus map (worker lever 2).
+   *
+   * Border k-means (k=2) on focus values at the image border → two clusters
+   * (subject vs background). Otsu's method on the border histogram finds the
+   * split threshold. The larger cluster is "subject", then clamped to
+   * 12–65% of the frame.
+   *
+   * @param {Float32Array} focusMap - from buildFocusMap
+   * @param {number} W
+   * @param {number} H
+   * @param {object} opts - resolved optimiser options
+   * @returns {Uint8Array} subject mask (1 = subject, 0 = background)
+   */
+  function detectSubject(focusMap, W, H, opts) {
+    const n = W * H;
+    const subject = new Uint8Array(n);
+
+    // Collect border pixels (top + bottom + left + right edges)
+    const border = [];
+    for (let x = 0; x < W; x++) border.push(focusMap[x], focusMap[(H - 1) * W + x]);
+    for (let y = 1; y < H - 1; y++) border.push(focusMap[y * W], focusMap[y * W + (W - 1)]);
+
+    if (border.length < 4) return subject;
+
+    // Otsu's threshold on border values
+    const hist = new Array(256).fill(0);
+    for (const v of border) {
+      const b = Math.min(255, Math.max(0, Math.round(v * 255)));
+      hist[b]++;
+    }
+    let sum = 0, sumB = 0, wB = 0, wF = 0, varMax = 0, threshold = 0;
+    for (let t = 0; t < 256; t++) sum += t * hist[t];
+    for (let t = 0; t < 256; t++) {
+      wB += hist[t];
+      if (wB === 0) continue;
+      wF = border.length - wB;
+      if (wF === 0) break;
+      sumB += t * hist[t];
+      const mB = sumB / wB;
+      const mF = (sum - sumB) / wF;
+      const varBetween = wB * wF * (mB - mF) * (mB - mF);
+      if (varBetween > varMax) { varMax = varBetween; threshold = t; }
+    }
+
+    // Classify whole image: above threshold = subject candidate
+    let subjectCount = 0;
+    for (let i = 0; i < n; i++) {
+      const b = Math.min(255, Math.max(0, Math.round(focusMap[i] * 255)));
+      if (b > threshold) { subject[i] = 1; subjectCount++; }
+    }
+
+    // Clamp to 12–65% of frame (worker's exact bounds)
+    const minCount = Math.round(opts.saliencySubjectMin * n);
+    const maxCount = Math.round(opts.saliencySubjectMax * n);
+    if (subjectCount < minCount) {
+      // Too small → expand by lowering threshold
+      for (let t = threshold; t >= 0 && subjectCount < minCount; t--) {
+        for (let i = 0; i < n; i++) {
+          const b = Math.min(255, Math.max(0, Math.round(focusMap[i] * 255)));
+          if (b === t && subject[i] === 0) { subject[i] = 1; subjectCount++; }
+        }
+      }
+    } else if (subjectCount > maxCount) {
+      // Too large → shrink by raising threshold
+      for (let t = threshold + 1; t < 256 && subjectCount > maxCount; t++) {
+        for (let i = 0; i < n; i++) {
+          const b = Math.min(255, Math.max(0, Math.round(focusMap[i] * 255)));
+          if (b === t && subject[i] === 1) { subject[i] = 0; subjectCount--; }
+        }
+      }
+    }
+    return subject;
   }
 
   /**
@@ -1127,16 +1383,28 @@ export function optimise(analysis, options = {}) {
       // boundary — the deterministic RNG keeps it reproducible. A band-scoped
       // pass (S4) multiplies the score by its band mask, biasing (never
       // forcing) the residual sample onto that band.
+      // Saliency-weighted placement (worker lever 2): when enabled, the focus
+      // map multiplies the score so strokes are biased toward visually salient
+      // regions; the subject mask adds a small bonus inside the detected subject.
       let best = -1, maxScore = 0;
       for (let i = 0; i < n; i++) {
-        const score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1);
+        let score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1);
+        if (opts.saliencyWeighted && focusMap) {
+          score *= focusMap[i];
+          if (subjectMask && subjectMask[i]) score *= opts.saliencySubjectBonus;
+        }
         if (score > maxScore) { maxScore = score; best = i; }
       }
       if (best < 0 || maxScore <= 1e-4) break;
       const thr = opts.anchorThreshold * maxScore;
       for (let attempt = 0; attempt < 24; attempt++) {
         const i = Math.floor(random.next() * n);
-        if (err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1) >= thr) { best = i; break; }
+        let score = err[i] * (1 - opts.spread * clamp(cov[i], 0, 1)) * (mask ? mask[i] : 1);
+        if (opts.saliencyWeighted && focusMap) {
+          score *= focusMap[i];
+          if (subjectMask && subjectMask[i]) score *= opts.saliencySubjectBonus;
+        }
+        if (score >= thr) { best = i; break; }
       }
       const ax = (best % W) + 0.5;
       const ay = Math.floor(best / W) + 0.5;
