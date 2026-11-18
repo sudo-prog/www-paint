@@ -48,6 +48,7 @@
 
 import { optimise, resolveOptions } from './optimizer.js';
 import { applyLayerStyles } from './layer-styles.js';
+import { computeTonalMasks } from './masks.js';
 import { buildR4Plan, resolveEffectiveShaping } from './r4.js';
 import { aliasStyle } from './style-alias.js';
 
@@ -479,6 +480,84 @@ export function quantiseColour(c, palette) {
   return best.slice();
 }
 
+// ── Multi-layer band assignment (Phase 2.2 on the modular engine) ───────────
+
+/**
+ * Sample the soft tonal masks at a point → the band that owns it.
+ *
+ * This is the modular engine's layer classifier, and it is OUR design, not the
+ * legacy Painter's: painter.js assigns a shape by two hard luminance cuts
+ * (`<0.3 → shadows`, `>0.7 → highlights`) read at the shape's centroid. Here
+ * the bands are `masks.js`' four SOFT tonal masks (Phase 2.1, the Zorn/Reilly
+ * value-structure abstraction) — a pixel belongs to a band by degree, the four
+ * windows sum to ~1 at every pixel, and a shape goes to the band that claims
+ * its anchor with the largest membership. Same five layer names the engine's
+ * multi-layer panel already exposes (`PaintingEngine.LAYER_NAMES`).
+ *
+ * Not a copy of painter.js `_assignLayer` — re-derived from the masks module
+ * the app already ships. The Painter's generation-progress rule (first ~5% of
+ * shapes → 'background') is deliberately NOT carried over: the optimiser has
+ * no meaningful progress fraction (its passes are coarse→fine, not
+ * background→detail), and which band a mark belongs to should depend on the
+ * IMAGE, not on when the mark happened to be emitted.
+ *
+ * @param {object} tonal - `computeTonalMasks()` result (masks + width/height)
+ * @param {number} x - anchor x in image pixels
+ * @param {number} y - anchor y in image pixels
+ * @param {string} [outlineFallback='outline'] - band for unplaced shapes
+ * @returns {string} one of background/shadows/midtone(S)/highlights
+ */
+export function bandAt(tonal, x, y, outlineFallback = 'outline') {
+  if (!tonal || !tonal.masks) return outlineFallback;
+  const { masks, width, height } = tonal;
+  const cx = Math.max(0, Math.min(width - 1, Math.round(x)));
+  const cy = Math.max(0, Math.min(height - 1, Math.round(y)));
+  const i = cy * width + cx;
+  let best = null, bv = -1;
+  for (const name of ['background', 'shadows', 'midtones', 'highlights']) {
+    const m = masks[name];
+    if (!m || i >= m.length) continue;
+    if (m[i] > bv) { bv = m[i]; best = name; }
+  }
+  // The masks partition luminance by degree, so a point always has SOME
+  // winner; `best === null` only on a malformed tonal object.
+  return best ? SINGULAR[best] : outlineFallback;
+}
+
+/** masks.js plural band name → the engine's singular layer name. */
+const SINGULAR = {
+  background: 'background',
+  shadows: 'shadows',
+  midtones: 'midtone',
+  highlights: 'highlights',
+};
+
+/**
+ * The layer band each emitted shape belongs to, keyed by paint order.
+ *
+ * Only meaningful when the caller opts into multi-layer output
+ * (`layerBands: 'bands'`). Classifies in emission order — outlines first
+ * (they ARE the outline layer), then chains/dabs by their anchor — so the
+ * returned index matches `plan.shapes[i]` exactly.
+ *
+ * @param {object} tonal - `computeTonalMasks()` result
+ * @param {Array<object>} shapes - the emitted engine-format shapes
+ * @param {object} [opts]
+ * @param {Set<object>} [opts.outlineShapes] - shape objects emitted as outline
+ * @returns {string[]} band name per shape (paint order)
+ */
+export function classifyShapeBands(tonal, shapes, opts = {}) {
+  const outline = opts.outlineShapes || null;
+  return shapes.map((s) => {
+    if (outline && outline.has(s)) return 'outline';
+    // 'S' params = [x0,y0, cx,cy, x1,y1, w, angle]; filled shapes put the
+    // centre at [0],[1]. Either way the first two numbers anchor the mark.
+    const x = Array.isArray(s.params) && s.params.length >= 2 ? s.params[0] : 0;
+    const y = Array.isArray(s.params) && s.params.length >= 2 ? s.params[1] : 0;
+    return bandAt(tonal, x, y, 'midtone');
+  });
+}
+
 /**
  * Chain adjacent same-colour dabs into flowing multi-dab strokes.
  *
@@ -715,16 +794,20 @@ export function modularOptions({
  * @param {string} [args.style='pencil'] - registry style name
  * @param {number} [args.count=400] - stroke budget
  * @param {number} [args.seed=12345]
- * @param {Array<object>} [args.layerStyles] - Phase 2.2 per-layer style spec
+ * @param {object} [args.layerStyles] - Phase 2.2 per-layer style spec
  * @param {Array<object>} [args.passes] - S4 explicit pass schedule
  * @param {object} [args.primitives] - S5 primitive mix
  * @param {object} [args.shapingOverride] - R4 per-style shaping override
  * @param {number} [args.width] - image width (ordering centre + outline cap)
  * @param {number} [args.height]
+ * @param {boolean} [args.layerBands=false] - Phase 2.2 multi-layer: stamp each
+ *   shape with `layerName` (the masks.js soft tonal band owning its anchor;
+ *   outline strokes → 'outline'). Opt-in; off keeps every shape untouched.
  * @returns {{
  *   used: boolean, reason: string, shapes: object[],
  *   shaping: object|null, plan: object|null, options: object|null,
- *   rawCount: number, outlineCount: number
+ *   rawCount: number, outlineCount: number,
+ *   layerBands: string|null, bandCounts: object|null
  * }}
  */
 export function buildModularPlan(analysis, args = {}) {
@@ -830,6 +913,11 @@ export function buildModularPlan(analysis, args = {}) {
   }
 
   const shapes = [];
+  // Multi-layer: the shape objects emitted as OUTLINE strokes. They are the
+  // only shapes whose band does not come from the tonal masks — an outline
+  // mark belongs to the 'outline' layer by construction (it follows the R4
+  // edge field, not a luminance band).
+  const outlineShapes = o.layerBands === 'bands' ? new Set() : null;
   let order = 0;
   for (const pts of outlines) {
     if (!Array.isArray(pts) || pts.length < 2) continue;
@@ -852,6 +940,7 @@ export function buildModularPlan(analysis, args = {}) {
       style: o.style,
       flat: true,
     }, order++, 0, o.seed));
+    if (outlineShapes) outlineShapes.add(shapes[shapes.length - 1]);
   }
   for (const r of usable) {
     // The RAW registry name, never the Painter alias: `aliasStyle('watercolor')
@@ -931,8 +1020,23 @@ export function buildModularPlan(analysis, args = {}) {
     shapes.push(toEngineShape({ ...r, style: o.style }, order++, 0, o.seed));
   }
 
+  // Phase 2.2 — multi-layer band assignment. OUR layer system (masks.js soft
+  // tonal bands), now on the modular engine: when the caller opts in, every
+  // shape carries `layerName` — the band that owns its anchor — and outlines
+  // are pinned to the 'outline' layer. engine.js maps `layerName` onto its
+  // five named band layers, exactly as the Painter path does.
+  let bandCounts = null;
+  if (o.layerBands === 'bands') {
+    const tonal = computeTonalMasks(analysis);
+    const bands = classifyShapeBands(tonal, shapes, { outlineShapes });
+    for (let i = 0; i < shapes.length; i++) shapes[i].layerName = bands[i];
+    bandCounts = {};
+    for (const b of bands) bandCounts[b] = (bandCounts[b] || 0) + 1;
+  }
+
   // Phase 2.2 — per-layer styles. Applied LAST, exactly where `engine.js`
-  // applies it on the Painter path.
+  // applies it on the Painter path. `applyLayerStyles` keys on `layerName`
+  // (see `shapeLayerKey`), so a banded plan is restamped per band directly.
   if (o.layerStyles) applyLayerStyles(shapes, o.layerStyles);
 
   return {
@@ -944,10 +1048,13 @@ export function buildModularPlan(analysis, args = {}) {
     options: resolved,
     rawCount: usable.length,
     outlineCount: outlines.length,
+    layerBands: o.layerBands === 'bands' ? 'bands' : null,
+    bandCounts,
   };
 }
 
 export default {
   BRIDGE_DEFAULTS, buildModularPlan, toEngineShape, dabToStrokeShape,
   chainDabs, buildPalette, quantiseColour, modularOptions,
+  bandAt, classifyShapeBands,
 };

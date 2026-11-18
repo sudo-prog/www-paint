@@ -174,7 +174,10 @@ async function main() {
   const fails = [];
   const ok = (cond, msg) => { if (!cond) fails.push(msg); else console.log(`  \u2713 ${msg}`); };
   console.log(`\n=== modular-engine switch probe @ ${WIDTH}x${HEIGHT} ===`);
-  ok(result.defaultModular === false, `default settings.modular is false (got ${result.defaultModular})`);
+  // The R6 default flip (commit 5b52357, human-approved, 9 pins re-baselined)
+  // turned `settings.modular` ON — this guard was written against the old
+  // opt-in contract and stayed red ever since. Assert the SHIPPED contract.
+  ok(result.defaultModular === true, `default settings.modular is true (got ${result.defaultModular})`);
   ok(result.on.shapes > 0, `modular generate returns shapes (${result.on.shapes})`);
   ok(result.off.shapes > 0, `painter generate returns shapes (${result.off.shapes})`);
   ok(result.on.shapeOk, `every modular shape is engine-format (params + color0)`);

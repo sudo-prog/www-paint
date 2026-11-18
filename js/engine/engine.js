@@ -443,20 +443,39 @@ export class PaintingEngine {
     // modular inkPct 48.4 / 314 colour buckets vs legacy 44.7 / 400
     // (source: 45.9 / 228). See docs/checkpoints/R6.md.
     const modular = opts.modular !== undefined ? !!opts.modular : !!this.settings.modular;
-    if (modular && !multiLayer) {
+    if (modular) {
+      // Phase 2.2 — multi-layer generation now runs on the MODULAR engine:
+      // the plan is banded by our own soft tonal masks (`layerBands: 'bands'`)
+      // and the shapes are sorted into the five named band layers, exactly as
+      // the Painter path below does. Falls through to the legacy path only if
+      // the modular plan comes back empty.
       const plan = buildModularPlan(this._analysis, {
         enabled: true,
         style,
         count,
         seed,
         layerStyles,
+        layerBands: multiLayer ? 'bands' : false,
         width: this.width,
         height: this.height,
       });
       if (plan.shapes.length) {
-        const layer = this.getLayer(layerIdx);
-        if (layer) layer.strokes = plan.shapes;
-        this.renderer.multiLayer = false;
+        if (multiLayer) {
+          const namedLayers = preserveLayerProps(this._initMultiLayerLayers(), this.layers);
+          const layerByName = {};
+          for (const l of namedLayers) { layerByName[l._name] = l; }
+          for (const s of plan.shapes) {
+            const ln = s.layerName || 'midtone';
+            if (layerByName[ln]) layerByName[ln].strokes.push(s);
+            else if (layerByName['midtone']) layerByName['midtone'].strokes.push(s);
+          }
+          this.layers = namedLayers;
+          this.renderer.multiLayer = true;
+        } else {
+          const layer = this.getLayer(layerIdx);
+          if (layer) layer.strokes = plan.shapes;
+          this.renderer.multiLayer = false;
+        }
         this.renderer.setLayers(this.layers);
         this._lastCount = plan.shapes.length;
         if (typeof opts.onShape === 'function') {
