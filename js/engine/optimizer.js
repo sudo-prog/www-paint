@@ -215,6 +215,21 @@ export const OPTIMISER_DEFAULTS = {
   // unrecognised resolves to nothing at all, so a stale or future value is a
   // safe no-op rather than a silent restyle.
   r4Shaping: null,
+
+  // ── Per-stroke gradient by weighted least squares (Track-S, worker lever 1) ─
+  // Opt-in — `false` (default) → every stroke is flat (color0 === color1),
+  // byte-identical to the legacy schedule. When `true`, each committed stroke
+  // solves its two endpoint colours (c0, c1) by α²-weighted LSQ over its own
+  // coverage footprint, with a small ridge toward c0 == c1 so a flat stroke
+  // wins unless the pixels genuinely ask for a gradient. This directly targets
+  // the teacher's "2-colour gradient on every stroke" stat (996/996).
+  //
+  // The solver runs once per stroke AFTER its geometry is fixed (post hill-climb),
+  // using the current scale's reference (`levelTarget`) and the stroke's alpha
+  // weights. It is pure, deterministic, and adds ~O(N_pixels) work per stroke.
+  gradientLSQ: false,
+  /** Ridge toward flat (c0 == c1). Larger = more reluctant to add a gradient. */
+  gradientLSQRidge: 1e-3,
 };
 
 /**
@@ -787,6 +802,108 @@ export function optimise(analysis, options = {}) {
     return [sr / wsum, sg / wsum, sb / wsum];
   }
 
+  /**
+   * Solve the two endpoint colours (c0, c1) of a stroke by α²-weighted
+   * least squares over the stroke's own coverage footprint.
+   *
+   * Model: the stroke is an elliptical dab with a linear gradient along its
+   * rotation axis. For each pixel, the gradient parameter t ∈ [-1, 1] maps
+   * to the colour c(t) = (c0 + c1)/2 + t·(c1 - c0)/2. The coverage α_p of
+   * the dab at pixel p weights the squared error. A small Tikhonov ridge
+   * (opts.gradientLSQRidge) penalises (c1 - c0) so a flat stroke wins unless
+   * the pixels genuinely demand a gradient.
+   *
+   * This is the classical LSQ for a two-endpoint gradient, re-derived from
+   * the Code Paint worker's `evaluate()` (which solves it analytically).
+   * Runs once per stroke AFTER geometry is fixed (post hill-climb).
+   *
+   * @param {object} p - the committed dab {x, y, rx, ry, rot, alpha}
+   * @param {object} win - windowOf(p, 1)
+   * @returns {[number,number,number][]} [[c0r,c0g,c0b], [c1r,c1g,c1b]]
+   */
+  function solveStrokeGradientLSQ(p, win) {
+    const cos = Math.cos(p.rot), sin = Math.sin(p.rot);
+    const rx = p.rx, ry = p.ry, alpha = p.alpha;
+    const mR = Math.max(0.5, Math.min(rx, ry));
+    const ridge = opts.gradientLSQRidge || 1e-3;
+
+    // Accumulators for the 3 channels independently
+    let Sw0 = 0, Sw1 = 0, Sw2 = 0;          // Σ w, Σ w·t, Σ w·t²
+    let Sr0 = 0, Sr1 = 0, Sg0 = 0, Sg1 = 0, Sb0 = 0, Sb1 = 0; // Σ w·L, Σ w·t·L
+
+    for (let py = win.y0; py <= win.y1; py++) {
+      const dyBase = py + 0.5 - p.y;
+      const rowBase = py * W;
+      for (let px = win.x0; px <= win.x1; px++) {
+        const i = rowBase + px;
+        const dx = px + 0.5 - p.x;
+        const u = dx * cos + dyBase * sin;
+        const v = -dx * sin + dyBase * cos;
+        const rr = Math.sqrt((u * u) / (rx * rx) + (v * v) / (ry * ry));
+        const a = clamp(0.5 + (1 - rr) * mR, 0, 1) * alpha;
+        if (a <= 0.0005) continue;
+        const w = a * a; // α² weighting (worker uses coverage²)
+        const o3 = i * 3;
+        const Lr = levelTarget[o3];
+        const Lg = levelTarget[o3 + 1];
+        const Lb = levelTarget[o3 + 2];
+
+        // Gradient parameter t in [-1, 1] along the stroke's rotation axis
+        const t = u / (rx + 1e-6); // normalised along major axis
+
+        Sw0 += w;
+        Sw1 += w * t;
+        Sw2 += w * t * t;
+
+        Sr0 += w * Lr;
+        Sr1 += w * t * Lr;
+        Sg0 += w * Lg;
+        Sg1 += w * t * Lg;
+        Sb0 += w * Lb;
+        Sb1 += w * t * Lb;
+      }
+    }
+
+    if (Sw0 <= 0) {
+      // Degenerate: fall back to a flat colour at the anchor
+      const col = localColor(p.x, p.y, Math.max(1, Math.min(p.rx, p.ry) * 0.4));
+      return [col.slice(), col.slice()];
+    }
+
+    // Solve [c0, c1] for each channel:
+    // We have: L(t) = c0 * (1-t)/2 + c1 * (1+t)/2 = (c0+c1)/2 + t*(c1-c0)/2
+    // Let m = (c0+c1)/2 (midpoint), d = (c1-c0)/2 (half-diff)
+    // Then: L = m + t·d
+    // LSQ: Σ w (m + t·d - L)² + ridge·d²
+    // Normal equations:
+    //   Σ w (m + t·d - L) = 0           → Sw0·m + Sw1·d = S0
+    //   Σ w t (m + t·d - L) + ridge·d = 0  → Sw1·m + (Sw2+ridge)·d = S1
+    // where S0 = Σ w·L, S1 = Σ w·t·L
+
+    const det = Sw0 * (Sw2 + ridge) - Sw1 * Sw1;
+    if (Math.abs(det) < 1e-12) {
+      const m0 = Sr0 / Sw0;
+      const m1 = Sg0 / Sw0;
+      const m2 = Sb0 / Sw0;
+      return [[m0, m1, m2], [m0, m1, m2]];
+    }
+
+    const invDet = 1 / det;
+    // m = ( (Sw2+ridge)*S0 - Sw1*S1 ) / det
+    // d = ( -Sw1*S0 + Sw0*S1 ) / det
+    const r_m = ((Sw2 + ridge) * Sr0 - Sw1 * Sr1) * invDet;
+    const r_d = (-Sw1 * Sr0 + Sw0 * Sr1) * invDet;
+    const g_m = ((Sw2 + ridge) * Sg0 - Sw1 * Sg1) * invDet;
+    const g_d = (-Sw1 * Sg0 + Sw0 * Sg1) * invDet;
+    const b_m = ((Sw2 + ridge) * Sb0 - Sw1 * Sb1) * invDet;
+    const b_d = (-Sw1 * Sb0 + Sw0 * Sb1) * invDet;
+
+    const c0 = [clamp(r_m - r_d, 0, 255), clamp(g_m - g_d, 0, 255), clamp(b_m - b_d, 0, 255)];
+    const c1 = [clamp(r_m + r_d, 0, 255), clamp(g_m + g_d, 0, 255), clamp(b_m + b_d, 0, 255)];
+
+    return [c0, c1];
+  }
+
   const shapes = [];
   let strokeIndex = 0;
 
@@ -798,15 +915,25 @@ export function optimise(analysis, options = {}) {
   function commitShape(p) {
     evaluate(p, windowOf(p, 1), true);
     if (opts.onStroke) opts.onStroke(strokeIndex, meanErrorVs(target));
-    const cr = Math.round(clamp(p.r, 0, 255));
-    const cg = Math.round(clamp(p.g, 0, 255));
-    const cb = Math.round(clamp(p.b, 0, 255));
+    const win = windowOf(p, 1);
+    let c0, c1;
+    if (opts.gradientLSQ) {
+      const [g0, g1] = solveStrokeGradientLSQ(p, win);
+      c0 = [Math.round(clamp(g0[0], 0, 255)), Math.round(clamp(g0[1], 0, 255)), Math.round(clamp(g0[2], 0, 255))];
+      c1 = [Math.round(clamp(g1[0], 0, 255)), Math.round(clamp(g1[1], 0, 255)), Math.round(clamp(g1[2], 0, 255))];
+    } else {
+      const cr = Math.round(clamp(p.r, 0, 255));
+      const cg = Math.round(clamp(p.g, 0, 255));
+      const cb = Math.round(clamp(p.b, 0, 255));
+      c0 = [cr, cg, cb];
+      c1 = [cr, cg, cb];
+    }
     shapes.push(createShape({
       id: `r3_${strokeIndex}_${((strokeIndex * 2654435761) >>> 0).toString(36)}`,
       type: 'E',
       params: [p.x, p.y, p.rx, p.ry, p.rot, p.rot, 0, 0],
-      color0: [cr, cg, cb],
-      color1: [cr, cg, cb],
+      color0: c0,
+      color1: c1,
       alpha: p.alpha,
       style: 'painterly',
       layer: 0,
@@ -1080,13 +1207,23 @@ export function optimise(analysis, options = {}) {
       evaluate(p, windowOf(p, 1), true);
       if (opts.onStroke) opts.onStroke(strokeIndex, meanErrorVs(target));
 
-      const cr = Math.round(p.r), cg = Math.round(p.g), cb = Math.round(p.b);
+      const win = windowOf(p, 1);
+      let c0, c1;
+      if (opts.gradientLSQ) {
+        const [g0, g1] = solveStrokeGradientLSQ(p, win);
+        c0 = [Math.round(clamp(g0[0], 0, 255)), Math.round(clamp(g0[1], 0, 255)), Math.round(clamp(g0[2], 0, 255))];
+        c1 = [Math.round(clamp(g1[0], 0, 255)), Math.round(clamp(g1[1], 0, 255)), Math.round(clamp(g1[2], 0, 255))];
+      } else {
+        const cr = Math.round(p.r), cg = Math.round(p.g), cb = Math.round(p.b);
+        c0 = [cr, cg, cb];
+        c1 = [cr, cg, cb];
+      }
       shapes.push(createShape({
         id: `r2_${strokeIndex}_${((strokeIndex * 2654435761) >>> 0).toString(36)}`,
         type: 'E',
         params: [p.x, p.y, p.rx, p.ry, p.rot, p.rot, 0, 0],
-        color0: [cr, cg, cb],
-        color1: [cr, cg, cb],
+        color0: c0,
+        color1: c1,
         alpha: p.alpha,
         style: 'painterly',
         layer: 0,
