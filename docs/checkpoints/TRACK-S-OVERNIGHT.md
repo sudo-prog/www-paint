@@ -266,3 +266,70 @@ All three pixel digests differ. Vision-checked: all three are **recognisable
 frogs** (green head, two eyes with pupils, yellow mouth, orange tongue, the
 pale mint foot bottom-right, heavy dark outlines) — the earlier "blobs of
 mess" render is gone.
+
+## 10. We UNDER-cover the source — and that is a cheap, large win
+
+The RefPacket breakdown (`refPacketDistance` parts) showed the dominant mark
+loss is the `scale` term, and the reason is visible in the raw stats:
+
+| | meanStrokeScale | meanDensity | meanCoherence | meanLuma |
+|---|---|---|---|---|
+| SOURCE | 0.6847 | **0.2398** | 0.4150 | 0.7661 |
+| graphic (default) | 0.7491 | 0.1956 | 0.4045 | 0.7830 |
+| thread (default) | 0.7605 | 0.1884 | 0.4326 | 0.8070 |
+| flat (default) | 0.7508 | 0.1996 | 0.4076 | 0.8006 |
+
+Every render paints **~20 % less ink than the source** (meanDensity 0.188–0.200
+vs 0.2398). The two knobs that add coverage — `strokeWidthScale` and
+`strokeAlpha` — were among the options that `engine.generate()` never
+forwarded (§6), so this was untunable until §6 was fixed.
+
+Sweeping them on the `graphic` style (400 strokes, seed 12345):
+
+| config | inkErr | lumErr | r | mad | ssim | mark |
+|---|---|---|---|---|---|---|
+| default (ws 0.55, sa 0.8) | −2.97 | 4.26 | 0.9215 | 15.84 | 0.6994 | 0.8990 |
+| ws 0.55, sa 0.9 | −3.86 | 2.68 | 0.9240 | 14.98 | 0.7102 | 0.9163 |
+| **ws 0.70, sa 0.90** | −1.73 | **0.15** | **0.9376** | **13.59** | **0.7296** | **0.9179** |
+| ws 0.70, sa 0.80 | −0.52 | 1.04 | 0.9375 | 14.14 | 0.7191 | 0.9059 |
+| ws 0.85, sa 0.80 | +0.52 | −0.49 | 0.9305 | 14.93 | 0.7181 | 0.8793 |
+| ws 0.70, bs 12, sa 0.90 | −2.17 | 1.77 | 0.9258 | 14.96 | 0.6948 | 0.9223 |
+
+**`strokeWidthScale 0.7` + `strokeAlpha 0.9` improves EVERY metric at once**
+(r +0.0161, mad −2.25, ssim +0.0302, mark +0.0189, lumErr 4.26 → 0.15) — the
+only configuration in the sweep that does not trade one metric for another.
+Raising the budget above 8 hurts (more strokes crowd the same regions).
+
+Per style, with that geometry:
+
+| style | r | mad | ssim | mark |
+|---|---|---|---|---|
+| **thread** | **0.9524** | **12.85** | 0.7289 | 0.9061 |
+| flat | 0.9404 | 13.54 | 0.7021 | 0.9174 |
+| tape | 0.9417 | 12.98 | 0.7229 | 0.9151 |
+| graphic | 0.9376 | 13.59 | **0.7296** | **0.9179** |
+
+`thread` reaches r 0.9524 against the legacy yardstick's 0.9646 — closing
+most of the remaining gap.
+
+### 10a. Why the defaults were NOT changed
+
+Changing `BRIDGE_DEFAULTS` moves **all 9** pinned visual baselines (measured:
+pass 0 / fail 9 in a pristine `git archive HEAD` tree with only the two values
+changed). Re-baselining the pins is a deliberate act, not a side effect of an
+algorithm change, and it needs sign-off. The parity bench is unaffected
+(identical numbers — it does not use the bridge defaults).
+
+So the measured geometry is passed **explicitly** by the deliverable probe
+(`scripts/frog-levers-probe.html`), which leaves the defaults and the pins
+untouched, and the default change is RECORDED HERE for BE's decision.
+
+### 10b. A latent Playwright bug found on the way
+
+`scripts/frog-levers-probe.cjs` waited with
+`page.waitForFunction(fn, { timeout: 600000 })`. Playwright's signature is
+`waitForFunction(pageFunction, arg, options)` — the object lands in the **arg**
+slot, so the 30 s DEFAULT timeout applies and the wait fails on a slow
+render. It only ever worked because the render happened to be fast enough;
+the slower (better) geometry made it fail. Fixed to the 3-arg form, the same
+one `scripts/ab-palette.cjs` already uses.

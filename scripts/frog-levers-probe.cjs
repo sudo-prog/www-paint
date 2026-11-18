@@ -82,10 +82,14 @@ function startServer() {
   const url = `http://127.0.0.1:${port}/scripts/frog-levers-probe.html`;
   await page.goto(url, { waitUntil: 'load', timeout: 60000 });
 
+  // Playwright's signature is waitForFunction(pageFunction, arg, options) —
+  // passing `{ timeout }` as the SECOND argument makes it the ARG, so the
+  // 30 s default applies and the wait fails on a slow render. The null arg
+  // puts the options in the third slot (the form scripts/ab-palette.cjs uses).
   await page.waitForFunction(() => {
     const s = document.getElementById('status');
     return s && (s.textContent.startsWith('DONE') || s.textContent.startsWith('FATAL'));
-  }, { timeout: 600000 });
+  }, null, { timeout: 600000 });
 
   const status = await page.$eval('#status', el => el.textContent);
   console.log('STATUS:', status);

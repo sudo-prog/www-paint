@@ -44,7 +44,23 @@ import { PaintingEngine } from '../js/engine/engine.js';
 const W = 512, H = 384;
 const COUNT = 400;
 const SEED = 12345;
-const STYLE = 'graphic'; // graphic: honours per-stroke gradient + top-5 fidelity
+// Style + geometry for the deliverable, each chosen BY MEASUREMENT on the
+// frog fixture with scripts/frog-fidelity-harness.mjs (see
+// docs/checkpoints/TRACK-S-OVERNIGHT.md).
+//
+// STYLE: 'graphic' — the only style in the TOP 5 of BOTH the fidelity list
+//   (r 0.9218 / ssim 0.7008) and the gradient-aware list. 25 of 48 styles
+//   ignore `color1` entirely, so a per-stroke gradient is structurally
+//   invisible in them.
+// GEOMETRY: strokeWidthScale 0.7 + strokeAlpha 0.9 — the source has
+//   meanDensity 0.2398 while every default render sits at 0.188–0.200, i.e.
+//   we UNDER-cover. These values close most of that gap and improve EVERY
+//   metric at once (r 0.9215 -> 0.9376, mad 15.84 -> 13.59,
+//   ssim 0.6994 -> 0.7296, mark 0.8990 -> 0.9179, lumErr 4.26 -> 0.15).
+//   They are passed EXPLICITLY, so the bridge defaults (0.55 / 0.8) and the
+//   9 pinned visual baselines are untouched.
+const STYLE = 'graphic';
+const GEOMETRY = { strokeWidthScale: 0.7, strokeAlpha: 0.9 };
 const statusEl = document.getElementById('status');
 const log = m => { statusEl.textContent = m; };
 
@@ -91,7 +107,7 @@ async function main() {
     const e = new PaintingEngine({ canvas: c, width: W, height: H, useWorker: true, background: '#ffffff' });
     await e.loadImage(cSrc);
     // Build generate opts: modular on + count + seed + style + levers
-    const genOpts = { modular: true, style: STYLE, count: COUNT, seed: SEED, ...leverOpts };
+    const genOpts = { modular: true, style: STYLE, count: COUNT, seed: SEED, ...GEOMETRY, ...leverOpts };
     const shapes = await e.generate(genOpts);
     // Render via engine renderer
     e.renderer.setLayers(e.layers);
