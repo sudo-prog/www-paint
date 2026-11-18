@@ -1,6 +1,6 @@
 # WWW_PAINT — Project Brief & Development Roadmap
 
-Version 1.5 · 2026-11-17
+Version 1.6 · 2026-11-18
 
 > **This is the living brief.** Update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 > Work strictly in order (see §8 Agent Protocol). Do not start Phase N+1 until Phase N exit criteria are checked.
@@ -40,15 +40,15 @@ Build a pure-web, stroke-based image-to-art engine that can:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R R0–R3 done, R4 **complete** (outlines / order / per-style shaping, each opt-in default-off → byte-identical); the app still paints via the legacy `painter.js` **by default** — the R6 modular switch is landed and proven under `useWorker:true` but opt-in (`settings.modular`, default off); the default flip + 9-baseline re-baseline need sign-off. Track-S S7 added `js/engine/bake.js` (deterministic bake + worker batch/cancel) |
+| Engine — modular (`analyzer` / `optimizer` / `regions` / `generator` / `scorer` / `renderer`) | Solid — engine of record | Track R **R0–R6**: R4 complete (4/4, opt-in), R5 done (gate MET — the modular engine beats the legacy port on all 4 bench images and sits inside the 2-point retire bar), R6 **default ON** (`5b52357` — the 9 baselines re-pinned against modular output; UI switch landed `R6-ui.md`; multi-layer now ALSO modular, `P2.2m`). Teacher-driven stroke quality landed (`19e2003`: quantise k=24, gradient, α 0.8, budget 8×). Track-S S7 added `js/engine/bake.js` (deterministic bake + worker batch/cancel) |
 | Shape vocabulary (E/B/T/R/S) | Complete | Five primitives — ellipse, blob, triangle, rect, stroke |
 | Styles | 50+ registered | Quality varies; 10 on the enhanced p5.brush stamp path (WebGL2) with a working fallback |
 | p5.brush integration | Working (stamp path) | `js/engine/brush-stamp-engine.js` + `js/engine/brush-media.js`; harness has no WebGL2 → the 9 baselines stay put |
 | Layers / per-layer styles | Working | `masks.js` tonal bands + `layer-styles.js` + the layer panel; multi-layer composite verified |
 | Wet media | Working (opt-in) | `js/engine/wetsim.js` + `mediaModel` integration; dry default is byte-identical |
 | Style Profile | **Complete (4.1 + 4.2)** | `js/engine/profile.js` + `engine.generate({ profile })`; the library UI is Mac M10 (`3b711fe`, = Track-S S6) |
-| AI style loop (harness) | H1/H2/H4/H5 done; **5.5 done** (optional memory warm start, opt-in); H3 mechanism done — real-LLM validation **blocked on the free-only pool (no vision-capable model)** | `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js` |
-| Style-match metrics / ref analysis grid | **Shipped** — Track S S1–S7 + S10 done; S8 (real-LLM validation) blocked (no vision model on the free-only pool); S9 PARTIAL (the diagonal loss is **STRUCTURAL** — needs a feature-space fix, S9b) | `ref-analyze.js` `metrics.js` `bake.js`; board: `docs/TRACK_S.md` |
+| AI style loop (harness) | H0–H5 all done; **5.5 done** (optional memory warm start, opt-in); **H3 real-LLM validation DONE via built-in vision** (S8, 2026-11-17 — all 9 pinned baselines visually distinct to `nvidia/nemotron-3.5-super-vl-120b-a12b`; web2api vision stays blocked, needs a cookie) | `score.js` `propose.js` `memory.js` `gate.js` `vision-propose.js`; evidence `docs/checkpoints/H3-vision-evidence.md` |
+| Style-match metrics / ref analysis grid | **Shipped** — Track S S1–S8 + S10 done (S10 re-pinned after the S9b fix: ownIsBest 3 → 12/27, mean margin ≈ 0); S9 PARTIAL (the residual diagonal loss is **STRUCTURAL** — the S9b feature-space fix is applied and re-pinned) | `ref-analyze.js` `metrics.js` `bake.js`; board: `docs/TRACK_S.md` |
 
 Key existing docs in repo: `ARCHITECTURE.md`, `RE_BREAKDOWN.md`, and the plan set
 `docs/CLEANROOM.md` (Track R), `docs/AI_STYLE_HARNESS.md` (Harness H),
@@ -282,9 +282,9 @@ no Phase-0 regression. Order, files, owners and the full gap analysis:
 
 ## 9. Immediate Next Steps
 
-1. **Track S S1–S2** — the analysis grid (`js/engine/ref-analyze.js`) then the Style-Match Score — is the live front (`docs/TRACK_S.md`).
-2. **Track R R4 finish** (outlines / order / per-style shaping) runs in parallel on the BE spine + the Mac's M7–M9 modules.
-3. **Phase 4.2** (Profile library UI, Mac M10) and **Phase 6** (worker batch + export, BE B5 / Mac M11) are already issued.
+1. **Re-derive the three worker-mapped levers** (2026-11-18 dissection, `docs/checkpoints/WORKER-MAP.md`), in leverage order: per-stroke gradient by **weighted-LSQ solve**, **saliency-weighted placement**, **palette-locked colour pair** — each opt-in default-off → byte-identical, each measured on the parity bench + frog fixture. Never translate identifiers (CLEANROOM §2).
+2. **R6 remainder**: demote `painter.js` + the parity fixtures to dev-only (default flip already landed, `5b52357`); H-S4 (a WebGL2 smoke or a hard doc note in the visual harness) is the last Track-S hygiene item.
+3. **Phase 5.2** (layered preview + critique UI) and **Phase 6** residuals (LOD preview-vs-export stroke counts, written performance budgets, user/developer docs) are the open roadmap items.
 4. Keep this document as the living brief; update the version and `docs/ROADMAP_STATUS.md` as phases complete.
 
 All major algorithms, libraries, and papers discussed are linked in §3 and should be copied into `docs/REFERENCES.md` during Phase 0. This roadmap is ready for Hermes / VS Code agents to execute checkpoint by checkpoint.
