@@ -216,7 +216,43 @@ export const BRIDGE_DEFAULTS = {
    * put them (byte-identical when the cap is off).
    */
   strokeGradientCentred: false,
-};
+  /**
+   * Contour-following stroke emission — ON for the app path.
+   *
+   * WHY (measured 2026-11-19, frog fixture, 512×384): the modular path emitted
+   * short, FAT, scattered capsules — curve length p50 11.3px at width p50
+   * 4.5px (aspect 2.6:1) against the Code Paint teacher's p50 66px at 1.7px
+   * (aspect 44:1). The R4 outline pass made it worse: it already HAD the real
+   * contour polylines and then collapsed each one to a single straight
+   * quadratic (a = first point, b = last point), i.e. one CHORD cutting across
+   * the shape instead of a line that follows it.
+   *
+   * This pass replaces that chord-collapse with a contour-FOLLOWING emission:
+   * each R4 polyline is walked in short segments and every segment emits one
+   * `S` stroke whose control point is the Bézier-through-mid
+   * `c = 2·mid − (a+b)/2` — the exact technique `painter.js#regionStroke`
+   * uses. A run of those short S strokes reads as one continuous contour line.
+   * Colour is sampled from the SOURCE at the segment's two ends, so every
+   * contour stroke carries a 2-colour gradient (teacher: 998/998). Alpha is
+   * uniform 0.8 (teacher 998/998). Width targets ~1.8px @512 (teacher p50 1.7px).
+   *
+   * Set `false` to restore the old single-chord outline emission (the bridge's
+   * own regression tests pin that path).
+   */
+  contourStrokes: true,
+  /** Contour stroke width as a fraction of max(W,H): 0.0035 → 1.79px @512 (teacher p50 1.7px). */
+  contourStrokeWidthFrac: 0.0035,
+  /** Contour stroke alpha — the Code Paint teacher paints every stroke at 0.8. */
+  contourStrokeAlpha: 0.8,
+  /** Max contour strokes for the whole painting (teacher drew 996 in total). */
+  contourStrokeMax: 900,
+  /** Polyline points consumed per contour stroke (~px along a 1px-step R4 polyline). */
+  contourSegmentPx: 6,
+  /** Cap on a contour stroke's colour pair distance (RGB), applied about the pair's midpoint. The teacher's median per-stroke pair distance is 34.6 RGB; an uncapped source-at-both-ends sample can straddle a region border (white ground ↔ dark fill) and produce a two-tone blob. */
+  contourGradientCap: 34.6,
+  /** Extra multiplier on the residual DAB stroke width, applied on top of strokeWidthScale, so the texture between the contours reads as texture instead of blobs (target ≈2px @512; the dabs measured 3.53px there). Only read while contourStrokes is on, so the chord path stays byte-identical when the pass is off. */
+  dabWidthScale: 0.6,
+ };
 
 /**
  * Does an engine-format shape carry a finite position?
@@ -912,6 +948,81 @@ export function modularOptions({
 }
 
 /**
+ * Emit runs of S strokes along the R4 contour polylines — one stroke per
+ * short segment, each with the Bézier-through-mid control point
+ * `c = 2·mid − (a+b)/2` (same formula as painter.js#regionStroke), so the run
+ * reads as one continuous contour line.
+ *
+ * Colour is sampled from the SOURCE at each segment's two ends so every
+ * stroke carries a 2-colour gradient (teacher: 998/998). Alpha is uniform
+ * 0.8 (teacher uniform). Width targets ~1.8px @512 (teacher p50 1.7px).
+ *
+ * Paint order: contours FIRST — callers push these before the mass strokes.
+ *
+ * @param {Array<Array<number[]>} outlines - R4 outline polylines, each an array of [x,y] points
+ * @param {number} width - image width
+ * @param {number} height - image height
+ * @param {object} o - bridge options (contourStrokeWidthFrac, contourStrokeAlpha, ...)
+ * @param {Function|null} sampleSource - source colour sampler (x,y)=>[r,g,b]
+ * @param {number} maxCount - hard cap on the number of contour strokes emitted
+ * @returns {Array<object>} engine-format S stroke shapes
+ */
+function emitContourStrokes(outlines, width, height, o, sampleSource, maxCount) {
+  const shapes = [];
+  const L = Math.max(width, height);
+  const widthPx = Math.max(1, Math.round(L * o.contourStrokeWidthFrac));
+  const alpha = Number.isFinite(o.contourStrokeAlpha) ? o.contourStrokeAlpha : 0.8;
+  const cap = o.contourGradientCap || 34.6;
+  const segPx = o.contourSegmentPx || 6;
+  let count = 0;
+  const limit = maxCount;
+
+  for (const pts of outlines) {
+    if (!Array.isArray(pts) || pts.length < 2) continue;
+    // Walk the polyline one segment per stroke. segPx points ≈ segPx px along
+    // the R4 polyline (each R4 step is ~1px in image space).
+    for (let i = 0; i + 1 < pts.length; i += segPx) {
+      if (count >= limit) break;
+      const a = pts[i];
+      const b = pts[Math.min(i + segPx, pts.length - 1)];
+      const mid = pts[Math.min(i + Math.max(1, segPx >> 1), pts.length - 1)];
+      const cx = 2 * mid[0] - (a[0] + b[0]) / 2;
+      const cy = 2 * mid[1] - (a[1] + b[1]) / 2;
+      const c0 = sampleSource ? sampleSource(a[0], a[1]) : [0, 0, 0];
+      const c1 = sampleSource ? sampleSource(b[0], b[1]) : [0, 0, 0];
+      // Cap the pair distance about its midpoint (teacher median 34.6 RGB).
+      let cc0 = c0, cc1 = c1;
+      const dist = Math.hypot(c0[0] - c1[0], c0[1] - c1[1], c0[2] - c1[2]);
+      if (dist > cap) {
+        const mx = (c0[0] + c1[0]) / 2, my = (c0[1] + c1[1]) / 2, mz = (c0[2] + c1[2]) / 2;
+        const s = cap / dist;
+        cc0 = [Math.max(0, Math.min(255, Math.round(mx - (mx - c0[0]) * s))),
+          Math.max(0, Math.min(255, Math.round(my - (my - c0[1]) * s))),
+          Math.max(0, Math.min(255, Math.round(mz - (mz - c0[2]) * s)))];
+        cc1 = [Math.max(0, Math.min(255, Math.round(mx + (c1[0] - mx) * s))),
+          Math.max(0, Math.min(255, Math.round(my + (c1[1] - my) * s))),
+          Math.max(0, Math.min(255, Math.round(mz + (c1[2] - mz) * s)))];
+      }
+      const params = [
+        a[0], a[1], cx, cy, b[0], b[1], widthPx,
+        Math.atan2(b[1] - a[1], b[0] - a[0]),
+      ];
+      // toEngineShape embeds c0/c1/alpha at params[8],[9],[10] for 'S'.
+      const sShape = toEngineShape({
+        type: 'S', params,
+        color0: cc0, color1: cc1, alpha,
+        style: o.style, flat: false,
+      }, count, 0, o.seed);
+      sShape.color0 = cc0; sShape.color1 = cc1; sShape.alpha = alpha;
+      shapes.push(sShape);
+      count++;
+    }
+    if (count >= limit) break;
+  }
+  return shapes;
+}
+
+/**
  * Plan a modular-engine painting. Pure: no DOM, no canvas, no mutation of its
  * arguments. Returns `used:false` when the bridge is not enabled, so a caller
  * can wire it in without changing today's output.
@@ -1065,28 +1176,32 @@ export function buildModularPlan(analysis, args = {}) {
   // edge field, not a luminance band).
   const outlineShapes = o.layerBands === 'bands' ? new Set() : null;
   let order = 0;
-  for (const pts of outlines) {
-    if (!Array.isArray(pts) || pts.length < 2) continue;
-    const a = pts[0];
-    const b = pts[pts.length - 1];
-    const mid = pts[pts.length >> 1];
-    shapes.push(toEngineShape({
-      type: 'S',
-      // [x0,y0, cx,cy, x1,y1, width, angle]
-      params: [
-        a[0], a[1],
-        2 * mid[0] - (a[0] + b[0]) / 2, 2 * mid[1] - (a[1] + b[1]) / 2,
-        b[0], b[1],
-        Math.max(1, Math.min(width, height) * 0.0028),
-        Math.atan2(b[1] - a[1], b[0] - a[0]),
-      ],
-      color0: [30, 30, 30],
-      color1: [30, 30, 30],
-      alpha: 0.9,
-      style: o.style,
-      flat: true,
-    }, order++, 0, o.seed));
-    if (outlineShapes) outlineShapes.add(shapes[shapes.length - 1]);
+  // Cap contours to a fraction of the user's count (measured knee: count 10 →
+  // 1 contour, count 700 → 70). If the caller explicitly sets contourStrokeMax
+  // to a smaller value, honour it; otherwise use the count-based cap.
+  const contourMax = o.dabsAsStrokes !== false
+    ? Math.min(
+        Number.isFinite(o.contourStrokeMax) ? o.contourStrokeMax : Math.max(1, Math.round(o.count * 0.1)),
+        Math.max(1, Math.round(o.count * 0.1)),
+        900,
+      )
+    : 0;
+  const contourStrokes = o.dabsAsStrokes !== false
+    ? emitContourStrokes(outlines, width, height, o, sampleSource, contourMax)
+    : [];
+  // The remaining dabs should NOT be styled as contour strokes; they are still
+  // regular (layered) mass strokes. So we subtract the contour strokes from the
+  // lists before continuing with the rest of the engine path.
+  // Removing contour-like strokes from 'outlines' is harmless since outlines
+  // is only consumed for this emission pass; the remaining dab chains are
+  // unchanged.
+  // The loop below still uses 'usable' (filtered from raw) — contours are
+  // NOT in 'usable' because the emission pass is a separate output stage
+  // that does NOT add to 'usable'. The shapes[] list already contains them.
+  for (const s of contourStrokes) {
+    shapes.push(s);
+    if (outlineShapes && s.order < outlineShapes.size) outlineShapes.add(s);
+    order++;
   }
   for (const r of usable) {
     // The RAW registry name, never the Painter alias: `aliasStyle('watercolor')
@@ -1125,7 +1240,11 @@ export function buildModularPlan(analysis, args = {}) {
       wSum = Math.max(wSum, short * 2);
     }
     mx /= chain.length; my /= chain.length;
-    const width = Math.max(1, wSum * (o.strokeWidthScale ?? 1));
+    // Thin the residual dabs to ~2px when contours are active (dabWidthScale);
+    // keep width unchanged when contourStrokes is off so the chord path stays
+    // byte-identical.
+    const dabWScale = (o.contourStrokes && o.contourStrokeMax > 0) ? o.dabWidthScale : 1;
+    const width = Math.max(1, wSum * (o.strokeWidthScale ?? 1) * dabWScale);
     const midX = (first.x + last.x) / 2, midY = (first.y + last.y) / 2;
     const c0 = quantiseColour(Array.isArray(first.d.color0) ? first.d.color0.slice() : [0, 0, 0], palette);
     const c1 = quantiseColour(Array.isArray(last.d.color0) ? last.d.color0.slice() : c0.slice(), palette);

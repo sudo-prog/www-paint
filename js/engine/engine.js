@@ -457,6 +457,9 @@ export class PaintingEngine {
         // stroke geometry
         'strokeElongation', 'strokeWidthScale', 'strokeBudgetScale',
         'strokeStructureAlign', 'strokeAlpha',
+        // contour-following stroke emission (see modular-bridge.js BRIDGE_DEFAULTS)
+        'contourStrokes', 'contourStrokeWidthFrac', 'contourStrokeAlpha',
+        'contourStrokeMax', 'contourSegmentPx', 'contourGradientCap', 'dabWidthScale',
         // colour pipeline
         'paletteSize', 'quantiseColours',
         // dab → stroke conversion + chaining
