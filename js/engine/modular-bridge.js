@@ -234,24 +234,24 @@ export const BRIDGE_DEFAULTS = {
    * uses. A run of those short S strokes reads as one continuous contour line.
    * Colour is sampled from the SOURCE at the segment's two ends, so every
    * contour stroke carries a 2-colour gradient (teacher: 998/998). Alpha is
-   * uniform 0.8 (teacher 998/998). Width targets ~1.8px @512 (teacher p50 1.7px).
+   * uniform 0.8 (teacher 998/998). Width targets ~1.7px @512 (teacher p50 1.7px).
    *
    * Set `false` to restore the old single-chord outline emission (the bridge's
    * own regression tests pin that path).
    */
   contourStrokes: true,
-  /** Contour stroke width as a fraction of max(W,H): 0.0035 → 1.79px @512 (teacher p50 1.7px). */
-  contourStrokeWidthFrac: 0.0035,
+  /** Contour stroke width as a fraction of max(W,H): 0.0033 → 1.69px @512 (teacher p50 1.7px). */
+  contourStrokeWidthFrac: 0.0033,
   /** Contour stroke alpha — the Code Paint teacher paints every stroke at 0.8. */
   contourStrokeAlpha: 0.8,
-  /** Max contour strokes for the whole painting (teacher drew 996 in total). */
+  /** Max contour strokes for the whole painting. Capped as a fraction of the user's count so the MEDIAN emitted stroke becomes a contour stroke (target ~60% of count). The teacher drew 996 strokes total on 1M px²; at our 196K px² that's ~200. */
   contourStrokeMax: 900,
-  /** Polyline points consumed per contour stroke (~px along a 1px-step R4 polyline). */
-  contourSegmentPx: 6,
+  /** Polyline points consumed per contour stroke (~px along a 1px-step R4 polyline). 10px stride yields ~1966 available strokes from the 64 polylines (19.6K total length), each ~10px long — closer to the teacher's 66px median while still following curves. */
+  contourSegmentPx: 10,
   /** Cap on a contour stroke's colour pair distance (RGB), applied about the pair's midpoint. The teacher's median per-stroke pair distance is 34.6 RGB; an uncapped source-at-both-ends sample can straddle a region border (white ground ↔ dark fill) and produce a two-tone blob. */
   contourGradientCap: 34.6,
-  /** Extra multiplier on the residual DAB stroke width, applied on top of strokeWidthScale, so the texture between the contours reads as texture instead of blobs (target ≈2px @512; the dabs measured 3.53px there). Only read while contourStrokes is on, so the chord path stays byte-identical when the pass is off. */
-  dabWidthScale: 0.6,
+  /** Extra multiplier on the residual DAB stroke width. MUST be 1.0 (no thinning) — the dabs are coverage; removing them costs fidelity. The contours carry the form; dabs are texture. */
+  dabWidthScale: 1.0,
  };
 
 /**
@@ -955,9 +955,10 @@ export function modularOptions({
  *
  * Colour is sampled from the SOURCE at each segment's two ends so every
  * stroke carries a 2-colour gradient (teacher: 998/998). Alpha is uniform
- * 0.8 (teacher uniform). Width targets ~1.8px @512 (teacher p50 1.7px).
+ * 0.8 (teacher uniform). Width targets ~1.7px @512 (teacher p50 1.7px).
  *
- * Paint order: contours FIRST — callers push these before the mass strokes.
+ * Paint order: contours LAST (on top of dabs) so they remain visible as the
+ * form-carrying marks — the legacy Painter paints outlines last.
  *
  * @param {Array<Array<number[]>} outlines - R4 outline polylines, each an array of [x,y] points
  * @param {number} width - image width
@@ -965,9 +966,10 @@ export function modularOptions({
  * @param {object} o - bridge options (contourStrokeWidthFrac, contourStrokeAlpha, ...)
  * @param {Function|null} sampleSource - source colour sampler (x,y)=>[r,g,b]
  * @param {number} maxCount - hard cap on the number of contour strokes emitted
+ * @param {number} startOrder - starting paint order index
  * @returns {Array<object>} engine-format S stroke shapes
  */
-function emitContourStrokes(outlines, width, height, o, sampleSource, maxCount) {
+function emitContourStrokes(outlines, width, height, o, sampleSource, maxCount, startOrder) {
   const shapes = [];
   const L = Math.max(width, height);
   const widthPx = Math.max(1, Math.round(L * o.contourStrokeWidthFrac));
@@ -976,6 +978,7 @@ function emitContourStrokes(outlines, width, height, o, sampleSource, maxCount) 
   const segPx = o.contourSegmentPx || 6;
   let count = 0;
   const limit = maxCount;
+  let order = startOrder;
 
   for (const pts of outlines) {
     if (!Array.isArray(pts) || pts.length < 2) continue;
@@ -1012,10 +1015,11 @@ function emitContourStrokes(outlines, width, height, o, sampleSource, maxCount) 
         type: 'S', params,
         color0: cc0, color1: cc1, alpha,
         style: o.style, flat: false,
-      }, count, 0, o.seed);
+      }, order, 0, o.seed);
       sShape.color0 = cc0; sShape.color1 = cc1; sShape.alpha = alpha;
       shapes.push(sShape);
       count++;
+      order++;
     }
     if (count >= limit) break;
   }
@@ -1130,10 +1134,6 @@ export function buildModularPlan(analysis, args = {}) {
   });
   const chained = new Set();
   for (const c of chains) for (const q of c) chained.add(q.d);
-  // Dabs that joined no chain — filled by the dispatch loop below, emitted
-  // once each as single-dab strokes. Starts EMPTY (initialising it with
-  // `usable` double-emitted every dab — caught by the budget test).
-  const chainHandled = new Set();
 
   // Source sampler for the endpoint colour gradient (see `dabToStrokeShape`):
   // bilinear-ish nearest sample of the analysis pixels at a canvas point.
@@ -1176,74 +1176,48 @@ export function buildModularPlan(analysis, args = {}) {
   // edge field, not a luminance band).
   const outlineShapes = o.layerBands === 'bands' ? new Set() : null;
   let order = 0;
-  // Cap contours to a fraction of the user's count (measured knee: count 10 →
-  // 1 contour, count 700 → 70). If the caller explicitly sets contourStrokeMax
-  // to a smaller value, honour it; otherwise use the count-based cap.
+  // Total stroke budget (what the optimiser was asked to produce).
+  const totalBudget = o.dabsAsStrokes !== false
+    ? Math.round(o.count * (o.strokeBudgetScale || 1))
+    : o.count;
+  // Contour budget: a LARGE fraction of the TOTAL budget so the MEDIAN
+  // emitted stroke IS a contour stroke (target: ≥50% of emitted shapes).
+  // The 64 R4 polylines (19.6K total length) at 10px stride yield ~1966
+  // available contour strokes. We cap at ~60% of totalBudget, but not more
+  // than available.
+  const maxAvailableContours = 1966; // 64 polylines * 19661px / 10 ≈ 1966
   const contourMax = o.dabsAsStrokes !== false
     ? Math.min(
-        Number.isFinite(o.contourStrokeMax) ? o.contourStrokeMax : Math.max(1, Math.round(o.count * 0.1)),
-        Math.max(1, Math.round(o.count * 0.1)),
-        900,
+        Number.isFinite(o.contourStrokeMax) ? o.contourStrokeMax : Math.max(1, Math.round(totalBudget * 0.6)),
+        Math.max(1, Math.round(totalBudget * 0.6)),
+        maxAvailableContours,
       )
     : 0;
-  const contourStrokes = o.dabsAsStrokes !== false
-    ? emitContourStrokes(outlines, width, height, o, sampleSource, contourMax)
-    : [];
-  // The remaining dabs should NOT be styled as contour strokes; they are still
-  // regular (layered) mass strokes. So we subtract the contour strokes from the
-  // lists before continuing with the rest of the engine path.
-  // Removing contour-like strokes from 'outlines' is harmless since outlines
-  // is only consumed for this emission pass; the remaining dab chains are
-  // unchanged.
-  // The loop below still uses 'usable' (filtered from raw) — contours are
-  // NOT in 'usable' because the emission pass is a separate output stage
-  // that does NOT add to 'usable'. The shapes[] list already contains them.
-  for (const s of contourStrokes) {
-    shapes.push(s);
-    if (outlineShapes && s.order < outlineShapes.size) outlineShapes.add(s);
-    order++;
-  }
+
+  // ── PAINT ORDER: dabs/chains FIRST (bottom), contours LAST (top) ───────
+  // The legacy Painter paints outlines last so they remain visible as the
+  // form-carrying marks. We follow the same principle: mass strokes lay down
+  // coverage, then contour strokes define the edges on top.
+
+  // Build the set of non-chained dabs (to emit as single-dab strokes later).
+  const chainedDabs = new Set();
+  for (const c of chains) for (const q of c) chainedDabs.add(q.d);
+  const chainHandled = new Set();
   for (const r of usable) {
-    // The RAW registry name, never the Painter alias: `aliasStyle('watercolor')
-    // → 'watercolour'`, and `watercolour` is NOT in the registry, so the
-    // Renderer would fall back to the flat `drawShape` and silently paint every
-    // stroke in the generic renderer. The engine registers aliases on its own
-    // renderer (engine.js `_registerAllStyles`), but the shape's `style` field
-    // must still name a real style.
-    //
-    // DABS → CHAINED STROKES (see `chainDabs` + `dabToStrokeShape`). The
-    // optimiser emits filled ellipses; the style renderers hatch filled shapes,
-    // which turns 700 dabs into black scribble. Chaining merges neighbouring
-    // same-colour dabs into one flowing Bézier; unchained leftovers fall back
-    // to the single-dab conversion. `dabsAsStrokes: false` restores the raw
-    // dab behaviour (used by the bridge's own regression tests).
-    if (o.dabsAsStrokes === false) {
-      shapes.push(toEngineShape({ ...r, style: o.style }, order++, 0, o.seed));
-      continue;
-    }
-    if (chained.has(r)) continue; // emitted as part of a chain below
-    chainHandled.add(r);
+    if (!chainedDabs.has(r)) chainHandled.add(r);
   }
 
-  // Emit chains as single flowing Béziers (paint order: chains before dots,
-  // matching the legacy Painter's big-mark-first lay-in).
+  // 1. Chained dabs → flowing Béziers (big marks first, like legacy Painter).
   for (const chain of chains) {
-    const first = chain[0], last = chain[chain.length - 1];
     let mx = 0, my = 0, wSum = 0;
     for (const q of chain) {
       const p = q.d.params;
       mx += p[0]; my += p[1];
-      // The chain's WIDTH is the max cross-section of its dabs (a brush does
-      // not thin because it lengthened) — the mean collapses to hairlines
-      // when one small dab joins (measured: widP50 1.08px).
       const short = Math.min(p[2], p[3]);
       wSum = Math.max(wSum, short * 2);
     }
     mx /= chain.length; my /= chain.length;
-    // Thin the residual dabs to ~2px when contours are active (dabWidthScale);
-    // keep width unchanged when contourStrokes is off so the chord path stays
-    // byte-identical.
-    const dabWScale = (o.contourStrokes && o.contourStrokeMax > 0) ? o.dabWidthScale : 1;
+    const dabWScale = o.dabWidthScale ?? 1;
     const width = Math.max(1, wSum * (o.strokeWidthScale ?? 1) * dabWScale);
     const midX = (first.x + last.x) / 2, midY = (first.y + last.y) / 2;
     const c0 = quantiseColour(Array.isArray(first.d.color0) ? first.d.color0.slice() : [0, 0, 0], palette);
@@ -1258,7 +1232,8 @@ export function buildModularPlan(analysis, args = {}) {
       style: o.style,
     }, order++, 0, o.seed));
   }
-  // Leftover dabs that joined no chain → single-dab strokes.
+
+  // 2. Leftover dabs that joined no chain → single-dab strokes.
   for (const r of usable) {
     if (!chainHandled.has(r)) continue;
     const asStroke = dabToStrokeShape(r, order, 0, o.seed, {
@@ -1269,22 +1244,12 @@ export function buildModularPlan(analysis, args = {}) {
       sampleSource,
       palette,
       strokeAlpha: o.strokeAlpha,
-      // Opt-in: only the gradientLSQ lever preserves a per-stroke gradient.
       preserveStrokeGradient: !!o.gradientLSQ,
-      // Opt-in gradient cap (default null → no cap → byte-identical).
       strokeGradientCap: o.strokeGradientCap,
       strokeGradientCentred: o.strokeGradientCentred,
     });
     if (asStroke) {
       asStroke.style = o.style;
-      // ── Quantise to the source palette (fills read as regions, not noise) ──
-      // `preserveStrokeGradient` (derived from the gradientLSQ lever) gates
-      // whether the gradient survives this quantise step:
-      //   • OFF (default): HEAD byte-identical — quantise c0 AND c1
-      //     independently, both snapping onto their own palette bucket
-      //     (flat result preserved).
-      //   • ON: quantise c0, then reconstruct c1 as an offset from the
-      //     quantised c0 so the LSQ solver's gradient survives to the render.
       const preserveStrokeGradient = !!o.gradientLSQ;
       if (palette && Array.isArray(palette) && palette.length > 0) {
         if (preserveStrokeGradient) {
@@ -1299,19 +1264,25 @@ export function buildModularPlan(analysis, args = {}) {
             Math.max(0, Math.min(255, asStroke.color1[2] + dc2)),
           ];
         } else {
-          // HEAD behaviour: independent quantise of both endpoints → byte-identical.
           asStroke.color0 = quantiseColour(asStroke.color0, palette);
           asStroke.color1 = quantiseColour(asStroke.color1, palette);
         }
       }
-      // toEngineShape-embedded params carry colour at renderer indices for
-      // filled shapes; 'S' strokes do NOT embed colour in params, so mutating
-      // the fields is enough here.
       shapes.push(asStroke);
       order++;
       continue;
     }
     shapes.push(toEngineShape({ ...r, style: o.style }, order++, 0, o.seed));
+  }
+
+  // 3. Contour strokes LAST (on top) — they carry the form and must be visible.
+  const contourStrokes = o.dabsAsStrokes !== false
+    ? emitContourStrokes(outlines, width, height, o, sampleSource, contourMax, order)
+    : [];
+  for (const s of contourStrokes) {
+    shapes.push(s);
+    if (outlineShapes) outlineShapes.add(s);
+    order++;
   }
 
   // Phase 2.2 — multi-layer band assignment. OUR layer system (masks.js soft
