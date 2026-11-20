@@ -292,38 +292,104 @@ export class Renderer {
     const sorted = [...(layers || [])].sort((a, b) => a.id - b.id);
 
     if (this.multiLayer) {
-      // Multi-layer mode: render each layer to its own offscreen canvas,
-      // then composite all canvases onto the main canvas in layer order.
+      // Multi-layer mode. Layers stay EDITABLE groups (visible / opacity /
+      // blendMode / per-shape style), but the PIXEL ORDER is the Painter's
+      // global emission order, not the band z-order.
+      //
+      // Compositing whole layers in band order reorders an interleaved paint
+      // stream: a stroke emitted late but classified into an early band gets
+      // painted UNDER strokes it used to cover. Measured on the kraken fixture
+      // (count=700, seed=12345): layer z-order composite r 0.9212 / mad 13.44
+      // vs emission-order composite r 0.9397 / mad 10.89 — a 0.0185 fidelity
+      // loss that is pure ordering, not paint. The emission-order composite is
+      // byte-identical to the single-layer render.
+      //
+      // BUT: style modules overwrite ctx.globalAlpha themselves (e.g.
+      // js/styles/calligraphy.js:190, js/styles/charcoal.js:284), so applying
+      // layer opacity BEFORE drawShapeAt() is ineffective — the style's own
+      // assignment wins. Therefore each stroke is rendered into a TRANSPARENT
+      // scratch canvas first (so the style's globalAlpha writes land there),
+      // and that scratch canvas is then composited onto the main canvas with
+      // the owning layer's opacity and blendMode. The scratch canvas must be
+      // cleared TRANSPARENTLY (clearRect, never a background fill) so the
+      // layer background is not painted over the main canvas on every stroke.
+      //
+      // `shape.order` is the Painter's global emission index. Shapes that carry
+      // no order keep their position within the layer list.
       this._layerCanvases.clear();
-      for (const layer of sorted) {
-        if (!layer.visible) continue;
-        var layerName = layer._name || layer.name || ('layer_' + layer.id);
-        var layerCanvas = this._getLayerCanvas(layerName);
-        if (!layerCanvas) continue;
-        var layerCtx = layerCanvas.getContext('2d');
-        if (!layerCtx) continue;
-        // Clear the layer canvas with transparent background
-        layerCtx.clearRect(0, 0, this.width, this.height);
-        // Temporarily swap ctx to render to the layer canvas
-        var oldCtx = this.ctx;
-        this.ctx = layerCtx;
-        this.renderLayer(layer, progress);
-        this.ctx = oldCtx;
-      }
-      // Composite all layer canvases onto the main canvas
-      for (const layer of sorted) {
-        if (!layer.visible) continue;
-        var ln = layer._name || layer.name || ('layer_' + layer.id);
-        var lc = this._layerCanvases.get(ln);
-        if (!lc) continue;
-        this.ctx.save();
-        this.ctx.globalAlpha = (layer.opacity !== undefined ? layer.opacity : 1);
-        if (layer.blendMode) {
-          var bm = layer.blendMode === 'normal' ? 'source-over' : layer.blendMode;
-          this.ctx.globalCompositeOperation = bm;
+      var mctx = this.ctx;
+      var ordered = [];
+      var allPlain = true;
+      for (var li = 0; li < sorted.length; li++) {
+        var lyr = sorted[li];
+        if (!lyr.visible) continue;
+        if ((lyr.opacity !== undefined && lyr.opacity !== 1) || 
+            (lyr.blendMode && lyr.blendMode !== 'normal')) {
+          allPlain = false;
         }
-        this.ctx.drawImage(lc, 0, 0);
-        this.ctx.restore();
+        var strokes = lyr.strokes || [];
+        for (var si = 0; si < strokes.length; si++) {
+          var shp = strokes[si];
+          var ord = (shp && shp.order !== undefined && shp.order !== null)
+            ? Number(shp.order)
+            : Number.MAX_SAFE_INTEGER;
+          ordered.push({ shape: shp, order: ord, seq: ordered.length, layer: lyr });
+        }
+      }
+      ordered.sort(function (a, b) {
+        if (a.order !== b.order) return a.order - b.order;
+        return a.seq - b.seq;
+      });
+      if (allPlain) {
+        for (var oi = 0; oi < ordered.length; oi++) {
+          this.drawShapeAt(ordered[oi].shape, progress);
+        }
+      } else {
+        var scratch = makeCanvas(this.width, this.height);
+        var sctx = scratch ? scratch.getContext('2d') : null;
+        for (var oi = 0; oi < ordered.length; oi++) {
+          var entry = ordered[oi];
+          var L = entry.layer;
+          if (!sctx) {
+            // No scratch canvas available (e.g. no DOM): fall back to drawing
+            // straight onto the main canvas.
+            mctx.save();
+            mctx.globalAlpha = (L.opacity !== undefined ? L.opacity : 1);
+            if (L.blendMode) {
+              mctx.globalCompositeOperation = L.blendMode === 'normal' ? 'source-over' : L.blendMode;
+            }
+            this.drawShapeAt(entry.shape, progress);
+            mctx.restore();
+            continue;
+          }
+          sctx.clearRect(0, 0, this.width, this.height);
+          var oldCtx = this.ctx;
+          this.ctx = sctx;
+          this.drawShapeAt(entry.shape, progress);
+          this.ctx = oldCtx;
+          mctx.save();
+          mctx.globalAlpha = (L.opacity !== undefined ? L.opacity : 1);
+          if (L.blendMode) {
+            mctx.globalCompositeOperation = L.blendMode === 'normal' ? 'source-over' : L.blendMode;
+          }
+          mctx.drawImage(scratch, 0, 0);
+          mctx.restore();
+        }
+      }
+      // Freehand paint surface (freehand painting overlay), per visible layer.
+      // Preserved from the previous layer-canvas path so freehand paint mode
+      // still composites in multi-layer mode.
+      if (this._paintSurfaceProvider) {
+        for (var pi = 0; pi < sorted.length; pi++) {
+          var pl = sorted[pi];
+          if (!pl.visible) continue;
+          var pc = this._paintSurfaceProvider(pl.id);
+          if (!pc) continue;
+          var prevT = mctx.getTransform();
+          mctx.setTransform(1, 0, 0, 1, 0, 0);
+          mctx.drawImage(pc, 0, 0);
+          mctx.setTransform(prevT);
+        }
       }
     } else {
       for (const layer of sorted) {

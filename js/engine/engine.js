@@ -36,6 +36,7 @@ import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
 import { applyLayerStyles, preserveLayerProps, resolveLayerStyles } from './layer-styles.js';
 import { applyProfile } from './profile.js';
 import { buildModularPlan } from './modular-bridge.js';
+import { buildPainterModularPlan } from './painter-plan.js';
 
 // Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
 // The actual painting is done by Painter, but the settings object is still
@@ -443,7 +444,27 @@ export class PaintingEngine {
     // modular inkPct 48.4 / 314 colour buckets vs legacy 44.7 / 400
     // (source: 45.9 / 228). See docs/checkpoints/R6.md.
     const modular = opts.modular !== undefined ? !!opts.modular : !!this.settings.modular;
-    if (modular) {
+    // ── Painter-backed modular planner (the human-approved port) ──────────
+    // `generationEngine:'painter'` (or `layerBands:'painter'`) routes through
+    // `buildPainterModularPlan`, which runs the real `painter.js` search and
+    // classifies each emitted shape's footprint into the five tonal bands.
+    // `generationEngine:'residual'` keeps the existing modular-bridge path.
+    // Absent → legacy Painter path (byte-identical default).
+    const generationEngine = opts.generationEngine !== undefined
+      ? opts.generationEngine
+      : (this.settings.generationEngine || 'legacy');
+    // `layerBands:'painter'` is itself an explicit request for the Painter-backed
+    // planner, so it selects the same route even when generationEngine is unset.
+    const requestedLayerBands = opts.layerBands !== undefined
+      ? opts.layerBands
+      : this.settings.layerBands;
+    const isPainterEngine = generationEngine === 'painter'
+      || requestedLayerBands === 'painter'
+      || requestedLayerBands === 'painter-footprint';
+    const isResidualEngine = generationEngine === 'residual';
+    const isModularEngine = (modular || isResidualEngine) && !isPainterEngine;
+
+    if (isModularEngine && !isPainterEngine) {
       // ── Forward the bridge's own shape-language options ──────────────────
       // `buildModularPlan` merges its args over `BRIDGE_DEFAULTS` with a plain
       // object spread, so a key present-but-`undefined` would CLOBBER a default
@@ -505,6 +526,52 @@ export class PaintingEngine {
         saliencySubjectMax: opts.saliencySubjectMax,
         paletteLockedPair: opts.paletteLockedPair,
       });
+      if (plan.shapes.length) {
+        if (multiLayer) {
+          const namedLayers = preserveLayerProps(this._initMultiLayerLayers(), this.layers);
+          const layerByName = {};
+          for (const l of namedLayers) { layerByName[l._name] = l; }
+          for (const s of plan.shapes) {
+            const ln = s.layerName || 'midtone';
+            if (layerByName[ln]) layerByName[ln].strokes.push(s);
+            else if (layerByName['midtone']) layerByName['midtone'].strokes.push(s);
+          }
+          this.layers = namedLayers;
+          this.renderer.multiLayer = true;
+        } else {
+          const layer = this.getLayer(layerIdx);
+          if (layer) layer.strokes = plan.shapes;
+          this.renderer.multiLayer = false;
+        }
+        this.renderer.setLayers(this.layers);
+        this._lastCount = plan.shapes.length;
+        if (typeof opts.onShape === 'function') {
+          for (let i = 0; i < plan.shapes.length; i++) opts.onShape(plan.shapes[i], i);
+        }
+        return plan.shapes;
+      }
+    }
+
+    // ── Painter-backed modular planner (generationEngine:'painter') ───────
+    // `layerBands:'painter'` routes through `buildPainterModularPlan` which runs
+    // the real painter.js search and classifies each emitted shape's footprint
+    // into the five tonal bands. Single-layer gets the same coherent shapes;
+    // multi-layer sorts into five layers without changing the plan.
+    if (isPainterEngine) {
+      const plan = await buildPainterModularPlan(this._analysis, {
+        enabled: true,
+        style,
+        count,
+        seed,
+        smart: this._smart,
+        layerStyles,
+        layerBands: multiLayer
+          ? (requestedLayerBands === 'painter-footprint' ? 'painter-footprint' : 'painter')
+          : false,
+        width: this.width,
+        height: this.height,
+      });
+
       if (plan.shapes.length) {
         if (multiLayer) {
           const namedLayers = preserveLayerProps(this._initMultiLayerLayers(), this.layers);

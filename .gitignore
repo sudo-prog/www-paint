@@ -26,3 +26,6 @@ _probe_brush.html
 
 # ui-sdk (React) surface build output (npm run ui:build)
 ui-dist/
+
+# Local parity-probe evidence (47 MB, regenerate with scripts/painter-parity-probe.cjs)
+painter-parity-out/
