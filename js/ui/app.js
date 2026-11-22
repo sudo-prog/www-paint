@@ -15,6 +15,7 @@ import { ExportManager } from "./export.js";
 import { MotionController } from "./motion.js";
 import { PaintBrushEngine } from "../engine/paint-brush.js";
 import { initBrushEngine } from "../engine/brush-stamp-engine.js";
+import { BrushMaker } from "./brush-maker.js";
 
 /**
  * WWW_PAINT Application Controller.
@@ -117,6 +118,18 @@ export class App {
         canvasMgr: this.canvasMgr,
         container: motionContainer,
       });
+    }
+
+    // Create BrushMaker (instantiated only when root exists)
+    const brushMakerRoot = document.getElementById('brush-maker-root');
+    if (brushMakerRoot) {
+      this._brushMaker = new BrushMaker(brushMakerRoot);
+      // Register any saved brushes with the engine once init completes
+      initBrushEngine(this.canvasEl.width, this.canvasEl.height).then(() => {
+        if (this._brushMaker && typeof this._brushMaker.registerAll === 'function') {
+          this._brushMaker.registerAll();
+        }
+      }).catch(() => {});
     }
 
     // Create PaintBrushEngine for freehand painting
@@ -306,12 +319,46 @@ export class App {
       });
     }
 
+    // Brush Maker
+    const brushMakerBtn = document.getElementById("btn-brush-maker");
+    if (brushMakerBtn) {
+      brushMakerBtn.addEventListener("click", () => {
+        if (this._brushMaker) {
+          this._brushMaker.toggle();
+        }
+      });
+    }
+
     // Paint toolbar controls
     const presetSelect = document.getElementById("paint-preset");
     if (presetSelect) {
       presetSelect.addEventListener("change", () => {
         this._brushPreset = presetSelect.value;
         this._updatePaintStatus();
+      });
+    }
+
+    // Brush Maker: register saved brushes into the paint preset select.
+    // Listen on the BrushMaker's own root (the App object has no this.root —
+    // that reference threw `Cannot read properties of undefined` on load).
+    const brushMakerRoot = document.getElementById("brush-maker-root");
+    if (brushMakerRoot) {
+      brushMakerRoot.addEventListener("brush-maker-registered", (e) => {
+        const brushes = e.detail && e.detail.brushes ? e.detail.brushes : [];
+        if (!presetSelect) return;
+        // Rebuild options: start fresh with saved brushes only
+        // (the select is pre-existing but empty — a pre-existing bug we fix here)
+        while (presetSelect.firstChild) presetSelect.removeChild(presetSelect.firstChild);
+        for (const b of brushes) {
+          const opt = document.createElement("option");
+          opt.value = b.name;
+          opt.textContent = b.name;
+          presetSelect.appendChild(opt);
+        }
+        // Restore the previously-selected preset if it still exists
+        if (this._brushPreset && Array.from(presetSelect.options).some(o => o.value === this._brushPreset)) {
+          presetSelect.value = this._brushPreset;
+        }
       });
     }
     const colorInput = document.getElementById("paint-color");

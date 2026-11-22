@@ -161,9 +161,9 @@ export class GouacheStyle {
    * @param {number} progress - 0..1
    */
   _renderStroke(ctx, shape, R, c0, c1, o, progress) {
-    const a = shape.params;
-    const w = Math.max(1, a[6]);
-    const P = quadPts(a, progress, 1, 24);
+      const a = shape.params;
+      const w = Math.max(1, a[6]);
+      const P = quadPts(a, progress, 1, 24);
     const n = P.length;
     if (n < 3) return;
 

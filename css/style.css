@@ -268,7 +268,7 @@ body {
 /* The app is ONE rounded black surface running to the edge, and it clips its
    children to the curve. The top bar is gone: the app top edge starts where the
    side panels start, and the header's contents came down into the panels. */
-.app {
+#app {
   display: flex;
   flex-direction: column;
   height: 100dvh;
@@ -545,12 +545,16 @@ html[data-theme="light"] .main::before {
 
 /* The strip the top bar's contents moved into. Deliberately quiet: no
    background of its own, so it does not reintroduce a seam against the black. */
+/* Shell-swap: LAYERS .panel-strip owns layout (padding 12px 12px 0, no
+   border-bottom — the strip is quiet chrome on the zero-seam panel). The old
+   border-bottom + heavier padding pushed the 240px strip's content past the
+   rail edge, clipping #toggle-theme (x250 in a 240px rail). */
 .panel-strip {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-3) var(--space-2);
+  padding: var(--space-3) var(--space-3) 0;
   min-width: 0;
 }
 .strip-sep { width: 1px; height: 14px; background: var(--border); }
@@ -561,6 +565,9 @@ html[data-theme="light"] .main::before {
   padding: 2px var(--space-2);
   border-radius: var(--r-sm);
   white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .strip-name:hover { background: var(--surface-raised); color: var(--text-primary); }
 .strip-chip {
@@ -570,6 +577,7 @@ html[data-theme="light"] .main::before {
   padding: 2px var(--space-2);
   border-radius: var(--r-sm);
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .panel-head {
@@ -585,10 +593,29 @@ html[data-theme="light"] .main::before {
 
 /* The panel's chrome (strip, head, rail) is fixed; only the sections scroll. */
 .controls-scroll {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-bottom: 40px;
+}
+.audit-pinned-actions {
+  flex: 0 0 auto;
+  margin-top: var(--space-2);
+}
+@media (max-width: 768px) {
+  .audit-pinned-actions { display: none !important; }
+  .controls-scroll .generate-btn-container { display: none !important; }
+}
+/* audit-pinned-actions: in-flow flex child AFTER the scroll host (not fixed,
+   not absolute). The scroll host clips its own content; no padding hack needed. */
+.controls-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: var(--space-2);
+  background: var(--bg-primary);
 }
 
 .panel-title {
@@ -605,6 +632,7 @@ html[data-theme="light"] .main::before {
   width: 24px; height: 24px; border-radius: var(--r-sm);
   color: var(--text-secondary); background: transparent; border: none;
   cursor: pointer; flex-shrink: 0;
+  position: relative; z-index: 2;
 }
 .collapse-btn:hover { background: var(--surface-raised); color: var(--text-primary); }
 .collapse-btn .icon { width: 13px; height: 13px; transition: transform var(--t-normal); }
@@ -655,17 +683,16 @@ html[data-theme="light"] .main::before {
   flex-shrink: 0;
 }
 
+/* Shell-swap: LAYERS .logo is the quiet 10px/700/0.16em uppercase wordmark
+   (flex 0 0 auto). The old 14px wordmark + flex display overflowed the 240px
+   strip and pushed #toggle-theme past the rail edge (x250). */
 .logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  /* Wordmark, not a label: --f-display is the dot-matrix face and reads as a
-     novelty at 14px. LAYERS uses a bold UI wordmark. */
-  font-family: var(--f-ui);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  flex: 0 0 auto;
   white-space: nowrap;
 }
 
@@ -720,10 +747,11 @@ html[data-theme="light"] .main::before {
 /* ── Main Layout ── */
 .main { display: flex; flex: 1; overflow: hidden; position: relative; }
 
-/* ── Canvas Area — the bright WINDOW, on top of the panels ── */
-/* It is a rounded card that sits between the panels, inset by --gap on every
-   side so the black base shows as a frame. Its corners face the panels on every
-   side. */
+/* ── Canvas Area — geometry/stacking only. SURFACE OWNERSHIP: layers-shell.css
+   (.canvas-card bright gradient, .canvas-body ambient glow, .frame #111 artwork
+   ground). The shell-swap retired every background restatement here (§18.1,
+   §18.21 and the base rule below) — they painted the window black over the
+   LAYERS gradient. Keep position/z-index/insets/overflow; do NOT add background. */
 .canvas-wrapper {
   position: absolute;
   z-index: 2;
@@ -732,16 +760,9 @@ html[data-theme="light"] .main::before {
   left: calc(var(--sidebar-w) + var(--gap));
   right: calc(var(--layers-w) + var(--gap));
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   overflow: hidden;
   border-radius: var(--r-canvas);
-  /* BRIGHT surface — the canvas window floats above the chrome. */
-  background: var(--surface-raised);
-  /* NO BORDER. On a bright surface a 1px light border is the brightest thing in
-     the app, so it drew a hard vertical line exactly where the panel meets the
-     canvas — a seam. The canvas is defined by its own luminance against the
-     black around it, not by an outline. */
 }
 
 /* When a panel collapses to a rail, the black frame narrows and the window
@@ -749,41 +770,23 @@ html[data-theme="light"] .main::before {
 .canvas-wrapper.nav-left  { left:  calc(var(--nav-w) + var(--gap)); }
 .canvas-wrapper.nav-right { right: calc(var(--nav-w) + var(--gap)); }
 
-/* The canvas header — the old top bar's contents, down inside the window. */
-.canvas-head {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--f-ui);
-  font-size: var(--text-sm-size);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  z-index: 3;
-  pointer-events: none;
-}
+/* The canvas header — LAYERS .canvas-head owns layout/type (flex 0 0 auto,
+   11px, rgba white .72, border-bottom). Keep only the spacer + mode chip here. */
 .canvas-head .spacer { margin-left: auto; }
 
 .canvas-frame {
   position: relative;
   border-radius: var(--r-row);
   overflow: hidden;
-  /* The artwork's own aspect ratio. This is what breaks the circular
-     dependency: previously the canvas filled its wrapper with max-width/height,
-     and the wrapper's size came from the canvas — so the artwork was silently
-     resized to whatever box it happened to get. The wrapper's box is now fixed
-     by the insets and this ratio, and the canvas is fitted into it. */
+  /* The artwork's own aspect ratio; audit-fix-host fitFrame() sets inline
+     width/height/aspectRatio to ~40% of the window area (LAYERS proportion).
+     Surface (bg #111, border, shadow) is owned by layers-shell.css .frame. */
   aspect-ratio: 4 / 3;
   width: 100%;
   height: auto;
   max-width: 100%;
   max-height: 100%;
   margin: auto;
-  /* A bright surface behind the artwork — LAYERS canvas-as-window pattern. */
-  background: var(--surface-raised);
   transition: border-color var(--t-normal);
 }
 
@@ -923,24 +926,21 @@ html[data-theme="light"] .main::before {
 
 /* ── Status Footer ── */
 /* Translucent glass surface with a hairline on top — reads as part of the shell. */
+/* Shell-swap: the status footer is the LEFT RAIL's panel-footer (LAYERS
+   .panel-footer owns layout: margin-top:auto, flex 0 0 auto, border-top,
+   11px tabular-nums). It is an in-flow flex child AFTER the scroll host —
+   NOT a fixed/absolute app-wide bar. No z-index, no glass, no fixed height
+   that could paint over the scroll host's clipped content. */
 .status-footer {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  height: var(--status-h);
-  padding: 0 var(--space-4);
-  background: var(--surface-chrome);
-  /* LAYERS glass */
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
-  font-family: var(--f-mono);
   font-size: 11px;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-  z-index: 4;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1727,7 +1727,7 @@ html[data-theme="light"] .main::before {
   .main { flex-direction: column; gap: 0; overflow: visible; }
 
   .panel--controls, .panel--layers, .panel--library {
-    position: fixed; top: var(--header-h); bottom: var(--status-h);
+    position: absolute; top: var(--header-h); bottom: var(--status-h);
     width: min(320px, 85vw) !important; max-width: none;
     z-index: var(--z-panel);
     box-shadow: 0 4px 20px -4px rgb(0 0 0 / 0.06);
@@ -1748,7 +1748,7 @@ html[data-theme="light"] .main::before {
   /* The media panel is an overlay too — it needs the SAME fixed positioning
      as the other two, or translateX has no effect on a flex-flow child. */
   .panel--media {
-    position: fixed; top: var(--header-h); bottom: var(--status-h);
+    position: absolute; top: var(--header-h); bottom: var(--status-h);
     left: 0; right: auto;
     width: min(320px, 85vw) !important; max-width: none;
     z-index: var(--z-panel);
@@ -1757,26 +1757,23 @@ html[data-theme="light"] .main::before {
   }
   .panel--media.panel--mobile-closed { transform: translateX(-340px); }
 
-  /* Canvas wrapper: full-bleed on mobile */
+  /* Canvas wrapper: full-bleed insets on mobile; the ADAPTER's .canvas-card
+     12px insets + LAYERS 28px radius win (later source order). No radius reset
+     here — the old border-radius:0 killed the rounded window on mobile. */
   .canvas-wrapper {
     position: absolute;
     top: 0; bottom: 0; left: 0; right: 0;
-    border-radius: 0;
   }
   .canvas-wrapper.nav-left, .canvas-wrapper.nav-right { left: 0; right: 0; }
 
-  .canvas-frame { border-radius: 0; }
+  /* .canvas-frame keeps the LAYERS .frame 8px radius on mobile (shell-swap). */
 
   .mobile-toggle {
     display: flex !important;
     position: fixed !important;
     left: var(--space-2);
-    /* Anchored just above the status strip. At a flat 80px the toggles landed on
-       the style library's Import row (y 766..810 at 390px) and covered both
-       buttons — they were untappable (AGENTS.md 0.12). `--status-h` + one gap
-       keeps them clear of the strip at every viewport height. */
-    bottom: calc(var(--status-h) + var(--space-2));
-    z-index: calc(var(--z-panel) + 10);
+    top: 8px;
+    z-index: 96;
     align-items: center; justify-content: center;
     width: var(--touch); height: var(--touch); border-radius: 50%;
     border: 1px solid var(--border-strong); background: var(--surface-raised);
@@ -1786,6 +1783,8 @@ html[data-theme="light"] .main::before {
   }
   #toggle-layers {
     left: calc(var(--space-1) + var(--touch) + var(--space-1));
+    right: auto;
+    top: 8px;
   }
 
   /* While the style library has the left rail, the floating toggles must not
@@ -3735,7 +3734,7 @@ input[type="range"]:focus-visible {
     right: var(--space-1);
     left: var(--space-1);
     width: auto;
-    bottom: calc(var(--status-h) + var(--space-2));
+    bottom: 8px;
   }
 }
 
@@ -4050,19 +4049,10 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
    resolved its own conflicts.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 18.1 The canvas is an opaque surface, not a translucent slab ─────────── */
-.canvas-wrapper {
-  background: var(--bg-secondary);
-  border-radius: var(--r-canvas);
-  /* LAYERS canvas-as-window: the window is defined by its own luminance
-     against the base, so no border and no inset highlight line. */
-  border: none;
-  box-shadow: 0 2px 24px -8px rgb(0 0 0 / 0.55);
-}
-/* The artwork ground is opaque too, so the picture never sits on glass. */
-.canvas-frame {
-  background: var(--bg-tertiary);
-}
+/* ── 18.1 RETIRED by the shell swap (2026-11-21): background/border/box-shadow
+   on .canvas-wrapper and .canvas-frame are owned by layers-shell.css (.canvas-card
+   bright gradient, .frame #111 + border + shadow). Restating them here painted the
+   window black. The radius still comes from --r-canvas via .canvas-card. */
 
 /* ── 18.2 Labels: one face, sentence case, real size ─────────────────────── */
 .slider-label,
@@ -4371,9 +4361,7 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
   border-bottom: 1px solid var(--border);
   box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.03);
 }
-.panel-strip {
-  border-bottom: 1px solid var(--border);
-}
+/* Shell-swap: no border-bottom on the strip (LAYERS quiet chrome). */
 
 /* ── 18.8 Sliders: a real track, not a 1px hairline ──────────────────────── */
 .slider-row input[type="range"],
@@ -4552,36 +4540,47 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
 .panel > .library-scroll {
   flex: 1 1 auto;
   min-height: 0;
+  max-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
 }
-
-/* ── 18.21 The canvas window must be a STEP UP in luminance, not a match. ────
-   Measured after 18.1: .canvas-wrapper resolved to rgb(16,18,21) — the SAME
-   value as the panel's effective composite (bg-secondary @ 0.74 over the base),
-   so the window vanished into the chrome and vision review read the whole
-   middle as one flat slab. LAYERS puts the artwork on --bg-tertiary
-   (#16191d, the "opaque by design" ramp step) and the canvas-area itself on
-   --bg-primary, with the panel glass over it. Copy that: the artwork ground is
-   a step brighter than the panels, and the window is defined by its own
-   luminance against the darker base. */
-.canvas-wrapper { background: var(--bg-primary); }
-.canvas-frame { background: var(--bg-tertiary); }
-
-/* ── 18.22 The canvas header is chrome on the window, not text on the art ─── */
-.canvas-head {
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
+/* STEER 3 RETIRED (shell-swap final): the absolute top:0/bottom:0 scroll host
+   ran UNDER the strip/head/rail-icons and OVER the pinned generate row — the
+   cause of the 7 desktop hitFails (controls painted under chrome). The correct
+   model is the LAYERS flex column: chrome flex:0 0 auto, scroll host flex:1
+   min-height:0 (clips its own content), pinned row + status footer flex:0 0 auto
+   AFTER the scroll host. No absolute positioning, no z-index games. */
+.panel > .panel-strip,
+.panel > .panel-head,
+.panel > .rail-icons {
+  flex: 0 0 auto;
 }
+.panel > .audit-pinned-actions,
+.panel > .generate-btn-container {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+  background: var(--bg-primary);
+}
+.panel > .panel-footer { flex: 0 0 auto; }
+
+/* ── 18.21 RETIRED by the shell swap (2026-11-21). The old restatement painted
+   .canvas-wrapper with --bg-primary (black) and .canvas-frame with --bg-tertiary,
+   which OVERRODE the LAYERS bright-window gradient (layers-shell.css loads first;
+   these later same-specificity rules won). Pixel probe proved the window read as
+   a dark slab: body-left-of-frame rgb(10,11,13) vs reference rgb(112,124,144).
+   The LAYERS shell now owns these surfaces:
+     .canvas-card  → linear-gradient(160deg,#6b7787,#525c6b 52%,#5f6a79)
+     .canvas-body  → ambient radial accent glows over linear-gradient(#7c8898,#5d6775)
+     .frame        → #111 (the artwork ground, floating centred)
+   Do NOT restate background on .canvas-wrapper/.canvas-card/.canvas-frame here. */
+
+/* ── 18.22 RETIRED by shell swap: .canvas-head type/color is owned by
+   layers-shell.css (11px, rgba(255,255,255,.72) dark / rgba(0,0,0,.58) light,
+   border-bottom). The #canvas-mode chip keeps its glass treatment below. */
 .canvas-head #canvas-mode {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-primary);
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
 }
 
 /* ── 18.23 The empty state is centred in the window, above the art ground ─── */
@@ -4622,3 +4621,1121 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
   .status-footer .status-label { font-size: 11px; }
   .motion-counter__text { font-size: 11px; }
 }
+
+/* ===============================================================================
+   ADAPTER - map WWW_PAINT tokens onto LAYERS shell tokens (2026-11-21)
+   (non-circular: only define tokens LAYERS does not provide)
+   =============================================================================== */
+:root {
+  --sidebar-w: var(--panel-left-w);
+  --layers-w: var(--panel-right-w);
+  --touch-a11y: 44px;
+  --touch-a11y-sm: 44px;
+  --header-h: 63px;
+  --status-h: 24px;
+  --z-panel: 90;
+  --t-normal: var(--duration);
+}
+@media (max-width: 768px) {
+  :root { --header-h: 0px; --status-h: 0px; }
+  .panel-strip { padding: 4px 8px 0 !important; min-height: 20px !important; }
+  .panel-head { padding: 4px 8px !important; min-height: 32px !important; max-height: 32px !important; }
+  .panel-head .panel-title { font-size: 10px !important; }
+  .rail-icons { display: none !important; }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) #toggle-controls,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) #toggle-layers {
+    display: none !important;
+  }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .radius-bar,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .radius-bar {
+    display: none !important;
+  }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .insert-bar,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .insert-bar {
+    display: none !important;
+  }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .insert-bar,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .insert-bar {
+    display: none !important;
+  }
+}
+
+/* ADAPTER: radius-bar narrow + right-aligned to avoid occluding motion controls */
+.radius-bar { z-index: 4 !important; max-width: 200px !important; right: 8px !important; left: auto !important; }
+.motion-controls-root, .insert-host { z-index: 5 !important; pointer-events: auto !important; }
+/* ADAPTER: neutralise old panel chrome so LAYERS zero-seam wins */
+.panel {
+  background: var(--bg-primary) !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ADAPTER: keep mode-switcher reachable in expanded mode.
+   Shell-swap final: the labelled nav rows must NOT inherit the icon-only
+   .rail-icon-btn fixed 36/44px width (it clipped "Brush"/"Layers" and wrapped
+   the labels to 3 lines). Auto width + nowrap label = LAYERS tree-row look. */
+.rail-icons { display: flex !important; flex-direction: column; align-items: stretch; gap: 2px; padding: 4px; }
+.rail-icons .nav-btn { display: flex; align-items: center; gap: var(--space-2); width: auto; height: auto; min-height: 28px; padding: 5px var(--space-2); border-radius: var(--r-row); color: var(--text-secondary); background: transparent; border: none; cursor: pointer; font-size: var(--text-sm); }
+.rail-icons .nav-btn.is-active, .rail-icons .nav-btn.nav-btn--active { color: var(--text-primary); background: rgb(122 162 255 / 0.16); }
+.rail-icons .nav-btn .btn-label { font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail-icons .nav-btn .icon { flex: 0 0 auto; }
+.panel.is-collapsed .rail-icons { align-items: center; }
+.panel.is-collapsed .rail-icons .nav-btn { justify-content: center; width: 36px; height: 36px; padding: var(--space-2); }
+.panel.is-collapsed .rail-icons .btn-label { display: none; }
+
+/* ADAPTER: ensure panel--hidden hides any rail surface */
+.panel--hidden { display: none !important; }
+.paint-toolbar.panel--hidden.paint-toolbar--active { display: flex !important; }
+
+/* settings-root: normal flow, overlay is fixed */
+
+/* ADAPTER: mobile (<=768px) — full-bleed canvas, overlay panels, radius-bar clear of actions */
+@media (max-width: 768px) {
+  /* Mode buttons live in the radius-bar on mobile; hide the rail-icons to give
+     the scroll host more vertical room. */
+  .rail-icons { display: none !important; }
+  /* Hide the floating toggle when its panel is open — the panel's own collapse
+     button handles closing, and the toggle otherwise covers panel content. */
+  #app:has(.panel--controls:not(.panel--mobile-closed)) #toggle-controls,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) #toggle-layers {
+    display: none !important;
+  }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .radius-bar,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .radius-bar {
+    display: none !important;
+  }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .insert-bar,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .insert-bar {
+    display: none !important;
+  }
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .motion-controls-root,
+  #app:has(.panel--controls:not(.panel--mobile-closed)) .insert-bar,
+  #app:has(.panel--layers:not(.panel--mobile-closed)) .insert-bar {
+    display: none !important;
+  }
+  /* Move settings button to top-right on mobile so it stays tappable when
+     the panel is open (the insert-bar is covered by the panel overlay). */
+  #btn-ui-settings {
+    position: fixed !important;
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 96 !important;
+  }
+  :root { --header-h: 0px; --status-h: 0px; }
+  .panel-strip { padding: 4px 8px 0 !important; min-height: 20px !important; }
+  .panel-head { padding: 4px 8px !important; min-height: 32px !important; max-height: 32px !important; }
+  .panel-head .panel-title { font-size: 10px !important; }
+  .canvas-card,
+  .canvas-card.nav-left,
+  .canvas-card.nav-right,
+  .canvas-card.nav-left.nav-right {
+    left: 12px !important;
+    right: 12px !important;
+    top: 12px !important;
+    bottom: 12px !important;
+    width: auto !important;
+  }
+  .radius-bar {
+    position: fixed;
+    left: 100px !important;
+    right: auto !important;
+    transform: none !important;
+    top: 8px !important;
+    bottom: auto !important;
+    width: auto !important;
+    max-width: calc(100vw - 120px);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    z-index: 95 !important;
+    padding: 4px 6px;
+    gap: 2px;
+    font-size: 10px;
+    opacity: 0.85;
+  }
+  .radius-bar .radius-btn { padding: 2px 6px; min-height: 24px; font-size: 10px; }
+  .radius-bar .nav-btn { padding: 2px 6px; min-height: 24px; font-size: 10px; }
+  /* Expanded at mobile: keep panels as overlays (off-screen by default) */
+  .panel--controls.is-collapsed,
+  .panel--layers.is-collapsed {
+    width: var(--nav-w);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHELL-SWAP FINAL — action pill buttons (LAYERS .insert-btn pattern)
+   The action row (#insert-bar) uses .insert-btn (icon + compact label, 30px,
+   pill radius) instead of the old 44px .round-btn circles whose text labels
+   wrapped to 3 lines and clipped at 390. Generate is the accent primary.
+   Busy/error states from audit-fix-host.js (.is-generating/.has-error-nearby).
+   ═══════════════════════════════════════════════════════════════════════════ */
+.insert-btn--primary {
+  background: rgb(122 162 255 / 0.16);
+  color: var(--accent);
+}
+.insert-btn--primary:hover { background: rgb(122 162 255 / 0.26); color: var(--accent-hover); }
+.insert-btn.is-generating {
+  background: rgb(122 162 255 / 0.28);
+  color: var(--accent);
+  animation: insert-pulse 1.1s ease-in-out infinite;
+}
+@keyframes insert-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.insert-btn.has-error-nearby { border-color: var(--error); color: var(--error); }
+@media (prefers-reduced-motion: reduce) {
+  .insert-btn.is-generating { animation: none; }
+}
+/* Mobile: the action pill keeps icon+label but tightens; labels never wrap. */
+@media (max-width: 768px) {
+  .insert-bar { gap: 1px; padding: 3px; max-width: calc(100% - 16px); flex-wrap: nowrap; }
+  .insert-btn { height: 30px; padding: 0 var(--space-2); gap: 4px; font-size: 10px; }
+  .insert-btn .icon { width: 13px; height: 13px; }
+  .insert-btn-label { white-space: nowrap; }
+}
+
+/* SHELL-SWAP FINAL: strip chrome stays LAYERS-quiet (10px) and the project
+   name shrinks instead of clipping. §18.2 raised .strip-name/.strip-chip to
+   11px which overflowed the 240px strip ("Untitled" clip 43px). */
+.panel-strip .strip-name { font-size: 10px; max-width: 72px; flex: 0 1 auto; min-width: 0; }
+.panel-strip .strip-chip { font-size: 10px; }
+.panel-strip .logo { font-size: 10px; }
+
+/* SHELL-SWAP FINAL: radius-bar mode buttons (Media/Library/Paint) are compact
+   LAYERS .nav-btn chips (icon + nowrap label), NOT icon-only .rail-icon-btn
+   circles (which wrapped/clipped their labels). The bar itself keeps the
+   LAYERS glass + radius; the 200px cap is lifted so the chips fit on one row
+   at desktop and wrap cleanly at mobile. */
+.radius-bar { max-width: none !important; }
+.radius-mode-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px var(--space-2); font-size: var(--text-xs); white-space: nowrap; }
+.radius-mode-btn .btn-label { white-space: nowrap; }
+.radius-mode-btn .icon { flex: 0 0 auto; }
+.radius-mode-btn.nav-btn--active { background: rgb(122 162 255 / 0.16); color: var(--accent); border-color: var(--accent); }
+@media (max-width: 768px) {
+  .radius-bar { max-width: calc(100vw - 16px) !important; }
+  .radius-mode-btn { padding: 3px 6px; font-size: 10px; min-height: 24px; }
+  .radius-mode-btn .icon { width: 12px; height: 12px; }
+}
+
+/* SHELL-SWAP FINAL: the project name shrinks to fit the strip instead of
+   clipping to a 16px ellipsis. The strip is flex; give the name flex-shrink
+   with a sane floor and let the chip + theme button keep their natural width. */
+.panel-strip #btn-project { flex: 0 1 auto; min-width: 28px; max-width: 90px; }
+
+/* SHELL-SWAP FINAL: drop the dims chip from the left strip — the canvas head
+   already shows "Canvas · WxH" (#canvas-dims), so the strip duplicate is what
+   overflowed the 240px rail and ellipsised the project name. LAYERS keeps its
+   dims chip because it has no canvas-head dims readout; WWW_PAINT does. */
+.panel-strip #strip-dims { display: none; }
+.panel-strip #btn-project { max-width: 120px; }
+
+/* SHELL-SWAP FINAL: bottom chrome layout — three glass elements must not overlap.
+   LAYERS puts the insert pill bottom-centre of the canvas and the radius-bar
+   bottom-right of the SHELL. WWW_PAINT adds the motion playback pill. Stack them:
+   motion pill bottom-centre (lowest), action insert-bar above it, radius-bar
+   bottom-right clear of both. The old max-width:200px cap on radius-bar forced
+   it to wrap into a tall block that covered the motion pill's speed select. */
+.radius-bar {
+  max-width: none !important;
+  right: var(--space-5) !important;
+  left: auto !important;
+  bottom: var(--space-5) !important;
+  top: auto !important;
+  flex-wrap: nowrap;
+  z-index: 6 !important;
+}
+.motion-controls-root {
+  bottom: var(--gap) !important;
+  z-index: 5 !important;
+}
+.insert-host, #insert-bar { z-index: 5; }
+/* The action insert-bar sits ABOVE the motion pill (motion is bottom:12px h~62,
+   so insert bottom = 12+62+8 = 82px). Both centred on the canvas. */
+#insert-bar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 84px;
+}
+@media (max-width: 768px) {
+  .radius-bar {
+    right: 8px !important;
+    bottom: auto !important;
+    top: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  #insert-bar { bottom: 76px; }
+  .motion-controls-root { bottom: var(--gap) !important; }
+}
+
+/* SHELL-SWAP FINAL: the motion playback pill is constrained to the canvas
+   window's width minus the radius-bar's footprint, so the two bottom chrome
+   elements never overlap. The radius-bar is ~715px wide at desktop; reserve
+   that much on the right of the canvas-body for it. The motion pill centres
+   in the REMAINING space (left portion of the canvas), clear of the bar. */
+@media (min-width: 769px) {
+  .motion-controls-root {
+    left: calc((100% - 720px) / 2) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 740px) !important;
+  }
+  #insert-bar {
+    left: calc((100% - 720px) / 2) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 740px);
+  }
+}
+
+/* SHELL-SWAP FINAL: compact the radius-bar so it matches LAYERS's ~444px
+   footprint (the mode chips + radius group + panel toggles were rendering at
+   715px because .nav-btn carried the full-size padding/font). Tighten to the
+   LAYERS .radius-btn/.nav-bar chip scale. This frees the canvas bottom-centre
+   for the motion + action pills at their natural width. */
+.radius-bar { gap: var(--space-2); padding: var(--space-2) var(--space-3); }
+.radius-bar .radius-bar-title { font-size: 9px; }
+.radius-bar .radius-btn, .radius-bar .nav-btn { padding: 4px var(--space-2); font-size: var(--text-xs); }
+.radius-bar .radius-mode-btn { padding: 4px var(--space-2); font-size: var(--text-xs); gap: 3px; }
+.radius-bar .radius-mode-btn .icon { width: 12px; height: 12px; }
+.radius-bar .radius-group { gap: 3px; }
+@media (min-width: 769px) {
+  .motion-controls-root {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 480px) !important;
+  }
+  #insert-bar {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 480px);
+  }
+}
+
+/* SHELL-SWAP FINAL: reserve the radius-bar's actual footprint (600px + 20px
+   right inset + 16px clearance = 636px) on the right of the canvas-body. The
+   motion + action pills centre in the remaining left space, never overlapping
+   the bar. At navbar the canvas is wider so the pills recentre automatically. */
+@media (min-width: 769px) {
+  .motion-controls-root {
+    left: calc((100% - 636px) / 2) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 660px) !important;
+  }
+  #insert-bar {
+    left: calc((100% - 636px) / 2) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 660px) !important;
+  }
+}
+
+/* SHELL-SWAP FINAL: keep action-pill labels VISIBLE on mobile. The verbatim
+   LAYERS shell hides .insert-btn-label at <=900px (its pill is icon-only on
+   narrow screens), but WWW_PAINT's Maestro flows assert the visible text
+   "Open"/"Generate"/"Export" and the labels fit at 10px. Override the hide. */
+@media (max-width: 900px) {
+  .insert-btn-label { display: inline !important; }
+}
+
+/* SHELL-SWAP FINAL: when the MEDIA or LIBRARY overlay is open on mobile, hide
+   the radius-bar / motion pill / action insert-bar exactly as for the brush and
+   layers overlays — otherwise the radius-bar (z6, top-right) paints over the
+   media panel's "WET MEDIA" title (z90 panel, but the bar is fixed on top).
+   The earlier :has() rules only covered .panel--controls / .panel--layers. */
+@media (max-width: 768px) {
+  #app:has(.panel--media:not(.panel--mobile-closed):not(.panel--hidden)) .radius-bar,
+  #app:has(.panel--library:not(.panel--mobile-closed):not(.panel--hidden)) .radius-bar,
+  #app:has(.panel--media:not(.panel--mobile-closed):not(.panel--hidden)) .motion-controls-root,
+  #app:has(.panel--library:not(.panel--mobile-closed):not(.panel--hidden)) .motion-controls-root,
+  #app:has(.panel--media:not(.panel--mobile-closed):not(.panel--hidden)) .insert-bar,
+  #app:has(.panel--library:not(.panel--mobile-closed):not(.panel--hidden)) .insert-bar {
+    display: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYERS COMPONENT PORT (2026-11-21) — resize EVERY WWW_PAINT control to the
+   LAYERS component language. The shell swap copied the outer chrome but left
+   the inner components at their old WWW_PAINT sizes/shapes. This block maps
+   each onto its LAYERS equivalent, measured from the running reference:
+     .ctl row        : flex, min-height 32px, gap 8px
+     .ctl-label      : flex 0 0 88px, 11px, tertiary, ellipsis
+     .ctl-range      : flex 1, height 18px, accent-color
+     .ctl-value      : flex 0 0 46px, right, 11px tabular-nums
+     .section-head   : 10px/600, 0.09em, uppercase, tertiary, pad 8px 4px
+     .prop-section   : border-top 1px --border; .section-body gap 2px pad-bottom 12px
+     .tree-row       : 12px, pad 5px 8px, radius 8px, gap 8px, ~27px tall
+     .icon-btn       : 24×24, radius 6px, tertiary
+     .insert-bar     : 40px tall, pad 4px, gap 2px, radius 999px; btn 30px/11px/999px
+   Loaded LAST so it wins over every earlier restatement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Section heads → LAYERS .section-head ── */
+.control-section { padding: 0; margin: 0; border-top: 1px solid var(--border); }
+.control-section:first-child { border-top: none; }
+.control-section__title {
+  display: flex; align-items: center; gap: var(--space-2);
+  width: 100%; padding: var(--space-2) var(--space-1);
+  font-family: var(--f-ui); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-tertiary); margin: 0;
+}
+.control-section__body { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--space-1) var(--space-3); }
+.control-hint { font-size: 10px; line-height: 1.5; color: var(--text-tertiary); padding: 0 var(--space-1) var(--space-2); margin: 0; }
+
+/* ── Slider → LAYERS .ctl row (label 88 │ track flex │ value 46, 32px tall) ──
+   DOM is .control-slider > .slider-label + .slider-row(input + .slider-value).
+   Flatten with grid + display:contents so label/track/value sit on ONE row. */
+.control-slider {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 46px;
+  align-items: center; gap: var(--space-2);
+  min-height: 32px; min-width: 0;
+}
+.control-slider > .slider-label {
+  grid-column: 1; font-family: var(--f-ui); font-size: var(--text-xs);
+  font-weight: 400; color: var(--text-tertiary); letter-spacing: 0; text-transform: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.control-slider > .slider-row { display: contents; }
+.control-slider > .slider-row > input[type="range"] {
+  grid-column: 2; flex: 1; min-width: 0; height: 18px;
+  -webkit-appearance: none; appearance: none; background: transparent;
+  accent-color: var(--accent); cursor: pointer; outline: none;
+}
+.control-slider > .slider-row > input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: var(--r-pill); background: var(--border-strong);
+}
+.control-slider > .slider-row > input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-top: -5px;
+  border-radius: 50%; background: var(--accent); border: none; cursor: pointer;
+}
+.control-slider > .slider-row > input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: var(--r-pill); background: var(--border-strong);
+}
+.control-slider > .slider-row > input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer;
+}
+.control-slider > .slider-row > .slider-value {
+  grid-column: 3; font-family: var(--f-ui); font-size: var(--text-xs); font-weight: 400;
+  color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums;
+  white-space: nowrap; min-width: 0;
+}
+
+/* ── Segmented control → LAYERS quiet chips (radius 6px, 11px, no shouty mono) ── */
+.segmented { display: flex; gap: var(--space-1); padding: 0; background: transparent; border: none; border-radius: 0; }
+.segmented__btn {
+  flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--bg-tertiary);
+  padding: 5px var(--space-2); font-family: var(--f-ui); font-size: var(--text-xs); font-weight: 500;
+  color: var(--text-secondary); cursor: pointer; border-radius: var(--r-control);
+  white-space: nowrap; text-transform: none; letter-spacing: 0; min-height: 28px;
+}
+.segmented__btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.segmented__btn--active { background: rgb(122 162 255 / 0.16); color: var(--accent); border-color: var(--accent); }
+.controls-panel #path-section .segmented { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: var(--space-1); }
+.controls-panel #path-section .segmented__btn { padding: 5px var(--space-1); white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
+
+/* ── Pill toggle (smart mode) → LAYERS .ctl-toggle scale ── */
+.pill-toggle {
+  position: relative; overflow: hidden; min-height: 20px; height: 20px;
+  padding: 0 var(--space-2); border: 1px solid var(--border); border-radius: var(--r-pill);
+  background: var(--bg-tertiary); color: var(--text-secondary);
+  font-family: var(--f-ui); font-size: 10px; font-weight: 500; cursor: pointer;
+  text-transform: none; letter-spacing: 0; display: inline-flex; align-items: center; gap: 4px;
+}
+.pill-toggle--on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── Generate button → LAYERS accent primary, compact (not shouty mono slab) ── */
+.generate-btn-container { margin-top: var(--space-2); padding: var(--space-2) var(--space-1); border-top: 1px solid var(--border); display: flex; gap: var(--space-2); }
+.generate-btn {
+  flex: 1; width: auto; padding: 6px var(--space-3); min-height: 30px;
+  font-family: var(--f-ui); font-size: var(--text-sm); font-weight: 600;
+  background: rgb(122 162 255 / 0.16); color: var(--accent);
+  border: 1px solid var(--accent); border-radius: var(--r-control);
+  letter-spacing: 0; text-transform: none; cursor: pointer;
+}
+.generate-btn:hover { background: rgb(122 162 255 / 0.26); color: var(--accent-hover); }
+.generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.stop-btn, .reset-btn { min-height: 30px; padding: 6px var(--space-2); font-size: var(--text-xs); border-radius: var(--r-control); }
+
+/* ── Style picker trigger → LAYERS .ctl-select scale (compact row, not 58px slab) ── */
+.style-picker__trigger {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%;
+  padding: 5px var(--space-2); min-height: 32px;
+  background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--r-control);
+  font-family: var(--f-ui); font-size: var(--text-xs); color: var(--text-primary); cursor: pointer;
+}
+.style-picker__trigger:hover { border-color: var(--border-strong); }
+.style-picker__trigger-thumb { width: 22px; height: 16px; border-radius: 3px; flex: 0 0 auto; }
+.style-picker__trigger-label { font-size: var(--text-xs); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.style-picker__chev { flex: 0 0 auto; color: var(--text-tertiary); }
+
+/* ── Layer row → LAYERS .tree-row (compact, 12px, 8px radius) ── */
+.layer-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 5px var(--space-2); margin-bottom: 1px; border-radius: var(--r-row);
+  border: none; background: transparent;
+}
+.layer-row:hover { background: rgb(255 255 255 / 0.05); }
+.layer-row--active { background: rgb(122 162 255 / 0.16); border: none; }
+.layer-row__main { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.layer-row__name { flex: 1; min-width: 0; font-size: var(--text-sm); font-weight: 500; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-row--active .layer-row__name { color: var(--text-primary); }
+.layer-row__drag { padding: 0; color: var(--text-tertiary); display: grid; place-items: center; flex: 0 0 auto; }
+.layer-row__drag svg { width: 13px; height: 13px; }
+.layer-visibility-btn { width: 24px; height: 24px; border-radius: var(--r-control); background: transparent; border: none; color: var(--text-tertiary); display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
+.layer-visibility-btn:hover { background: rgb(255 255 255 / 0.06); color: var(--text-primary); }
+.layer-action-btn { width: 24px; height: 24px; border-radius: var(--r-control); border: none; background: transparent; color: var(--text-tertiary); display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; }
+.layer-action-btn svg { width: 13px; height: 13px; }
+.layer-action-btn:hover { color: var(--text-primary); background: rgb(255 255 255 / 0.06); }
+.layer-row__actions { display: flex; gap: 2px; flex: 0 0 auto; }
+.layer-opacity-row { display: flex; align-items: center; gap: var(--space-2); min-height: 24px; }
+.layer-opacity-label { font-size: 10px; color: var(--text-tertiary); text-transform: none; letter-spacing: 0; flex: 0 0 auto; }
+.layer-opacity-input { flex: 1; height: 18px; -webkit-appearance: none; appearance: none; background: transparent; accent-color: var(--accent); cursor: pointer; }
+.layer-opacity-input::-webkit-slider-runnable-track { height: 4px; border-radius: var(--r-pill); background: var(--border-strong); }
+.layer-opacity-input::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4px; border-radius: 50%; background: var(--accent); border: none; }
+.layer-opacity-value { font-size: 10px; color: var(--text-secondary); font-variant-numeric: tabular-nums; flex: 0 0 32px; text-align: right; }
+.layer-tools-row { display: flex; align-items: center; gap: var(--space-1); margin-top: 2px; }
+.layer-blend-select, .layer-style-select {
+  flex: 1 1 auto; min-width: 0; width: auto; padding: 4px var(--space-2);
+  background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--r-control);
+  font-family: var(--f-ui); font-size: 10px; color: var(--text-primary); cursor: pointer;
+}
+.layers-header { padding: var(--space-2) var(--space-1); border-bottom: none; background: transparent; }
+.layers-placeholder { padding: var(--space-3); font-size: var(--text-xs); color: var(--text-tertiary); letter-spacing: 0; }
+
+/* ── Panel title → LAYERS .panel-title (10px/600/0.1em uppercase tertiary) ── */
+.panel-title { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+
+/* ── Motion playback pill → LAYERS .insert-bar language (40px, 30px btns, 999px) ── */
+.motion-controls-root {
+  padding: 4px; gap: 2px; border-radius: var(--r-pill);
+  border: 1px solid rgb(0 0 0 / 0.28); background: var(--surface-chrome);
+  box-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.55);
+  max-width: calc(100% - 24px);
+}
+.motion-bar { gap: 2px; align-items: center; }
+.motion-btn-group { gap: 2px; }
+.motion-btn {
+  width: 30px; height: 30px; border-radius: var(--r-pill);
+  border: none; background: transparent; color: var(--text-secondary);
+  font-size: 11px; display: grid; place-items: center; cursor: pointer; padding: 0;
+}
+.motion-btn svg { width: 14px; height: 14px; }
+.motion-btn:hover { background: rgb(255 255 255 / 0.06); color: var(--text-primary); }
+.motion-scrubber-wrap { height: 30px; flex: 1; min-width: 60px; }
+.motion-scrubber { height: 18px; background: transparent; accent-color: var(--accent); }
+.motion-scrubber::-webkit-slider-runnable-track { height: 4px; border-radius: var(--r-pill); background: var(--border-strong); }
+.motion-scrubber::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4px; border-radius: 50%; background: var(--accent); border: none; }
+.motion-progress-fill { background: var(--accent); opacity: 0.25; }
+.motion-speed { display: flex; align-items: center; gap: 4px; }
+.motion-speed-label { font-size: 10px; color: var(--text-tertiary); text-transform: none; letter-spacing: 0; min-width: 0; }
+.motion-speed select, #motion-speed-select {
+  padding: 3px var(--space-2); background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: var(--r-control); font-family: var(--f-ui); font-size: 10px; color: var(--text-primary); cursor: pointer;
+}
+.motion-counter { font-size: 10px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.motion-counter__text { font-size: 10px; }
+
+/* ── Bottom chrome: ONE full-width centred action pill (LAYERS .insert-host),
+   motion pill above it; radius-bar bottom-right clear of both. Undo the 228px
+   squeeze + left-shift that made the pill tiny and off-centre. ── */
+@media (min-width: 769px) {
+  #insert-bar {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: var(--space-3); max-width: calc(100% - 24px);
+  }
+  .motion-controls-root {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: 64px; max-width: calc(100% - 24px);
+  }
+  .radius-bar {
+    position: fixed; right: var(--space-5); bottom: var(--space-5);
+    left: auto; top: auto; max-width: none; z-index: 6;
+  }
+}
+
+/* ── LAYERS COMPONENT PORT — high-specificity overrides ──
+   The old M13 44px touch-target rules (.panel--layers .layer-action-btn etc.)
+   and the §18 generate-btn restatement outrank the base component port above.
+   LAYERS uses compact 24px icon buttons / 28px controls on desktop (its own
+   .icon-btn is 24×24). Match that; keep 44px hit areas on MOBILE only. */
+.panel--layers .layer-action-btn,
+.panel--layers .layer-visibility-btn { width: 24px; height: 24px; }
+.panel--layers .layer-style-select,
+.panel--layers .layer-blend-select { min-height: 28px; }
+.panel--layers .layer-opacity-input { height: 18px; }
+.panel--layers .layer-opacity-row { min-height: 24px; }
+.panel--layers .layer-row__main,
+.panel--layers .layer-tools-row,
+.panel--layers .layer-row__actions { flex-wrap: nowrap; }
+.panel--layers .layer-row__name { min-width: 0; }
+.panel--layers .layer-row { padding: 5px var(--space-2); }
+
+/* Generate button: compact LAYERS accent primary, single line, no wrap. */
+.generate-btn-container .generate-btn,
+.panel .generate-btn {
+  flex: 1 1 auto; min-width: 0; width: auto;
+  padding: 6px var(--space-2); min-height: 30px; height: auto;
+  font-family: var(--f-ui); font-size: var(--text-xs); font-weight: 600;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+  background: rgb(122 162 255 / 0.16); color: var(--accent);
+  border: 1px solid var(--accent); border-radius: var(--r-control);
+  transform: none; box-shadow: none; line-height: 1.2;
+}
+.generate-btn-container .generate-btn:hover,
+.panel .generate-btn:hover { background: rgb(122 162 255 / 0.26); color: var(--accent-hover); transform: none; box-shadow: none; }
+.generate-btn-container { display: flex; flex-direction: row; gap: var(--space-2); align-items: center; }
+.generate-btn-container .stop-btn,
+.generate-btn-container .reset-btn { flex: 0 0 auto; min-height: 30px; padding: 6px var(--space-2); font-size: 10px; white-space: nowrap; }
+
+/* Slider track must FILL its grid column (the range input was shrinking to
+   its intrinsic ~38px). width:100% + min-width:0 on the grid item. */
+.control-slider > .slider-row > input[type="range"] { width: 100%; min-width: 0; justify-self: stretch; }
+
+/* Mobile: restore 44px hit areas (a11y floor) — desktop stays LAYERS-compact. */
+@media (max-width: 768px) {
+  .panel--layers .layer-action-btn,
+  .panel--layers .layer-visibility-btn { width: 44px; height: 44px; }
+  .panel--layers .layer-style-select,
+  .panel--layers .layer-blend-select { min-height: 44px; }
+  .panel--layers .layer-row__main,
+  .panel--layers .layer-tools-row { flex-wrap: wrap; }
+  .panel--layers .layer-row__name { min-width: 74px; }
+  .generate-btn-container .generate-btn, .panel .generate-btn { min-height: 44px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYERS COMPONENT PORT — FINAL bottom-chrome + generate sizing.
+   Neutralise the earlier "reserve 636px" squeeze (it used !important and shrank
+   the pill to 228px, off-centre). LAYERS centres its insert-bar in the canvas
+   at natural width (604px) with the radius-bar bottom-right of the SHELL. The
+   action pill is the primary bottom chrome (full width, centred, bottom 12px);
+   the motion playback pill sits above it; the radius-bar is compact bottom-right.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  #insert-bar {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: var(--space-3) !important;
+    max-width: calc(100% - 24px) !important;
+    width: auto !important;
+  }
+  .motion-controls-root {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 64px !important;
+    max-width: calc(100% - 24px) !important;
+    width: auto !important;
+  }
+  .radius-bar {
+    position: fixed !important;
+    right: var(--space-5) !important;
+    bottom: var(--space-5) !important;
+    left: auto !important;
+    top: auto !important;
+    max-width: 360px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    z-index: 6 !important;
+  }
+}
+/* Generate button: fill the pinned row, single line, never collapse to 18px. */
+.generate-btn-container { display: flex !important; flex-direction: row !important; align-items: center !important; gap: var(--space-2) !important; }
+.generate-btn-container .generate-btn {
+  flex: 1 1 auto !important; min-width: 0 !important; width: auto !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+  padding: 6px var(--space-2) !important; min-height: 30px !important;
+  font-size: 11px !important; line-height: 1.2 !important;
+}
+.generate-btn-container .stop-btn,
+.generate-btn-container .reset-btn { flex: 0 0 auto !important; min-height: 30px !important; white-space: nowrap !important; }
+
+/* Stop/Reset were width:100% (full-row stacked layout). In the LAYERS compact
+   pinned action row they must be auto-width chips beside Generate. */
+.generate-btn-container .stop-btn,
+.generate-btn-container .reset-btn {
+  width: auto !important; flex: 0 0 auto !important; margin-top: 0 !important;
+  min-height: 30px !important; padding: 6px var(--space-2) !important;
+  font-size: 10px !important; white-space: nowrap !important;
+}
+
+  /* ── Brush Maker UI ── */
+  /* Scoped panel using existing CSS variables (--panel-bg, --accent, etc.).
+     This block is appended to style.css and targets .brush-maker elements only. */
+  /* #brush-maker-root sits directly in #app beside the positioned .base /
+     .panel layers, so it MUST be positioned itself or .base paints over it
+     (the whole panel rendered invisible-black under the shell). */
+  #brush-maker-root {
+    position: relative;
+    z-index: 10; /* above .base/.panels (z 0-2), below dialogs (z 100) */
+    display: none; /* BrushMaker.toggle() switches to flex */
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    padding: var(--space-3) 0;
+  }
+  .brush-maker {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 960px;
+    font-family: var(--f-ui);
+    font-size: 11px;
+    color: var(--text-primary);
+    background: var(--surface-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+
+  .brush-maker__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-3);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-raised);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .brush-maker__title {
+    margin: 0;
+  }
+
+  .brush-maker__controls,
+  .brush-maker__side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-3);
+    overflow-y: auto;
+  }
+
+  .brush-maker__controls {
+    border-right: 1px solid var(--border);
+    width: 340px;
+    min-width: 340px;
+  }
+
+  .brush-maker__side {
+    border-left: 1px solid var(--border);
+    padding-left: var(--space-3);
+  }
+
+  .brush-maker__actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border);
+  }
+
+  .brush-maker__actions .bm-btn {
+    flex: 1;
+  }
+
+  .brush-maker__preview-section,
+  .brush-maker__code-section,
+  .brush-maker__saved-section {
+    margin-top: var(--space-2);
+  }
+
+  .brush-maker__preview-section .bm-section-label,
+  .brush-maker__code-section .bm-section-label,
+  .brush-maker__saved-section .bm-section-label {
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+  }
+
+  .brush-maker__preview-wrap {
+    position: relative;
+    margin-top: var(--space-1);
+  }
+
+  .brush-maker__preview {
+    display: block;
+    background: var(--canvas-bg);
+    border: 1px solid var(--border);
+  }
+
+  .brush-maker__preview-error {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 102, 102, 0.1);
+    border: 1px solid var(--error);
+    color: var(--error);
+    padding: 2px 6px;
+    border-radius: var(--r-sm);
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  .brush-maker__code-section .bm-section-label {
+    margin-bottom: var(--space-1);
+  }
+
+  .brush-maker__code-output {
+    width: 100%;
+    height: 120px;
+    margin-top: var(--space-1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--code-text);
+    font-family: var(--f-mono);
+    font-size: 9px;
+    line-height: 1.4;
+    padding: var(--space-2);
+    resize: vertical;
+    overflow: auto;
+  }
+
+  .brush-maker__code-output.invalid {
+    background: rgba(255, 102, 102, 0.06);
+  }
+
+  .brush-maker__saved-section {
+    display: none;
+  }
+
+  .brush-maker__saved-section.visible {
+    display: block;
+  }
+
+  .brush-maker__saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .brush-maker__saved-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    background: var(--surface-raised);
+    border-radius: var(--r-sm);
+    font-size: 9px;
+    color: var(--text-primary);
+  }
+
+  .brush-maker__saved-item .bm-saved-name {
+    flex: 1;
+  }
+
+  .brush-maker__saved-actions {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .brush-maker__saved-actions .bm-btn--sm {
+    flex: 0 0 auto;
+  }
+
+  .brush-maker__hint {
+    font-size: 8px;
+    color: var(--text-dim);
+    margin-bottom: var(--space-1);
+  }
+
+  .brush-maker__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+  }
+
+  .brush-maker__label {
+    width: 60px;
+    color: var(--text-secondary);
+    font-size: 9px;
+  }
+
+  .brush-maker__input,
+  .brush-maker__select {
+    flex: 1;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: var(--radius);
+    outline: none;
+  }
+
+  .brush-maker__input:focus,
+  .brush-maker__select:focus {
+    border-color: var(--accent);
+  }
+
+  .brush-maker__slider {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+    height: 3px;
+  }
+
+  .brush-maker__slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-primary);
+    border: 2px solid var(--bg-primary);
+    cursor: pointer;
+    transition: transform var(--t-fast);
+  }
+
+  .brush-maker__slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .brush-maker__toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .brush-maker__toggle-input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .brush-maker__toggle-track {
+    width: 36px;
+    height: 18px;
+    background: var(--border);
+    border-radius: 18px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .brush-maker__toggle-input:checked + .brush-maker__toggle-track {
+    background: var(--accent);
+  }
+
+  .brush-maker__toggle-input:checked + .brush-maker__toggle-track::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .brush-maker__toggle-input:checked + .brush-maker__toggle-track::before {
+    transform: translateX(18px);
+  }
+
+  .brush-maker__section {
+    margin-bottom: var(--space-2);
+  }
+
+  .brush-maker__section:last-child {
+    margin-bottom: 0;
+  }
+
+  .brush-maker__no-tip-warning {
+    color: var(--text-dim);
+    font-size: 8px;
+    margin-top: var(--space-1);
+  }
+
+  .brush-maker__tip-pad-wrap {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background: var(--canvas-bg);
+    border: 1px solid var(--border);
+    cursor: crosshair;
+  }
+
+  .brush-maker__tip-pad {
+    display: block;
+    width: 100px;
+    height: 100px;
+    cursor: crosshair;
+  }
+
+  .brush-maker__tip-pad.canvas-drawn {
+    cursor: crosshair;
+  }
+
+  /* Type-specific slider range adjustments */
+  .brush-maker select.bm-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 20px;
+  }
+
+  /* Custom tip code textarea */
+  .brush-maker__tip-code {
+    width: 100%;
+    height: 80px;
+    margin-top: var(--space-1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--code-text);
+    font-family: var(--f-mono);
+    font-size: 9px;
+    line-height: 1.4;
+    padding: var(--space-2);
+    resize: vertical;
+    overflow: auto;
+  }
+
+  /* Buttons */
+  .brush-maker__btn {
+    appearance: none;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--f-ui);
+    font-size: 9px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--r-sm);
+    white-space: nowrap;
+    transition: background var(--t-fast), border-color var(--t-fast);
+  }
+
+  .brush-maker__btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-strong);
+  }
+
+  .brush-maker__btn--primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+  }
+
+  .brush-maker__btn--primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+
+  .brush-maker__btn--ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border);
+  }
+
+  .brush-maker__btn--ghost:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+  }
+
+  .brush-maker__btn--sm {
+    font-size: 8px;
+    padding: var(--space-1) var(--space-2);
+    min-height: 28px;
+  }
+
+  .brush-maker__controls .bm-section {
+    margin-bottom: var(--space-2);
+  }
+
+  .brush-maker__controls .bm-section:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Type UI visibility */
+  .brush-maker__type-selector {
+    margin-bottom: var(--space-2);
+  }
+
+  /* Tip section */
+  .brush-maker__tip-section {
+    margin-top: var(--space-2);
+  }
+
+  .brush-maker__tip-section[style*="display:none"] {
+    display: none !important;
+  }
+
+  /* Saved brushes list */
+  .brush-maker__saved-section {
+    display: none;
+  }
+
+  .brush-maker__saved-section.visible {
+    display: block;
+  }
+
+  .brush-maker__saved-header {
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+  }
+
+  .brush-maker__saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .brush-maker__saved-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    background: var(--surface-raised);
+    border-radius: var(--r-sm);
+    font-size: 9px;
+    color: var(--text-primary);
+  }
+
+  .brush-maker__saved-item .bm-saved-name {
+    flex: 1;
+    font-size: 9px;
+    color: var(--text-primary);
+  }
+
+  .brush-maker__saved-actions {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .brush-maker__saved-actions .bm-btn--sm {
+    flex: 0 0 auto;
+    font-size: 8px;
+    padding: var(--space-1) var(--space-2);
+    min-height: 28px;
+  }

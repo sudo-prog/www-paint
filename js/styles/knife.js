@@ -164,8 +164,19 @@ export class KnifeStyle {
     const a = shape.params;
     const w = Math.max(2, a[6]);
     const P = quadPts(a, progress, 1, 22);
-    const n = P.length;
-    if (n < 3) return;
+    let n = P.length;
+    // A degenerate path (zero-length curve or progress≈0) has no area to fill;
+    // duplicate the first point so the ribbon collapses to a dot rather than
+    // producing an empty/degenerate Path2D band.
+    if (n < 3) {
+      if (P.length > 0) {
+        P.push([P[0][0], P[0][1]]);
+        P.push([P[0][0], P[0][1]]);
+        n = 3;
+      } else {
+        return;
+      }
+    }
 
     const hw = w / 2;
     const ridgeW = w * this.defaults.ridgeWidth;

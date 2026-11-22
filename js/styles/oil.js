@@ -22,6 +22,8 @@ import {
   shapeAxis, inPoly, colsOf, rgbToHex
 } from './base.js';
 
+import { renderOilImpasto } from '../engine/oil-impasto.js';
+
 /**
  * Resolve colors from a shape, handling both formats:
  *  - Engine format: shape.color0/color1 are RGB arrays, shape.alpha is number
@@ -143,6 +145,20 @@ export class OilStyle {
     const [c0, c1, o] = resolveColors(shape);
 
     if (shape.type === 'S') {
+      // Try the dli/paint-inspired impasto backend first.
+      // It fails gracefully (returns {ok:false}) if the device can't support
+      // the height-field computation (e.g. no ImageData in some embedded contexts).
+      const result = renderOilImpasto(ctx, shape, {
+        seed: R,
+        color0: c0,
+        color1: c1,
+        alpha: o,
+        progress,
+      });
+      if (result.ok) {
+        return;
+      }
+      // Fall back to the existing bristle renderer unchanged.
       this._renderStroke(ctx, shape, R, c0, c1, o, progress);
     } else {
       this._renderArea(ctx, shape, R, c0, c1, o);
