@@ -191,7 +191,7 @@ test('normals are always unit length', () => {
 
 // 3. Shading
 console.log('\nshadePigment:');
-test('shaded output has same dimensions and opaque alpha', () => {
+test('shaded output matches pigment footprint: covered pixels opaque, uncovered transparent', () => {
   const w = 16, h = 16;
   const pigment = makePigment(w, h, [200, 100, 50]);
   const hfield = makeRampHeight(w, h);
@@ -199,9 +199,29 @@ test('shaded output has same dimensions and opaque alpha', () => {
   const normals = computeNormals(gx, gy, w, h, DEFAULTS.NORMAL_SCALE);
   const shaded = shadePigment(pigment, normals, w, h);
   assert(shaded.length === w * h * 4, 'output length wrong');
-  for (let i = 3; i < shaded.length; i += 4) {
-    assert(shaded[i] === 255, `alpha not 255 at ${i}`);
+  // Full-coverage pigment (makePigment writes alpha=255) -> every pixel
+  // opaque: coverage = max(pigment alpha, max RGB channel).
+  for (let i = 0; i < w * h; i++) {
+    const pi = i * 4;
+    const expect = Math.max(pigment[pi + 3], pigment[pi], pigment[pi + 1], pigment[pi + 2]);
+    assert(shaded[pi + 3] === expect, `alpha ${shaded[pi + 3]} != coverage ${expect} at ${i}`);
   }
+  // Partial footprint: a pixel with NO pigment must stay transparent so the
+  // stroke composite never erases previously painted strokes.
+  const partial = new Uint8ClampedArray(w * h * 4);
+  partial[0] = 200; partial[1] = 100; partial[2] = 50; // only pixel 0 has pigment (alpha 0)
+  const shadedPartial = shadePigment(partial, normals, w, h);
+  // RGB-only buffer: coverage falls back to max(RGB) = 200.
+  assert(shadedPartial[3] === 200, 'covered pixel should carry coverage alpha');
+  for (let i = 1; i < w * h; i++) {
+    assert(shadedPartial[i * 4 + 3] === 0, `uncovered pixel ${i} must be alpha 0`);
+  }
+  // depositStroke-written coverage channel: dark paint (near-black RGB) must
+  // stay opaque via its coverage alpha, not read as empty by max(RGB).
+  const dark = new Uint8ClampedArray(w * h * 4);
+  dark[0] = 10; dark[1] = 8; dark[2] = 6; dark[3] = 255; // near-black, fully covered
+  const shadedDark = shadePigment(dark, normals, w, h);
+  assert(shadedDark[3] === 255, 'dark covered pixel must stay opaque');
 });
 
 test('shading changes pixel values from flat color', () => {

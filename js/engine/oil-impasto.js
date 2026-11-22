@@ -19,6 +19,10 @@
 
 import { rngFor, hexRgb, rgbToHex } from '../styles/base.js';
 
+// Module-level scratch canvas reused across strokes (see renderOilImpasto).
+let _scratchCanvas = null;
+let _scratchCtx = null;
+
 /**
  * Deterministic parameters (matching dli/paint paint.js constants)
  */
@@ -178,20 +182,32 @@ export function shadePigment(pigment, normals, w, h, opts = {}) {
       
       const specular = (D * G * F) * specularScale;
       
-      // Get pigment color (0..255)
+      // Coverage of this pixel: the deposit's own coverage channel (pigment
+      // alpha, written by depositStroke) OR the max RGB channel — max() of
+      // both so legacy callers that fill RGB only still composite correctly,
+      // and near-black paint (max(RGB) ≈ 0) stays opaque via its coverage.
+      const cov = Math.max(pigment[pi + 3], pigment[pi], pigment[pi + 1], pigment[pi + 2]);
+      if (cov === 0) {
+        // No paint here — this pixel is NOT part of the stroke and must stay
+        // fully transparent, or the opaque offscreen rect erases every
+        // previously painted stroke when composited.
+        out[pi + 3] = 0;
+        continue;
+      }
+
       const r = pigment[pi] / 255;
       const g = pigment[pi + 1] / 255;
       const b = pigment[pi + 2] / 255;
-      
+
       // Final color
       const fr = Math.min(1, r * diffuse + specular);
       const fg = Math.min(1, g * diffuse + specular);
       const fb = Math.min(1, b * diffuse + specular);
-      
+
       out[pi] = Math.round(fr * 255);
       out[pi + 1] = Math.round(fg * 255);
       out[pi + 2] = Math.round(fb * 255);
-      out[pi + 3] = 255;
+      out[pi + 3] = cov;
     }
   }
   
@@ -251,17 +267,40 @@ export function depositStroke(surface, shape, R, opts = {}) {
   const progress = opts.progress !== undefined ? opts.progress : 1;
   const alpha = shape.alpha ?? a[10] ?? opts.alpha ?? 1;
 
-  // Sample points along the quadratic bezier, only up to `progress`
+  // Sample points along the quadratic bezier, only up to `progress`.
+  // Coarse pass first (49 points), then DENSIFY by arc length so stamp
+  // spacing is ~0.8px — a fixed 49-sample walk left ~4.4px gaps that rendered
+  // every stroke as a dashed string of dots.
   const P = [];
-  const N = 48;
-  const maxS = Math.max(0, Math.min(1, progress));
-  for (let i = 0; i <= N; i++) {
-    const s = (i / N) * maxS;
-    const v = 1 - s;
-    P.push([
-      v * v * a[0] + 2 * v * s * a[2] + s * s * a[4],
-      v * v * a[1] + 2 * v * s * a[3] + s * s * a[5]
-    ]);
+  {
+    const N = 48;
+    const maxS = Math.max(0, Math.min(1, progress));
+    const coarse = [];
+    for (let i = 0; i <= N; i++) {
+      const s = (i / N) * maxS;
+      const v = 1 - s;
+      coarse.push([
+        v * v * a[0] + 2 * v * s * a[2] + s * s * a[4],
+        v * v * a[1] + 2 * v * s * a[3] + s * s * a[5]
+      ]);
+    }
+    // Total polyline length → per-segment subdivision count.
+    let total = 0;
+    for (let i = 1; i < coarse.length; i++) {
+      total += Math.hypot(coarse[i][0] - coarse[i - 1][0], coarse[i][1] - coarse[i - 1][1]);
+    }
+    const STEP = 0.8; // px between stamps
+    P.push(coarse[0]);
+    for (let i = 1; i < coarse.length; i++) {
+      const [ax, ay] = coarse[i - 1];
+      const [bx, by] = coarse[i];
+      const seg = Math.hypot(bx - ax, by - ay);
+      const n = Math.max(1, Math.round(seg / STEP));
+      for (let k = 1; k <= n; k++) {
+        P.push([ax + (bx - ax) * k / n, ay + (by - ay) * k / n]);
+      }
+    }
+    void total;
   }
   
   // Bristle colour endpoints must be hex strings ('#rrggbb'); params may
@@ -272,10 +311,13 @@ export function depositStroke(surface, shape, R, opts = {}) {
   // Create bristle profile
   const bristles = createBristleProfile(strokeW / 2, R);
   
-  // For each bristle, deposit along the path
+  // For each bristle, deposit along the path. Each bristle occupies its own
+  // lateral SLICE of the brush cross-section (br.center spans 0..1 across the
+  // stroke width) — without this spread every bristle stacks on the
+  // centerline and the "stroke" deposits as a 1px thread (measured: 104px
+  // footprint for a 212×13px stroke).
   for (const br of bristles) {
-    const brW = strokeW * (br.hi - br.lo);
-    const halfBrW = brW / 2;
+    const brW = Math.max(0.8, strokeW * (br.hi - br.lo));
     
     for (let j = 0; j < P.length; j++) {
       const s = j / Math.max(1, P.length - 1);
@@ -297,14 +339,16 @@ export function depositStroke(surface, shape, R, opts = {}) {
         ? Math.pow(1 - (s - dryEnd) / (1 - dryEnd), dryTaper)
         : 1;
       
-      // Bristle-specific width with variation
-      const hw = halfBrW * Math.max(0.3, dryFactor) * br.heightMul;
+      // Lateral centre of THIS bristle across the brush (px), plus its
+      // per-bristle jitter; the bristle's own width tapers as it runs dry.
+      const centreOffset = (br.center - 0.5) * strokeW + br.offset * brW;
+      const liveW = Math.max(0.4, brW * Math.max(0.3, dryFactor));
       
       // Deposit along the bristle width (multiple samples across)
-      const samplesAcross = Math.max(3, Math.ceil(brW / 2));
+      const samplesAcross = Math.max(2, Math.ceil(liveW / 1.2));
       for (let k = 0; k < samplesAcross; k++) {
         const t = (k + 0.5) / samplesAcross;
-        const offset = (t - 0.5) * 2 * hw + br.offset * hw;
+        const offset = centreOffset + (t - 0.5) * liveW;
         
         const ix = Math.round(px + nx * offset);
         const iy = Math.round(py + ny * offset);
@@ -329,11 +373,19 @@ export function depositStroke(surface, shape, R, opts = {}) {
         const tg = Math.max(0, Math.min(255, cg + tone * 255));
         const tb = Math.max(0, Math.min(255, cb + tone * 255));
         
-        // Deposit pigment (additive, clamped)
-        const pigmentMul = br.pigmentMul * dryFactor * alpha;
+        // Deposit pigment (additive, clamped). Alpha is NOT folded in here —
+        // it rides on the composite's globalAlpha, so a stroke's opacity is
+        // uniform rather than baked per-sample.
+        const pigmentMul = br.pigmentMul * dryFactor;
         pigment[pIdx] = Math.min(255, pigment[pIdx] + tr * pigmentMul);
         pigment[pIdx + 1] = Math.min(255, pigment[pIdx + 1] + tg * pigmentMul);
         pigment[pIdx + 2] = Math.min(255, pigment[pIdx + 2] + tb * pigmentMul);
+        // Coverage lives in the pigment buffer's alpha channel (RGB deposit
+        // never touches it): max of this pixel's paint load, clamped 0..255.
+        // Dark pigments (near-black oil) then stay opaque — max(RGB) would
+        // read them as empty.
+        const load = Math.max(0, Math.min(1, pigmentMul)) * 255;
+        if (load > pigment[pIdx + 3]) pigment[pIdx + 3] = load;
         
         // Deposit height (additive, clamped to HEIGHT_SCALE)
         const heightMul = br.heightMul * dryFactor * alpha;
@@ -385,78 +437,137 @@ export function renderOilImpasto(ctx, shape, options = {}) {
     if (shape.type !== 'S') {
       return { ok: false, reason: 'oil-impasto only supports stroke type S' };
     }
-    
+
+    const a = shape.params;
     const canvas = ctx.canvas;
-    const w = canvas.width;
-    const h = canvas.height;
-    
-    // Create or reuse surface
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Per-stroke coverage mask sized to the FULL canvas; cropped surfaces
+    // would clip the stroke's soft edges when the deposit lands on the pad.
+    // Deposit + height stay full-canvas-cheap (typed-array writes); only the
+    // expensive shading is cropped to the stroke's bbox (see below).
     let surface = options.surface;
-    const ownsSurface = !surface;
-    
-    if (ownsSurface) {
-      // New surface - caller must reset between strokes if they want isolation
-      surface = {
-        width: w,
-        height: h,
-        pigment: new Uint8ClampedArray(w * h * 4),
-        heightField: new Float32Array(w * h),
-      };
+    if (!surface) {
+      surface = createSurface(W, H);
     }
-    
-    const R = rngFor(shape.seed || shape.params.slice(0, 6));
-    
-    // Deposit the stroke
-    depositStroke(surface, shape, R, options);
-    
-    // Soften height for smoother normals
-    const softHeight = softenHeight(surface.heightField, w, h, 1);
-    
-    // Compute normals
-    const { gx, gy } = computeSobel(softHeight, w, h);
-    const normals = computeNormals(gx, gy, w, h, DEFAULTS.NORMAL_SCALE);
-    
-    // Shade the pigment
-    const shaded = shadePigment(surface.pigment, normals, w, h, {
+
+    // Bristle RNG: the caller's seeded RNG when provided, else a fresh one
+    // from the shape's own seed. Never Math.random.
+    const R = options.seed instanceof Function
+      ? options.seed
+      : rngFor(shape.seed || shape.params.slice(0, 6));
+
+    // Stroke colours: oil.js passes c0/c1 hex in options; shapes may also
+    // carry hex strings or [r,g,b] arrays in params[8]/[9]. Normalise
+    // everything to hex; fall back to a mid-grey when nothing is usable
+    // (undefined params caused "Cannot read 'slice'" crashes before).
+    const toHex = (v, fb) => {
+      if (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) return v;
+      if (Array.isArray(v) && v.length >= 3 && v.every((c) => Number.isFinite(c))) {
+        return rgbToHex(v);
+      }
+      return fb;
+    };
+    const colA = toHex(options.color0 ?? a[8], '#808080');
+    const colB = toHex(options.color1 ?? a[9], colA);
+    a[8] = colA;
+    a[9] = colB;
+
+    // Stroke alpha: explicit option > shape alpha > params[10] > 1.
+    const alpha = Number.isFinite(options.alpha)
+      ? Math.max(0, Math.min(1, options.alpha))
+      : Math.max(0, Math.min(1, shape.alpha ?? a[10] ?? 1));
+
+    // Deposit the stroke (pigment + height + coverage in surface buffers)
+    depositStroke(surface, shape, R, { ...options, alpha: 1 });
+
+    // ── Bbox-cropped shading ─────────────────────────────────────────────
+    // Compute the stroke's bounding box from the bezier path ± brush radius:
+    // shading/Sobel/normals/putImageData then work on a small crop instead of
+    // the full canvas (a 40k-stroke painting previously allocated + shaded a
+    // full 640×668 buffer per stroke — 100% CPU + browser crash).
+    const sw = Math.max(2, a[6]);
+    const strokeBBox = (params, halfWidth) => {
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (let i = 0; i < 49; i++) {
+        const s = i / 48;
+        const v = 1 - s;
+        const x = v * v * params[0] + 2 * v * s * params[2] + s * s * params[4];
+        const y = v * v * params[1] + 2 * v * s * params[3] + s * s * params[5];
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y);
+        x1 = strokeBBox_x1(x1, x); y1 = Math.max(y1, y);
+      }
+      return [x0 - halfWidth, y0 - halfWidth, x1 + halfWidth, y1 + halfWidth];
+    };
+    const strokeBBox_x1 = (cur, x) => Math.max(cur, x);
+    const [bx0, by0, bx1, by1] = strokeBBox(a, sw);
+    const cx0 = Math.max(0, Math.floor(bx0) - 2);
+    const cy0 = Math.max(0, Math.floor(by0) - 2);
+    const cx1 = Math.min(W - 1, Math.ceil(bx1) + 2);
+    const cy1 = Math.min(H - 1, Math.ceil(by1) + 2);
+    const cw = cx1 - cx0 + 1;
+    const ch = cy1 - cy0 + 1;
+    if (cw <= 0 || ch <= 0) {
+      return { ok: false, reason: 'oil-impasto: empty stroke bbox' };
+    }
+
+    // Crop the pigment + height fields into small working buffers.
+    const pigmentCrop = new Uint8ClampedArray(cw * ch * 4);
+    const heightCrop = new Float32Array(cw * ch);
+    for (let y = 0; y < ch; y++) {
+      const srcRow = (cy0 + y) * W + cx0;
+      pigmentCrop.set(surface.pigment.subarray(srcRow * 4, srcRow * 4 + cw * 4), y * cw * 4);
+      heightCrop.set(surface.heightField.subarray(srcRow, srcRow + cw), y * cw);
+    }
+
+    // Soften + normals + shade on the crop only.
+    const softHeight = softenHeight(heightCrop, cw, ch, 1);
+    const { gx, gy } = computeSobel(softHeight, cw, ch);
+    const normals = computeNormals(gx, gy, cw, ch, DEFAULTS.NORMAL_SCALE);
+    const shaded = shadePigment(pigmentCrop, normals, cw, ch, {
       roughness: DEFAULTS.ROUGHNESS,
       F0: DEFAULTS.F0,
       specularScale: DEFAULTS.SPECULAR_SCALE,
       diffuseScale: DEFAULTS.DIFFUSE_SCALE,
       lightDirection: DEFAULTS.LIGHT_DIRECTION,
     });
-    
-    // Draw to offscreen canvas first (transparent background)
-    const offscreenCanvas = new OffscreenCanvas(w, h);
-    const offscreenCtx = offscreenCanvas.getContext('2d');
-    offscreenCtx.clearRect(0, 0, w, h);
-    const imgData = new ImageData(shaded, w, h);
-    offscreenCtx.putImageData(imgData, 0, 0);
-    
-    // Then composite onto the main canvas with proper alpha
+
+    // Composite the shaded crop onto the main canvas. Per-pixel alpha (set in
+    // shadePigment) keeps pixels outside the stroke footprint transparent, so
+    // earlier strokes survive; globalAlpha carries the shape's own opacity.
+    if (!_scratchCanvas || _scratchCanvas.width < cw || _scratchCanvas.height < ch) {
+      _scratchCanvas = new OffscreenCanvas(cw, ch);
+      _scratchCtx = _scratchCanvas.getContext('2d');
+    }
+    _scratchCtx.clearRect(0, 0, cw, ch);
+    _scratchCtx.putImageData(new ImageData(shaded, cw, ch), 0, 0);
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.drawImage(offscreenCanvas, 0, 0);
+    ctx.drawImage(_scratchCanvas, 0, 0, cw, ch, cx0, cy0, cw, ch);
     ctx.restore();
-    
-    // Stats
+
+    // Stats (over the crop — the only region the stroke touched)
     let pixelsPainted = 0;
     let minHeight = Infinity, maxHeight = -Infinity;
-    for (let i = 0; i < w * h; i++) {
-      if (surface.pigment[i * 4 + 3] > 0 || surface.pigment[i * 4] > 0 || surface.pigment[i * 4 + 1] > 0 || surface.pigment[i * 4 + 2] > 0) {
+    for (let i = 0; i < cw * ch; i++) {
+      const pi = i * 4;
+      if (pigmentCrop[pi + 3] > 0 || pigmentCrop[pi] > 0 || pigmentCrop[pi + 1] > 0 || pigmentCrop[pi + 2] > 0) {
         pixelsPainted++;
       }
-      if (surface.heightField[i] > 0) {
-        minHeight = Math.min(minHeight, surface.heightField[i]);
-        maxHeight = Math.max(maxHeight, surface.heightField[i]);
+      const hVal = heightCrop[i];
+      if (hVal > 0) {
+        minHeight = Math.min(minHeight, hVal);
+        maxHeight = Math.max(maxHeight, hVal);
       }
     }
-    
+
     return {
       ok: true,
       stats: {
         pixelsPainted,
         heightRange: maxHeight > -Infinity ? [minHeight, maxHeight] : [0, 0],
-        surface, // returned so caller can chain or reset
+        surface,
       },
     };
   } catch (e) {
