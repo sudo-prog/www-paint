@@ -22,6 +22,23 @@ import { rngFor, hexRgb, rgbToHex } from '../styles/base.js';
 // Module-level scratch canvas reused across strokes (see renderOilImpasto).
 let _scratchCanvas = null;
 let _scratchCtx = null;
+// Shared CUMULATIVE paint surface (pigment + height), keyed by target canvas.
+// One per canvas so overlapping strokes shade against the paint already down —
+// real impasto is a field, not isolated worms. Reset via resetImpastoSurface().
+let _sharedSurface = null;
+
+/**
+ * Reset the shared impasto surface (call when a render pass starts over —
+ * renderer.clear() or a fresh export). Keeps render() idempotent: the same
+ * stroke sequence always paints onto a fresh field.
+ * @param {CanvasRenderingContext2D} [ctx] - reset only the surface for this canvas
+ */
+export function resetImpastoSurface(ctx) {
+  if (!ctx) { _sharedSurface = null; return; }
+  if (_sharedSurface && _sharedSurface.key === ctx.canvas) {
+    resetSurface(_sharedSurface);
+  }
+}
 
 /**
  * Deterministic parameters (matching dli/paint paint.js constants)
@@ -36,7 +53,9 @@ export const DEFAULTS = {
   // Bristle channel parameters
   BRISTLE_COUNT: 12,
   BRISTLE_VAR: 0.5,
-  HEIGHT_SCALE: 2.0, // max height value
+  HEIGHT_SCALE: 8.0, // max height value — tall enough that stroke-over-stroke
+                     // furrows survive the 3x3 soften and visibly tilt the
+                     // normals (2.0 left the relief flat after softening)
   HEIGHT_SOFTEN: 0.3, // how much to blur height for smoother normals
 };
 
@@ -199,10 +218,20 @@ export function shadePigment(pigment, normals, w, h, opts = {}) {
       const g = pigment[pi + 1] / 255;
       const b = pigment[pi + 2] / 255;
 
-      // Final color
-      const fr = Math.min(1, r * diffuse + specular);
-      const fg = Math.min(1, g * diffuse + specular);
-      const fb = Math.min(1, b * diffuse + specular);
+      // CP's gloss formulation (painting.frag): the specular is TINTED with
+      // the albedo — `mix(vec3(1.), c, .65) * .35 * spec(...)` — never pure
+      // white at full scale. White spec on dark oil blows the mark to lum
+      // ~236 (measured: 78% of dark strokes rendered >200); tinted and
+      // scaled to 0.35 the mark keeps its colour with a glossy sheen, which
+      // is the whole point of the impasto read.
+      const specR = specular * (0.35 + 0.65 * r);
+      const specG = specular * (0.35 + 0.65 * g);
+      const specB = specular * (0.35 + 0.65 * b);
+
+      // Final color: albedo lit by diffuse + ALBEDO-TINTED specular
+      const fr = Math.min(1, r * diffuse + specR);
+      const fg = Math.min(1, g * diffuse + specG);
+      const fb = Math.min(1, b * diffuse + specB);
 
       out[pi] = Math.round(fr * 255);
       out[pi + 1] = Math.round(fg * 255);
@@ -258,6 +287,11 @@ export function depositStroke(surface, shape, R, opts = {}) {
   const { width, height, pigment, heightField } = surface;
   const w = width;
   const h = height;
+  // Optional per-stroke ownership mask (Uint8Array w*h): pixels THIS stroke
+  // deposited. Written when provided (shared-surface mode) and used by the
+  // renderer to composite only the fresh paint while shading against the
+  // cumulative field.
+  const own = opts.own || null;
   
   // Parse stroke params: [x0,y0,cx,cy,x1,y1,width,angle,colorA,colorB,alpha]
   const a = shape.params;
@@ -373,18 +407,39 @@ export function depositStroke(surface, shape, R, opts = {}) {
         const tg = Math.max(0, Math.min(255, cg + tone * 255));
         const tb = Math.max(0, Math.min(255, cb + tone * 255));
         
-        // Deposit pigment (additive, clamped). Alpha is NOT folded in here —
-        // it rides on the composite's globalAlpha, so a stroke's opacity is
-        // uniform rather than baked per-sample.
+        // Deposit pigment. On a SHARED surface (cumulative field) the newest
+        // stroke's paint WETS OVER the old paint — alpha-blend the fresh
+        // colour on top (source-over) rather than adding, so a dark stroke
+        // dragged through light paint leaves a dark furrow instead of mud.
+        // On a per-stroke surface (options.surface / shared:false) the
+        // additive path is preserved byte-for-byte (unit tests pin it).
         const pigmentMul = br.pigmentMul * dryFactor;
-        pigment[pIdx] = Math.min(255, pigment[pIdx] + tr * pigmentMul);
-        pigment[pIdx + 1] = Math.min(255, pigment[pIdx + 1] + tg * pigmentMul);
-        pigment[pIdx + 2] = Math.min(255, pigment[pIdx + 2] + tb * pigmentMul);
+        const load = Math.max(0, Math.min(1, pigmentMul)) * 255;
+        if (own) {
+          // A bristle TOUCH means opaque paint at that pixel — the mark's
+          // own footprint is fully covered (the 0.8 stroke alpha is applied
+          // at composite). Wet-over-wet blending still uses the deposit's
+          // load as the blend weight so light paint dragged through dark
+          // shows through proportionally.
+          const old = own[idx] > 0 ? 1 : 0;
+          const aNew = Math.max(0, Math.min(1, load / 255));
+          if (aNew > 0) {
+            for (let cc = 0; cc < 3; cc++) {
+              const srcC = [tr, tg, tb][cc];
+              const dstC = pigment[pIdx + cc];
+              pigment[pIdx + cc] = Math.min(255, srcC * aNew + dstC * (1 - aNew) * old);
+            }
+          }
+          own[idx] = 255;
+        } else {
+          pigment[pIdx] = Math.min(255, pigment[pIdx] + tr * pigmentMul);
+          pigment[pIdx + 1] = Math.min(255, pigment[pIdx + 1] + tg * pigmentMul);
+          pigment[pIdx + 2] = Math.min(255, pigment[pIdx + 2] + tb * pigmentMul);
+        }
         // Coverage lives in the pigment buffer's alpha channel (RGB deposit
         // never touches it): max of this pixel's paint load, clamped 0..255.
         // Dark pigments (near-black oil) then stay opaque — max(RGB) would
         // read them as empty.
-        const load = Math.max(0, Math.min(1, pigmentMul)) * 255;
         if (load > pigment[pIdx + 3]) pigment[pIdx + 3] = load;
         
         // Deposit height (additive, clamped to HEIGHT_SCALE)
@@ -443,14 +498,29 @@ export function renderOilImpasto(ctx, shape, options = {}) {
     const W = canvas.width;
     const H = canvas.height;
 
+    // Shared CUMULATIVE paint surface. Real oil paint is a height FIELD: a
+    // later bristle drags through earlier paint, leaving furrows — that
+    // interaction is the whole dli/paint look. Shading each stroke on its
+    // own blank surface (the old behaviour) produces identical isolated
+    // worms with no relief history. The surface is keyed per canvas and
+    // reset when the renderer starts a fresh pass (see resetImpastoSurface),
+    // so render() stays deterministic: same shapes + same pass order → same
+    // cumulative field → same pixels.
+    if (!options.surface && options.shared !== false) {
+      if (!_sharedSurface || _sharedSurface.key !== canvas || _sharedSurface.width !== W || _sharedSurface.height !== H) {
+        _sharedSurface = createSurface(W, H);
+        _sharedSurface.key = canvas;
+      }
+      surface = _sharedSurface;
+    } else if (!options.surface) {
+      surface = createSurface(W, H);
+    } else {
+      surface = options.surface;
+    }
     // Per-stroke coverage mask sized to the FULL canvas; cropped surfaces
     // would clip the stroke's soft edges when the deposit lands on the pad.
     // Deposit + height stay full-canvas-cheap (typed-array writes); only the
     // expensive shading is cropped to the stroke's bbox (see below).
-    let surface = options.surface;
-    if (!surface) {
-      surface = createSurface(W, H);
-    }
 
     // Bristle RNG: the caller's seeded RNG when provided, else a fresh one
     // from the shape's own seed. Never Math.random.
@@ -479,8 +549,12 @@ export function renderOilImpasto(ctx, shape, options = {}) {
       ? Math.max(0, Math.min(1, options.alpha))
       : Math.max(0, Math.min(1, shape.alpha ?? a[10] ?? 1));
 
-    // Deposit the stroke (pigment + height + coverage in surface buffers)
-    depositStroke(surface, shape, R, { ...options, alpha: 1 });
+    // Deposit the stroke. In shared mode also record THIS stroke's own
+    // footprint so the composite applies only the fresh paint (the pigment/
+    // height it lands on is the cumulative field, giving real furrows).
+    const isShared = surface === _sharedSurface;
+    const own = isShared ? new Uint8Array(W * H) : null;
+    depositStroke(surface, shape, R, { ...options, alpha: 1, own });
 
     // ── Bbox-cropped shading ─────────────────────────────────────────────
     // Compute the stroke's bounding box from the bezier path ± brush radius:
@@ -512,16 +586,23 @@ export function renderOilImpasto(ctx, shape, options = {}) {
       return { ok: false, reason: 'oil-impasto: empty stroke bbox' };
     }
 
-    // Crop the pigment + height fields into small working buffers.
+    // Crop the pigment + height fields (+ ownership mask) into working buffers.
     const pigmentCrop = new Uint8ClampedArray(cw * ch * 4);
     const heightCrop = new Float32Array(cw * ch);
+    const ownCrop = own ? new Uint8Array(cw * ch) : null;
     for (let y = 0; y < ch; y++) {
       const srcRow = (cy0 + y) * W + cx0;
       pigmentCrop.set(surface.pigment.subarray(srcRow * 4, srcRow * 4 + cw * 4), y * cw * 4);
       heightCrop.set(surface.heightField.subarray(srcRow, srcRow + cw), y * cw);
+      if (ownCrop) ownCrop.set(own.subarray(srcRow, srcRow + cw), y * cw);
     }
 
-    // Soften + normals + shade on the crop only.
+    // Soften + normals + shade on the crop only. The height field is the
+    // CUMULATIVE one (earlier strokes' ridges/furrows tilt the normals, so
+    // this stroke's shading bends around existing paint — the dli/paint
+    // interaction), but in shared mode the composite is masked to THIS
+    // stroke's own footprint (ownCrop) so we lay fresh paint without
+    // re-painting the strokes already on the canvas.
     const softHeight = softenHeight(heightCrop, cw, ch, 1);
     const { gx, gy } = computeSobel(softHeight, cw, ch);
     const normals = computeNormals(gx, gy, cw, ch, DEFAULTS.NORMAL_SCALE);
@@ -532,6 +613,13 @@ export function renderOilImpasto(ctx, shape, options = {}) {
       diffuseScale: DEFAULTS.DIFFUSE_SCALE,
       lightDirection: DEFAULTS.LIGHT_DIRECTION,
     });
+    if (ownCrop) {
+      // Ownership mask: only pixels THIS stroke deposited get painted.
+      // Alpha = own coverage; RGB stays the field-shaded colour.
+      for (let i = 0; i < cw * ch; i++) {
+        shaded[i * 4 + 3] = ownCrop[i];
+      }
+    }
 
     // Composite the shaded crop onto the main canvas. Per-pixel alpha (set in
     // shadePigment) keeps pixels outside the stroke footprint transparent, so

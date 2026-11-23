@@ -10,6 +10,7 @@
 
 import { drawShape, getRuntimeSource } from './shapes.js';
 import { createWetSim } from './wetsim.js';
+import { resetImpastoSurface } from './oil-impasto.js';
 
 /**
  * An offscreen 2D canvas, or null where none can be created.
@@ -260,6 +261,10 @@ export class Renderer {
     ctx.clearRect(0, 0, this.width, this.height);
     ctx.fillRect(0, 0, this.width, this.height);
     ctx.fillStyle = prev;
+    // The impasto surface is a cumulative height/pigment field — a fresh
+    // pass must start from bare canvas or the relief history leaks between
+    // renders (same reason the wet sim resets in renderAll).
+    resetImpastoSurface(ctx);
   }
 
   /**

@@ -430,6 +430,39 @@ export class Painter {
         }
       }
     }
+    // CP-calibrated pigment-pair orientation (oil@500 cross-reference,
+    // 2026-11-22): CP pairs a DARK c0 with a LIGHT c1 on every stroke
+    // (c0 lum p50 53.7 -> c1 lum p50 162.3, ratio ~1.53, 0% flat) — the
+    // gradient always runs dark->light along the mark. The raw LSQ solve
+    // is a coin flip (measured 49% dark->light), which renders as muddy
+    // grey noodles. ORIENT the pair only — re-centering the endpoints also
+    // changed the solver's error landscape (strokes came out 2.5× wider),
+    // so the magnitudes stay exactly as the LSQ solve produced them.
+    if (s.st === 'oil' || s.st === 'acrylic' || s.st === 'gouache' || s.st === 'knife') {
+      const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+      if (lum(c1) < lum(c0)) { const tmp = c0; c0 = c1; c1 = tmp; }
+      // CP's marks span ~108 luminance units dark->light (p50; c0 54 -> c1 162,
+      // tips p90 171). Ours solve to half that (span p50 57) — flat mud. Expand
+      // the pair about its MEAN to the measured span (mean + hue preserved,
+      // tips clamped 6..248), which keeps the solve's placement economics and
+      // gives each stroke its internal dark->light shading.
+      const l0 = lum(c0), l1 = lum(c1);
+      // Expansion headroom: CP's light tips stop at lum ~171 (p90) — pushing
+      // past that paints white worms over the subject. Allow the tip to grow
+      // toward the span target but never beyond 171.
+      const SPAN = 108, TIP_MAX = 171;
+      const span = l1 - l0;
+      const grow = Math.max(0, Math.min(SPAN - span, TIP_MAX - l1));
+      if (span > 1 && grow > 0) {
+        for (let ch = 0; ch < 3; ch++) {
+          c0[ch] = cl255(c0[ch] - grow);
+          c1[ch] = cl255(c1[ch] + grow);
+        }
+        // Re-orient after clamping (a clamped tip can invert the pair).
+        if (lum(c1) < lum(c0)) { const tmp = c0; c0 = c1; c1 = tmp; }
+      }
+      void l0; void l1;
+    }
     s.c0 = c0; s.c1 = c1;
     return d;
   }
@@ -493,7 +526,26 @@ export class Painter {
     else if (st === 'hatch' && s.t === 'S') { const cx = (p[0] + p[4]) / 2, cy = (p[1] + p[5]) / 2, len = Math.max(Math.hypot(p[4] - p[0], p[5] - p[1]) * 0.6, Math.max(this.W, this.H) * 0.03), ang = (this.rnd() < 0.5 ? 0.785 : 2.356) + this.gauss() * 0.08; p[0] = cx - Math.cos(ang) * len; p[1] = cy - Math.sin(ang) * len; p[4] = cx + Math.cos(ang) * len; p[5] = cy + Math.sin(ang) * len; p[2] = cx; p[3] = cy; p[6] = lerp(0.6, 1.5, this.rnd()); s.a = 0.9; }
     else if (st === 'calligraphy' && s.t === 'S') { p[6] = Math.max(1, p[6] * lerp(0.35, 1.4, this.rnd())); s.a = 0.95; }
     else if (st === 'watercolour') { if (s.t === 'S') { s.a = 0.62; p[6] = Math.max(2, p[6] * lerp(1.1, 1.6, this.rnd())); this.longer(p, 1.2); } else { s.a = lerp(0.45, 0.7, this.rnd()); if (s.t === 'B') p[5] = 0.15; } }
-    else if (st === 'oil' || st === 'acrylic' || st === 'gouache') { s.a = 1; if (s.t === 'S') { p[6] = Math.max(3, p[6] * lerp(1.0, st === 'oil' ? 1.7 : 1.5, this.rnd())); this.longer(p, lerp(1.1, 1.4, this.rnd())); } else if (s.t === 'B') p[5] = 0.12; }
+    else if (st === 'oil' || st === 'acrylic' || st === 'gouache') {
+  // CP-calibrated (oil@500 draw-call cross-reference, 2026-11-22):
+  // CP paints every stroke at alpha .8 (996/996) with widths clustered
+  // 1.675–4.645 (p50 2.786) through the WHOLE run — it has no giant early
+  // washes. The old alpha 1.0 + width ×1.0–1.7 growth left ours at alpha
+  // 1.0 / p90 19.8 / max 107 — the "trash look" outliers.
+  // Widths: cap the fine pass at 5px, and let the early coarse pass run at
+  // most ~L/12 (was L×0.45!) so coverage comes from MANY strokes, not a
+  // dozen smears (measured: 91 strokes >10px, orders 2..456, p50 13px).
+  s.a = 0.8;
+  if (s.t === 'S') {
+    const cap = this.stepProg > 0.15 ? 5 : Math.max(5, Math.max(this.W, this.H) / 12);
+    p[6] = Math.max(1.2, Math.min(cap, p[6] * lerp(0.8, 1.0, this.rnd())));
+    // CP's marks are long and THIN (aspect ~44:1 at p50): stretch the mark
+    // length but SHRINK the width with it, so coverage comes from length.
+    const shrink = this.stepProg > 0.15 ? 1 : lerp(0.8, 1.0, this.rnd()) * 0.7;
+    if (shrink < 1) { p[6] = Math.max(1.2, p[6] * shrink); this.longer(p, 1 / shrink); }
+    else this.longer(p, lerp(1.1, 1.4, this.rnd()));
+  } else if (s.t === 'B') p[5] = 0.12;
+}
     else if (st === 'knife') { s.a = 1; if (s.t === 'S') { p[6] = Math.max(4, p[6] * lerp(1.1, 1.5, this.rnd())); p[2] = (p[0] + p[4]) / 2 + (p[2] - (p[0] + p[4]) / 2) * 0.3; p[3] = (p[1] + p[5]) / 2 + (p[3] - (p[1] + p[5]) / 2) * 0.3; this.longer(p, 0.95); } else if (s.t === 'B') p[5] = 0.12; }
     else if (st === 'sumi') { s.a = 0.95; if (s.t === 'S') p[6] = Math.max(1.5, p[6] * lerp(0.8, 1.6, this.rnd())); else if (s.t === 'B') p[5] = lerp(0.3, 0.6, this.rnd()); }
     else if (st === 'marker') { s.a = 0.7; if (s.t === 'S') { p[6] = Math.max(2, Math.min(10, p[6] * 0.6)); this.longer(p, 1.2); } }
@@ -675,7 +727,13 @@ export class Painter {
     this.stepProg = prog; this.stepStyle = this.styles[Math.floor(this.rnd() * this.styles.length)] || 'painterly';
     this.stepBg = this.bgStyles.length ? this.bgStyles[Math.floor(this.rnd() * this.bgStyles.length)] : null;
     const kk = (this.sizeRand ? Math.pow(2, this.rnd() * 5.32 - 3.32) : this.sizeK) * (this.SSZ[this.stepStyle] || 1);
-    let smax = Math.min(L * 0.9, L * lerp(0.45, 0.012, Math.pow(prog, 0.5)) * kk);
+    // RELIEF styles (oil/acrylic/knife, CP-calibrated 2026-11-22): CP never
+    // drops a giant early wash — its marks stay 1.7–4.6px wide all run and
+    // coverage comes from COUNT. Cap smax at ~L/24 so the LSQ solver's
+    // candidate shapes are stroke-sized from the first step (the old
+    // L×0.45 cap produced 90+ strokes wider than 10px, max 107px).
+    const reliefCap = this.RELIEF_ST.includes(this.stepStyle) ? L / 24 : Infinity;
+    let smax = Math.min(L * 0.9, L * lerp(0.45, 0.012, Math.pow(prog, 0.5)) * kk, reliefCap);
     if (this.under) smax = Math.min(smax, L * (this.endless ? 0.05 : 0.1) * Math.max(1, kk));
     if (this.ORD) smax = Math.min(smax, Math.max(this.ORD.thick, L * 0.02));
     const smin = smax * 0.3;
