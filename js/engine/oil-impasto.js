@@ -57,6 +57,12 @@ export const DEFAULTS = {
                      // furrows survive the 3x3 soften and visibly tilt the
                      // normals (2.0 left the relief flat after softening)
   HEIGHT_SOFTEN: 0.3, // how much to blur height for smoother normals
+  // Rendered-width gain. CP's nominal draw-call width is 2.786 but its ROPES
+  // measure 8px on the 512 canvas (measured horizontal-run p50) — the mark is
+  // ~2.9x the nominal width once bristle spread and rounded caps are in.
+  // Ours rendered ~1:1 (run p50 5px, ink coverage 40% vs CP 67%), which read
+  // as wires. 2.5 brings the painted band to CP's measured geometry.
+  WIDTH_GAIN: 2.5,
 };
 
 /**
@@ -164,12 +170,18 @@ export function shadePigment(pigment, normals, w, h, opts = {}) {
       const ny = normals[ni + 1];
       const nz = normals[ni + 2];
       
-      // Diffuse: max(0, dot(N, L))
+      // Diffuse: REAL Lambert response. The old nDotL*0.15+0.85 flatlined the
+      // shading (every pixel within 15% of albedo no matter how steep the
+      // ridge) — the single biggest reason the height field never read as 3D.
+      // Ambient floor 0.3 keeps the shadow side of a furrow readable.
       const nDotL = Math.max(0, nx * lightDir[0] + ny * lightDir[1] + nz * lightDir[2]);
-      const diffuse = nDotL * diffuseScale + (1 - diffuseScale);
-      
-      // Specular (GGX-style)
-      // Half vector H = normalize(L + V)
+      const diffuse = 0.3 + 0.7 * nDotL;
+
+      // Specular: Blinn-Phong SHEEN, not the GGX mirror. GGX at roughness
+      // 0.075 spikes D to ~57 at mirror alignment → isolated blown-white
+      // pixels (the measured "white worms": 78% of dark strokes >200 lum)
+      // with zero gloss everywhere else. Blinn-Phong^32 gives every lit
+      // slope a broad glossy band — the continuous sheen real oil has.
       const hx = lightDir[0] + eyeDir[0];
       const hy = lightDir[1] + eyeDir[1];
       const hz = lightDir[2] + eyeDir[2];
@@ -177,29 +189,8 @@ export function shadePigment(pigment, normals, w, h, opts = {}) {
       const Hx = hx / hLen;
       const Hy = hy / hLen;
       const Hz = hz / hLen;
-      
-      // N·H
       const nDotH = Math.max(0, nx * Hx + ny * Hy + nz * Hz);
-      // L·H
-      const lDotH = Math.max(0, lightDir[0] * Hx + lightDir[1] * Hy + lightDir[2] * Hz);
-      
-      // GGX D term
-      const a2 = roughness * roughness;
-      const nDotH2 = nDotH * nDotH;
-      const denom = Math.PI * (nDotH2 * (a2 - 1) + 1) * (nDotH2 * (a2 - 1) + 1);
-      const D = a2 / denom;
-      
-      // Smith G term (GGX)
-      const nDotV = Math.max(0, nz); // V = (0,0,1)
-      const k = (roughness + 1) * (roughness + 1) / 8;
-      const Gv = nDotV / (nDotV * (1 - k) + k);
-      const Gl = nDotL / (nDotL * (1 - k) + k);
-      const G = Gv * Gl;
-      
-      // Fresnel (Schlick)
-      const F = F0 + (1 - F0) * Math.pow(1 - lDotH, 5);
-      
-      const specular = (D * G * F) * specularScale;
+      const specular = Math.pow(nDotH, 32) * specularScale;
       
       // Coverage of this pixel: the deposit's own coverage channel (pigment
       // alpha, written by depositStroke) OR the max RGB channel — max() of
@@ -295,7 +286,11 @@ export function depositStroke(surface, shape, R, opts = {}) {
   
   // Parse stroke params: [x0,y0,cx,cy,x1,y1,width,angle,colorA,colorB,alpha]
   const a = shape.params;
-  const strokeW = Math.max(2, a[6]);
+  // Rendered-width gain (DEFAULTS.WIDTH_GAIN): the painted band must be
+  // ~2.5x the nominal stroke width to match CP's measured rope geometry
+  // (nominal 2.8 -> rendered 8px @512). Applied to the deposit only — the
+  // shape's params stay untouched so the planner's numbers are preserved.
+  const strokeW = Math.max(2, a[6]) * (opts.widthGain ?? DEFAULTS.WIDTH_GAIN);
   const baseColorA = a[8];
   const baseColorB = a[9];
   const progress = opts.progress !== undefined ? opts.progress : 1;
@@ -506,16 +501,17 @@ export function renderOilImpasto(ctx, shape, options = {}) {
     // reset when the renderer starts a fresh pass (see resetImpastoSurface),
     // so render() stays deterministic: same shapes + same pass order → same
     // cumulative field → same pixels.
-    if (!options.surface && options.shared !== false) {
+    let surface;
+    if (options.surface) {
+      surface = options.surface;
+    } else if (options.shared !== false) {
       if (!_sharedSurface || _sharedSurface.key !== canvas || _sharedSurface.width !== W || _sharedSurface.height !== H) {
         _sharedSurface = createSurface(W, H);
         _sharedSurface.key = canvas;
       }
       surface = _sharedSurface;
-    } else if (!options.surface) {
-      surface = createSurface(W, H);
     } else {
-      surface = options.surface;
+      surface = createSurface(W, H);
     }
     // Per-stroke coverage mask sized to the FULL canvas; cropped surfaces
     // would clip the stroke's soft edges when the deposit lands on the pad.
@@ -603,7 +599,11 @@ export function renderOilImpasto(ctx, shape, options = {}) {
     // interaction), but in shared mode the composite is masked to THIS
     // stroke's own footprint (ownCrop) so we lay fresh paint without
     // re-painting the strokes already on the canvas.
-    const softHeight = softenHeight(heightCrop, cw, ch, 1);
+    // Radius-2 soften: radius 1 kept per-bristle ripple noise, which at
+    // 1000+ strokes turned flat regions into shimmer (measured v19: the
+    // background read as fabric). Radius 2 keeps the rope-scale relief and
+    // kills the bristle-scale noise.
+    const softHeight = softenHeight(heightCrop, cw, ch, 2);
     const { gx, gy } = computeSobel(softHeight, cw, ch);
     const normals = computeNormals(gx, gy, cw, ch, DEFAULTS.NORMAL_SCALE);
     const shaded = shadePigment(pigmentCrop, normals, cw, ch, {
