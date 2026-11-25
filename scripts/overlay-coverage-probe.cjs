@@ -62,7 +62,13 @@ const SURFACES = [
   // media/library toggles are wired through window.__app in index.html.
   // `assertOpen` is the class/attribute that proves the surface is OPEN; a
   // surface measured while it is still closed reports a vacuous pass.
-  { id: 'export-root',        label: 'Legacy export dialog (#btn-export)',        open: 'btn-export',        root: 'export-root',        openClass: 'export-dialog--open' },
+  // export.js opens #export-root with `modal--open` + aria-hidden=false (NOT the
+  // old `export-dialog--open` class, which only sets opacity/pointer-events and
+  // leaves visibility:hidden via the a11y aria-hidden rule). The stale class made
+  // this surface depend entirely on the app's click handler landing; on a cold
+  // cache the programmatic .click() ran before module init finished and the
+  // surface was measured CLOSED -> 13 false hit-fails at 390/768. See §19 log.
+  { id: 'export-root',        label: 'Legacy export dialog (#btn-export)',        open: 'btn-export',        root: 'export-root',        openClass: 'modal--open' },
   { id: 'export-panel-root',  label: 'Export & share panel (#btn-export-panel)', open: 'btn-export-panel',  root: 'export-panel-root',  openClass: 'export-panel--open' },
   { id: 'style-library-root', label: 'Style library (#btn-library-mode)',       open: 'btn-library-mode', root: 'style-library-root', openClass: null /* visibility is the proof */ },
   { id: 'media-root',         label: 'Media panel (#btn-media-mode)',           open: 'btn-media-mode',   root: 'media-root',         openClass: null },
@@ -101,6 +107,27 @@ const MEASURE = (ROOT) => {
     const cy = b.t + (b.b - b.t) / 2;
     return b.r > 0 && b.b > 0 && b.l < innerWidth && cy < innerHeight;
   };
+  // A control clipped by its own SCROLL HOST (box extends past the host's
+  // content edge) is below the fold of that host — reachable by scrolling,
+  // not occluded. The viewport test alone misses this: the pinned action row
+  // sits inside the viewport while the scroll host ends above it (audit
+  // 2026-11-20: ctrl-scatter reported hit=generate-section).
+  const scrollHostOf = (el) => {
+    let p = el.parentElement;
+    while (p && p !== document.body) {
+      const cs = getComputedStyle(p);
+      if (/(auto|scroll|hidden)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 1) return p;
+      p = p.parentElement;
+    }
+    return null;
+  };
+  const clippedByHost = (el, b) => {
+    const host = scrollHostOf(el);
+    if (!host) return false;
+    const h = host.getBoundingClientRect();
+    const cy = b.t + (b.b - b.t) / 2;
+    return cy > h.bottom || cy < h.top || b.r > h.right + 1 || b.l < h.left - 1;
+  };
   const doc = document.documentElement;
   const view = { w: innerWidth, h: innerHeight };
   const rect = (el) => {
@@ -110,7 +137,7 @@ const MEASURE = (ROOT) => {
   const controls = btns.map((el) => {
     const b = rect(el);
     const cx = b.l + b.w / 2, cy = b.t + b.h / 2;
-    const visible = onScreen(b);
+    const visible = onScreen(b) && !clippedByHost(el, b);
     let hit = null;
     if (visible) {
       try { hit = document.elementFromPoint(cx, cy); } catch (e) { hit = null; }
@@ -162,6 +189,11 @@ const MEASURE = (ROOT) => {
     page.on('pageerror', (e) => errors.push(String(e.message || e)));
     page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
     await page.goto(URL, { waitUntil: 'networkidle' });
+    // Wait for the app's module graph to finish initialising. index.html loads
+    // the 500 KB React bundle via a top-level await; `networkidle` can fire
+    // before `window.__app` exists, so the programmatic trigger click below
+    // would hit a button whose handler is not wired yet.
+    await page.waitForFunction(() => !!(window.__app && window.__app.exportMgr), null, { timeout: 15000 });
     await page.waitForTimeout(600);
     const widthReport = { surfaces: {}, pageErrors: errors };
 
@@ -203,6 +235,14 @@ const MEASURE = (ROOT) => {
         root.style.display = '';
         root.classList.remove('panel--hidden');
         if (openClass) root.classList.add(openClass);
+        // Deterministically open a DIALOG surface. The programmatic trigger
+        // click above is best-effort (it can race module init); the modal's
+        // visibility/opacity are actually governed by aria-hidden + the open
+        // class, so force those to the same state a real user click produces.
+        // Without this, a surface measured closed yields false hit-fails.
+        if (root.classList.contains('modal') || root.classList.contains('export-panel')) {
+          root.setAttribute('aria-hidden', 'false');
+        }
         if (rootId === 'media-root' && app) {
           app._mediaMode = true; app._libraryMode = false;
           root.classList.remove('panel--mobile-closed');

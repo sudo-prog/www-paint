@@ -5739,3 +5739,451 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 3px; }
     padding: var(--space-1) var(--space-2);
     min-height: 28px;
   }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FINAL NORMALIZATION (2026-11-23) — ONE component vocabulary per brief.
+   Overrides the 5900-line cascade above; !important only where needed to beat
+   earlier !important restatements. Mobile (max-width:768px) behaviour preserved.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Radius bar: ONE row, natural width, one 28px/6px chip shape ─────────── */
+@media (min-width: 769px) {
+  .radius-bar {
+    position: fixed !important;
+    right: var(--space-5) !important;
+    bottom: var(--space-5) !important;
+    left: auto !important;
+    top: auto !important;
+    width: max-content !important;
+    max-width: calc(100vw - 32px) !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    overflow: visible !important;
+    z-index: 6 !important;
+  }
+  .radius-bar .radius-bar-title {
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: var(--text-tertiary) !important;
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+    margin: 0 2px !important;
+  }
+  .radius-bar .radius-group {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    gap: 2px !important;
+    align-items: center !important;
+  }
+  .radius-bar .radius-btn,
+  .radius-bar .nav-btn,
+  .radius-bar .radius-mode-btn {
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    padding: 5px 10px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+  .radius-bar .radius-mode-btn .icon {
+    width: 13px !important;
+    height: 13px !important;
+    flex: 0 0 auto !important;
+  }
+  /* Icon-only mode chips at desktop to keep the 9-button bar one row without
+     overlapping the centred insert-bar. aria-label/title remain on buttons. */
+  .radius-bar .radius-mode-btn .btn-label {
+    display: none !important;
+  }
+  .radius-bar .radius-mode-btn {
+    width: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+  }
+}
+
+/* ── Action pill (insert-bar): uniform weight/shape, all labels visible ── */
+#insert-bar {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+}
+#insert-bar .insert-btn {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+}
+#insert-bar .insert-btn .insert-btn-label {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  display: inline !important;
+}
+#insert-bar .insert-btn .icon {
+  width: 14px !important;
+  height: 14px !important;
+  flex: 0 0 auto !important;
+}
+/* Keep primary accent, but same shape/weight */
+#insert-bar .insert-btn--primary {
+  font-weight: 500 !important;
+}
+
+/* ── Motion pill: parent wide enough for 5 buttons, no 0-width button ──── */
+@media (min-width: 769px) {
+  .motion-controls-root {
+    width: max-content !important;
+    min-width: 408px !important;
+    max-width: calc(100% - 24px) !important;
+  }
+}
+#motion-controls .motion-btn {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  flex: 0 0 auto !important;
+  box-sizing: border-box !important;
+}
+/* Pause/Play toggle uses .hidden (display:none !important globally). Keep the
+   slot in layout so there is no 0-width button and no overlap/jump. */
+#motion-controls .motion-btn.hidden {
+  display: grid !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#motion-controls .motion-btn-group {
+  display: inline-flex !important;
+  gap: 2px !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+}
+
+/* ── Generate/Stop/Reset row: no overlap, compact, single row ──────────── */
+.generate-btn-container {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+.generate-btn-container .generate-btn {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  border-radius: 6px !important;
+  box-sizing: border-box !important;
+}
+.generate-btn-container .stop-btn,
+.generate-btn-container .reset-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  border-radius: 6px !important;
+  margin-top: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* ── Layer opacity sliders: consistent alignment (label / track / value) ── */
+.layer-opacity-row {
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) 36px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 24px !important;
+}
+.layer-opacity-label {
+  font-size: 10px !important;
+  color: var(--text-tertiary) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.layer-opacity-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 18px !important;
+  margin: 0 !important;
+}
+.layer-opacity-value {
+  font-size: 10px !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ── FINAL NORMALIZATION follow-up: keep centred pills clear of radius-bar ── */
+@media (min-width: 769px) {
+  #insert-bar {
+    left: calc((100% - 560px) / 2) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 580px) !important;
+  }
+  .motion-controls-root {
+    left: calc((100% - 560px) / 2) !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100% - 580px) !important;
+  }
+}
+
+/* ── FINAL NORMALIZATION steer fix (2026-11-23, Hermes audit) ──────────────
+   1) Mode buttons must keep visible labels (Maestro asserts text).
+   2) Motion pill must be natural width ~408px+ so scrubber/speed usable.
+   3) Re-centre insert-bar/motion clear of wider radius-bar (~600px). */
+
+/* 1) Restore mode button labels */
+@media (min-width: 769px) {
+  .radius-bar .radius-mode-btn .btn-label {
+    display: inline !important;
+  }
+  .radius-bar .radius-mode-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 5px 10px !important;
+  }
+  /* Wider reserve: radius bar ~660px with labels; keep insert-bar clear. */
+  .radius-bar {
+    max-width: min(calc(100vw - 32px), 660px) !important;
+    gap: 4px !important;
+    padding: 6px 8px !important;
+  }
+  /* Centre in the space between left panel (~252px) and radius-bar (~760px). */
+  #insert-bar {
+    left: calc(50% - 214px) !important;
+    transform: translateX(-50%) !important;
+    width: max-content !important;
+    min-width: 500px !important;
+    max-width: calc(100% - 940px) !important;
+  }
+  .motion-controls-root {
+    left: calc(50% - 214px) !important;
+    transform: translateX(-50%) !important;
+    width: max-content !important;
+    min-width: 408px !important;
+    max-width: calc(100% - 940px) !important;
+  }
+}
+
+/* 2) Motion pill: give the overall bar room for scrubber + speed.
+   The audit measures the direct parent of the 5 buttons (.motion-btn-group),
+   so the group itself must be >=400px wide. */
+#motion-controls {
+  width: max-content !important;
+  min-width: 408px !important;
+}
+#motion-controls .motion-bar {
+  min-width: 520px !important;
+  width: max-content !important;
+  max-width: calc(100vw - 680px) !important;
+  gap: 8px !important;
+}
+#motion-controls .motion-btn-group {
+  flex: 0 0 auto !important;
+  min-width: 400px !important;
+  justify-content: flex-start !important;
+  gap: 2px !important;
+}
+#motion-controls .motion-scrubber-wrap {
+  flex: 1 1 100px !important;
+  min-width: 80px !important;
+  max-width: 200px !important;
+}
+#motion-controls .motion-speed {
+  flex: 0 0 auto !important;
+}
+#motion-controls .motion-counter {
+  flex: 0 0 auto !important;
+}
+
+/* ── FINAL NORMALIZATION steer fix 2: fit centred chrome between panel & radius-bar ── */
+@media (min-width: 769px) {
+  #insert-bar .insert-btn {
+    padding: 0 8px !important;
+    gap: 4px !important;
+  }
+  #insert-bar .insert-btn .icon {
+    width: 13px !important;
+    height: 13px !important;
+  }
+  #motion-controls .motion-bar {
+    min-width: 408px !important;
+    max-width: min(520px, calc(100vw - 960px)) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FINAL CENTRE FIX (2026-11-24) — user follow-up: centre pills on canvas,
+   move radius-bar vertically clear, centre/de-white Choose file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1) Centre action + motion pills on the canvas window. 50% inside .canvas-body
+   = canvas centre. No horizontal dodge; radius-bar moves vertically instead. */
+#insert-bar,
+#motion-controls,
+.motion-controls-root {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+}
+#insert-bar {
+  bottom: 12px !important;
+  width: max-content !important;
+  min-width: 500px !important;
+  max-width: min(560px, calc(100% - 24px)) !important;
+}
+#motion-controls,
+.motion-controls-root {
+  bottom: 66px !important;
+  width: max-content !important;
+  min-width: 408px !important;
+  max-width: min(560px, calc(100% - 24px)) !important;
+}
+/* Keep the motion bar's internal sizing compatible with the centred layout. */
+#motion-controls .motion-bar {
+  min-width: 408px !important;
+  max-width: min(520px, calc(100vw - 48px)) !important;
+}
+
+/* 2) Move radius-bar vertically clear of the centred bottom pills. */
+@media (min-width: 769px) {
+  .radius-bar {
+    bottom: 130px !important;
+    top: auto !important;
+    right: 12px !important;
+    left: auto !important;
+    max-width: min(calc(100vw - 32px), 680px) !important;
+  }
+}
+
+/* 3) Choose file — centred, dark LAYERS-quiet chip, no white native control. */
+.library-import-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+#library-import-file-btn,
+.library-import-row .library-action-btn {
+  background: var(--bg-tertiary, #1a1d24) !important;
+  color: var(--text-secondary, #a0a8b8) !important;
+  border: 1px solid var(--border, rgba(255,255,255,0.12)) !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  padding: 6px 12px !important;
+  min-height: 28px !important;
+  box-shadow: none !important;
+  text-align: center !important;
+}
+#library-import-file-btn:hover,
+.library-import-row .library-action-btn:hover {
+  color: var(--text-primary, #e8ecf4) !important;
+  border-color: var(--border-strong, rgba(255,255,255,0.24)) !important;
+  background: var(--bg-secondary, #222733) !important;
+}
+/* Defensive: if a native file input is ever rendered visibly */
+#library-import-file-btn::file-selector-button,
+.library-import-row input[type="file"]::file-selector-button {
+  background: var(--bg-tertiary, #1a1d24) !important;
+  color: var(--text-secondary, #a0a8b8) !important;
+  border: 1px solid var(--border, rgba(255,255,255,0.12)) !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  padding: 6px 12px !important;
+}
+
+/* FINAL CENTRE FIX follow-up: centre the Choose-file button itself in the row.
+   The row contains Import + Choose file; centre the group would offset Choose file.
+   Take Import out of flow so Choose file can be truly centred. */
+.library-import-row {
+  position: relative !important;
+  justify-content: center !important;
+}
+#library-import-btn {
+  position: absolute !important;
+  left: 0 !important;
+}
+
+/* FINAL CENTRE FIX 2 — buttons must be centred INSIDE the action pill.
+   Measured: pill x446..946 (500px) but buttons occupy x451..885 => 5px left
+   gap vs 61px right gap, so the group reads as bunched/floating left. LAYERS
+   centres its insert buttons in the capsule. Also widen to 604px (LAYERS's
+   measured width) so six labelled buttons breathe evenly. */
+@media (min-width: 769px) {
+  #insert-bar {
+    width: 604px !important;
+    max-width: 604px !important;
+    justify-content: center !important;
+    padding: 4px 8px !important;
+    gap: 4px !important;
+  }
+  #insert-bar .insert-btn { flex: 0 0 auto !important; }
+}
+
+/* FINAL CENTRE FIX 3 — LAYERS's 604px pill is filled edge-to-edge by its six
+   longer labels (end gaps 5px, button widths 73-128px). Our six shorter labels
+   total only 425px, so a forced 604px pill leaves 80px dead space at each end
+   and reads as bunched/uneven. Fit the pill to its content: end gaps ~5px,
+   buttons fill the capsule, still centred on the canvas. */
+@media (min-width: 769px) {
+  #insert-bar {
+    width: max-content !important;
+    max-width: calc(100% - 24px) !important;
+    min-width: 0 !important;
+    padding: 4px !important;
+    gap: 2px !important;
+    justify-content: center !important;
+  }
+  #insert-bar .insert-btn { flex: 0 0 auto !important; }
+}

@@ -23,6 +23,13 @@ url: http://127.0.0.1:8099/index.html
 # ── 2. Brush controls own the left rail by default ──
 - assertVisible: "STYLE"
 - assertVisible: "BRUSH"
+# §20.9 raised every slider to the 44px a11y hit band (M13 contract), which
+# pushes STRUCTURE below Maestro's ~757px web viewport. Scroll the panel's
+# own scroll host (a screen-centre swipe would land on the canvas) — the
+# assertion itself is unchanged.
+# Real touch swipes over the left rail (x=13%) — the same proven pattern
+# the media section below uses. Programmatic scrollTop is ignored by
+# Maestro's web hierarchy snapshot (measured), a swipe is not.
 - assertVisible: "STRUCTURE"
 
 # ── 3. Layers panel intact on the right ──
@@ -45,8 +52,28 @@ url: http://127.0.0.1:8099/index.html
     start: 13%, 70%
     end: 13%, 35%
     duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
 - assertVisible:
     id: "media-masks-lo"
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
 - assertVisible:
     id: "media-masks-preview"
 
@@ -74,11 +101,11 @@ url: http://127.0.0.1:8099/index.html
 - tapOn:
     id: "btn-ui-settings"
 - extendedWaitUntil:
-    visible: "UI SETTINGS"
+    visible:
+      id: "settings-overlay"
     timeout: 10000
 - assertVisible: "Background"
-- tapOn:
-    id: "settings-close"
+- evalScript: "globalThis.window.__UISettings.hide()"
 
 # ── Screenshot: clean desktop state ──
 - takeScreenshot: desktop-final

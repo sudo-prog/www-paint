@@ -7,18 +7,15 @@ url: http://127.0.0.1:8099/index.html
 
 ---
 - launchApp
+# Changed: "WWW" → "Drop an image to begin" (canvas placeholder always visible;
+# logo is "WWW_PAINT" inside the left panel strip, hidden when panel closed on mobile).
 - extendedWaitUntil:
-    visible: "WWW"
+    visible: "Drop an image to begin"
     timeout: 30000
 
-# ── Status settles ──
-- extendedWaitUntil:
-    visible: "Ready"
-    timeout: 10000
-
-# ── 1. Top bar ──
-- assertVisible: "Brush"
-- assertVisible: "Layers"
+# ── 1. Top bar (always-visible mobile chrome) ──
+# Changed: "Brush"/"Layers" moved to after panel opens (rail-icon labels inside panel).
+- assertVisible: "Media"
 - assertVisible: "Paint"
 - assertVisible: "Open"
 
@@ -26,24 +23,34 @@ url: http://127.0.0.1:8099/index.html
 - assertVisible: "Drop an image to begin"
 - assertVisible: "Or click Open above"
 
-# ── 3. Footer strip ──
-- assertVisible: "pencil"
-- assertVisible: "Strokes"
-
-# ── Screenshot: canvas with footer strip ──
+# ── Screenshot: canvas initial ──
 - takeScreenshot: canvas-with-footer
 
-# ── 4. Mobile toggle buttons should be visible at narrow viewport ──
+# ── 3. Mobile toggle buttons should be visible at narrow viewport ──
 - assertVisible:
     id: "toggle-controls"
 
-# ── 5. Open controls panel via floating mobile toggle ──
+# ── 4. Open controls panel via floating mobile toggle ──
 - tapOn:
     id: "toggle-controls"
 
-# ── 6. Controls panel opens ──
+# ── 5. Controls panel opens ──
+# Changed: "Ready"/"pencil"/"Strokes" moved here (status footer lives in left rail,
+# visible only when panel is open in the LAYERS shell).
 - assertVisible: "Untitled"
-- assertVisible: "STROKE MIN"
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+- assertVisible: "pencil"
+- assertVisible: "Strokes"
+# Changed: "Brush"/"Layers" moved here (rail-icon labels, inside panel).
+- assertVisible: "Brush"
+- assertVisible: "Layers"
+
+# ── 6. STROKE MIN (sentence case in LAYERS design) ──
+# Changed: "STROKE MIN" → "Stroke Min" (controls.js label:"Stroke Min"; old
+# uppercase came from CSS text-transform removed by LAYERS design).
+- assertVisible: "Stroke Min"
 
 # ── 7. Style picker trigger visible ──
 - assertVisible: "Pencil / Graphite"

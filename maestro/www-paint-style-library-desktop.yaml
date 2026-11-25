@@ -1,0 +1,85 @@
+# WWW_PAINT — React Style Library audit (DESKTOP 1440x900)
+# Run: CHROME_BINARY="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ~/.maestro/bin/maestro test --headless --screen-size 1440x900 maestro/www-paint-style-library-desktop.yaml
+# Exercises the React/ui-sdk Style Library mounted in the real shell: open, save,
+# row contract (no duplicate createRoot regression), export, delete, close.
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "WWW"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Ready"
+    timeout: 10000
+
+# 1. Starts closed
+- assertTrue: "globalThis.document.getElementById('react-root').dataset.closed === 'true'"
+
+# 2. Open via the nav control
+- tapOn:
+    id: "btn-react-surface"
+- extendedWaitUntil:
+    visible: "Style profiles"
+    timeout: 10000
+
+# 3. Non-vacuous open proof
+- assertTrue: "(() => { const el = globalThis.document.getElementById('react-root'); const r = el.getBoundingClientRect(); return el.dataset.closed !== 'true' && r.width > 0; })()"
+
+# 4. Surface chrome present
+- assertVisible: "Import"
+- assertVisible: "Save current"
+- assertVisible: "Reference confidence"
+
+# 5. Save a profile
+- tapOn:
+    id: "sl-save-current"
+- extendedWaitUntil:
+    visible: "Save style profile"
+    timeout: 10000
+- tapOn:
+    id: "profile-name-input"
+- inputText: "Flow check profile"
+- tapOn:
+    id: "sl-save-confirm"
+- assertTrue: "globalThis.document.querySelectorAll('#profile-root .sp-row').length === 1"
+- assertVisible: "Flow check profile"
+
+# 6. Selection + detail contract
+- assertTrue: "globalThis.document.querySelectorAll('#profile-root .sp-row[aria-pressed=\"true\"]').length === 1"
+- assertVisible: "Apply"
+- assertVisible: "Export"
+- assertVisible: "Delete"
+- assertVisible: "Style"
+- assertVisible: "References"
+
+# 7. Export dialog
+- tapOn:
+    id: "sl-export"
+- extendedWaitUntil:
+    visible: "Export profile"
+    timeout: 10000
+- assertTrue: "(() => { const pre = globalThis.document.querySelector('[data-slot=\"dialog-content\"] pre.sp-json'); return Boolean(pre && /schemaVersion/.test(pre.textContent || '')); })()"
+- tapOn:
+    id: "sl-export-close"
+- assertTrue: "globalThis.document.querySelector('[data-slot=\"dialog-content\"]') === null"
+
+# 8. Delete dialog
+- tapOn:
+    id: "sl-delete"
+- extendedWaitUntil:
+    visible: "Delete this profile?"
+    timeout: 10000
+- tapOn:
+    id: "sl-delete-confirm"
+- assertTrue: "globalThis.document.querySelectorAll('#profile-root .sp-row').length === 0"
+- assertVisible: "No profiles in the library yet."
+
+# 9. Screenshot while open (empty state) then close
+- takeScreenshot: style-library-react-1440
+- tapOn:
+    id: "btn-react-surface"
+- assertTrue: "globalThis.document.getElementById('react-root').dataset.closed === 'true'"
+
+# 10. Desktop shell intact: brush rail visible after close
+- assertVisible: "Brush"

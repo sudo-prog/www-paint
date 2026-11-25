@@ -139,14 +139,16 @@ function _ensureOverlay() {
   const root = document.getElementById("settings-root");
   if (!root) return null;
 
-  _overlay = document.createElement("div");
-  _overlay.id = "settings-overlay";
+  _overlay = document.getElementById("settings-overlay");
+  if (!_overlay) {
+    _overlay = document.createElement("div");
+    _overlay.id = "settings-overlay";
+    root.appendChild(_overlay);
+  }
   _overlay.className = "settings-overlay";
   _overlay.setAttribute("role", "dialog");
-  _overlay.setAttribute("aria-hidden", "true");
   _overlay.setAttribute("aria-labelledby", "settings-title");
   _overlay.setAttribute("aria-modal", "true");
-  root.appendChild(_overlay);
 
   _overlay.innerHTML = "";
 
@@ -367,6 +369,14 @@ export const _UISettings = {
    */
   isOpen() {
     return _overlay && _overlay.classList.contains("settings-overlay--open");
+  },
+
+  /**
+   * Toggle between dark and light themes.
+   */
+  toggleTheme() {
+    _settings.activeMode = _settings.activeMode === "dark" ? "light" : "dark";
+    _applyCurrentMode();
   },
 
   /**

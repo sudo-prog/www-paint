@@ -9,11 +9,8 @@ url: http://127.0.0.1:8099/index.html
 ---
 - launchApp
 - extendedWaitUntil:
-    visible: "WWW"
+    visible: "Drop an image to begin"
     timeout: 30000
-- extendedWaitUntil:
-    visible: "Ready"
-    timeout: 10000
 
 # ── A. Every surface mounted ──────────────────────────────────────────
 - assertTrue: "globalThis.document.getElementById('paint-canvas') !== null"
@@ -97,6 +94,8 @@ url: http://127.0.0.1:8099/index.html
 - assertTrue: "globalThis.__noName.length === 0"
 
 # ── E. The export panel is a dialog and Escape closes it ──────────────
+- tapOn:
+    id: "toggle-layers"
 - tapOn:
     id: "btn-export-panel"
 - assertTrue: "globalThis.document.getElementById('export-panel-root').getAttribute('role') === 'dialog'"

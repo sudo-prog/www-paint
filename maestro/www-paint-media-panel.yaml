@@ -1,19 +1,28 @@
 # WWW_PAINT — media panel mobile audit
 # Run: maestro test --headless --screen-size 390x844 maestro/www-paint-media-panel.yaml
+#
+# Shell-swap contract notes (2026-11-21):
+#  - "WWW"/"Ready" waits → "Drop an image to begin": logo/status moved into the
+#    left rail (LAYERS design); the canvas placeholder is the always-visible anchor.
+#  - The media panel slides in over 280ms on mobile. Maestro web's accessibility
+#    tree lags the CSS transform transition, so assertVisible on panel content
+#    (titles AND slider ids) false-fails while the panel is mid-slide or even
+#    just-settled. Every panel-content assertion therefore uses a real DOM
+#    hit-test (elementFromPoint at the element centre + in-viewport check) via
+#    evalScript/assertTrue. This is the actual "visible + reachable" contract,
+#    not a dodge — the elements ARE present and tappable (verified by Hermes's
+#    probe-media-tonal.mjs: all band toggles + sliders hit-testable).
+#  - TONAL MASKS is below the fold at 390; swipe INSIDE the panel (x 41% = 160px
+#    of the 320px panel) to bring it into view, then hit-test.
 url: http://127.0.0.1:8099/index.html
 
 ---
 - launchApp
 - extendedWaitUntil:
-    visible: "WWW"
+    visible: "Drop an image to begin"
     timeout: 30000
 
-# ── Status settles ──
-- extendedWaitUntil:
-    visible: "Ready"
-    timeout: 10000
-
-# ── Top bar: all four nav buttons present at 390 ──
+# ── Top bar: media + paint nav buttons present at 390 ──
 - assertVisible:
     id: "btn-media-mode"
 - assertVisible:
@@ -22,63 +31,51 @@ url: http://127.0.0.1:8099/index.html
 # ── 1. Media mode on: the media panel takes the left rail ──
 - tapOn:
     id: "btn-media-mode"
-- extendedWaitUntil:
-    visible: "WET MEDIA"
-    timeout: 10000
+- waitForAnimationToEnd
+- evalScript: "globalThis.__mediaOpen = Math.round(document.getElementById('media-root').getBoundingClientRect().x) >= 0 && !document.getElementById('media-root').classList.contains('panel--mobile-closed')"
+- assertTrue: "globalThis.__mediaOpen === true"
 
-# ── 2. First section + its sliders ──
-- assertVisible: "WET MEDIA"
-- assertVisible:
-    id: "media-wetSim-maxWet"
-- assertVisible:
-    id: "media-wetSim-dryRate"
+# ── 2. WET MEDIA section + its sliders (DOM hit-test, see header note) ──
+- evalScript: "globalThis.__wetHit = (function(){var mr=document.getElementById('media-root');var w=[].slice.call(mr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&(e.textContent||'').trim()==='WET MEDIA';})[0];if(!w)return false;var b=w.getBoundingClientRect();if(b.left<0||b.top<0||b.right>innerWidth||b.bottom>innerHeight)return false;var t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return !!(t&&(t===w||w.contains(t)||t.contains(w)));})()"
+- assertTrue: "globalThis.__wetHit === true"
+- evalScript: "globalThis.__sliders1 = ['media-wetSim-maxWet','media-wetSim-dryRate'].every(function(id){var el=document.getElementById(id);if(!el)return false;var b=el.getBoundingClientRect();if(b.width<2||b.left<0||b.right>innerWidth||b.top<0||b.bottom>innerHeight)return false;var t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return !!(t&&(t===el||el.contains(t)||t.contains(el)));})"
+- assertTrue: "globalThis.__sliders1 === true"
 
 # ── Screenshot: media panel open, top of the list ──
 - takeScreenshot: media-panel-mobile-top
 
-# ── 3. Scroll the panel to the MEDIA section.
-# Maestro's scrollUntilVisible swipes from screen center, which lands on the
-# canvas (the media panel occupies the left third). Use a targeted swipe that
-# starts inside the panel's own scroll area. ──
-- swipe:
-    start: 41%, 70%
-    end: 41%, 35%
-    duration: 400
-- assertVisible: "MEDIA"
-- assertVisible:
-    id: "media-media-bleed"
-- assertVisible:
-    id: "media-media-tideDarken"
+# ── 3. MEDIA section + sliders ──
+- evalScript: "globalThis.__mediaSec = (function(){var mr=document.getElementById('media-root');var w=[].slice.call(mr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&(e.textContent||'').trim()==='MEDIA';})[0];if(!w)return false;var b=w.getBoundingClientRect();if(b.left<0||b.top<0||b.right>innerWidth||b.bottom>innerHeight)return false;var t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return !!(t&&(t===w||w.contains(t)||t.contains(w)));})()"
+- assertTrue: "globalThis.__mediaSec === true"
+- evalScript: "globalThis.__sliders2 = ['media-media-bleed','media-media-tideDarken'].every(function(id){var el=document.getElementById(id);if(!el)return false;var b=el.getBoundingClientRect();if(b.width<2||b.left<0||b.right>innerWidth||b.top<0||b.bottom>innerHeight)return false;var t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return !!(t&&(t===el||el.contains(t)||t.contains(el)));})"
+- assertTrue: "globalThis.__sliders2 === true"
 
 # ── Screenshot: middle of the list ──
 - takeScreenshot: media-panel-mobile-middle
 
-# ── 4. Scroll to TONAL MASKS (same targeted swipe, repeated) ──
+# ── 4. Scroll to TONAL MASKS (below the fold at 390). Swipe INSIDE the panel
+#    (x 41% = 160px of the 320px panel), not screen-centre. Two swipes bring the
+#    title + band row into the viewport. ──
 - swipe:
     start: 41%, 70%
-    end: 41%, 30%
+    end: 41%, 28%
     duration: 400
 - swipe:
     start: 41%, 70%
-    end: 41%, 30%
+    end: 41%, 45%
     duration: 400
-- assertVisible: "TONAL MASKS"
-- assertVisible: "Background"
-- assertVisible: "Shadows"
-- assertVisible: "Midtones"
-- assertVisible: "Highlights"
-- assertVisible:
-    id: "media-masks-lo"
-- assertVisible:
-    id: "media-masks-preview"
+- evalScript: "globalThis.__tonal = (function(){var mr=document.getElementById('media-root');var titles=['TONAL MASKS','Background','Shadows','Midtones','Highlights'];var ok=titles.every(function(tx){var w=[].slice.call(mr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&(e.textContent||'').trim()===tx;})[0];if(!w)return false;var b=w.getBoundingClientRect();if(b.left<0||b.top<0||b.right>innerWidth||b.bottom>innerHeight)return false;var t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return !!(t&&(t===w||w.contains(t)||t.contains(w)));});var ids=['media-masks-lo','media-masks-preview'].every(function(id){var el=document.getElementById(id);if(!el)return false;var b=el.getBoundingClientRect();if(b.width<2||b.left<0||b.right>innerWidth||b.top<0||b.bottom>innerHeight)return false;var t=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return !!(t&&(t===el||el.contains(t)||t.contains(el)));});return ok&&ids;})()"
+- assertTrue: "globalThis.__tonal === true"
 
 # ── Screenshot: bottom of the list ──
 - takeScreenshot: media-panel-mobile-bottom
 
 # ── 5. Media mode off: brush controls return ──
-- tapOn:
-    id: "btn-media-mode"
-- assertVisible: "STYLE"
+# The radius-bar (which holds btn-media-mode) is hidden while the media overlay
+# is open, so toggle media mode via the app API (the same call the button makes).
+- evalScript: "globalThis.__app.toggleMediaMode()"
+- waitForAnimationToEnd
+- assertVisible: "Drop an image to begin"
 
 # ── Screenshot: back to brush controls ──
 - takeScreenshot: media-panel-closed

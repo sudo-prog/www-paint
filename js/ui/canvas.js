@@ -123,12 +123,14 @@ export class CanvasManager {
    * @param {number} [opts.progress=1]
    * @param {boolean} [opts.clear=true]
    */
-  render(opts = {}) {
-    const progress = opts.progress !== undefined ? opts.progress : 1;
-    this.renderer.renderAll({
+  async render(t = {}) {
+    const progress = t.progress !== undefined ? t.progress : 1;
+    // renderAll is async (style renders may be — the dli/paint backend runs a
+    // WebGL fluid sim), so await it before returning.
+    await this.renderer.renderAll({
       progress,
-      clear: opts.clear !== false,
-      layers: opts.layers,
+      clear: t.clear !== false,
+      layers: t.layers,
     });
   }
 
@@ -159,19 +161,19 @@ export class CanvasManager {
     return new Promise((resolve) => {
       const start = performance.now();
 
-      const step = (now) => {
+      const frame = async (now) => {
         const elapsed = now - start;
         const t = Math.min(1, elapsed / duration);
         const progress = 1 - Math.pow(1 - t, 3); // easeOutCubic
 
-        this.render({ progress });
+        await this.render({ progress });
         if (opts.onFrame) opts.onFrame(progress);
 
         if (t < 1 && this._animating) {
           this._rafId = requestAnimationFrame(step);
         } else {
           this._animating = false;
-          this.render({ progress: 1 });
+          await this.render({ progress: 1 });
           resolve();
         }
       };

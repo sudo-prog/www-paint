@@ -19,6 +19,15 @@ still needs no build.
 | `js/ui/react/main.jsx` | Entry — mounts `<StyleLibrary>` and exposes the `host` boundary. |
 | `js/ui/react/StyleLibrary.jsx` | The React Style Library (ui-sdk Button/Dialog/Field/Input/Listbox/Select/Switch/Tooltip over `style-library-core.js`). |
 | `js/ui/react/styles.css` | Standalone dark styling (independent of `css/style.css`). |
+| `css/layers-shell.css` | 670-line LAYERS desktop shell CSS (20px shell radius, 28px canvas radius, glass pill toolbar, 12px gaps). NEW — delivered via Syncthing from Mac. |
+| `js/ui/shell-host.js` | NEW — wires LAYERS shell structure to WWW_PAINT's DOM, handles radius/expanded-navbar/theme/≤900-collapse/strip-dims. |
+| `js/ui/audit-fix-host.js` | NEW — worker-backed generation with live progress, 20-deep undo stack, image-aspect frame fit, dimmed source preview, two-step Reset/Clear confirm. |
+| `js/ui/react/components/ui/` | 67 shadcn-style React component files (sidebar, sheet, dialog, tabs, command, popover, table, input-group, etc.) implementing LAYERS UI components with glass pill design. NEW — delivered via Syncthing from Mac. |
+| `js/ui/react/hooks/` | NEW React hooks for LAYERS UI state management. |
+| `js/ui/react/lib/` | NEW utility library for LAYERS React components. |
+| `js/ui/react/fonts/` | NEW font assets for LAYERS UI. |
+| `js/ui/react/dev.jsx` | NEW React dev entry point. |
+| `js/ui/react/bundle.js` | **Committed build artefact** (518 KB). Built with `npm run react:bundle` (scripts/react-bundle.cjs). MUST be rebuilt after any `js/ui/react/*.jsx` change. Inlines CSS as `<style id="react-surface-styles">`. |
 
 ## Commands
 

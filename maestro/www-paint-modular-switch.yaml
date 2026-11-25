@@ -17,13 +17,15 @@ url: http://127.0.0.1:8099/index.html
     visible: "WWW"
     timeout: 30000
 
-# The toggle is present and starts on the LEGACY engine (default off).
-- assertVisible: "Painter"
-
-# Flip to the modular engine (Track R / optimizer.js).
-- tapOn: "Painter"
+# The toggle is present. DEFAULT IS MODULAR since the R6 flip (2026-11-17,
+# generator.js DEFAULT_SETTINGS.modular = true) — the old "Painter" default
+# assertion was stale (logged pre-existing 2026-11-18, updated 2026-11-20).
 - assertVisible: "Modular"
 
-# And back — the switch must be reversible, not a one-way door.
+# Flip to the legacy painter.
 - tapOn: "Modular"
 - assertVisible: "Painter"
+
+# And back — the switch must be reversible, not a one-way door.
+- tapOn: "Painter"
+- assertVisible: "Modular"

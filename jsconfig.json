@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": ["./js/ui/react/components/*"],
+      "@lib/*": ["./js/ui/react/lib/*"],
+      "@hooks/*": ["./js/ui/react/hooks/*"]
+    }
+  },
+  "include": ["js/ui/react"]
+}

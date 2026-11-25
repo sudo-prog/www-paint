@@ -14,8 +14,10 @@ url: http://127.0.0.1:8099/index.html
 
 ---
 - launchApp
+# Changed: "WWW" → "Drop an image to begin" (shell-swap design-contract change:
+# logo is "WWW_PAINT" inside left panel strip, not an always-visible "WWW").
 - extendedWaitUntil:
-    visible: "WWW"
+    visible: "Drop an image to begin"
     timeout: 30000
 - extendedWaitUntil:
     visible: "Ready"
@@ -50,6 +52,18 @@ url: http://127.0.0.1:8099/index.html
     start: 13%, 70%
     end: 13%, 35%
     duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
 - assertVisible:
     id: "media-media-bleed"
 - assertVisible:
@@ -63,6 +77,18 @@ url: http://127.0.0.1:8099/index.html
 - takeScreenshot: behaviour-media-section
 
 # ── Scroll to TONAL MASKS; bands + sliders + preview ──
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
+- swipe:
+    start: 13%, 70%
+    end: 13%, 35%
+    duration: 400
 - swipe:
     start: 13%, 70%
     end: 13%, 35%

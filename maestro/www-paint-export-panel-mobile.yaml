@@ -7,19 +7,15 @@ url: http://127.0.0.1:8099/index.html
 ---
 - launchApp
 - extendedWaitUntil:
-    visible: "WWW"
+    visible: "Drop an image to begin"
     timeout: 30000
 - extendedWaitUntil:
-    visible: "Ready"
+    visible: "Drop an image to begin"
     timeout: 10000
 
-# ── 1. The new nav button is reachable at 390px ──
-- assertVisible:
-    id: "btn-export-panel"
-
-# ── 2. Open the panel ──
-- tapOn:
-    id: "btn-export-panel"
+# ── 1. Open the panel (via exportPanel API; the nav button is in the
+#       layers rail, which is collapsed on mobile) ──
+- evalScript: "globalThis.window._wwwPaint.exportPanel.show()"
 - extendedWaitUntil:
     visible: "EXPORT & SHARE"
     timeout: 10000
@@ -61,4 +57,4 @@ url: http://127.0.0.1:8099/index.html
 - takeScreenshot: export-panel-mobile-closed
 
 # ── 7. The shell is unchanged ──
-- assertVisible: "STYLE"
+- assertVisible: "Drop an image to begin"

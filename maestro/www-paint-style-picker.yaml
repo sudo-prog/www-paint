@@ -26,18 +26,20 @@ url: http://127.0.0.1:8099/index.maestro.html
 # Click Graphic category
 - tapOn: "Graphic"
 
-# Scroll to find Neon style thumbnail
-- scrollUntilVisible:
-    element:
-      text: "Neon"
-
-# Select Neon style (tap on the thumbnail area, not just the tiny text)
+# Scroll the DROPDOWN's own grid to Neon. scrollUntilVisible swipes from
+# screen centre (the canvas), which closes the dropdown via its outside-click
+# handler before the tap lands — measured 2026-11-20: the trigger still read
+# "Pencil / Graphite" after the tap. A real layout scroll of the grid keeps
+# the dropdown open; the selection contract is asserted on the trigger.
+- evalScript: |
+    const neon = [...globalThis.document.querySelectorAll('.style-thumb')].find(t => t.dataset.style === 'neon');
+    if (neon) neon.scrollIntoView({ block: 'center' });
 - tapOn:
     text: "Neon"
     point: "50%,50%"
 
-# Verify the trigger now shows Neon
-- assertVisible: "Neon"
+# Verify the trigger now shows Neon (dropdown closes on selection)
+- assertTrue: "globalThis.document.querySelector('.style-picker__trigger-label').textContent === 'Neon'"
 
 # Take screenshot for visual verification
 - takeScreenshot: style-picker-final

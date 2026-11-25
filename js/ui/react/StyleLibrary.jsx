@@ -125,7 +125,7 @@ function SaveDialog({ library, onChanged, children }) {
   };
 
   return (
-    <Dialog open={field.open} onOpenChange={field.setOpen}>
+    <Dialog open={field.open} onOpenChange={field.setOpen} container={document.body}>
       <DialogTrigger render={children} aria-label="Save current settings as a profile" />
       <DialogContent>
         <DialogTitle>Save style profile</DialogTitle>
@@ -136,6 +136,7 @@ function SaveDialog({ library, onChanged, children }) {
         <Field name="profile-name" invalid={Boolean(field.error)}>
           <FieldLabel>Profile name</FieldLabel>
           <Input
+            id="profile-name-input"
             value={field.value}
             onValueChange={(value) => {
               field.setValue(value);
@@ -154,7 +155,7 @@ function SaveDialog({ library, onChanged, children }) {
         </Field>
         <div className="dialog-actions">
           <DialogClose>Cancel</DialogClose>
-          <Button onClick={save}>Save profile</Button>
+          <Button id="sl-save-confirm" onClick={save}>Save profile</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -187,7 +188,7 @@ function ImportDialog({ library, onChanged, children }) {
   };
 
   return (
-    <Dialog open={field.open} onOpenChange={field.setOpen}>
+    <Dialog open={field.open} onOpenChange={field.setOpen} container={document.body}>
       <DialogTrigger render={children} aria-label="Import a profile from JSON" />
       <DialogContent>
         <DialogTitle>Import a profile</DialogTitle>
@@ -240,7 +241,7 @@ function ExportDialog({ library, profileId, children }) {
   };
 
   return (
-    <Dialog>
+    <Dialog container={document.body}>
       <DialogTrigger render={children} />
       <DialogContent>
         <DialogTitle>Export profile</DialogTitle>
@@ -248,9 +249,9 @@ function ExportDialog({ library, profileId, children }) {
           The profile JSON is the contract: portable, schema-valid and
           round-trips byte-identically.
         </DialogDescription>
-        <pre className="export-json">{library.exportText(profileId)}</pre>
+        <pre className="export-json sp-json">{library.exportText(profileId)}</pre>
         <div className="dialog-actions">
-          <DialogClose>Close</DialogClose>
+          <DialogClose id="sl-export-close">Close</DialogClose>
           <Button onClick={copy}>{copied ? "Copied" : "Copy JSON"}</Button>
         </div>
       </DialogContent>
@@ -262,7 +263,7 @@ function DeleteDialog({ library, profileId, onDeleted, children }) {
   const profile = library.get(profileId);
 
   return (
-    <Dialog>
+    <Dialog container={document.body}>
       <DialogTrigger render={children} />
       <DialogContent>
         <DialogTitle>Delete this profile?</DialogTitle>
@@ -275,6 +276,7 @@ function DeleteDialog({ library, profileId, onDeleted, children }) {
           <DialogClose
             value="confirm"
             data-agent-confirm="Deletes this style profile from the library"
+            id="sl-delete-confirm"
             action={() => {
               library.delete(profileId);
               onDeleted();
@@ -334,15 +336,15 @@ export function StyleLibrary({ host = null }) {
             <Button>Import</Button>
           </ImportDialog>
           <SaveDialog library={library} onChanged={refresh}>
-            <Button>Save current</Button>
+            <Button id="sl-save-current">Save current</Button>
           </SaveDialog>
         </div>
       </header>
 
-      <div className="library-body">
+      <div className="library-body sp-body">
         <div className="library-list">
           <Field>
-            <FieldLabel>Filter by reference confidence</FieldLabel>
+            <FieldLabel>Reference confidence</FieldLabel>
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger>
                 <SelectValue />
@@ -363,13 +365,13 @@ export function StyleLibrary({ host = null }) {
             className="library-listbox"
           >
             {visible.length === 0 ? (
-              <p className="library-empty">No profiles in the library yet.</p>
+              <p className="library-empty sp-empty">No profiles in the library yet.</p>
             ) : (
               <ListboxGroup>
                 <ListboxGroupLabel>Saved profiles</ListboxGroupLabel>
                 {visible.map((row) => (
-                  <ListboxItem key={row.id} value={row.id} className="library-row">
-                    <span className="library-row__name">{row.name}</span>
+                  <ListboxItem key={row.id} value={row.id} className={`library-row sp-row${selectedId === row.id ? " is-active" : ""}`}>
+                    <span className="library-row__name sp-row-name">{row.name}</span>
                     <span className="library-row__meta">
                       {summarizeProfile(row.profile).style}
                     </span>
@@ -388,21 +390,25 @@ export function StyleLibrary({ host = null }) {
               <div className="library-detail__head">
                 <h3>{selected.name}</h3>
                 <div className="surface__actions">
-                  <Button onClick={apply} aria-label="Apply the selected profile">Apply</Button>
+                  <Button id="sl-apply" onClick={apply} aria-label="Apply the selected profile">Apply</Button>
                   <ExportDialog library={library} profileId={selected.id}>
-                    <Button aria-label="Export the selected profile">Export</Button>
+                    <Button id="sl-export" aria-label="Export the selected profile">Export</Button>
                   </ExportDialog>
                   <DeleteDialog
                     library={library}
                     profileId={selected.id}
                     onDeleted={refresh}
                   >
-                    <Button aria-label="Delete the selected profile">Delete</Button>
+                    <Button id="sl-delete" aria-label="Delete the selected profile">Delete</Button>
                   </DeleteDialog>
                 </div>
               </div>
 
               <dl className="readout">
+                <div>
+                  <dt>References</dt>
+                  <dd aria-label="References">{summary.refCount}</dd>
+                </div>
                 <div>
                   <dt>Style</dt>
                   <dd>{summary.style}</dd>
@@ -423,10 +429,6 @@ export function StyleLibrary({ host = null }) {
                   <dt>Seed</dt>
                   <dd>{summary.seed ?? "engine default"}</dd>
                 </div>
-                <div>
-                  <dt>References</dt>
-                  <dd>{summary.refCount}</dd>
-                </div>
               </dl>
 
               <Field name="apply-profile" className="library-apply">
@@ -446,7 +448,7 @@ export function StyleLibrary({ host = null }) {
               </p>
             </>
           ) : (
-            <p className="library-empty">Select a profile to see its recipe.</p>
+            <p className="library-empty sp-empty">Select a profile to see its recipe.</p>
           )}
         </div>
       </div>
