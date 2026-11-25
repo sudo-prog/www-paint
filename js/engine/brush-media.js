@@ -218,6 +218,19 @@ export const MEDIA_PRESETS = {
     granulation: 0,
     granulationCount: 0,
   },
+  painterly: {
+    brushName: 'HB',
+    size: { min: 6, max: 32, default: 14 },
+    spacing: 0.12,
+    scatter: 0.5,
+    sharpness: 0.25,
+    grain: 0.3,
+    bleed: 0.04,
+    bleedOpacity: 0.12,
+    tideDarken: 0.2,
+    granulation: 0.1,
+    granulationCount: 60,
+  },
 };
 
 /**

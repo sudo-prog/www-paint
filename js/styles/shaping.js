@@ -76,6 +76,7 @@ export const SHAPING_TABLE = {
   pen:         { minSize: 2,  maxSize: 10, elongation: 2.4, order: 'diag',     regionFill: 0.05 },
   wash:        { minSize: 5,  maxSize: 22, elongation: 1.2, order: 'down',     regionFill: 0.40 },
   graffiti:    { minSize: 4,  maxSize: 20, elongation: 1.3, order: 'down',     regionFill: 0.30 },
+  painterly:   { minSize: 3,  maxSize: 12, elongation: 1.8, order: 'free',     regionFill: 0 },
 
   // ── Graphic ─────────────────────────────────────────────────────
   graphic:     { minSize: 4,  maxSize: 18, elongation: 1.1, order: 'down',     regionFill: 0.20 },

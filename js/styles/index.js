@@ -18,6 +18,7 @@ import PencilStyle from './pencil.js';
 import InkStyle from './ink.js';
 import WatercolorStyle from './watercolor.js';
 import OilStyle from './oil.js';
+import PainterlyStyle from './painterly.js';
 import GraffitiStyle from './graffiti.js';
 import GraphicStyle from './graphic.js';
 import CharcoalStyle from './charcoal.js';
@@ -73,6 +74,7 @@ const registry = {
   ink:          { class: InkStyle,         category: 'paint',   label: 'Ink Brush' },
   watercolor:   { class: WatercolorStyle,  category: 'paint',   label: 'Watercolor' },
   oil:          { class: OilStyle,         category: 'paint',   label: 'Oil / Acrylic' },
+  painterly:    { class: PainterlyStyle,   category: 'paint',   label: 'Painterly' },
   graffiti:     { class: GraffitiStyle,    category: 'paint',   label: 'Graffiti / Spray' },
   graphic:      { class: GraphicStyle,     category: 'graphic', label: 'Flat Graphic' },
   charcoal:     { class: CharcoalStyle,    category: 'draw',    label: 'Charcoal' },
@@ -182,7 +184,7 @@ export function registerStyle(name, styleClass, category, label) {
 
 // Re-export all style classes for direct import
 export {
-  PencilStyle, InkStyle, WatercolorStyle, OilStyle, GraffitiStyle, GraphicStyle,
+  PencilStyle, InkStyle, WatercolorStyle, OilStyle, PainterlyStyle, GraffitiStyle, GraphicStyle,
   CharcoalStyle, MarkerStyle, CalligraphyStyle, CrossHatchStyle,
   MosaicStyle, ScribbleStyle, HalftoneStyle, StringStyle,
   SumiStyle, GouacheStyle, KnifeStyle, PastelStyle, PenStyle, WashStyle,

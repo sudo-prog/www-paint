@@ -18,15 +18,14 @@
 
 | Metric | Value |
 |---|---|
-| Registered styles | **51** |
+| Registered styles | **52** |
 | Categories | draw, paint, graphic, craft, 3d |
 | Stamp-engine styles (`p5.brush` + canvas fallback) | 2 (`pencil`, `charcoal`) |
 | Relief/3D-material styles (`js/engine/relief.js`) | 16 |
 | Pure-canvas procedural styles | 33 |
+| Hertzmann painterly planner (`js/engine/painterly-planner.js`) + multi-bristle fan | 1 (`painterly`) |
 
-**Doc drift fixed:** `ARCHITECTURE.md` still says "Styles implemented: 14" — that
-is stale (written 2026-10-15). The registry has had **51** since the material
-set landed.
+**Doc drift fixed:** `ARCHITECTURE.md` still says "Styles implemented: 14" — that is stale (written 2026-10-15). The registry now has **52** (was 51; plus `painterly`). The registry count and this table must agree; add a check to the Phase 0.2 suite to assert `getAllStyles().length === 52`. Note: the RUNTIME map (`renderer._styles`) reads **55** keys — 52 registry entries + 3 Painter aliases (`watercolor`→`watercolour`, `graphic`→`flat`, `cross-hatch`→`hatch`).
 
 ---
 
@@ -41,6 +40,12 @@ set landed.
   lit-looking "ropes"/flakes/blobs. *Styles:* the 16 in §4.
 - **Canvas procedural** — each style's own `render(ctx, shape, progress)`
   draws directly on the 2D canvas. *Everything else.*
+- **Hertzmann painterly planner** — stroke GEOMETRY comes from the vendored
+  painterly Hertzmann planner (`js/engine/painterly-planner.js`), stroke
+  APPEARANCE from the style's own multi-bristle fan renderer. The planner grows
+  strokes ALONG the image gradient, across five brush radii coarse→fine, and
+  stops a stroke when the canvas already matches the photo. *Styles:*
+  `painterly`.
 
 The Painter (`js/engine/painter.js`) produces the strokes; styles decide how a
 stroke *looks*. Both stamp styles keep a canvas fallback so they never hard-fail
@@ -56,6 +61,7 @@ if `p5.brush` is absent.
 | `ink` | Ink Brush | paint | canvas | loaded brush swells/tapers | advanced (roadmap); Phase 0.2 baseline |
 | `watercolor` | Watercolor | paint | canvas | (allied to `wash`) | advanced (roadmap); Phase 0.2 baseline |
 | `oil` | Oil / Acrylic | paint | canvas | bristle strokes | advanced (roadmap); Phase 0.2 baseline |
+| `painterly` | Painterly | paint | planner + bristle fan | Hertzmann edge-following strokes; multi-bristle fan brush | MEASURED: 400 strokes / 365 curved / 102342 colours / 127 ms render / 0 errors |
 | `graffiti` | Graffiti / Spray | paint | canvas | particle spray | solid; not yet baselined |
 | `graphic` | Flat Graphic | graphic | canvas | clean flat shapes, bold colour | Phase 0.2 baseline |
 | `charcoal` | Charcoal | draw | stamped brush | heavy grain, soft smudgy edges | advanced (roadmap); Phase 0.2 baseline |
@@ -122,5 +128,5 @@ yet.** These are the least real-world-verified styles and a Phase 1 target
 
 Update this file whenever a style is added to, removed from, or materially
 changed in `js/styles/index.js`. The registry count and this table must agree;
-add a check to the Phase 0.2 suite to assert `getAllStyles().length === 51` (or
+add a check to the Phase 0.2 suite to assert `getAllStyles().length === 52` (or
 whatever the registry reports) so the two never drift again.
