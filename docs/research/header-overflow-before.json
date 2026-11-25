@@ -1,0 +1,949 @@
+[
+  {
+    "w": 320,
+    "h": 640,
+    "headerHVar": "96px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 151,
+      "scrollW": 320,
+      "clientW": 320
+    },
+    "nav": {
+      "x": 8,
+      "y": 52,
+      "w": 304,
+      "h": 94
+    },
+    "right": {
+      "x": 112.4,
+      "y": 4,
+      "w": 199.6,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 2,
+    "navRows": [
+      57,
+      101
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 30,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 70,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 74,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 114,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 118,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 158,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 162,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 202,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 206,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 246,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 250,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 290,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 118,
+        "y": 101,
+        "w": 40,
+        "h": 40,
+        "r": 158,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 162,
+        "y": 101,
+        "w": 40,
+        "h": 40,
+        "r": 202,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "none"
+  },
+  {
+    "w": 360,
+    "h": 640,
+    "headerHVar": "96px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 360,
+      "h": 151,
+      "scrollW": 360,
+      "clientW": 360
+    },
+    "nav": {
+      "x": 8,
+      "y": 52,
+      "w": 344,
+      "h": 94
+    },
+    "right": {
+      "x": 152.4,
+      "y": 4,
+      "w": 199.6,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 2,
+    "navRows": [
+      57,
+      101
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 28,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 68,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 72,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 112,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 116,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 156,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 160,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 200,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 204,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 244,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 248,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 288,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 292,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 332,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 160,
+        "y": 101,
+        "w": 40,
+        "h": 40,
+        "r": 200,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "none"
+  },
+  {
+    "w": 390,
+    "h": 844,
+    "headerHVar": "96px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 107,
+      "scrollW": 390,
+      "clientW": 390
+    },
+    "nav": {
+      "x": 8,
+      "y": 52,
+      "w": 374,
+      "h": 50
+    },
+    "right": {
+      "x": 182.4,
+      "y": 4,
+      "w": 199.6,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      57
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 21,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 61,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 65,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 105,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 109,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 149,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 153,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 193,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 197,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 237,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 241,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 281,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 285,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 325,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 329,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 369,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "none"
+  },
+  {
+    "w": 414,
+    "h": 896,
+    "headerHVar": "96px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 414,
+      "h": 107,
+      "scrollW": 414,
+      "clientW": 414
+    },
+    "nav": {
+      "x": 8,
+      "y": 52,
+      "w": 398,
+      "h": 50
+    },
+    "right": {
+      "x": 206.4,
+      "y": 4,
+      "w": 199.6,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      57
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 33,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 73,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 77,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 117,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 121,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 161,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 165,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 205,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 209,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 249,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 253,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 293,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 297,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 337,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 341,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 381,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "flex"
+  },
+  {
+    "w": 500,
+    "h": 900,
+    "headerHVar": "96px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 500,
+      "h": 107,
+      "scrollW": 500,
+      "clientW": 500
+    },
+    "nav": {
+      "x": 8,
+      "y": 52,
+      "w": 484,
+      "h": 50
+    },
+    "right": {
+      "x": 292.4,
+      "y": 4,
+      "w": 199.6,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      57
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 76,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 116,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 120,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 160,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 164,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 204,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 208,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 248,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 252,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 292,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 296,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 336,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 340,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 380,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 384,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 424,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "flex"
+  },
+  {
+    "w": 768,
+    "h": 1024,
+    "headerHVar": "96px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 768,
+      "h": 107,
+      "scrollW": 768,
+      "clientW": 768
+    },
+    "nav": {
+      "x": 8,
+      "y": 52,
+      "w": 752,
+      "h": 50
+    },
+    "right": {
+      "x": 560.4,
+      "y": 4,
+      "w": 199.6,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      57
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 210,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 250,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 254,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 294,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 298,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 338,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 342,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 382,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 386,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 426,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 430,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 470,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 474,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 514,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 518,
+        "y": 57,
+        "w": 40,
+        "h": 40,
+        "r": 558,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "flex"
+  },
+  {
+    "w": 1024,
+    "h": 768,
+    "headerHVar": "44px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 1024,
+      "h": 111,
+      "scrollW": 1024,
+      "clientW": 1024
+    },
+    "nav": {
+      "x": 264.8,
+      "y": 4,
+      "w": 743.2,
+      "h": 54
+    },
+    "right": {
+      "x": 16,
+      "y": 62,
+      "w": 225.9,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      9
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 270,
+        "y": 9,
+        "w": 85,
+        "h": 44,
+        "r": 354,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 358,
+        "y": 9,
+        "w": 90,
+        "h": 44,
+        "r": 448,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 452,
+        "y": 9,
+        "w": 86,
+        "h": 44,
+        "r": 538,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 542,
+        "y": 9,
+        "w": 92,
+        "h": 44,
+        "r": 634,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 638,
+        "y": 9,
+        "w": 79,
+        "h": 44,
+        "r": 718,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 722,
+        "y": 9,
+        "w": 89,
+        "h": 44,
+        "r": 811,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 815,
+        "y": 9,
+        "w": 100,
+        "h": 44,
+        "r": 915,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 919,
+        "y": 9,
+        "w": 84,
+        "h": 44,
+        "r": 1003,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "flex"
+  },
+  {
+    "w": 1440,
+    "h": 900,
+    "headerHVar": "44px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 63,
+      "scrollW": 1440,
+      "clientW": 1440
+    },
+    "nav": {
+      "x": 302.2,
+      "y": 4,
+      "w": 735.7,
+      "h": 54
+    },
+    "right": {
+      "x": 1198.1,
+      "y": 9,
+      "w": 225.9,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      9
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 307,
+        "y": 9,
+        "w": 85,
+        "h": 44,
+        "r": 392,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 396,
+        "y": 9,
+        "w": 90,
+        "h": 44,
+        "r": 485,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 489,
+        "y": 9,
+        "w": 86,
+        "h": 44,
+        "r": 575,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 579,
+        "y": 9,
+        "w": 92,
+        "h": 44,
+        "r": 672,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 676,
+        "y": 9,
+        "w": 79,
+        "h": 44,
+        "r": 755,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 759,
+        "y": 9,
+        "w": 89,
+        "h": 44,
+        "r": 848,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 852,
+        "y": 9,
+        "w": 93,
+        "h": 44,
+        "r": 945,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 949,
+        "y": 9,
+        "w": 84,
+        "h": 44,
+        "r": 1033,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "flex"
+  },
+  {
+    "w": 1920,
+    "h": 1080,
+    "headerHVar": "44px",
+    "bar": {
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 63,
+      "scrollW": 1920,
+      "clientW": 1920
+    },
+    "nav": {
+      "x": 542.2,
+      "y": 4,
+      "w": 735.7,
+      "h": 54
+    },
+    "right": {
+      "x": 1678.1,
+      "y": 9,
+      "w": 225.9,
+      "h": 44
+    },
+    "docOverflowX": 0,
+    "navRowCount": 1,
+    "navRows": [
+      9
+    ],
+    "btns": [
+      {
+        "label": "Brush",
+        "x": 547,
+        "y": 9,
+        "w": 85,
+        "h": 44,
+        "r": 632,
+        "hit": true
+      },
+      {
+        "label": "Layers",
+        "x": 636,
+        "y": 9,
+        "w": 90,
+        "h": 44,
+        "r": 725,
+        "hit": true
+      },
+      {
+        "label": "Media controls",
+        "x": 729,
+        "y": 9,
+        "w": 86,
+        "h": 44,
+        "r": 815,
+        "hit": true
+      },
+      {
+        "label": "Style library",
+        "x": 819,
+        "y": 9,
+        "w": 92,
+        "h": 44,
+        "r": 912,
+        "hit": true
+      },
+      {
+        "label": "Paint mode",
+        "x": 916,
+        "y": 9,
+        "w": 79,
+        "h": 44,
+        "r": 995,
+        "hit": true
+      },
+      {
+        "label": "Export and share",
+        "x": 999,
+        "y": 9,
+        "w": 89,
+        "h": 44,
+        "r": 1088,
+        "hit": true
+      },
+      {
+        "label": "Engine: legacy painter",
+        "x": 1092,
+        "y": 9,
+        "w": 93,
+        "h": 44,
+        "r": 1185,
+        "hit": true
+      },
+      {
+        "label": "Style profiles (React)",
+        "x": 1189,
+        "y": 9,
+        "w": 84,
+        "h": 44,
+        "r": 1273,
+        "hit": true
+      }
+    ],
+    "logoDisplay": "flex"
+  }
+]

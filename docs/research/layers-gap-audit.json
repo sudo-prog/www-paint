@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "date": "2026-11-19",
+    "brief": "/Users/AIR2K/.hermes/cache/scratch/layers-match-brief.md",
+    "reference": "/Users/AIR2K/Data/20_Projects/20.34_LAYERS",
+    "authority": [
+      "LAYERS/packages/ui/src/tokens.ts",
+      "LAYERS/apps/web/src/graphite.css",
+      "LAYERS/docs/design-graphite.md",
+      "LAYERS/docs/adr/ADR-012-graphite-strategy.md",
+      "LAYERS/docs/adr/ADR-012-graphite-patterns.md"
+    ],
+    "measuredAgainst": "http://127.0.0.1:8099/index.html",
+    "measurementMethod": "playwright-core (chromium headless, 1440x900) getComputedStyle on documentElement vars and key elements; theme set to dark/light with proper inline tunable values applied to isolate CSS token state",
+    "notes": "settings.js applies 5 tunable color tokens as inline styles on <html>; measurements below reflect CSS token definitions plus correct per-theme inline values. bundle.css (react/bundle.css) is loaded after css/style.css and was found to override --border globally."
+  },
+  "dimensions": [
+    {
+      "dimension": "Color tokens — dark theme",
+      "layers": {
+        "bg-primary": "#0a0b0d",
+        "bg-secondary": "#101215",
+        "bg-tertiary": "#16191d",
+        "bg-raised": "#1c2026",
+        "text-primary": "#f2f4f7",
+        "text-secondary": "#9aa3af",
+        "text-tertiary": "#8b95a3",
+        "accent": "#7aa2ff",
+        "accent-hover": "#9ab8ff",
+        "border": "#262b33",
+        "border-strong": "#363c46",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#f87171",
+        "editor-bg": "#0a0b0d"
+      },
+      "wwwPaintBefore": {
+        "bg-primary": "#0a0b0d",
+        "bg-secondary": "#101215",
+        "bg-tertiary": "#16191d",
+        "bg-raised": "#1c2026",
+        "text-primary": "#f2f4f7",
+        "text-secondary": "#9aa3af",
+        "text-tertiary": "#8b95a3",
+        "accent": "#7aa2ff",
+        "accent-hover": "#9ab8ff",
+        "border_css_declared": "#262b33",
+        "border_computed_effective": "#2a2a33 (overridden by react/bundle.css :root loaded after style.css)",
+        "border-strong": "#363c46",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#f87171",
+        "editor-bg": "#0a0b0d"
+      },
+      "verdict": "PARTIAL — core ramp mostly aligned but effective --border leaked from bundle.css (#2a2a33) instead of LAYERS #262b33",
+      "gaps": ["Effective --border overridden by bundle.css to #2a2a33 (should be #262b33)"]
+    },
+    {
+      "dimension": "Color tokens — light theme (html[data-theme=\"light\"])",
+      "layers": {
+        "bg-primary": "#ffffff",
+        "bg-secondary": "#f5f5f5",
+        "bg-tertiary": "#e8e8e8",
+        "bg-raised": "#ffffff",
+        "text-primary": "#0a0a0a",
+        "text-secondary": "#555555",
+        "text-tertiary": "#6f6f6f",
+        "accent": "#0066ff",
+        "accent-hover": "#0052cc",
+        "border": "#d4d4d4",
+        "border-strong": "#b8b8b8",
+        "success": "#00aa44",
+        "warning": "#ff8800",
+        "error": "#dd2200",
+        "editor-bg": "#f5f5f5"
+      },
+      "wwwPaintBefore": {
+        "bg-primary_css": "#ffffff",
+        "text-primary_css": "#0a0a0a",
+        "note": "CSS declarations in html[data-theme=\"light\"] match LAYERS light column; however settings.js applies 5 tunable tokens as inline styles on init (dark defaults) so a bare attribute flip without settings re-apply leaves inline dark values. Proper theme switch via settings/applyTheme sets correct inline values. Phase 3 gate requires computed values correct on theme flip.",
+        "border": "#d4d4d4",
+        "border-strong": "#b8b8b8",
+        "glass-brightness": "1",
+        "panel-alpha": "0.88"
+      },
+      "verdict": "PARTIAL — CSS values aligned; theme flip must yield correct computed bg-primary/glass-brightness (inline override interaction must be correct)",
+      "gaps": ["Ensure theme flip produces computed --bg-primary #ffffff and --glass-brightness 1 per Phase 3 gate (settings inline-style interaction)"]
+    },
+    {
+      "dimension": "Glass / derived surfaces",
+      "layers": {
+        "panel-alpha_dark": "0.74",
+        "chrome-alpha_dark": "0.80",
+        "wash-alpha_dark": "0.06",
+        "glass-blur_dark": "32px",
+        "glass-saturate_dark": "1.25",
+        "glass-brightness_dark": "0.45",
+        "panel-alpha_light": "0.88",
+        "chrome-alpha_light": "0.92",
+        "wash-alpha_light": "0.05",
+        "glass-blur_light": "20px",
+        "glass-saturate_light": "1.15",
+        "glass-brightness_light": "1",
+        "derived": "surface-panel = bg-secondary @ panel-alpha; surface-chrome = bg-primary @ chrome-alpha; surface-raised = bg-tertiary @ panel-alpha"
+      },
+      "wwwPaintBefore": {
+        "panel-alpha_dark": "0.74",
+        "chrome-alpha_dark": "0.80",
+        "wash-alpha_dark": "0.06",
+        "glass-blur_dark": "32px",
+        "glass-saturate_dark": "1.25",
+        "glass-brightness_dark": "0.45",
+        "surface-panel_dark_computed": "rgb(16 18 21 / 0.74)",
+        "surface-chrome_dark_computed": "rgb(10 11 13 / 0.80)",
+        "surface-raised_dark_computed": "rgb(22 25 29 / 0.74)",
+        "panel-alpha_light": "0.88",
+        "chrome-alpha_light": "0.92",
+        "glass-blur_light": "20px",
+        "glass-saturate_light": "1.15",
+        "glass-brightness_light": "1",
+        "panel_backdrop_filter_dark": "blur(32px) saturate(1.25) brightness(0.45)"
+      },
+      "verdict": "ALIGNED — core glass tokens and derived surfaces match LAYERS derivation in both themes",
+      "gaps": []
+    },
+    {
+      "dimension": "Spacing / radii / typography / motion tokens",
+      "layers": {
+        "spacing": "4px base: space-0..space-16 (0,4,8,12,16,20,24,32,40,48,64)",
+        "typography": "text-xs..text-4xl with size/line-height/weight per tokens.ts (xs 12/16/400, sm 14/20/400, base 16/24/400, lg 18/28/500, xl 20/28/500, 2xl 24/32/600, 3xl 30/36/600, 4xl 36/40/700)",
+        "motion": "duration-fast 150ms, duration-normal 250ms, duration-slow 350ms; easing cubic-bezier(0.4, 0, 0.2, 1)",
+        "radii": "LAYERS graphite.css/app patterns use small radii (e.g. 6-12px controls/panels) — tokens.ts focuses on color/glass/spacing/typography/motion; applied radii in graphite.css are the practical spec"
+      },
+      "wwwPaintBefore": {
+        "spacing": "4px rhythm present (--space-1..8 defined; values calc(4px*n) / 4-32px). LAYERS includes space-10/12/16; WWW_PAINT has space-5/6/8/10/12/16 in :root (partial set observed) — functional but not a verbatim token set",
+        "typography": "System font stacks aligned (--f-ui, --f-mono). LAYERS text-* size/line-height/weight token vars not fully mirrored as a complete token set",
+        "motion": "--t-fast .12s ease, --t-slow .32s ease; missing explicit --t-med and LAYERS easing curve cubic-bezier(0.4,0,0.2,1) naming; durations differ from 150/250/350ms",
+        "radii": "--r-sm 6px, --r-md 8px, --r-pill 999px, --r-shell 20px, --r-canvas 28px, --radius 12px — app-specific ladder present; LAYERS applied radii vary by component"
+      },
+      "verdict": "PARTIAL — spacing rhythm and font stacks reasonable; motion timing/easing tokens not verbatim to LAYERS; typography token variables incomplete",
+      "gaps": ["Motion tokens differ from LAYERS (150/250/350ms, cubic-bezier(0.4,0,0.2,1))", "No complete LAYERS text-* token variable set", "Spacing token names/coverage not a 1:1 mirror of spacingTokens"]
+    },
+    {
+      "dimension": "Ambient backdrop",
+      "layers": {
+        "dark": "Luminous wash behind glass panels so blur reads as non-uniform; graphite.css uses strong corner glows (e.g. ~0.55 alpha blue over #0a0b0d) chosen so through-glass lift is perceptible (~12-unit lift) and strongest at corners, gone mid-canvas",
+        "light": "Faint blue tint wash; light background with subtle radial gradients"
+      },
+      "wwwPaintBefore": {
+        "dark_computed": ".main::before has background gradients defined in base .main::before rule but content is 'none' (base rule omits content:\"\"); pseudo-element does not render in dark mode",
+        "light_computed": "html[data-theme=\"light\"] .main::before renders (content \"\") with blue-tinted radial gradients over white — present",
+        "css_location": "css/style.css around ambient backdrop section (~line 300+)"
+      },
+      "verdict": "GAP — dark ambient wash not rendered (missing content on base .main::before); light ambient present",
+      "gaps": ["Dark mode ambient backdrop pseudo-element not generated (no content in base .main::before rule)"]
+    },
+    {
+      "dimension": "Component patterns (panels, buttons, nav, status, controls)",
+      "layers": {
+        "panels": "Translucent glass panels over ambient backdrop; derived surface-panel with backdrop blur/saturate/brightness; structural borders, subtle inner highlights",
+        "buttons": "Consistent control sizing, clear hover/active states, depth via subtle shadow/transform where appropriate, 44px targets",
+        "nav": "Segmented/clear active state aligned to accent",
+        "typography_in_ui": "Sentence case, hierarchy by weight/color, values in mono+tabular-nums, 11px floor for labels"
+      },
+      "wwwPaintBefore": {
+        "panels": "Glass treatment applied (blur/saturate/brightness) with derived surface-panel; panel border effective color impacted by bundle.css --border leak in dark",
+        "buttons": "44px targets present on key controls; .btn has 1px border + subtle shadow; .generate-btn styled as primary; nav active uses accent fill — structurally present but border color inherited from leaked token",
+        "status": "Uses --f-ui, tabular-nums on values, 11-12px sizes — reasonable",
+        "labels": "Largely sentence case and >=11px in current state (per prior alignment passes in CSS tail)"
+      },
+      "verdict": "PARTIAL — core patterns largely in place; component borders/colors affected by leaked --border token; no major layout-pattern rewrite needed (skin pass only)",
+      "gaps": ["Component border rendering in dark follows leaked --border (#2a2a33) not LAYERS #262b33"]
+    },
+    {
+      "dimension": "Theme flip behavior",
+      "layers": {
+        "mechanism": "data-theme attribute driven; tokens swap per theme; derived surfaces consistent with alpha/brightness rules"
+      },
+      "wwwPaintBefore": {
+        "attribute": "html data-theme switches (dark/light)",
+        "css_tokens": "html[data-theme=\"light\"] block defines LAYERS light values for core tokens",
+        "inline_interaction": "settings.js persists and reapplies 5 tunable color tokens inline on init/mode apply; a raw attribute flip without reapplying correct per-theme inline values leaves stale inline dark values",
+        "phase3_requirement": "computed --bg-primary light #ffffff / glass-brightness 1, dark #0a0b0d / 0.45"
+      },
+      "verdict": "PARTIAL — structure exists; must satisfy Phase 3 computed-value gate under actual theme flip",
+      "gaps": ["Verify/fix that theme flip path yields required computed values despite inline tunable-token behavior"]
+    },
+    {
+      "dimension": "React surface (js/ui/react/styles.css, StyleLibrary.jsx) token alignment",
+      "layers": {
+        "expectation": "React surface should align to same LAYERS/WWW_PAINT token values (dark graphite ramp, glass/derived surfaces, accent, borders, typography/radii/motion) rather than an independent palette"
+      },
+      "wwwPaintBefore": {
+        "bundle_css_vars_sample": {
+          "--background": "#16161a",
+          "--foreground": "#f2f4f7",
+          "--card": "#1e1e24",
+          "--primary": "#7aa2ff",
+          "--border": "#2a2a33",
+          "--radius": "12px",
+          "--ui-border": "#2a2a33"
+        },
+        "panel_computed_sample": "rgba(22,22,26,0.86) with backdrop blur (28px) saturate(1.25) brightness(0.55) — different from main app surface-panel/glass",
+        "button_computed_sample": "height 44px, border #2a2a33, fontFamily computed as Arial in measurement (fallback) — not clearly aligned to --f-ui token usage",
+        "leakage": "bundle.css loaded globally and overrides :root --border to #2a2a33 affecting main app"
+      },
+      "verdict": "GAP — React surface uses a parallel token palette and leaks --border into main document; not aligned to LAYERS token values/derivations",
+      "gaps": [
+        "React surface color/glass tokens differ from LAYERS graphite tokens",
+        "bundle.css :root overrides leak into main app (--border)",
+        "React surface font/token application inconsistent (computed Arial on button sample)"
+      ]
+    }
+  ],
+  "summary": {
+    "aligned": ["Glass/derived surfaces core tokens and derivation (dark+light)"],
+    "partial": ["Dark color tokens (border leak)", "Light color tokens/theme-flip computed behavior", "Spacing/radii/typography/motion token completeness", "Component patterns (affected by token leak)", "Theme flip behavior under inline overrides"],
+    "gaps": ["Dark ambient backdrop not rendering", "React surface token alignment and global leakage"],
+    "deferred": []
+  }
+}

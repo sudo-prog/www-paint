@@ -1,0 +1,33 @@
+=== UNIT TESTS ===
+engine exit=0 :: Failed: 0 ✅ All tests passed! 
+wetsim exit=0 :: Failed: 0 ✅ All wet-sim tests passed! 
+masks exit=0 :: Failed: 0 ✅ All mask tests passed! 
+outlines exit=0 :: Failed: 0 ✅ All outline tests passed! 
+order exit=0 :: Failed: 0 ✅ All order tests passed! 
+shaping exit=0 :: Failed: 0 ✅ All shaping tests passed! 
+ref-analyze exit=0 :: Failed: 0 ✅ All ref-analyze tests passed! 
+style-library exit=0 :: Failed: 0 ✅ All style-library tests passed! 
+export-panel exit=0 :: Passed: 90  Failed: 0 
+style-polish exit=0 :: === M12 style polish: Passed 14  Failed 0 === 
+modular-bridge exit=0 :: === Track R modular bridge: Passed 29  Failed 0 === 
+modular-switch exit=0 :: === Track R6 modular switch: Passed 22  Failed 0 === 
+=== VISUAL REGRESSION ===
+
+=== VERIFY SUMMARY ===
+pass=0 fail=9 error=0 total=9
+visual-regression exit=1
+=== ENGINE FILE HASHES ===
+      91 /Users/AIR2K/Data/20_Projects/20.36_WWW_PAINT/docs/research/shell-swap/oracle/pre-edit/engine-hashes.txt
+=== MAESTRO FLOWS (own widths) ===
+www-paint-desktop-regression.yaml @1440x900 exit=0 COMPLETED=40 FAILED=0
+www-paint-mobile-ui-audit.yaml @390x844 exit=0 COMPLETED=30 FAILED=0
+www-paint-media-panel.yaml @390x844 exit=0 COMPLETED=31 FAILED=0
+www-paint-export-panel.yaml @1440x900 exit=0 COMPLETED=35 FAILED=0
+=== BEFORE SCREENSHOTS ===
+before-shots exit=0
+ORACLE DONE
+www-paint-a11y-sweep.yaml @1440x900 exit=0 COMPLETED=55 FAILED=0
+www-paint-a11y-sweep-mobile.yaml @390x844 exit=0 COMPLETED=39 FAILED=0
+www-paint-media-behaviour.yaml @1440x900 exit=0 COMPLETED=41 FAILED=0
+www-paint-export-panel-mobile.yaml @390x844 exit=0 COMPLETED=20 FAILED=0
+EXTRA ORACLE DONE

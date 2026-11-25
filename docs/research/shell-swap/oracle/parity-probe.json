@@ -1,0 +1,207 @@
+{
+  "executablePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "1440x900": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "steps": {},
+    "base": {
+      "shellRadius": "20px",
+      "canvasRadius": "28px",
+      "panelBg": "rgb(10, 11, 13)",
+      "baseBg": "rgb(10, 11, 13)",
+      "rightPanelBg": "rgb(10, 11, 13)",
+      "leftDisplay": "flex",
+      "rightDisplay": "flex",
+      "leftVisible": true,
+      "rightVisible": true,
+      "leftRect": {
+        "x": 0,
+        "y": 0,
+        "w": 240,
+        "h": 900,
+        "l": 0,
+        "r": 240,
+        "t": 0,
+        "b": 900
+      },
+      "rightRect": {
+        "x": 1152,
+        "y": 0,
+        "w": 288,
+        "h": 900,
+        "l": 1152,
+        "r": 1440,
+        "t": 0,
+        "b": 900
+      },
+      "cardRect": {
+        "x": 252,
+        "y": 12,
+        "w": 888,
+        "h": 876,
+        "l": 252,
+        "r": 1140,
+        "t": 12,
+        "b": 888
+      },
+      "gapLeft": 12,
+      "gapRight": 12,
+      "gapTop": 12,
+      "cardLeftInset": 252,
+      "cardRightInset": 300,
+      "docOverflowX": 0,
+      "controlCount": 22,
+      "hitFails": 0,
+      "hitFailSamples": [],
+      "pastViewport": 0,
+      "webgl2": true
+    },
+    "navbarState": {
+      "navCollapsed": "true",
+      "navExpanded": "false",
+      "leftCollapsed": true,
+      "rightCollapsed": true,
+      "cardNavLeft": true,
+      "cardNavRight": true
+    },
+    "expandedState": {
+      "navCollapsed": "false",
+      "navExpanded": "true",
+      "leftCollapsed": false,
+      "rightCollapsed": false,
+      "cardNavLeft": false,
+      "cardNavRight": false
+    },
+    "theme": {
+      "before": "dark",
+      "mid": "light",
+      "after": "dark"
+    },
+    "propsCheck": {
+      "hasScale": true,
+      "hasOctaves": true,
+      "hasStrength": true,
+      "snippet": "Noise/GrainTransformOpacity100%AppearanceBlend ModeNormalMultiplyScreenOverlayDifferenceNoise/GrainScale20Octaves3Strength0.3MonochromeSeed1"
+    },
+    "picker": {
+      "openedTextures1": true,
+      "addedDither": true,
+      "openedTextures2": true,
+      "addedGrain": true,
+      "selectedGrain": true
+    },
+    "fps": {
+      "fps1": "1 fps",
+      "fps2": "1 fps",
+      "fps3": "1 fps",
+      "fpsLive": true
+    },
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failed404s": []
+  },
+  "390x844": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "steps": {},
+    "base": {
+      "shellRadius": "20px",
+      "canvasRadius": "28px",
+      "panelBg": "rgb(10, 11, 13)",
+      "baseBg": "rgb(10, 11, 13)",
+      "rightPanelBg": "rgb(10, 11, 13)",
+      "leftDisplay": "flex",
+      "rightDisplay": "flex",
+      "leftVisible": true,
+      "rightVisible": true,
+      "leftRect": {
+        "x": 0,
+        "y": 0,
+        "w": 44,
+        "h": 844,
+        "l": 0,
+        "r": 44,
+        "t": 0,
+        "b": 844
+      },
+      "rightRect": {
+        "x": 346,
+        "y": 0,
+        "w": 44,
+        "h": 844,
+        "l": 346,
+        "r": 390,
+        "t": 0,
+        "b": 844
+      },
+      "cardRect": {
+        "x": 56,
+        "y": 12,
+        "w": 278,
+        "h": 820,
+        "l": 56,
+        "r": 334,
+        "t": 12,
+        "b": 832
+      },
+      "gapLeft": 12,
+      "gapRight": 12,
+      "gapTop": 12,
+      "cardLeftInset": 56,
+      "cardRightInset": 56,
+      "docOverflowX": 0,
+      "controlCount": 19,
+      "hitFails": 0,
+      "hitFailSamples": [],
+      "pastViewport": 0,
+      "webgl2": true
+    },
+    "expandedState": {
+      "navCollapsed": "false",
+      "navExpanded": "true",
+      "leftCollapsed": false,
+      "rightCollapsed": false,
+      "cardNavLeft": false,
+      "cardNavRight": false
+    },
+    "navbarState": {
+      "navCollapsed": "true",
+      "navExpanded": "false",
+      "leftCollapsed": true,
+      "rightCollapsed": true,
+      "cardNavLeft": true,
+      "cardNavRight": true
+    },
+    "theme": {
+      "before": "dark",
+      "mid": "light",
+      "after": "dark"
+    },
+    "propsCheck": {
+      "hasScale": true,
+      "hasOctaves": true,
+      "hasStrength": true,
+      "snippet": "Noise/GrainTransformOpacity100%AppearanceBlend ModeNormalMultiplyScreenOverlayDifferenceNoise/GrainScale20Octaves3Strength0.3MonochromeSeed1"
+    },
+    "picker": {
+      "openedTextures1": true,
+      "addedDither": true,
+      "openedTextures2": true,
+      "addedGrain": true,
+      "selectedGrain": true
+    },
+    "fps": {
+      "fps1": "2 fps",
+      "fps2": "6 fps",
+      "fps3": "6 fps",
+      "fpsLive": true
+    },
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failed404s": []
+  }
+}

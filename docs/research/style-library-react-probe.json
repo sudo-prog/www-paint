@@ -1,0 +1,178 @@
+{
+  "url": "http://127.0.0.1:8099/index.html",
+  "profileName": "Flow check profile",
+  "results": [
+    {
+      "width": 390,
+      "height": 844,
+      "initial": {
+        "closed": true,
+        "box": {
+          "w": 382,
+          "h": 708,
+          "x": 402,
+          "y": 96
+        },
+        "mounted": true
+      },
+      "open": {
+        "open": true,
+        "closed": false,
+        "box": {
+          "w": 382,
+          "h": 708,
+          "x": 4,
+          "y": 96
+        },
+        "clipX": {
+          "profileRoot": 0,
+          "panelBody": 0
+        },
+        "pastViewport": [],
+        "toggleExpanded": "true"
+      },
+      "afterSave": {
+        "rowCount": 1,
+        "duplicateRows": 0,
+        "rowNames": [
+          "Flow check profile"
+        ],
+        "savedNamePresent": true,
+        "selectedRows": 1,
+        "buttons": [
+          {
+            "id": "sl-apply",
+            "w": 74,
+            "h": 44
+          },
+          {
+            "id": "sl-export",
+            "w": 79,
+            "h": 44
+          },
+          {
+            "id": "sl-delete",
+            "w": 79,
+            "h": 44
+          }
+        ],
+        "dialogClosed": true
+      },
+      "exportDialog": {
+        "title": "Export profile",
+        "json": "{\n  \"schemaVersion\": 1,\n  \"id\": \"7f5e5fec-66c4-4403-b5b8-901d0d230eac\",\n  \"name\": \"Flow check profile\",\n  \"version\": \"1.0.0\",\n  \"engine\": {\n    \"name\": \"www-paint\",\n    \"version\": \"0.1.0\"\n  },\n  \"global\": {\n    \"style\": \"pencil\",\n    \"strokeCount\": 1000,\n    \"strokeSize\": {\n      \"min\": 3,\n      \"max\": 18,\n      \"random\": true\n    },\n    \"sizeK\": 1,\n    \"detailLevel\": 0.7,\n    \"styleStrength\": 0.8,\n    \"opacity\": 0.9,\n    \"randomness\": 0.3,\n    \"pathOrder\": \"free\",\n    \"colorMode\": \"exact\",\n    \"palette\": null,\n    \"abstract\": false,\n    \"outline\": \"off\",\n    \"rfill\": \"off\",\n    \"oneLine\": false,\n    \"smart\": false,\n    \"multiLayer\": false,\n    \"seed\": 3047602159\n  },\n  \"layers\": [],\n  \"effects\": [],\n  \"mediaModel\": {\n    \"kind\": \"dry\",\n    \"wetness\": 0,\n    \"drying\": 0,\n    \"bleed\": 0,\n    \"granulation\": 0,\n    \"height\": 0,\n    \"bristle\": 0,\n    \"paper\": null\n  },\n  \"provenance\": {\n    \"source\": \"human\",\n    \"notes\": \"Created in WWW_PAINT\",\n    \"createdAt\": \"2026-11-18T23:17:20.351Z\",\n    \"updatedAt\": \"2026-11-18T23:17:20.355Z\"\n  },\n  \"passes\": []\n}"
+      },
+      "deleteDialog": {
+        "title": "Delete this profile?",
+        "description": "This profile is removed from the library. This cannot be undone.",
+        "confirmLabel": "Delete forever",
+        "confirmDestructive": true
+      },
+      "afterDelete": {
+        "rowCount": 0,
+        "duplicateRows": 0,
+        "emptyText": "No profiles in the library yet.",
+        "dialogClosed": true
+      },
+      "closed": {
+        "closed": true,
+        "visibility": "hidden",
+        "brushVisible": false,
+        "shellIntact": true,
+        "widthGate": "shell-intact-mobile",
+        "toggleExpanded": "false"
+      },
+      "buttonsOk": true,
+      "pageErrors": [],
+      "artefacts": [
+        "Failed to load resource: the server responded with a status of 404 (File not found)"
+      ],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "initial": {
+        "closed": true,
+        "box": {
+          "w": 520,
+          "h": 812,
+          "x": 1188,
+          "y": 44
+        },
+        "mounted": true
+      },
+      "open": {
+        "open": true,
+        "closed": false,
+        "box": {
+          "w": 520,
+          "h": 812,
+          "x": 652,
+          "y": 44
+        },
+        "clipX": {
+          "profileRoot": 0,
+          "panelBody": 0
+        },
+        "pastViewport": [],
+        "toggleExpanded": "true"
+      },
+      "afterSave": {
+        "rowCount": 1,
+        "duplicateRows": 0,
+        "rowNames": [
+          "Flow check profile"
+        ],
+        "savedNamePresent": true,
+        "selectedRows": 1,
+        "buttons": [
+          {
+            "id": "sl-apply",
+            "w": 74,
+            "h": 44
+          },
+          {
+            "id": "sl-export",
+            "w": 79,
+            "h": 44
+          },
+          {
+            "id": "sl-delete",
+            "w": 79,
+            "h": 44
+          }
+        ],
+        "dialogClosed": true
+      },
+      "exportDialog": {
+        "title": "Export profile",
+        "json": "{\n  \"schemaVersion\": 1,\n  \"id\": \"1ec69040-836a-4390-a6e9-810302b36724\",\n  \"name\": \"Flow check profile\",\n  \"version\": \"1.0.0\",\n  \"engine\": {\n    \"name\": \"www-paint\",\n    \"version\": \"0.1.0\"\n  },\n  \"global\": {\n    \"style\": \"pencil\",\n    \"strokeCount\": 1000,\n    \"strokeSize\": {\n      \"min\": 3,\n      \"max\": 18,\n      \"random\": true\n    },\n    \"sizeK\": 1,\n    \"detailLevel\": 0.7,\n    \"styleStrength\": 0.8,\n    \"opacity\": 0.9,\n    \"randomness\": 0.3,\n    \"pathOrder\": \"free\",\n    \"colorMode\": \"exact\",\n    \"palette\": null,\n    \"abstract\": false,\n    \"outline\": \"off\",\n    \"rfill\": \"off\",\n    \"oneLine\": false,\n    \"smart\": false,\n    \"multiLayer\": false,\n    \"seed\": 3047602159\n  },\n  \"layers\": [],\n  \"effects\": [],\n  \"mediaModel\": {\n    \"kind\": \"dry\",\n    \"wetness\": 0,\n    \"drying\": 0,\n    \"bleed\": 0,\n    \"granulation\": 0,\n    \"height\": 0,\n    \"bristle\": 0,\n    \"paper\": null\n  },\n  \"provenance\": {\n    \"source\": \"human\",\n    \"notes\": \"Created in WWW_PAINT\",\n    \"createdAt\": \"2026-11-18T23:17:30.492Z\",\n    \"updatedAt\": \"2026-11-18T23:17:30.493Z\"\n  },\n  \"passes\": []\n}"
+      },
+      "deleteDialog": {
+        "title": "Delete this profile?",
+        "description": "This profile is removed from the library. This cannot be undone.",
+        "confirmLabel": "Delete forever",
+        "confirmDestructive": true
+      },
+      "afterDelete": {
+        "rowCount": 0,
+        "duplicateRows": 0,
+        "emptyText": "No profiles in the library yet.",
+        "dialogClosed": true
+      },
+      "closed": {
+        "closed": true,
+        "visibility": "hidden",
+        "brushVisible": true,
+        "shellIntact": true,
+        "widthGate": "brush-visible-desktop",
+        "toggleExpanded": "false"
+      },
+      "buttonsOk": true,
+      "pageErrors": [],
+      "artefacts": [],
+      "pass": true
+    }
+  ]
+}

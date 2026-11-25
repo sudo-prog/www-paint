@@ -1,0 +1,132 @@
+{
+  "S": 200,
+  "case1": {
+    "shapes": 501,
+    "banded": 501,
+    "rendererMulti": true,
+    "layers": [
+      {
+        "name": "background",
+        "strokes": 0,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "shadows",
+        "strokes": 293,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "outline",
+        "strokes": 21,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "midtone",
+        "strokes": 17,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "highlights",
+        "strokes": 170,
+        "visible": true,
+        "opacity": 1
+      }
+    ],
+    "populated": [
+      "shadows",
+      "outline",
+      "midtone",
+      "highlights"
+    ],
+    "metrics": {
+      "painted": 18690,
+      "uniqueColours": 31
+    }
+  },
+  "case2": {
+    "shapes": 501,
+    "stylesOk": true,
+    "shadowsInk": 293,
+    "highlightsPastel": 170
+  },
+  "case3": {
+    "shapes": 501,
+    "workerBanded": 501,
+    "metrics": {
+      "painted": 18690,
+      "uniqueColours": 31
+    },
+    "layers": [
+      {
+        "name": "background",
+        "strokes": 0,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "shadows",
+        "strokes": 293,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "outline",
+        "strokes": 21,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "midtone",
+        "strokes": 17,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "highlights",
+        "strokes": 170,
+        "visible": true,
+        "opacity": 1
+      }
+    ]
+  },
+  "case4": {
+    "shapes": 200,
+    "painterMulti": true,
+    "layers": [
+      {
+        "name": "background",
+        "strokes": 9,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "shadows",
+        "strokes": 89,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "outline",
+        "strokes": 0,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "midtone",
+        "strokes": 15,
+        "visible": true,
+        "opacity": 1
+      },
+      {
+        "name": "highlights",
+        "strokes": 87,
+        "visible": true,
+        "opacity": 1
+      }
+    ]
+  }
+}

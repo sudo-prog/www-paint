@@ -1,0 +1,467 @@
+{
+  "1440x900": {
+    "expanded": {
+      "shellRadius": "20px",
+      "canvasRadius": "28px",
+      "baseBg": "rgb(10, 11, 13)",
+      "panelBg": "rgb(10, 11, 13)",
+      "rightBg": "rgb(10, 11, 13)",
+      "cardRect": {
+        "x": 252,
+        "y": 12,
+        "w": 888,
+        "h": 876
+      },
+      "bodyRect": {
+        "x": 252,
+        "y": 48,
+        "w": 888,
+        "h": 840
+      },
+      "frameRect": {
+        "x": 374,
+        "y": 227,
+        "w": 644,
+        "h": 483
+      },
+      "headRect": {
+        "x": 252,
+        "y": 12,
+        "w": 888,
+        "h": 36
+      },
+      "leftRect": {
+        "x": 0,
+        "y": 0,
+        "w": 240,
+        "h": 900
+      },
+      "rightRect": {
+        "x": 1152,
+        "y": 0,
+        "w": 288,
+        "h": 900
+      },
+      "frameAreaPct": 41.7,
+      "frameMargins": {
+        "l": 122,
+        "r": 122,
+        "t": 179,
+        "b": 179
+      },
+      "cardBg": "linear-gradient(160deg, rgb(107, 119, 135) 0%, rgb(82, 92, 107) 52%, rgb(95, 106, 121) 100%)",
+      "frameBg": "rgb(17, 17, 17)",
+      "frameRadius": "8px",
+      "frameShadow": "rgba(0, 0, 0, 0.6) 0px 16px 40px -10px",
+      "radiusBar": {
+        "x": 758,
+        "y": 728,
+        "w": 670,
+        "h": 42
+      },
+      "pill": {
+        "x": 474,
+        "y": 836,
+        "w": 444,
+        "h": 40
+      },
+      "docOverflowX": 0,
+      "controlCount": 68,
+      "hitFails": 11,
+      "past": 0,
+      "samples": [
+        {
+          "id": "",
+          "cls": "segmented__btn segmented__btn--active",
+          "text": "Free",
+          "top": {
+            "tag": "SECTION",
+            "id": "generate-section",
+            "cls": "control-section generate-btn-container a"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Down",
+          "top": {
+            "tag": "SECTION",
+            "id": "generate-section",
+            "cls": "control-section generate-btn-container a"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Up",
+          "top": {
+            "tag": "SECTION",
+            "id": "generate-section",
+            "cls": "control-section generate-btn-container a"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Right",
+          "top": {
+            "tag": "SECTION",
+            "id": "generate-section",
+            "cls": "control-section generate-btn-container a"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Left",
+          "top": {
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "generate-btn"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Diagonal",
+          "top": {
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "generate-btn"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Spiral",
+          "top": {
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "btn btn--sm btn--danger stop-btn"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Spiral In",
+          "top": {
+            "tag": "BUTTON",
+            "id": "",
+            "cls": "btn btn--sm btn--ghost reset-btn"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Rings",
+          "top": {
+            "tag": "FOOTER",
+            "id": "status-bar",
+            "cls": "panel-footer status-footer"
+          }
+        },
+        {
+          "id": "",
+          "cls": "segmented__btn",
+          "text": "Rings In",
+          "top": {
+            "tag": "FOOTER",
+            "id": "status-bar",
+            "cls": "panel-footer status-footer"
+          }
+        }
+      ],
+      "collapsedLeft": false,
+      "collapsedRight": false,
+      "navLeft": false,
+      "navRight": false,
+      "theme": "dark",
+      "bodyFont": "-apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+      "statusInLeft": true,
+      "pageErrors": []
+    },
+    "navbar": {
+      "shellRadius": "20px",
+      "canvasRadius": "28px",
+      "baseBg": "rgb(10, 11, 13)",
+      "panelBg": "rgb(10, 11, 13)",
+      "rightBg": "rgb(10, 11, 13)",
+      "cardRect": {
+        "x": 68,
+        "y": 12,
+        "w": 1304,
+        "h": 876
+      },
+      "bodyRect": {
+        "x": 68,
+        "y": 48,
+        "w": 1304,
+        "h": 840
+      },
+      "frameRect": {
+        "x": 398,
+        "y": 227,
+        "w": 644,
+        "h": 483
+      },
+      "headRect": {
+        "x": 68,
+        "y": 12,
+        "w": 1304,
+        "h": 36
+      },
+      "leftRect": {
+        "x": 0,
+        "y": 0,
+        "w": 56,
+        "h": 900
+      },
+      "rightRect": {
+        "x": 1384,
+        "y": 0,
+        "w": 56,
+        "h": 900
+      },
+      "frameAreaPct": 28.4,
+      "frameMargins": {
+        "l": 330,
+        "r": 330,
+        "t": 179,
+        "b": 179
+      },
+      "cardBg": "linear-gradient(160deg, rgb(107, 119, 135) 0%, rgb(82, 92, 107) 52%, rgb(95, 106, 121) 100%)",
+      "frameBg": "rgb(17, 17, 17)",
+      "frameRadius": "8px",
+      "frameShadow": "rgba(0, 0, 0, 0.6) 0px 16px 40px -10px",
+      "radiusBar": {
+        "x": 758,
+        "y": 728,
+        "w": 670,
+        "h": 42
+      },
+      "pill": {
+        "x": 498,
+        "y": 836,
+        "w": 444,
+        "h": 40
+      },
+      "docOverflowX": 0,
+      "controlCount": 22,
+      "hitFails": 0,
+      "past": 0,
+      "samples": [],
+      "collapsedLeft": true,
+      "collapsedRight": true,
+      "navLeft": true,
+      "navRight": true,
+      "theme": "dark",
+      "bodyFont": "-apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+      "statusInLeft": true,
+      "pageErrors": []
+    },
+    "themeFlip": {
+      "before": "dark",
+      "mid": "light",
+      "lightBaseBg": "rgb(255, 255, 255)",
+      "after": "dark"
+    },
+    "radius": {
+      "after16": "16px",
+      "restored": "28px"
+    },
+    "pageErrorsFinal": []
+  },
+  "390x844": {
+    "expanded": {
+      "shellRadius": "20px",
+      "canvasRadius": "28px",
+      "baseBg": "rgb(10, 11, 13)",
+      "panelBg": "rgb(10, 11, 13)",
+      "rightBg": "rgb(10, 11, 13)",
+      "cardRect": {
+        "x": 12,
+        "y": 12,
+        "w": 366,
+        "h": 820
+      },
+      "bodyRect": {
+        "x": 12,
+        "y": 40,
+        "w": 366,
+        "h": 792
+      },
+      "frameRect": {
+        "x": 40,
+        "y": 320,
+        "w": 311,
+        "h": 233
+      },
+      "headRect": {
+        "x": 12,
+        "y": 12,
+        "w": 366,
+        "h": 28
+      },
+      "leftRect": {
+        "x": -340,
+        "y": 0,
+        "w": 320,
+        "h": 844
+      },
+      "rightRect": {
+        "x": 410,
+        "y": 0,
+        "w": 320,
+        "h": 844
+      },
+      "frameAreaPct": 25,
+      "frameMargins": {
+        "l": 28,
+        "r": 28,
+        "t": 280,
+        "b": 280
+      },
+      "cardBg": "linear-gradient(160deg, rgb(107, 119, 135) 0%, rgb(82, 92, 107) 52%, rgb(95, 106, 121) 100%)",
+      "frameBg": "rgb(17, 17, 17)",
+      "frameRadius": "8px",
+      "frameShadow": "rgba(0, 0, 0, 0.6) 0px 16px 40px -10px",
+      "radiusBar": {
+        "x": 8,
+        "y": 8,
+        "w": 374,
+        "h": 78
+      },
+      "pill": {
+        "x": -55,
+        "y": 782,
+        "w": 500,
+        "h": 38
+      },
+      "docOverflowX": 0,
+      "controlCount": 22,
+      "hitFails": 1,
+      "past": 2,
+      "samples": [
+        {
+          "id": "btn-media-mode",
+          "cls": "nav-btn radius-mode-btn",
+          "text": "Media",
+          "top": {
+            "tag": "svg",
+            "id": "",
+            "cls": "[object SVGAnimatedString]"
+          }
+        }
+      ],
+      "collapsedLeft": false,
+      "collapsedRight": false,
+      "navLeft": false,
+      "navRight": false,
+      "theme": "dark",
+      "bodyFont": "-apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+      "statusInLeft": true,
+      "pageErrors": []
+    },
+    "navbar": {
+      "shellRadius": "20px",
+      "canvasRadius": "28px",
+      "baseBg": "rgb(10, 11, 13)",
+      "panelBg": "rgb(10, 11, 13)",
+      "rightBg": "rgb(10, 11, 13)",
+      "cardRect": {
+        "x": 12,
+        "y": 12,
+        "w": 366,
+        "h": 820
+      },
+      "bodyRect": {
+        "x": 12,
+        "y": 40,
+        "w": 366,
+        "h": 792
+      },
+      "frameRect": {
+        "x": 40,
+        "y": 320,
+        "w": 311,
+        "h": 233
+      },
+      "headRect": {
+        "x": 12,
+        "y": 12,
+        "w": 366,
+        "h": 28
+      },
+      "leftRect": {
+        "x": -340,
+        "y": 0,
+        "w": 320,
+        "h": 844
+      },
+      "rightRect": {
+        "x": 410,
+        "y": 0,
+        "w": 320,
+        "h": 844
+      },
+      "frameAreaPct": 25,
+      "frameMargins": {
+        "l": 28,
+        "r": 28,
+        "t": 280,
+        "b": 280
+      },
+      "cardBg": "linear-gradient(160deg, rgb(107, 119, 135) 0%, rgb(82, 92, 107) 52%, rgb(95, 106, 121) 100%)",
+      "frameBg": "rgb(17, 17, 17)",
+      "frameRadius": "8px",
+      "frameShadow": "rgba(0, 0, 0, 0.6) 0px 16px 40px -10px",
+      "radiusBar": {
+        "x": 8,
+        "y": 8,
+        "w": 374,
+        "h": 78
+      },
+      "pill": {
+        "x": -55,
+        "y": 782,
+        "w": 500,
+        "h": 38
+      },
+      "docOverflowX": 0,
+      "controlCount": 22,
+      "hitFails": 1,
+      "past": 2,
+      "samples": [
+        {
+          "id": "btn-media-mode",
+          "cls": "nav-btn radius-mode-btn",
+          "text": "Media",
+          "top": {
+            "tag": "svg",
+            "id": "",
+            "cls": "[object SVGAnimatedString]"
+          }
+        }
+      ],
+      "collapsedLeft": false,
+      "collapsedRight": false,
+      "navLeft": false,
+      "navRight": false,
+      "theme": "dark",
+      "bodyFont": "-apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+      "statusInLeft": true,
+      "pageErrors": []
+    },
+    "themeFlip": {
+      "before": "dark",
+      "mid": "light",
+      "lightBaseBg": "rgb(255, 255, 255)",
+      "after": "dark"
+    },
+    "radius": {
+      "after16": "16px",
+      "restored": "28px"
+    },
+    "pageErrorsFinal": []
+  }
+}

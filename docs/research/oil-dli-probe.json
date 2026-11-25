@@ -1,0 +1,56 @@
+{
+  "probe": "oil-dli-probe",
+  "environment": "node-headless",
+  "backend": "dli-webgl-port/fallback-2d",
+  "fallbackCount": 0,
+  "runs": [
+    {
+      "ok": true,
+      "pixelsPainted": 13084,
+      "heightRange": [
+        0.010301077738404274,
+        5.201091289520264
+      ],
+      "reason": null
+    },
+    {
+      "ok": true,
+      "pixelsPainted": 13084,
+      "heightRange": [
+        0.010301077738404274,
+        5.201091289520264
+      ],
+      "reason": null
+    },
+    {
+      "ok": true,
+      "pixelsPainted": 13084,
+      "heightRange": [
+        0.010301077738404274,
+        5.201091289520264
+      ],
+      "reason": null
+    },
+    {
+      "ok": true,
+      "pixelsPainted": 13084,
+      "heightRange": [
+        0.010301077738404274,
+        5.201091289520264
+      ],
+      "reason": null
+    }
+  ],
+  "frog": {
+    "ok": true,
+    "strokes": 2,
+    "pixelsPainted": 18295,
+    "inkPercent": "6.98"
+  },
+  "surface": {
+    "pigmentPixels": 0,
+    "maxHeight": 0
+  },
+  "note": "dli/paint port modules at js/engine/dli-paint/; active backend: 2D height-field (fallback)",
+  "timestamp": "2026-11-23T04:32:03.662Z"
+}

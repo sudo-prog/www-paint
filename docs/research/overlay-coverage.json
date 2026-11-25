@@ -1,11 +1,2096 @@
 {
-  "url": "http://127.0.0.1:8097/index.html",
+  "url": "http://127.0.0.1:8099/index.html",
   "widths": {
+    "390": {
+      "surfaces": {
+        "export-root": {
+          "label": "Legacy export dialog (#btn-export)",
+          "rootClass": "modal export-dialog modal--open",
+          "rootDisplay": "flex",
+          "rootVisibility": "visible",
+          "rootPosition": "fixed",
+          "rootTransform": "none",
+          "targetRect": {
+            "l": 0,
+            "r": 371,
+            "t": 0,
+            "b": 711,
+            "w": 371,
+            "h": 711
+          },
+          "targetOverflowX": 0,
+          "targetMaxWidth": "370.5px",
+          "docOverflowX": 0,
+          "rows": [
+            {
+              "cls": "form-actions",
+              "l": 13,
+              "r": 358,
+              "t": 489,
+              "b": 585,
+              "w": 345,
+              "h": 96,
+              "overflowX": 0
+            },
+            {
+              "cls": "form-actions",
+              "l": 13,
+              "r": 358,
+              "t": 585,
+              "b": 629,
+              "w": 345,
+              "h": 44,
+              "overflowX": 0
+            }
+          ],
+          "controlCount": 13,
+          "onScreenCount": 13,
+          "belowFoldCount": 0,
+          "controlsPastViewport": [],
+          "controlsHitFail": [],
+          "controlsClipped": [],
+          "controlsUnderMin": [],
+          "minControl": 32,
+          "controls": [
+            {
+              "tag": "button",
+              "action": "close",
+              "label": "Close",
+              "box": {
+                "l": 306,
+                "r": 350,
+                "t": 21,
+                "b": 65,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "line.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "width",
+              "label": "",
+              "box": {
+                "l": 13,
+                "r": 358,
+                "t": 121,
+                "b": 165,
+                "w": 345,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.form-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "height",
+              "label": "",
+              "box": {
+                "l": 13,
+                "r": 358,
+                "t": 201,
+                "b": 245,
+                "w": 345,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.form-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": "format",
+              "label": "PNG\n            JPG",
+              "box": {
+                "l": 13,
+                "r": 358,
+                "t": 280,
+                "b": 324,
+                "w": 345,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "select.form-select",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "quality",
+              "label": "",
+              "box": {
+                "l": 13,
+                "r": 358,
+                "t": 360,
+                "b": 404,
+                "w": 345,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.form-range",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "background",
+              "label": "",
+              "box": {
+                "l": 13,
+                "r": 53,
+                "t": 457,
+                "b": 489,
+                "w": 40,
+                "h": 32
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.form-color",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "export-image",
+              "label": "Export Image",
+              "box": {
+                "l": 13,
+                "r": 93,
+                "t": 489,
+                "b": 533,
+                "w": 80,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "export-layers",
+              "label": "Export Layers",
+              "box": {
+                "l": 101,
+                "r": 181,
+                "t": 489,
+                "b": 533,
+                "w": 80,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "export-html",
+              "label": "Export HTML",
+              "box": {
+                "l": 189,
+                "r": 269,
+                "t": 489,
+                "b": 533,
+                "w": 80,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "export-svg",
+              "label": "Export SVG",
+              "box": {
+                "l": 277,
+                "r": 358,
+                "t": 489,
+                "b": 533,
+                "w": 80,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "save-project",
+              "label": "Save Project",
+              "box": {
+                "l": 13,
+                "r": 358,
+                "t": 541,
+                "b": 585,
+                "w": 345,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "load-project",
+              "label": "Load Project",
+              "box": {
+                "l": 13,
+                "r": 358,
+                "t": 585,
+                "b": 629,
+                "w": 345,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "close",
+              "label": "Cancel",
+              "box": {
+                "l": 298,
+                "r": 350,
+                "t": 654,
+                "b": 698,
+                "w": 52,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            }
+          ],
+          "openVerified": true,
+          "closeVerified": false
+        },
+        "export-panel-root": {
+          "label": "Export & share panel (#btn-export-panel)",
+          "rootClass": "export-panel export-panel--open",
+          "rootDisplay": "flex",
+          "rootVisibility": "visible",
+          "rootPosition": "fixed",
+          "rootTransform": "none",
+          "targetRect": {
+            "l": 16,
+            "r": 374,
+            "t": 140,
+            "b": 760,
+            "w": 359,
+            "h": 620
+          },
+          "targetOverflowX": 0,
+          "targetMaxWidth": "358.8px",
+          "docOverflowX": 0,
+          "rows": [
+            {
+              "cls": "export-panel__actions",
+              "l": 29,
+              "r": 361,
+              "t": 515,
+              "b": 611,
+              "w": 333,
+              "h": 96,
+              "overflowX": 0
+            },
+            {
+              "cls": "export-panel__actions export-panel__actions--secondary",
+              "l": 29,
+              "r": 361,
+              "t": 623,
+              "b": 719,
+              "w": 333,
+              "h": 96,
+              "overflowX": 0
+            }
+          ],
+          "controlCount": 8,
+          "onScreenCount": 8,
+          "belowFoldCount": 0,
+          "controlsPastViewport": [],
+          "controlsHitFail": [],
+          "controlsClipped": [],
+          "controlsUnderMin": [],
+          "minControl": 44,
+          "controls": [
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Close export panel",
+              "box": {
+                "l": 309,
+                "r": 353,
+                "t": 157,
+                "b": 201,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "line.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": null,
+              "label": "Original2×4×",
+              "box": {
+                "l": 29,
+                "r": 361,
+                "t": 254,
+                "b": 298,
+                "w": 333,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "select.form-select",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": null,
+              "label": "PNGJPG",
+              "box": {
+                "l": 29,
+                "r": 361,
+                "t": 333,
+                "b": 377,
+                "w": 333,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "select.form-select",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 29,
+                "r": 319,
+                "t": 412,
+                "b": 456,
+                "w": 291,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.form-range",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Download image",
+              "box": {
+                "l": 29,
+                "r": 361,
+                "t": 515,
+                "b": 559,
+                "w": 333,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Copy share text",
+              "box": {
+                "l": 29,
+                "r": 361,
+                "t": 567,
+                "b": 611,
+                "w": 333,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Copy profile JSON",
+              "box": {
+                "l": 29,
+                "r": 361,
+                "t": 623,
+                "b": 667,
+                "w": 333,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Download profile",
+              "box": {
+                "l": 29,
+                "r": 361,
+                "t": 675,
+                "b": 719,
+                "w": 333,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            }
+          ],
+          "openVerified": true,
+          "closeVerified": false
+        },
+        "style-library-root": {
+          "label": "Style library (#btn-library-mode)",
+          "rootClass": "panel panel--library style-library-panel",
+          "rootDisplay": "flex",
+          "rootVisibility": "visible",
+          "rootPosition": "fixed",
+          "rootTransform": "none",
+          "targetRect": {
+            "l": 0,
+            "r": 320,
+            "t": 168,
+            "b": 868,
+            "w": 320,
+            "h": 700
+          },
+          "targetOverflowX": 0,
+          "targetMaxWidth": "none",
+          "docOverflowX": 0,
+          "rows": [
+            {
+              "cls": "control-section library-section",
+              "l": 0,
+              "r": 320,
+              "t": 276,
+              "b": 436,
+              "w": 320,
+              "h": 159,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section library-section",
+              "l": 0,
+              "r": 320,
+              "t": 436,
+              "b": 611,
+              "w": 320,
+              "h": 175,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section library-section",
+              "l": 0,
+              "r": 320,
+              "t": 619,
+              "b": 704,
+              "w": 320,
+              "h": 85,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section library-section",
+              "l": 0,
+              "r": 320,
+              "t": 712,
+              "b": 949,
+              "w": 320,
+              "h": 237,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section primitive-mixer",
+              "l": 0,
+              "r": 320,
+              "t": 957,
+              "b": 1658,
+              "w": 320,
+              "h": 701,
+              "overflowX": 0
+            }
+          ],
+          "controlCount": 14,
+          "onScreenCount": 4,
+          "belowFoldCount": 10,
+          "controlsPastViewport": [],
+          "controlsHitFail": [],
+          "controlsClipped": [],
+          "controlsUnderMin": [],
+          "minControl": 44,
+          "controls": [
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Collapse library panel",
+              "box": {
+                "l": 264,
+                "r": 308,
+                "t": 224,
+                "b": 268,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Profile name",
+              "box": {
+                "l": 12,
+                "r": 260,
+                "t": 518,
+                "b": 562,
+                "w": 248,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.library-name-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Save current settings as a p",
+              "box": {
+                "l": 264,
+                "r": 308,
+                "t": 518,
+                "b": 562,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "textarea",
+              "action": null,
+              "label": "Paste a Style Profile JSON",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 795,
+                "b": 859,
+                "w": 296,
+                "h": 64
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "textarea.library-import-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Import the pasted profile JS",
+              "box": {
+                "l": 12,
+                "r": 65,
+                "t": 867,
+                "b": 911,
+                "w": 53,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Import a profile JSON file",
+              "box": {
+                "l": 69,
+                "r": 148,
+                "t": 867,
+                "b": 911,
+                "w": 78,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": null,
+              "label": "Primitive mix level",
+              "box": {
+                "l": 66,
+                "r": 308,
+                "t": 1066,
+                "b": 1110,
+                "w": 242,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Dry stamp weight",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1151,
+                "b": 1195,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Wet wash weight",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1221,
+                "b": 1265,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Bristle weight",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1290,
+                "b": 1334,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Smudge weight",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1360,
+                "b": 1404,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Hatch weight",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1429,
+                "b": 1473,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Spatter weight",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1498,
+                "b": 1542,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Clear the primitive mix",
+              "box": {
+                "l": 12,
+                "r": 76,
+                "t": 1602,
+                "b": 1646,
+                "w": 64,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            }
+          ],
+          "openVerified": true,
+          "closeVerified": false
+        },
+        "media-root": {
+          "label": "Media panel (#btn-media-mode)",
+          "rootClass": "panel panel--media media-panel",
+          "rootDisplay": "flex",
+          "rootVisibility": "visible",
+          "rootPosition": "fixed",
+          "rootTransform": "none",
+          "targetRect": {
+            "l": 0,
+            "r": 320,
+            "t": 168,
+            "b": 868,
+            "w": 320,
+            "h": 700
+          },
+          "targetOverflowX": 0,
+          "targetMaxWidth": "none",
+          "docOverflowX": 0,
+          "rows": [
+            {
+              "cls": "control-section media-section",
+              "l": 0,
+              "r": 320,
+              "t": 276,
+              "b": 810,
+              "w": 320,
+              "h": 534,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section media-section",
+              "l": 0,
+              "r": 320,
+              "t": 810,
+              "b": 1289,
+              "w": 320,
+              "h": 479,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section media-section",
+              "l": 0,
+              "r": 320,
+              "t": 1297,
+              "b": 2042,
+              "w": 320,
+              "h": 745,
+              "overflowX": 0
+            }
+          ],
+          "controlCount": 20,
+          "onScreenCount": 7,
+          "belowFoldCount": 13,
+          "controlsPastViewport": [],
+          "controlsHitFail": [],
+          "controlsClipped": [],
+          "controlsUnderMin": [],
+          "minControl": 44,
+          "controls": [
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Collapse media panel",
+              "box": {
+                "l": 264,
+                "r": 308,
+                "t": 224,
+                "b": 268,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Wetness",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 401,
+                "b": 445,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Drying",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 476,
+                "b": 520,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Flow",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 552,
+                "b": 596,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Paper Height",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 627,
+                "b": 671,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Paper Tooth",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 702,
+                "b": 746,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "seed-reset",
+              "label": "Seed Reset",
+              "box": {
+                "l": 12,
+                "r": 86,
+                "t": 754,
+                "b": 798,
+                "w": 74,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Bleed",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 932,
+                "b": 976,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Bleed Opacity",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1007,
+                "b": 1051,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Tide Line",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1082,
+                "b": 1126,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Granulation",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1158,
+                "b": 1202,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Granulation Count",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1233,
+                "b": 1277,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Background",
+              "box": {
+                "l": 17,
+                "r": 158,
+                "t": 1416,
+                "b": 1460,
+                "w": 141,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Shadows",
+              "box": {
+                "l": 162,
+                "r": 303,
+                "t": 1416,
+                "b": 1460,
+                "w": 141,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Midtones",
+              "box": {
+                "l": 17,
+                "r": 158,
+                "t": 1464,
+                "b": 1508,
+                "w": 141,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Highlights",
+              "box": {
+                "l": 162,
+                "r": 303,
+                "t": 1464,
+                "b": 1508,
+                "w": 141,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Shadow Edge",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1544,
+                "b": 1588,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Highlight Edge",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1619,
+                "b": 1663,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Softness",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1695,
+                "b": 1739,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "Background",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 1770,
+                "b": 1814,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            }
+          ],
+          "openVerified": true,
+          "closeVerified": false
+        },
+        "controls-root": {
+          "label": "Brush controls (default left rail)",
+          "rootClass": "panel panel--controls controls-panel",
+          "rootDisplay": "flex",
+          "rootVisibility": "visible",
+          "rootPosition": "fixed",
+          "rootTransform": "none",
+          "targetRect": {
+            "l": 0,
+            "r": 320,
+            "t": 168,
+            "b": 868,
+            "w": 320,
+            "h": 700
+          },
+          "targetOverflowX": 0,
+          "targetMaxWidth": "none",
+          "docOverflowX": 0,
+          "rows": [
+            {
+              "cls": "control-section",
+              "l": 0,
+              "r": 320,
+              "t": 276,
+              "b": 402,
+              "w": 320,
+              "h": 126,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section",
+              "l": 0,
+              "r": 320,
+              "t": 402,
+              "b": 1007,
+              "w": 320,
+              "h": 604,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 320,
+              "t": 1015,
+              "b": 1080,
+              "w": 320,
+              "h": 65,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 320,
+              "t": 1088,
+              "b": 1153,
+              "w": 320,
+              "h": 65,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 320,
+              "t": 1161,
+              "b": 1226,
+              "w": 320,
+              "h": 65,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 320,
+              "t": 1234,
+              "b": 1299,
+              "w": 320,
+              "h": 65,
+              "overflowX": 0
+            },
+            {
+              "cls": "control-section generate-btn-container audit-pinned-actions",
+              "l": 0,
+              "r": 320,
+              "t": 697,
+              "b": 868,
+              "w": 320,
+              "h": 171,
+              "overflowX": 0
+            }
+          ],
+          "controlCount": 19,
+          "onScreenCount": 10,
+          "belowFoldCount": 9,
+          "controlsPastViewport": [],
+          "controlsHitFail": [],
+          "controlsClipped": [],
+          "controlsUnderMin": [],
+          "minControl": 34,
+          "controls": [
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Collapse controls panel",
+              "box": {
+                "l": 264,
+                "r": 308,
+                "t": 224,
+                "b": 268,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "STYLE section",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 288,
+                "b": 332,
+                "w": 296,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "span.b5-disclosure-label",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Pencil / Graphite",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 332,
+                "b": 390,
+                "w": 296,
+                "h": 58
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "span.style-picker__trigger-label",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "BRUSH section",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 411,
+                "b": 455,
+                "w": 296,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "span.b5-disclosure-label",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 479,
+                "b": 523,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 546,
+                "b": 590,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 614,
+                "b": 658,
+                "w": 252,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 681,
+                "b": 725,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 748,
+                "b": 792,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 816,
+                "b": 860,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 883,
+                "b": 927,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": null,
+              "label": "",
+              "box": {
+                "l": 12,
+                "r": 264,
+                "t": 951,
+                "b": 995,
+                "w": 252,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "STRUCTURE section",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 1024,
+                "b": 1068,
+                "w": 296,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "PATH ORDER section",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 1097,
+                "b": 1141,
+                "w": 296,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "MOTION & PATH section",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 1170,
+                "b": 1214,
+                "w": 296,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
+              "label": "COLOR section",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 1243,
+                "b": 1287,
+                "w": 296,
+                "h": 44
+              },
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "generate",
+              "label": "Generate Painting",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 706,
+                "b": 740,
+                "w": 296,
+                "h": 34
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.generate-btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "stop",
+              "label": "Stop",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 756,
+                "b": 800,
+                "w": 296,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "reset",
+              "label": "Reset",
+              "box": {
+                "l": 12,
+                "r": 308,
+                "t": 816,
+                "b": 860,
+                "w": 296,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            }
+          ],
+          "openVerified": true,
+          "closeVerified": false
+        },
+        "layers-root": {
+          "label": "Layers rail (#toggle-layers)",
+          "rootClass": "panel panel--layers layers-panel",
+          "rootDisplay": "flex",
+          "rootVisibility": "visible",
+          "rootPosition": "fixed",
+          "rootTransform": "none",
+          "targetRect": {
+            "l": 70,
+            "r": 390,
+            "t": 168,
+            "b": 868,
+            "w": 320,
+            "h": 700
+          },
+          "targetOverflowX": 0,
+          "targetMaxWidth": "none",
+          "docOverflowX": 0,
+          "rows": [
+            {
+              "cls": "layer-row layer-row--active",
+              "l": 78,
+              "r": 382,
+              "t": 353,
+              "b": 519,
+              "w": 304,
+              "h": 166,
+              "overflowX": 0
+            },
+            {
+              "cls": "layer-row",
+              "l": 78,
+              "r": 382,
+              "t": 523,
+              "b": 687,
+              "w": 304,
+              "h": 164,
+              "overflowX": 0
+            }
+          ],
+          "controlCount": 14,
+          "onScreenCount": 14,
+          "belowFoldCount": 0,
+          "controlsPastViewport": [],
+          "controlsHitFail": [],
+          "controlsClipped": [],
+          "controlsUnderMin": [],
+          "minControl": 44,
+          "controls": [
+            {
+              "tag": "button",
+              "action": null,
+              "label": "Collapse layers panel",
+              "box": {
+                "l": 334,
+                "r": 378,
+                "t": 224,
+                "b": 268,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "add-layer",
+              "label": "Add layer",
+              "box": {
+                "l": 86,
+                "r": 130,
+                "t": 288,
+                "b": 332,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "span",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "toggle-visibility",
+              "label": "Hide layer",
+              "box": {
+                "l": 218,
+                "r": 262,
+                "t": 362,
+                "b": 406,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "duplicate-layer",
+              "label": "Duplicate layer",
+              "box": {
+                "l": 270,
+                "r": 314,
+                "t": 362,
+                "b": 406,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "path.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "delete-layer",
+              "label": "Delete layer",
+              "box": {
+                "l": 318,
+                "r": 362,
+                "t": 362,
+                "b": 406,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "line.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": "style-change",
+              "label": "Layer style",
+              "box": {
+                "l": 158,
+                "r": 255,
+                "t": 414,
+                "b": 458,
+                "w": 97,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "select.layer-style-select",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "regenerate-layer",
+              "label": "Regenerate layer",
+              "box": {
+                "l": 259,
+                "r": 303,
+                "t": 414,
+                "b": 458,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "opacity-change",
+              "label": "Layer opacity",
+              "box": {
+                "l": 159,
+                "r": 288,
+                "t": 466,
+                "b": 510,
+                "w": 129,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.layer-opacity-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "toggle-visibility",
+              "label": "Hide layer",
+              "box": {
+                "l": 219,
+                "r": 263,
+                "t": 531,
+                "b": 575,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "duplicate-layer",
+              "label": "Duplicate layer",
+              "box": {
+                "l": 271,
+                "r": 315,
+                "t": 531,
+                "b": 575,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "path.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "delete-layer",
+              "label": "Delete layer",
+              "box": {
+                "l": 319,
+                "r": 363,
+                "t": 531,
+                "b": 575,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "line.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": "style-change",
+              "label": "Layer style",
+              "box": {
+                "l": 158,
+                "r": 255,
+                "t": 583,
+                "b": 627,
+                "w": 97,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "select.layer-style-select",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "regenerate-layer",
+              "label": "Regenerate layer",
+              "box": {
+                "l": 259,
+                "r": 303,
+                "t": 583,
+                "b": 627,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "opacity-change",
+              "label": "Layer opacity",
+              "box": {
+                "l": 159,
+                "r": 288,
+                "t": 635,
+                "b": 679,
+                "w": 129,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.layer-opacity-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            }
+          ],
+          "openVerified": true,
+          "closeVerified": false
+        }
+      },
+      "pageErrors": []
+    },
     "1440": {
       "surfaces": {
         "export-root": {
           "label": "Legacy export dialog (#btn-export)",
-          "rootClass": "modal export-dialog modal--open export-dialog--open",
+          "rootClass": "modal export-dialog modal--open",
           "rootDisplay": "flex",
           "rootVisibility": "visible",
           "rootPosition": "fixed",
@@ -14,9 +2099,9 @@
             "l": 0,
             "r": 480,
             "t": 0,
-            "b": 668,
+            "b": 677,
             "w": 480,
-            "h": 668
+            "h": 677
           },
           "targetOverflowX": 0,
           "targetMaxWidth": "1296px",
@@ -26,8 +2111,8 @@
               "cls": "form-actions",
               "l": 21,
               "r": 459,
-              "t": 488,
-              "b": 534,
+              "t": 497,
+              "b": 543,
               "w": 438,
               "h": 46,
               "overflowX": 0
@@ -36,8 +2121,8 @@
               "cls": "form-actions",
               "l": 21,
               "r": 459,
-              "t": 534,
-              "b": 578,
+              "t": 543,
+              "b": 587,
               "w": 438,
               "h": 44,
               "overflowX": 0
@@ -78,8 +2163,8 @@
               "box": {
                 "l": 21,
                 "r": 459,
-                "t": 127,
-                "b": 171,
+                "t": 129,
+                "b": 173,
                 "w": 438,
                 "h": 44
               },
@@ -97,8 +2182,8 @@
               "box": {
                 "l": 21,
                 "r": 459,
-                "t": 204,
-                "b": 248,
+                "t": 209,
+                "b": 253,
                 "w": 438,
                 "h": 44
               },
@@ -116,8 +2201,8 @@
               "box": {
                 "l": 21,
                 "r": 459,
-                "t": 281,
-                "b": 325,
+                "t": 288,
+                "b": 332,
                 "w": 438,
                 "h": 44
               },
@@ -135,8 +2220,8 @@
               "box": {
                 "l": 21,
                 "r": 459,
-                "t": 358,
-                "b": 402,
+                "t": 368,
+                "b": 412,
                 "w": 438,
                 "h": 44
               },
@@ -154,8 +2239,8 @@
               "box": {
                 "l": 21,
                 "r": 61,
-                "t": 456,
-                "b": 488,
+                "t": 465,
+                "b": 497,
                 "w": 40,
                 "h": 32
               },
@@ -173,8 +2258,8 @@
               "box": {
                 "l": 21,
                 "r": 102,
-                "t": 488,
-                "b": 534,
+                "t": 497,
+                "b": 543,
                 "w": 81,
                 "h": 46
               },
@@ -192,8 +2277,8 @@
               "box": {
                 "l": 110,
                 "r": 191,
-                "t": 488,
-                "b": 534,
+                "t": 497,
+                "b": 543,
                 "w": 81,
                 "h": 46
               },
@@ -211,8 +2296,8 @@
               "box": {
                 "l": 199,
                 "r": 281,
-                "t": 488,
-                "b": 534,
+                "t": 497,
+                "b": 543,
                 "w": 81,
                 "h": 46
               },
@@ -230,8 +2315,8 @@
               "box": {
                 "l": 289,
                 "r": 370,
-                "t": 488,
-                "b": 534,
+                "t": 497,
+                "b": 543,
                 "w": 81,
                 "h": 46
               },
@@ -249,8 +2334,8 @@
               "box": {
                 "l": 378,
                 "r": 459,
-                "t": 488,
-                "b": 534,
+                "t": 497,
+                "b": 543,
                 "w": 81,
                 "h": 46
               },
@@ -268,8 +2353,8 @@
               "box": {
                 "l": 21,
                 "r": 459,
-                "t": 534,
-                "b": 578,
+                "t": 543,
+                "b": 587,
                 "w": 438,
                 "h": 44
               },
@@ -287,8 +2372,8 @@
               "box": {
                 "l": 401,
                 "r": 459,
-                "t": 611,
-                "b": 655,
+                "t": 620,
+                "b": 664,
                 "w": 58,
                 "h": 44
               },
@@ -313,10 +2398,10 @@
           "targetRect": {
             "l": 480,
             "r": 960,
-            "t": 188,
-            "b": 712,
+            "t": 184,
+            "b": 716,
             "w": 480,
-            "h": 523
+            "h": 532
           },
           "targetOverflowX": 0,
           "targetMaxWidth": "1324.8px",
@@ -326,8 +2411,8 @@
               "cls": "export-panel__actions",
               "l": 501,
               "r": 939,
-              "t": 563,
-              "b": 607,
+              "t": 567,
+              "b": 611,
               "w": 438,
               "h": 44,
               "overflowX": 0
@@ -336,8 +2421,8 @@
               "cls": "export-panel__actions export-panel__actions--secondary",
               "l": 501,
               "r": 939,
-              "t": 619,
-              "b": 663,
+              "t": 623,
+              "b": 667,
               "w": 438,
               "h": 44,
               "overflowX": 0
@@ -359,8 +2444,8 @@
               "box": {
                 "l": 895,
                 "r": 939,
-                "t": 205,
-                "b": 249,
+                "t": 201,
+                "b": 245,
                 "w": 44,
                 "h": 44
               },
@@ -378,8 +2463,8 @@
               "box": {
                 "l": 501,
                 "r": 939,
-                "t": 307,
-                "b": 351,
+                "t": 306,
+                "b": 350,
                 "w": 438,
                 "h": 44
               },
@@ -416,8 +2501,8 @@
               "box": {
                 "l": 501,
                 "r": 897,
-                "t": 462,
-                "b": 506,
+                "t": 464,
+                "b": 508,
                 "w": 396,
                 "h": 44
               },
@@ -435,8 +2520,8 @@
               "box": {
                 "l": 501,
                 "r": 716,
-                "t": 563,
-                "b": 607,
+                "t": 567,
+                "b": 611,
                 "w": 215,
                 "h": 44
               },
@@ -454,8 +2539,8 @@
               "box": {
                 "l": 724,
                 "r": 939,
-                "t": 563,
-                "b": 607,
+                "t": 567,
+                "b": 611,
                 "w": 215,
                 "h": 44
               },
@@ -473,8 +2558,8 @@
               "box": {
                 "l": 501,
                 "r": 716,
-                "t": 619,
-                "b": 663,
+                "t": 623,
+                "b": 667,
                 "w": 215,
                 "h": 44
               },
@@ -492,8 +2577,8 @@
               "box": {
                 "l": 724,
                 "r": 939,
-                "t": 619,
-                "b": 663,
+                "t": 623,
+                "b": 667,
                 "w": 215,
                 "h": 44
               },
@@ -518,10 +2603,10 @@
           "targetRect": {
             "l": 0,
             "r": 260,
-            "t": 63,
-            "b": 864,
+            "t": 0,
+            "b": 888,
             "w": 260,
-            "h": 801
+            "h": 888
           },
           "targetOverflowX": 0,
           "targetMaxWidth": "none",
@@ -529,58 +2614,58 @@
           "rows": [
             {
               "cls": "control-section library-section",
-              "l": 1,
-              "r": 259,
-              "t": 171,
-              "b": 342,
-              "w": 258,
-              "h": 171,
+              "l": 0,
+              "r": 260,
+              "t": 329,
+              "b": 504,
+              "w": 260,
+              "h": 175,
               "overflowX": 0
             },
             {
               "cls": "control-section library-section",
-              "l": 1,
-              "r": 259,
-              "t": 350,
-              "b": 523,
-              "w": 258,
-              "h": 173,
+              "l": 0,
+              "r": 260,
+              "t": 504,
+              "b": 694,
+              "w": 260,
+              "h": 191,
               "overflowX": 0
             },
             {
               "cls": "control-section library-section",
-              "l": 1,
-              "r": 259,
-              "t": 531,
-              "b": 609,
-              "w": 258,
-              "h": 78,
+              "l": 0,
+              "r": 260,
+              "t": 702,
+              "b": 788,
+              "w": 260,
+              "h": 85,
               "overflowX": 0
             },
             {
               "cls": "control-section library-section",
-              "l": 1,
-              "r": 259,
-              "t": 617,
-              "b": 859,
-              "w": 258,
-              "h": 243,
+              "l": 0,
+              "r": 260,
+              "t": 796,
+              "b": 1032,
+              "w": 260,
+              "h": 237,
               "overflowX": 0
             },
             {
               "cls": "control-section primitive-mixer",
-              "l": 1,
-              "r": 259,
-              "t": 867,
-              "b": 1574,
-              "w": 258,
-              "h": 707,
+              "l": 0,
+              "r": 260,
+              "t": 1040,
+              "b": 1757,
+              "w": 260,
+              "h": 716,
               "overflowX": 0
             }
           ],
           "controlCount": 14,
-          "onScreenCount": 6,
-          "belowFoldCount": 8,
+          "onScreenCount": 3,
+          "belowFoldCount": 11,
           "controlsPastViewport": [],
           "controlsHitFail": [],
           "controlsClipped": [],
@@ -592,10 +2677,10 @@
               "action": null,
               "label": "Collapse library panel",
               "box": {
-                "l": 203,
-                "r": 247,
-                "t": 119,
-                "b": 163,
+                "l": 204,
+                "r": 248,
+                "t": 277,
+                "b": 321,
                 "w": 44,
                 "h": 44
               },
@@ -611,11 +2696,11 @@
               "action": null,
               "label": "Profile name",
               "box": {
-                "l": 9,
-                "r": 201,
-                "t": 442,
-                "b": 486,
-                "w": 192,
+                "l": 12,
+                "r": 200,
+                "t": 602,
+                "b": 646,
+                "w": 188,
                 "h": 44
               },
               "visible": true,
@@ -630,11 +2715,11 @@
               "action": null,
               "label": "Save current settings as a p",
               "box": {
-                "l": 205,
-                "r": 251,
-                "t": 442,
-                "b": 486,
-                "w": 46,
+                "l": 204,
+                "r": 248,
+                "t": 602,
+                "b": 646,
+                "w": 44,
                 "h": 44
               },
               "visible": true,
@@ -649,16 +2734,16 @@
               "action": null,
               "label": "Paste a Style Profile JSON",
               "box": {
-                "l": 9,
-                "r": 251,
-                "t": 709,
-                "b": 773,
-                "w": 242,
+                "l": 12,
+                "r": 248,
+                "t": 878,
+                "b": 942,
+                "w": 236,
                 "h": 64
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "textarea.library-import-input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -668,16 +2753,16 @@
               "action": null,
               "label": "Import the pasted profile JS",
               "box": {
-                "l": 9,
+                "l": 12,
                 "r": 65,
-                "t": 781,
-                "b": 825,
-                "w": 56,
+                "t": 950,
+                "b": 994,
+                "w": 53,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.btn",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -688,15 +2773,15 @@
               "label": "Import a profile JSON file",
               "box": {
                 "l": 69,
-                "r": 152,
-                "t": 781,
-                "b": 825,
-                "w": 83,
+                "r": 148,
+                "t": 950,
+                "b": 994,
+                "w": 78,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.btn",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -706,11 +2791,11 @@
               "action": null,
               "label": "Primitive mix level",
               "box": {
-                "l": 63,
-                "r": 251,
-                "t": 1002,
-                "b": 1046,
-                "w": 188,
+                "l": 66,
+                "r": 248,
+                "t": 1165,
+                "b": 1209,
+                "w": 182,
                 "h": 44
               },
               "visible": false,
@@ -725,11 +2810,11 @@
               "action": null,
               "label": "Dry stamp weight",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1085,
-                "b": 1129,
-                "w": 198,
+                "l": 12,
+                "r": 204,
+                "t": 1251,
+                "b": 1295,
+                "w": 192,
                 "h": 44
               },
               "visible": false,
@@ -744,11 +2829,11 @@
               "action": null,
               "label": "Wet wash weight",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1152,
-                "b": 1196,
-                "w": 198,
+                "l": 12,
+                "r": 204,
+                "t": 1320,
+                "b": 1364,
+                "w": 192,
                 "h": 44
               },
               "visible": false,
@@ -763,11 +2848,11 @@
               "action": null,
               "label": "Bristle weight",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1220,
-                "b": 1264,
-                "w": 198,
+                "l": 12,
+                "r": 204,
+                "t": 1389,
+                "b": 1433,
+                "w": 192,
                 "h": 44
               },
               "visible": false,
@@ -782,11 +2867,11 @@
               "action": null,
               "label": "Smudge weight",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1287,
-                "b": 1331,
-                "w": 198,
+                "l": 12,
+                "r": 204,
+                "t": 1459,
+                "b": 1503,
+                "w": 192,
                 "h": 44
               },
               "visible": false,
@@ -801,11 +2886,11 @@
               "action": null,
               "label": "Hatch weight",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1354,
-                "b": 1398,
-                "w": 198,
+                "l": 12,
+                "r": 204,
+                "t": 1528,
+                "b": 1572,
+                "w": 192,
                 "h": 44
               },
               "visible": false,
@@ -820,11 +2905,11 @@
               "action": null,
               "label": "Spatter weight",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1421,
-                "b": 1465,
-                "w": 198,
+                "l": 12,
+                "r": 204,
+                "t": 1597,
+                "b": 1641,
+                "w": 192,
                 "h": 44
               },
               "visible": false,
@@ -839,10 +2924,10 @@
               "action": null,
               "label": "Clear the primitive mix",
               "box": {
-                "l": 9,
-                "r": 81,
-                "t": 1522,
-                "b": 1566,
+                "l": 12,
+                "r": 84,
+                "t": 1701,
+                "b": 1745,
                 "w": 72,
                 "h": 44
               },
@@ -867,10 +2952,10 @@
           "targetRect": {
             "l": 0,
             "r": 260,
-            "t": 63,
-            "b": 864,
+            "t": 0,
+            "b": 888,
             "w": 260,
-            "h": 801
+            "h": 888
           },
           "targetOverflowX": 0,
           "targetMaxWidth": "none",
@@ -878,38 +2963,38 @@
           "rows": [
             {
               "cls": "control-section media-section",
-              "l": 1,
-              "r": 259,
-              "t": 171,
-              "b": 526,
-              "w": 258,
-              "h": 355,
+              "l": 0,
+              "r": 260,
+              "t": 329,
+              "b": 879,
+              "w": 260,
+              "h": 549,
               "overflowX": 0
             },
             {
               "cls": "control-section media-section",
-              "l": 1,
-              "r": 259,
-              "t": 534,
-              "b": 852,
-              "w": 258,
-              "h": 319,
+              "l": 0,
+              "r": 260,
+              "t": 879,
+              "b": 1373,
+              "w": 260,
+              "h": 494,
               "overflowX": 0
             },
             {
               "cls": "control-section media-section",
-              "l": 1,
-              "r": 259,
-              "t": 860,
-              "b": 1396,
-              "w": 258,
-              "h": 535,
+              "l": 0,
+              "r": 260,
+              "t": 1381,
+              "b": 2135,
+              "w": 260,
+              "h": 754,
               "overflowX": 0
             }
           ],
           "controlCount": 20,
-          "onScreenCount": 12,
-          "belowFoldCount": 8,
+          "onScreenCount": 7,
+          "belowFoldCount": 13,
           "controlsPastViewport": [],
           "controlsHitFail": [],
           "controlsClipped": [],
@@ -921,10 +3006,10 @@
               "action": null,
               "label": "Collapse media panel",
               "box": {
-                "l": 203,
-                "r": 247,
-                "t": 119,
-                "b": 163,
+                "l": 204,
+                "r": 248,
+                "t": 277,
+                "b": 321,
                 "w": 44,
                 "h": 44
               },
@@ -940,11 +3025,11 @@
               "action": null,
               "label": "Wetness",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 292,
-                "b": 336,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 469,
+                "b": 513,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -959,11 +3044,11 @@
               "action": null,
               "label": "Drying",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 331,
-                "b": 375,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 545,
+                "b": 589,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -978,11 +3063,11 @@
               "action": null,
               "label": "Flow",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 370,
-                "b": 414,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 620,
+                "b": 664,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -997,11 +3082,11 @@
               "action": null,
               "label": "Paper Height",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 409,
-                "b": 453,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 695,
+                "b": 739,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -1016,11 +3101,11 @@
               "action": null,
               "label": "Paper Tooth",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 448,
-                "b": 492,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 771,
+                "b": 815,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -1035,10 +3120,10 @@
               "action": "seed-reset",
               "label": "Seed Reset",
               "box": {
-                "l": 9,
-                "r": 92,
-                "t": 474,
-                "b": 518,
+                "l": 12,
+                "r": 95,
+                "t": 823,
+                "b": 867,
                 "w": 83,
                 "h": 44
               },
@@ -1054,16 +3139,16 @@
               "action": null,
               "label": "Bleed",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 670,
-                "b": 714,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1015,
+                "b": 1059,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1073,16 +3158,16 @@
               "action": null,
               "label": "Bleed Opacity",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 709,
-                "b": 753,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1091,
+                "b": 1135,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1092,16 +3177,16 @@
               "action": null,
               "label": "Tide Line",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 748,
-                "b": 792,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1166,
+                "b": 1210,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1111,16 +3196,16 @@
               "action": null,
               "label": "Granulation",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 787,
-                "b": 831,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1242,
+                "b": 1286,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1130,16 +3215,16 @@
               "action": null,
               "label": "Granulation Count",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 826,
-                "b": 870,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1317,
+                "b": 1361,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1149,11 +3234,11 @@
               "action": null,
               "label": "Background",
               "box": {
-                "l": 14,
-                "r": 69,
-                "t": 1004,
-                "b": 1048,
-                "w": 55,
+                "l": 17,
+                "r": 128,
+                "t": 1530,
+                "b": 1574,
+                "w": 111,
                 "h": 44
               },
               "visible": false,
@@ -1168,11 +3253,11 @@
               "action": null,
               "label": "Shadows",
               "box": {
-                "l": 73,
-                "r": 128,
-                "t": 1004,
-                "b": 1048,
-                "w": 55,
+                "l": 132,
+                "r": 243,
+                "t": 1530,
+                "b": 1574,
+                "w": 111,
                 "h": 44
               },
               "visible": false,
@@ -1187,11 +3272,11 @@
               "action": null,
               "label": "Midtones",
               "box": {
-                "l": 132,
-                "r": 187,
-                "t": 1004,
-                "b": 1048,
-                "w": 55,
+                "l": 17,
+                "r": 128,
+                "t": 1578,
+                "b": 1622,
+                "w": 111,
                 "h": 44
               },
               "visible": false,
@@ -1206,11 +3291,11 @@
               "action": null,
               "label": "Highlights",
               "box": {
-                "l": 191,
-                "r": 246,
-                "t": 1004,
-                "b": 1048,
-                "w": 55,
+                "l": 132,
+                "r": 243,
+                "t": 1578,
+                "b": 1622,
+                "w": 111,
                 "h": 44
               },
               "visible": false,
@@ -1225,11 +3310,11 @@
               "action": null,
               "label": "Shadow Edge",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1075,
-                "b": 1119,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1659,
+                "b": 1703,
+                "w": 184,
                 "h": 44
               },
               "visible": false,
@@ -1244,11 +3329,11 @@
               "action": null,
               "label": "Highlight Edge",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1114,
-                "b": 1158,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1734,
+                "b": 1778,
+                "w": 184,
                 "h": 44
               },
               "visible": false,
@@ -1263,11 +3348,11 @@
               "action": null,
               "label": "Softness",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1153,
-                "b": 1197,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1809,
+                "b": 1853,
+                "w": 184,
                 "h": 44
               },
               "visible": false,
@@ -1282,11 +3367,11 @@
               "action": null,
               "label": "Background",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 1192,
-                "b": 1236,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 1885,
+                "b": 1929,
+                "w": 184,
                 "h": 44
               },
               "visible": false,
@@ -1310,10 +3395,10 @@
           "targetRect": {
             "l": 0,
             "r": 260,
-            "t": 63,
-            "b": 864,
+            "t": 0,
+            "b": 888,
             "w": 260,
-            "h": 801
+            "h": 888
           },
           "targetOverflowX": 0,
           "targetMaxWidth": "none",
@@ -1321,151 +3406,93 @@
           "rows": [
             {
               "cls": "control-section",
-              "l": 1,
-              "r": 259,
-              "t": 171,
-              "b": 263,
-              "w": 258,
-              "h": 93,
+              "l": 0,
+              "r": 260,
+              "t": 285,
+              "b": 411,
+              "w": 260,
+              "h": 126,
               "overflowX": 0
             },
             {
               "cls": "control-section",
-              "l": 1,
-              "r": 259,
-              "t": 271,
-              "b": 554,
-              "w": 258,
-              "h": 283,
+              "l": 0,
+              "r": 260,
+              "t": 411,
+              "b": 1015,
+              "w": 260,
+              "h": 604,
               "overflowX": 0
             },
             {
-              "cls": "control-section",
-              "l": 1,
-              "r": 259,
-              "t": 562,
-              "b": 766,
-              "w": 258,
-              "h": 204,
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 260,
+              "t": 1023,
+              "b": 1088,
+              "w": 260,
+              "h": 65,
               "overflowX": 0
             },
             {
-              "cls": "control-section",
-              "l": 1,
-              "r": 259,
-              "t": 774,
-              "b": 918,
-              "w": 258,
-              "h": 144,
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 260,
+              "t": 1096,
+              "b": 1161,
+              "w": 260,
+              "h": 65,
               "overflowX": 0
             },
             {
-              "cls": "control-section",
-              "l": 1,
-              "r": 259,
-              "t": 926,
-              "b": 1098,
-              "w": 258,
-              "h": 173,
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 260,
+              "t": 1169,
+              "b": 1234,
+              "w": 260,
+              "h": 65,
               "overflowX": 0
             },
             {
-              "cls": "control-section",
-              "l": 1,
-              "r": 259,
-              "t": 1106,
-              "b": 1177,
-              "w": 258,
-              "h": 71,
+              "cls": "control-section b5-collapsed",
+              "l": 0,
+              "r": 260,
+              "t": 1242,
+              "b": 1307,
+              "w": 260,
+              "h": 65,
               "overflowX": 0
             },
             {
-              "cls": "control-section generate-btn-container",
-              "l": 1,
-              "r": 259,
-              "t": 1185,
-              "b": 1342,
-              "w": 258,
-              "h": 157,
+              "cls": "control-section generate-btn-container audit-pinned-actions",
+              "l": 0,
+              "r": 260,
+              "t": 717,
+              "b": 888,
+              "w": 260,
+              "h": 171,
               "overflowX": 0
             }
           ],
-          "controlCount": 39,
-          "onScreenCount": 24,
-          "belowFoldCount": 15,
+          "controlCount": 19,
+          "onScreenCount": 11,
+          "belowFoldCount": 8,
           "controlsPastViewport": [],
-          "controlsHitFail": [
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Rings",
-              "box": {
-                "l": 14,
-                "r": 69,
-                "t": 878,
-                "b": 905,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": false,
-              "hitTag": "footer.status-footer",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Rings In",
-              "box": {
-                "l": 73,
-                "r": 128,
-                "t": 878,
-                "b": 905,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": false,
-              "hitTag": "footer.status-footer",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Clock",
-              "box": {
-                "l": 132,
-                "r": 187,
-                "t": 878,
-                "b": 905,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": false,
-              "hitTag": "footer.status-footer",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            }
-          ],
+          "controlsHitFail": [],
           "controlsClipped": [],
           "controlsUnderMin": [],
-          "minControl": 26,
+          "minControl": 34,
           "controls": [
             {
               "tag": "button",
               "action": null,
               "label": "Collapse controls panel",
               "box": {
-                "l": 203,
-                "r": 247,
-                "t": 119,
-                "b": 163,
+                "l": 204,
+                "r": 248,
+                "t": 233,
+                "b": 277,
                 "w": 44,
                 "h": 44
               },
@@ -1479,13 +3506,32 @@
             {
               "tag": "button",
               "action": null,
+              "label": "STYLE section",
+              "box": {
+                "l": 12,
+                "r": 248,
+                "t": 297,
+                "b": 341,
+                "w": 236,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "span.b5-disclosure-label",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": null,
               "label": "Pencil / Graphite",
               "box": {
-                "l": 9,
-                "r": 251,
-                "t": 197,
-                "b": 255,
-                "w": 242,
+                "l": 12,
+                "r": 248,
+                "t": 341,
+                "b": 399,
+                "w": 236,
                 "h": 58
               },
               "visible": true,
@@ -1496,15 +3542,34 @@
               "underMin": false
             },
             {
+              "tag": "button",
+              "action": null,
+              "label": "BRUSH section",
+              "box": {
+                "l": 12,
+                "r": 248,
+                "t": 420,
+                "b": 464,
+                "w": 236,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "span.b5-disclosure-label",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
               "tag": "input",
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 311,
-                "b": 355,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 487,
+                "b": 531,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -1519,11 +3584,11 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 342,
-                "b": 386,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 555,
+                "b": 599,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -1538,11 +3603,11 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 373,
-                "b": 417,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 622,
+                "b": 666,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -1557,11 +3622,11 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 404,
-                "b": 448,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 690,
+                "b": 734,
+                "w": 184,
                 "h": 44
               },
               "visible": true,
@@ -1576,16 +3641,16 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 435,
-                "b": 479,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 757,
+                "b": 801,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1595,16 +3660,16 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 466,
-                "b": 510,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 824,
+                "b": 868,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1614,16 +3679,16 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 497,
-                "b": 541,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 892,
+                "b": 936,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1633,16 +3698,16 @@
               "action": null,
               "label": "",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 528,
-                "b": 572,
-                "w": 198,
+                "l": 12,
+                "r": 196,
+                "t": 959,
+                "b": 1003,
+                "w": 184,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1650,227 +3715,37 @@
             {
               "tag": "button",
               "action": null,
-              "label": "Smart Mode",
+              "label": "STRUCTURE section",
               "box": {
-                "l": 9,
-                "r": 105,
-                "t": 666,
-                "b": 696,
-                "w": 96,
-                "h": 30
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.pill-toggle",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "input",
-              "action": null,
-              "label": "",
-              "box": {
-                "l": 9,
-                "r": 207,
-                "t": 709,
-                "b": 753,
-                "w": 198,
+                "l": 12,
+                "r": 248,
+                "t": 1032,
+                "b": 1076,
+                "w": 236,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
+              "visible": false,
+              "tappable": false,
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
             },
             {
-              "tag": "input",
+              "tag": "button",
               "action": null,
-              "label": "",
+              "label": "PATH ORDER section",
               "box": {
-                "l": 9,
-                "r": 207,
-                "t": 740,
-                "b": 784,
-                "w": 198,
+                "l": 12,
+                "r": 248,
+                "t": 1105,
+                "b": 1149,
+                "w": 236,
                 "h": 44
               },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Free",
-              "box": {
-                "l": 14,
-                "r": 69,
-                "t": 805,
-                "b": 832,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Down",
-              "box": {
-                "l": 73,
-                "r": 128,
-                "t": 805,
-                "b": 832,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Up",
-              "box": {
-                "l": 132,
-                "r": 187,
-                "t": 805,
-                "b": 832,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Right",
-              "box": {
-                "l": 191,
-                "r": 246,
-                "t": 805,
-                "b": 832,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Left",
-              "box": {
-                "l": 14,
-                "r": 69,
-                "t": 836,
-                "b": 874,
-                "w": 55,
-                "h": 38
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Diagonal",
-              "box": {
-                "l": 73,
-                "r": 128,
-                "t": 836,
-                "b": 874,
-                "w": 55,
-                "h": 38
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Spiral",
-              "box": {
-                "l": 132,
-                "r": 187,
-                "t": 836,
-                "b": 874,
-                "w": 55,
-                "h": 38
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Spiral In",
-              "box": {
-                "l": 191,
-                "r": 246,
-                "t": 836,
-                "b": 874,
-                "w": 55,
-                "h": 38
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "button.segmented__btn",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Rings",
-              "box": {
-                "l": 14,
-                "r": 69,
-                "t": 878,
-                "b": 905,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
+              "visible": false,
               "tappable": false,
-              "hitTag": "footer.status-footer",
+              "hitTag": null,
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -1878,52 +3753,14 @@
             {
               "tag": "button",
               "action": null,
-              "label": "Rings In",
+              "label": "MOTION & PATH section",
               "box": {
-                "l": 73,
-                "r": 128,
-                "t": 878,
-                "b": 905,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": false,
-              "hitTag": "footer.status-footer",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Clock",
-              "box": {
-                "l": 132,
-                "r": 187,
-                "t": 878,
-                "b": 905,
-                "w": 55,
-                "h": 27
-              },
-              "visible": true,
-              "tappable": false,
-              "hitTag": "footer.status-footer",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Single",
-              "box": {
-                "l": 14,
-                "r": 128,
-                "t": 957,
-                "b": 983,
-                "w": 114,
-                "h": 26
+                "l": 12,
+                "r": 248,
+                "t": 1178,
+                "b": 1222,
+                "w": 236,
+                "h": 44
               },
               "visible": false,
               "tappable": false,
@@ -1935,204 +3772,14 @@
             {
               "tag": "button",
               "action": null,
-              "label": "Multi",
+              "label": "COLOR section",
               "box": {
-                "l": 132,
-                "r": 246,
-                "t": 957,
-                "b": 983,
-                "w": 114,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "One Line",
-              "box": {
-                "l": 9,
-                "r": 87,
-                "t": 988,
-                "b": 1018,
-                "w": 78,
-                "h": 30
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Off",
-              "box": {
-                "l": 14,
-                "r": 89,
-                "t": 1023,
-                "b": 1049,
-                "w": 75,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "First",
-              "box": {
-                "l": 93,
-                "r": 167,
-                "t": 1023,
-                "b": 1049,
-                "w": 75,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Last",
-              "box": {
-                "l": 171,
-                "r": 246,
-                "t": 1023,
-                "b": 1049,
-                "w": 75,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Off",
-              "box": {
-                "l": 14,
-                "r": 87,
-                "t": 1059,
-                "b": 1085,
-                "w": 73,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Scribble",
-              "box": {
-                "l": 91,
-                "r": 169,
-                "t": 1059,
-                "b": 1085,
-                "w": 79,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Rows",
-              "box": {
-                "l": 173,
-                "r": 246,
-                "t": 1059,
-                "b": 1085,
-                "w": 73,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Exact",
-              "box": {
-                "l": 14,
-                "r": 80,
-                "t": 1138,
-                "b": 1164,
-                "w": 66,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Quantized",
-              "box": {
-                "l": 84,
-                "r": 169,
-                "t": 1138,
-                "b": 1164,
-                "w": 85,
-                "h": 26
-              },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": null,
-              "label": "Palette",
-              "box": {
-                "l": 173,
-                "r": 246,
-                "t": 1138,
-                "b": 1164,
-                "w": 73,
-                "h": 26
+                "l": 12,
+                "r": 248,
+                "t": 1251,
+                "b": 1295,
+                "w": 236,
+                "h": 44
               },
               "visible": false,
               "tappable": false,
@@ -2146,16 +3793,16 @@
               "action": "generate",
               "label": "Generate Painting",
               "box": {
-                "l": 9,
-                "r": 251,
-                "t": 1193,
-                "b": 1230,
-                "w": 242,
-                "h": 37
+                "l": 12,
+                "r": 248,
+                "t": 726,
+                "b": 760,
+                "w": 236,
+                "h": 34
               },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.generate-btn",
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -2165,16 +3812,16 @@
               "action": "stop",
               "label": "Stop",
               "box": {
-                "l": 9,
-                "r": 251,
-                "t": 1238,
-                "b": 1282,
-                "w": 242,
+                "l": 12,
+                "r": 248,
+                "t": 776,
+                "b": 820,
+                "w": 236,
                 "h": 44
               },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -2184,16 +3831,16 @@
               "action": "reset",
               "label": "Reset",
               "box": {
-                "l": 9,
-                "r": 251,
-                "t": 1290,
-                "b": 1334,
-                "w": 242,
+                "l": 12,
+                "r": 248,
+                "t": 836,
+                "b": 880,
+                "w": 236,
                 "h": 44
               },
-              "visible": false,
-              "tappable": false,
-              "hitTag": null,
+              "visible": true,
+              "tappable": true,
+              "hitTag": "button.btn",
               "scrollClip": 0,
               "pastRight": false,
               "underMin": false
@@ -2212,10 +3859,10 @@
           "targetRect": {
             "l": 1180,
             "r": 1440,
-            "t": 63,
-            "b": 864,
+            "t": 0,
+            "b": 888,
             "w": 260,
-            "h": 801
+            "h": 888
           },
           "targetOverflowX": 0,
           "targetMaxWidth": "none",
@@ -2223,21 +3870,21 @@
           "rows": [
             {
               "cls": "layer-row layer-row--active",
-              "l": 1189,
-              "r": 1431,
-              "t": 248,
-              "b": 466,
-              "w": 242,
+              "l": 1188,
+              "r": 1432,
+              "t": 239,
+              "b": 457,
+              "w": 244,
               "h": 218,
               "overflowX": 0
             },
             {
               "cls": "layer-row",
-              "l": 1189,
-              "r": 1431,
-              "t": 470,
-              "b": 686,
-              "w": 242,
+              "l": 1188,
+              "r": 1432,
+              "t": 461,
+              "b": 677,
+              "w": 244,
               "h": 216,
               "overflowX": 0
             }
@@ -2256,10 +3903,10 @@
               "action": null,
               "label": "Collapse layers panel",
               "box": {
-                "l": 1383,
-                "r": 1427,
-                "t": 119,
-                "b": 163,
+                "l": 1384,
+                "r": 1428,
+                "t": 110,
+                "b": 154,
                 "w": 44,
                 "h": 44
               },
@@ -2275,10 +3922,10 @@
               "action": "add-layer",
               "label": "Add layer",
               "box": {
-                "l": 1197,
-                "r": 1241,
-                "t": 183,
-                "b": 227,
+                "l": 1196,
+                "r": 1240,
+                "t": 174,
+                "b": 218,
                 "w": 44,
                 "h": 44
               },
@@ -2292,126 +3939,12 @@
             {
               "tag": "button",
               "action": "toggle-visibility",
-              "label": "",
-              "box": {
-                "l": 1378,
-                "r": 1422,
-                "t": 257,
-                "b": 301,
-                "w": 44,
-                "h": 44
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "svg.[object",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": "duplicate-layer",
-              "label": "Duplicate layer",
-              "box": {
-                "l": 1198,
-                "r": 1242,
-                "t": 309,
-                "b": 353,
-                "w": 44,
-                "h": 44
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "path.[object",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": "delete-layer",
-              "label": "Delete layer",
-              "box": {
-                "l": 1246,
-                "r": 1290,
-                "t": 309,
-                "b": 353,
-                "w": 44,
-                "h": 44
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "line.[object",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "select",
-              "action": "style-change",
-              "label": "Layer style",
-              "box": {
-                "l": 1241,
-                "r": 1332,
-                "t": 361,
-                "b": 405,
-                "w": 91,
-                "h": 44
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "select.layer-style-select",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": "regenerate-layer",
-              "label": "Regenerate layer",
-              "box": {
-                "l": 1336,
-                "r": 1380,
-                "t": 361,
-                "b": 405,
-                "w": 44,
-                "h": 44
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "svg.[object",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "input",
-              "action": "opacity-change",
-              "label": "Layer opacity",
-              "box": {
-                "l": 1237,
-                "r": 1366,
-                "t": 413,
-                "b": 457,
-                "w": 129,
-                "h": 44
-              },
-              "visible": true,
-              "tappable": true,
-              "hitTag": "input.layer-opacity-input",
-              "scrollClip": 0,
-              "pastRight": false,
-              "underMin": false
-            },
-            {
-              "tag": "button",
-              "action": "toggle-visibility",
-              "label": "",
+              "label": "Hide layer",
               "box": {
                 "l": 1379,
                 "r": 1423,
-                "t": 478,
-                "b": 522,
+                "t": 248,
+                "b": 292,
                 "w": 44,
                 "h": 44
               },
@@ -2429,8 +3962,8 @@
               "box": {
                 "l": 1197,
                 "r": 1241,
-                "t": 530,
-                "b": 574,
+                "t": 300,
+                "b": 344,
                 "w": 44,
                 "h": 44
               },
@@ -2448,8 +3981,8 @@
               "box": {
                 "l": 1245,
                 "r": 1289,
-                "t": 530,
-                "b": 574,
+                "t": 300,
+                "b": 344,
                 "w": 44,
                 "h": 44
               },
@@ -2465,11 +3998,11 @@
               "action": "style-change",
               "label": "Layer style",
               "box": {
-                "l": 1241,
-                "r": 1332,
-                "t": 582,
-                "b": 626,
-                "w": 91,
+                "l": 1238,
+                "r": 1335,
+                "t": 352,
+                "b": 396,
+                "w": 97,
                 "h": 44
               },
               "visible": true,
@@ -2484,10 +4017,10 @@
               "action": "regenerate-layer",
               "label": "Regenerate layer",
               "box": {
-                "l": 1336,
-                "r": 1380,
-                "t": 582,
-                "b": 626,
+                "l": 1339,
+                "r": 1383,
+                "t": 352,
+                "b": 396,
                 "w": 44,
                 "h": 44
               },
@@ -2503,10 +4036,124 @@
               "action": "opacity-change",
               "label": "Layer opacity",
               "box": {
-                "l": 1237,
-                "r": 1366,
-                "t": 634,
-                "b": 678,
+                "l": 1239,
+                "r": 1368,
+                "t": 404,
+                "b": 448,
+                "w": 129,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "input.layer-opacity-input",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "toggle-visibility",
+              "label": "Hide layer",
+              "box": {
+                "l": 1380,
+                "r": 1424,
+                "t": 469,
+                "b": 513,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "duplicate-layer",
+              "label": "Duplicate layer",
+              "box": {
+                "l": 1196,
+                "r": 1240,
+                "t": 521,
+                "b": 565,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "path.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "delete-layer",
+              "label": "Delete layer",
+              "box": {
+                "l": 1244,
+                "r": 1288,
+                "t": 521,
+                "b": 565,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "line.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "select",
+              "action": "style-change",
+              "label": "Layer style",
+              "box": {
+                "l": 1238,
+                "r": 1335,
+                "t": 573,
+                "b": 617,
+                "w": 97,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "select.layer-style-select",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "button",
+              "action": "regenerate-layer",
+              "label": "Regenerate layer",
+              "box": {
+                "l": 1339,
+                "r": 1383,
+                "t": 573,
+                "b": 617,
+                "w": 44,
+                "h": 44
+              },
+              "visible": true,
+              "tappable": true,
+              "hitTag": "svg.[object",
+              "scrollClip": 0,
+              "pastRight": false,
+              "underMin": false
+            },
+            {
+              "tag": "input",
+              "action": "opacity-change",
+              "label": "Layer opacity",
+              "box": {
+                "l": 1239,
+                "r": 1368,
+                "t": 625,
+                "b": 669,
                 "w": 129,
                 "h": 44
               },
@@ -2525,5 +4172,5 @@
       "pageErrors": []
     }
   },
-  "generatedAt": "2026-11-17T00:02:19.290Z"
+  "generatedAt": "2026-11-20T07:50:58.202Z"
 }

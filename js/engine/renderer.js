@@ -10,7 +10,7 @@
 
 import { drawShape, getRuntimeSource } from './shapes.js';
 import { createWetSim } from './wetsim.js';
-import { resetImpastoSurface } from './oil-impasto.js';
+import { resetImpastoSurface, resetOilDli } from './oil-impasto.js';
 
 /**
  * An offscreen 2D canvas, or null where none can be created.
@@ -265,6 +265,8 @@ export class Renderer {
     // pass must start from bare canvas or the relief history leaks between
     // renders (same reason the wet sim resets in renderAll).
     resetImpastoSurface(ctx);
+    // Also reset the dli/paint backend so its internal state is fresh
+    resetOilDli();
   }
 
   /**
@@ -283,7 +285,7 @@ export class Renderer {
    * @param {Array<object>} [opts.layers] - Override layer list.
    * @param {boolean} [opts.clear=true] - Clear canvas first.
    */
-  renderAll(opts = {}) {
+  async renderAll(opts = {}) {
     const { progress = 1, layers = this._layers, clear: doClear = true } = opts;
 
     if (doClear) this.clear();
@@ -312,7 +314,7 @@ export class Renderer {
         // Temporarily swap ctx to render to the layer canvas
         var oldCtx = this.ctx;
         this.ctx = layerCtx;
-        this.renderLayer(layer, progress);
+        await this.renderLayer(layer, progress);
         this.ctx = oldCtx;
       }
       // Composite all layer canvases onto the main canvas
@@ -332,7 +334,7 @@ export class Renderer {
       }
     } else {
       for (const layer of sorted) {
-        this.renderLayer(layer, progress);
+        await this.renderLayer(layer, progress);
       }
       // Phase 3.3 — wet-media wash, then Phase 1.5 — smudge, ONCE for the pass
       // (multi-layer mode is skipped: the sim is a single shared grid, so
@@ -348,7 +350,7 @@ export class Renderer {
    * @param {object} layer - { id, name, visible, opacity, blendMode, strokes }
    * @param {number} progress - 0..1
    */
-  renderLayer(layer, progress = 1) {
+  async renderLayer(layer, progress = 1) {
     if (!layer.visible) return;
 
     const ctx = this.ctx;
@@ -368,7 +370,10 @@ export class Renderer {
 
     for (let i = 0; i < visibleCount; i++) {
       const shape = strokes[i];
-      this.drawShapeAt(shape, 1);
+      // Await each async style draw (the dli/paint backend is async) so the
+      // stroke is actually painted before the next one starts.
+      const pending = this.drawShapeAt(shape, 1);
+      if (pending && typeof pending.then === 'function') await pending;
       if (this._wet && !this.multiLayer) this._wetDeposit(shape);
     }
 
@@ -397,15 +402,17 @@ export class Renderer {
    * @param {number} [progress=1] - Per-shape reveal progress 0..1.
    */
   drawShapeAt(shape, progress = 1) {
-    if (!shape) return;
+    if (!shape) return undefined;
 
     const styleMod = this._styles[shape.style];
     if (styleMod && typeof styleMod.draw === 'function') {
-      styleMod.draw(this.ctx, shape, progress);
-    } else {
-      // Fall back to the default shape renderer
-      drawShape(this.ctx, shape, progress);
+      // Style draws may be async (the dli/paint backend runs a WebGL fluid sim).
+      // Return the promise so callers can await the whole render pass.
+      return styleMod.draw(this.ctx, shape, progress);
     }
+    // Fall back to the default shape renderer
+    drawShape(this.ctx, shape, progress);
+    return undefined;
   }
 
   /**
@@ -441,7 +448,7 @@ export class Renderer {
     this.background = opts.background || oldBg;
     this.setLayers(layers);
     this.clear();
-    this.renderAll({ progress: 1, clear: false });
+    await this.renderAll({ progress: 1, clear: false });
 
     // Restore the renderer's own geometry WITHOUT resizing the caller's canvas.
     // `setSize()` writes `ctx.canvas.width/height`, and assigning those — even

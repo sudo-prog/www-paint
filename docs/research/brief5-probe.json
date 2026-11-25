@@ -1,0 +1,1512 @@
+{
+  "desktopDark": {
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "theme": "dark",
+    "chromeAttached": true,
+    "topbarDisplay": "none",
+    "topClusters": [
+      {
+        "cls": "top-bar__left",
+        "parent": "rail-chrome__strip",
+        "box": {
+          "x": 12,
+          "y": 8,
+          "width": 123.234375,
+          "height": 26,
+          "right": 135.234375,
+          "bottom": 34,
+          "top": 8,
+          "left": 12
+        }
+      },
+      {
+        "cls": "top-bar__center b5-mode-switcher",
+        "parent": "rail-chrome rail-chrome--left",
+        "box": {
+          "x": 0,
+          "y": 36.390625,
+          "width": 260,
+          "height": 184,
+          "right": 260,
+          "bottom": 220.390625,
+          "top": 36.390625,
+          "left": 0
+        }
+      },
+      {
+        "cls": "top-bar__right b5-action-row",
+        "parent": "rail-chrome rail-chrome--right",
+        "box": {
+          "x": 1180,
+          "y": 36.390625,
+          "width": 260,
+          "height": 61,
+          "right": 1440,
+          "bottom": 97.390625,
+          "top": 36.390625,
+          "left": 1180
+        }
+      }
+    ],
+    "canvas": {
+      "x": 272,
+      "y": 12,
+      "width": 896,
+      "height": 876,
+      "right": 1168,
+      "bottom": 888,
+      "top": 12,
+      "left": 272
+    },
+    "canvasHead": {
+      "box": {
+        "x": 272,
+        "y": 12,
+        "width": 896,
+        "height": 43,
+        "right": 1168,
+        "bottom": 55,
+        "top": 12,
+        "left": 272
+      },
+      "text": "Canvas · 1024 × 768\n          \n          Generate",
+      "hit": "section#canvas-area.canvas-wrapper"
+    },
+    "bandHits": [],
+    "bandHitCount": 0,
+    "chrome": {
+      "left": {
+        "x": 0,
+        "y": 0,
+        "width": 260,
+        "height": 220.390625,
+        "right": 260,
+        "bottom": 220.390625,
+        "top": 0,
+        "left": 0
+      },
+      "right": {
+        "x": 1180,
+        "y": 0,
+        "width": 260,
+        "height": 97.390625,
+        "right": 1440,
+        "bottom": 97.390625,
+        "top": 0,
+        "left": 1180
+      }
+    },
+    "nav": {
+      "box": {
+        "x": 0,
+        "y": 36.390625,
+        "width": 260,
+        "height": 184,
+        "right": 260,
+        "bottom": 220.390625,
+        "top": 36.390625,
+        "left": 0
+      },
+      "buttons": 8,
+      "gridCols": "126px 126px",
+      "visibleLabels": 8
+    },
+    "actions": {
+      "box": {
+        "x": 1180,
+        "y": 36.390625,
+        "width": 260,
+        "height": 61,
+        "right": 1440,
+        "bottom": 97.390625,
+        "top": 36.390625,
+        "left": 1180
+      },
+      "buttons": 4
+    },
+    "strips": [
+      {
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 260,
+          "height": 36.390625,
+          "right": 260,
+          "bottom": 36.390625,
+          "top": 0,
+          "left": 0
+        },
+        "text": "WWW _ PAINT Untitled 1024 × 768"
+      },
+      {
+        "box": {
+          "x": 1180,
+          "y": 0,
+          "width": 260,
+          "height": 36.390625,
+          "right": 1440,
+          "bottom": 36.390625,
+          "top": 0,
+          "left": 1180
+        },
+        "text": "sRGB PNG"
+      }
+    ],
+    "stripChips": [
+      "sRGB",
+      "PNG"
+    ],
+    "disclosure": [
+      {
+        "id": "style-section",
+        "title": "STYLE",
+        "expanded": "true",
+        "badge": "1",
+        "bodyHidden": false
+      },
+      {
+        "id": "brush-section",
+        "title": "BRUSH",
+        "expanded": "true",
+        "badge": "8",
+        "bodyHidden": false
+      },
+      {
+        "id": "structure-section",
+        "title": "STRUCTURE",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "path-section",
+        "title": "PATH ORDER",
+        "expanded": "false",
+        "badge": "11",
+        "bodyHidden": true
+      },
+      {
+        "id": "motion-section",
+        "title": "MOTION & PATH",
+        "expanded": "false",
+        "badge": "9",
+        "bodyHidden": true
+      },
+      {
+        "id": "color-section",
+        "title": "COLOR",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "generate-section"
+      }
+    ],
+    "panelPadLeft": "221px",
+    "panelPadRight": "98px",
+    "vars": {
+      "left": "221px",
+      "right": "98px"
+    },
+    "docOverflowX": 0,
+    "pageErrors": []
+  },
+  "mobileDark": {
+    "viewport": {
+      "w": 390,
+      "h": 844
+    },
+    "theme": "dark",
+    "chromeAttached": false,
+    "topbarDisplay": "flex",
+    "topClusters": [
+      {
+        "cls": "top-bar__left",
+        "parent": "top-bar",
+        "box": {
+          "x": 12,
+          "y": 8,
+          "width": 117.828125,
+          "height": 24,
+          "right": 129.828125,
+          "bottom": 32,
+          "top": 8,
+          "left": 12
+        }
+      },
+      {
+        "cls": "top-bar__center",
+        "parent": "top-bar",
+        "box": {
+          "x": 9,
+          "y": 68,
+          "width": 372,
+          "height": 50,
+          "right": 381,
+          "bottom": 118,
+          "top": 68,
+          "left": 9
+        }
+      },
+      {
+        "cls": "top-bar__right",
+        "parent": "top-bar",
+        "box": {
+          "x": 162.375,
+          "y": 8,
+          "width": 215.625,
+          "height": 54,
+          "right": 378,
+          "bottom": 62,
+          "top": 8,
+          "left": 162.375
+        }
+      }
+    ],
+    "canvas": {
+      "x": 0,
+      "y": 12,
+      "width": 390,
+      "height": 820,
+      "right": 390,
+      "bottom": 832,
+      "top": 12,
+      "left": 0
+    },
+    "canvasHead": {
+      "box": {
+        "x": 0,
+        "y": 172,
+        "width": 390,
+        "height": 43,
+        "right": 390,
+        "bottom": 215,
+        "top": 172,
+        "left": 0
+      },
+      "text": "Canvas · 1024 × 768\n          \n          Generate",
+      "hit": "section#canvas-area.canvas-wrapper"
+    },
+    "bandHits": [
+      {
+        "x": 20,
+        "y": 14,
+        "hit": "div.logo"
+      },
+      {
+        "x": 20,
+        "y": 22,
+        "hit": "span.logo__dot"
+      },
+      {
+        "x": 20,
+        "y": 30,
+        "hit": "div.top-bar__left"
+      },
+      {
+        "x": 36,
+        "y": 14,
+        "hit": "span.logo__text"
+      },
+      {
+        "x": 36,
+        "y": 22,
+        "hit": "span.logo__text"
+      },
+      {
+        "x": 36,
+        "y": 30,
+        "hit": "div.top-bar__left"
+      },
+      {
+        "x": 36,
+        "y": 70,
+        "hit": "nav.top-bar__center"
+      },
+      {
+        "x": 52,
+        "y": 14,
+        "hit": "span.logo__text"
+      },
+      {
+        "x": 52,
+        "y": 22,
+        "hit": "span.logo__text"
+      },
+      {
+        "x": 52,
+        "y": 30,
+        "hit": "div.top-bar__left"
+      },
+      {
+        "x": 52,
+        "y": 70,
+        "hit": "nav.top-bar__center"
+      },
+      {
+        "x": 68,
+        "y": 14,
+        "hit": "div.logo"
+      }
+    ],
+    "bandHitCount": 122,
+    "chrome": {
+      "left": null,
+      "right": null
+    },
+    "nav": {
+      "box": null,
+      "buttons": 0,
+      "gridCols": null,
+      "visibleLabels": 0
+    },
+    "actions": {
+      "box": null,
+      "buttons": 0
+    },
+    "strips": [],
+    "stripChips": [
+      "sRGB",
+      "PNG"
+    ],
+    "disclosure": [
+      {
+        "id": "style-section",
+        "title": "STYLE",
+        "expanded": "true",
+        "badge": "1",
+        "bodyHidden": false
+      },
+      {
+        "id": "brush-section",
+        "title": "BRUSH",
+        "expanded": "true",
+        "badge": "8",
+        "bodyHidden": false
+      },
+      {
+        "id": "structure-section",
+        "title": "STRUCTURE",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "path-section",
+        "title": "PATH ORDER",
+        "expanded": "false",
+        "badge": "11",
+        "bodyHidden": true
+      },
+      {
+        "id": "motion-section",
+        "title": "MOTION & PATH",
+        "expanded": "false",
+        "badge": "9",
+        "bodyHidden": true
+      },
+      {
+        "id": "color-section",
+        "title": "COLOR",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "generate-section"
+      }
+    ],
+    "panelPadLeft": "0px",
+    "panelPadRight": "0px",
+    "vars": {
+      "left": "",
+      "right": ""
+    },
+    "docOverflowX": 0,
+    "pageErrors": []
+  },
+  "desktopLight": {
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "theme": "light",
+    "chromeAttached": true,
+    "topbarDisplay": "none",
+    "topClusters": [
+      {
+        "cls": "top-bar__left",
+        "parent": "rail-chrome__strip",
+        "box": {
+          "x": 12,
+          "y": 8,
+          "width": 123.234375,
+          "height": 26,
+          "right": 135.234375,
+          "bottom": 34,
+          "top": 8,
+          "left": 12
+        }
+      },
+      {
+        "cls": "top-bar__center b5-mode-switcher",
+        "parent": "rail-chrome rail-chrome--left",
+        "box": {
+          "x": 0,
+          "y": 36.390625,
+          "width": 260,
+          "height": 184,
+          "right": 260,
+          "bottom": 220.390625,
+          "top": 36.390625,
+          "left": 0
+        }
+      },
+      {
+        "cls": "top-bar__right b5-action-row",
+        "parent": "rail-chrome rail-chrome--right",
+        "box": {
+          "x": 1180,
+          "y": 36.390625,
+          "width": 260,
+          "height": 61,
+          "right": 1440,
+          "bottom": 97.390625,
+          "top": 36.390625,
+          "left": 1180
+        }
+      }
+    ],
+    "canvas": {
+      "x": 272,
+      "y": 12,
+      "width": 896,
+      "height": 876,
+      "right": 1168,
+      "bottom": 888,
+      "top": 12,
+      "left": 272
+    },
+    "canvasHead": {
+      "box": {
+        "x": 272,
+        "y": 12,
+        "width": 896,
+        "height": 43,
+        "right": 1168,
+        "bottom": 55,
+        "top": 12,
+        "left": 272
+      },
+      "text": "Canvas · 1024 × 768\n          \n          Generate",
+      "hit": "section#canvas-area.canvas-wrapper"
+    },
+    "bandHits": [],
+    "bandHitCount": 0,
+    "chrome": {
+      "left": {
+        "x": 0,
+        "y": 0,
+        "width": 260,
+        "height": 220.390625,
+        "right": 260,
+        "bottom": 220.390625,
+        "top": 0,
+        "left": 0
+      },
+      "right": {
+        "x": 1180,
+        "y": 0,
+        "width": 260,
+        "height": 97.390625,
+        "right": 1440,
+        "bottom": 97.390625,
+        "top": 0,
+        "left": 1180
+      }
+    },
+    "nav": {
+      "box": {
+        "x": 0,
+        "y": 36.390625,
+        "width": 260,
+        "height": 184,
+        "right": 260,
+        "bottom": 220.390625,
+        "top": 36.390625,
+        "left": 0
+      },
+      "buttons": 8,
+      "gridCols": "126px 126px",
+      "visibleLabels": 8
+    },
+    "actions": {
+      "box": {
+        "x": 1180,
+        "y": 36.390625,
+        "width": 260,
+        "height": 61,
+        "right": 1440,
+        "bottom": 97.390625,
+        "top": 36.390625,
+        "left": 1180
+      },
+      "buttons": 4
+    },
+    "strips": [
+      {
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 260,
+          "height": 36.390625,
+          "right": 260,
+          "bottom": 36.390625,
+          "top": 0,
+          "left": 0
+        },
+        "text": "WWW _ PAINT Untitled 1024 × 768"
+      },
+      {
+        "box": {
+          "x": 1180,
+          "y": 0,
+          "width": 260,
+          "height": 36.390625,
+          "right": 1440,
+          "bottom": 36.390625,
+          "top": 0,
+          "left": 1180
+        },
+        "text": "sRGB PNG"
+      }
+    ],
+    "stripChips": [
+      "sRGB",
+      "PNG"
+    ],
+    "disclosure": [
+      {
+        "id": "style-section",
+        "title": "STYLE",
+        "expanded": "true",
+        "badge": "1",
+        "bodyHidden": false
+      },
+      {
+        "id": "brush-section",
+        "title": "BRUSH",
+        "expanded": "true",
+        "badge": "8",
+        "bodyHidden": false
+      },
+      {
+        "id": "structure-section",
+        "title": "STRUCTURE",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "path-section",
+        "title": "PATH ORDER",
+        "expanded": "false",
+        "badge": "11",
+        "bodyHidden": true
+      },
+      {
+        "id": "motion-section",
+        "title": "MOTION & PATH",
+        "expanded": "false",
+        "badge": "9",
+        "bodyHidden": true
+      },
+      {
+        "id": "color-section",
+        "title": "COLOR",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "generate-section"
+      }
+    ],
+    "panelPadLeft": "221px",
+    "panelPadRight": "98px",
+    "vars": {
+      "left": "221px",
+      "right": "98px"
+    },
+    "docOverflowX": 0,
+    "pageErrors": []
+  },
+  "desktopRails": {
+    "viewport": {
+      "w": 1440,
+      "h": 900
+    },
+    "theme": "dark",
+    "chromeAttached": true,
+    "topbarDisplay": "none",
+    "topClusters": [
+      {
+        "cls": "top-bar__left",
+        "parent": "rail-chrome__strip",
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0,
+          "top": 0,
+          "left": 0
+        }
+      },
+      {
+        "cls": "top-bar__center b5-mode-switcher",
+        "parent": "rail-chrome rail-chrome--left b5-collapsed",
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 56,
+          "height": 360,
+          "right": 56,
+          "bottom": 360,
+          "top": 0,
+          "left": 0
+        }
+      },
+      {
+        "cls": "top-bar__right b5-action-row",
+        "parent": "rail-chrome rail-chrome--right b5-collapsed",
+        "box": {
+          "x": 1384,
+          "y": 0,
+          "width": 56,
+          "height": 205,
+          "right": 1440,
+          "bottom": 205,
+          "top": 0,
+          "left": 1384
+        }
+      }
+    ],
+    "canvas": {
+      "x": 272,
+      "y": 12,
+      "width": 896,
+      "height": 876,
+      "right": 1168,
+      "bottom": 888,
+      "top": 12,
+      "left": 272
+    },
+    "canvasHead": {
+      "box": {
+        "x": 272,
+        "y": 12,
+        "width": 896,
+        "height": 43,
+        "right": 1168,
+        "bottom": 55,
+        "top": 12,
+        "left": 272
+      },
+      "text": "Canvas · 1024 × 768\n          \n          Generate",
+      "hit": "section#canvas-area.canvas-wrapper"
+    },
+    "bandHits": [],
+    "bandHitCount": 0,
+    "chrome": {
+      "left": {
+        "x": 0,
+        "y": 0,
+        "width": 56,
+        "height": 360,
+        "right": 56,
+        "bottom": 360,
+        "top": 0,
+        "left": 0
+      },
+      "right": {
+        "x": 1384,
+        "y": 0,
+        "width": 56,
+        "height": 205,
+        "right": 1440,
+        "bottom": 205,
+        "top": 0,
+        "left": 1384
+      }
+    },
+    "nav": {
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 56,
+        "height": 360,
+        "right": 56,
+        "bottom": 360,
+        "top": 0,
+        "left": 0
+      },
+      "buttons": 8,
+      "gridCols": "44px",
+      "visibleLabels": 0
+    },
+    "actions": {
+      "box": {
+        "x": 1384,
+        "y": 0,
+        "width": 56,
+        "height": 205,
+        "right": 1440,
+        "bottom": 205,
+        "top": 0,
+        "left": 1384
+      },
+      "buttons": 4
+    },
+    "strips": [
+      {
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0,
+          "top": 0,
+          "left": 0
+        },
+        "text": "WWW _ PAINT Untitled 1024 × 768"
+      },
+      {
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0,
+          "top": 0,
+          "left": 0
+        },
+        "text": "sRGB PNG"
+      }
+    ],
+    "stripChips": [
+      "sRGB",
+      "PNG"
+    ],
+    "disclosure": [
+      {
+        "id": "style-section",
+        "title": "STYLE",
+        "expanded": "true",
+        "badge": "1",
+        "bodyHidden": false
+      },
+      {
+        "id": "brush-section",
+        "title": "BRUSH",
+        "expanded": "true",
+        "badge": "8",
+        "bodyHidden": false
+      },
+      {
+        "id": "structure-section",
+        "title": "STRUCTURE",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "path-section",
+        "title": "PATH ORDER",
+        "expanded": "false",
+        "badge": "11",
+        "bodyHidden": true
+      },
+      {
+        "id": "motion-section",
+        "title": "MOTION & PATH",
+        "expanded": "false",
+        "badge": "9",
+        "bodyHidden": true
+      },
+      {
+        "id": "color-section",
+        "title": "COLOR",
+        "expanded": "false",
+        "badge": "3",
+        "bodyHidden": true
+      },
+      {
+        "id": "generate-section"
+      }
+    ],
+    "panelPadLeft": "360px",
+    "panelPadRight": "205px",
+    "vars": {
+      "left": "360px",
+      "right": "205px"
+    },
+    "docOverflowX": 0,
+    "pageErrors": []
+  },
+  "resize": {
+    "start": {
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "theme": "dark",
+      "chromeAttached": true,
+      "topbarDisplay": "none",
+      "topClusters": [
+        {
+          "cls": "top-bar__left",
+          "parent": "rail-chrome__strip",
+          "box": {
+            "x": 12,
+            "y": 8,
+            "width": 123.234375,
+            "height": 26,
+            "right": 135.234375,
+            "bottom": 34,
+            "top": 8,
+            "left": 12
+          }
+        },
+        {
+          "cls": "top-bar__center b5-mode-switcher",
+          "parent": "rail-chrome rail-chrome--left",
+          "box": {
+            "x": 0,
+            "y": 36.390625,
+            "width": 260,
+            "height": 184,
+            "right": 260,
+            "bottom": 220.390625,
+            "top": 36.390625,
+            "left": 0
+          }
+        },
+        {
+          "cls": "top-bar__right b5-action-row",
+          "parent": "rail-chrome rail-chrome--right",
+          "box": {
+            "x": 1180,
+            "y": 36.390625,
+            "width": 260,
+            "height": 61,
+            "right": 1440,
+            "bottom": 97.390625,
+            "top": 36.390625,
+            "left": 1180
+          }
+        }
+      ],
+      "canvas": {
+        "x": 272,
+        "y": 12,
+        "width": 896,
+        "height": 876,
+        "right": 1168,
+        "bottom": 888,
+        "top": 12,
+        "left": 272
+      },
+      "canvasHead": {
+        "box": {
+          "x": 272,
+          "y": 12,
+          "width": 896,
+          "height": 43,
+          "right": 1168,
+          "bottom": 55,
+          "top": 12,
+          "left": 272
+        },
+        "text": "Canvas · 1024 × 768\n          \n          Generate",
+        "hit": "section#canvas-area.canvas-wrapper"
+      },
+      "bandHits": [],
+      "bandHitCount": 0,
+      "chrome": {
+        "left": {
+          "x": 0,
+          "y": 0,
+          "width": 260,
+          "height": 220.390625,
+          "right": 260,
+          "bottom": 220.390625,
+          "top": 0,
+          "left": 0
+        },
+        "right": {
+          "x": 1180,
+          "y": 0,
+          "width": 260,
+          "height": 97.390625,
+          "right": 1440,
+          "bottom": 97.390625,
+          "top": 0,
+          "left": 1180
+        }
+      },
+      "nav": {
+        "box": {
+          "x": 0,
+          "y": 36.390625,
+          "width": 260,
+          "height": 184,
+          "right": 260,
+          "bottom": 220.390625,
+          "top": 36.390625,
+          "left": 0
+        },
+        "buttons": 8,
+        "gridCols": "126px 126px",
+        "visibleLabels": 8
+      },
+      "actions": {
+        "box": {
+          "x": 1180,
+          "y": 36.390625,
+          "width": 260,
+          "height": 61,
+          "right": 1440,
+          "bottom": 97.390625,
+          "top": 36.390625,
+          "left": 1180
+        },
+        "buttons": 4
+      },
+      "strips": [
+        {
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 260,
+            "height": 36.390625,
+            "right": 260,
+            "bottom": 36.390625,
+            "top": 0,
+            "left": 0
+          },
+          "text": "WWW _ PAINT Untitled 1024 × 768"
+        },
+        {
+          "box": {
+            "x": 1180,
+            "y": 0,
+            "width": 260,
+            "height": 36.390625,
+            "right": 1440,
+            "bottom": 36.390625,
+            "top": 0,
+            "left": 1180
+          },
+          "text": "sRGB PNG"
+        }
+      ],
+      "stripChips": [
+        "sRGB",
+        "PNG"
+      ],
+      "disclosure": [
+        {
+          "id": "style-section",
+          "title": "STYLE",
+          "expanded": "true",
+          "badge": "1",
+          "bodyHidden": false
+        },
+        {
+          "id": "brush-section",
+          "title": "BRUSH",
+          "expanded": "true",
+          "badge": "8",
+          "bodyHidden": false
+        },
+        {
+          "id": "structure-section",
+          "title": "STRUCTURE",
+          "expanded": "false",
+          "badge": "3",
+          "bodyHidden": true
+        },
+        {
+          "id": "path-section",
+          "title": "PATH ORDER",
+          "expanded": "false",
+          "badge": "11",
+          "bodyHidden": true
+        },
+        {
+          "id": "motion-section",
+          "title": "MOTION & PATH",
+          "expanded": "false",
+          "badge": "9",
+          "bodyHidden": true
+        },
+        {
+          "id": "color-section",
+          "title": "COLOR",
+          "expanded": "false",
+          "badge": "3",
+          "bodyHidden": true
+        },
+        {
+          "id": "generate-section"
+        }
+      ],
+      "panelPadLeft": "221px",
+      "panelPadRight": "98px",
+      "vars": {
+        "left": "221px",
+        "right": "98px"
+      },
+      "docOverflowX": 0,
+      "pageErrors": []
+    },
+    "mobile": {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "theme": "dark",
+      "chromeAttached": false,
+      "topbarDisplay": "flex",
+      "topClusters": [
+        {
+          "cls": "top-bar__left",
+          "parent": "top-bar",
+          "box": {
+            "x": 12,
+            "y": 8,
+            "width": 117.828125,
+            "height": 24,
+            "right": 129.828125,
+            "bottom": 32,
+            "top": 8,
+            "left": 12
+          }
+        },
+        {
+          "cls": "top-bar__center",
+          "parent": "top-bar",
+          "box": {
+            "x": 9,
+            "y": 68,
+            "width": 372,
+            "height": 50,
+            "right": 381,
+            "bottom": 118,
+            "top": 68,
+            "left": 9
+          }
+        },
+        {
+          "cls": "top-bar__right",
+          "parent": "top-bar",
+          "box": {
+            "x": 162.375,
+            "y": 8,
+            "width": 215.625,
+            "height": 54,
+            "right": 378,
+            "bottom": 62,
+            "top": 8,
+            "left": 162.375
+          }
+        }
+      ],
+      "canvas": {
+        "x": 0,
+        "y": 12,
+        "width": 390,
+        "height": 820,
+        "right": 390,
+        "bottom": 832,
+        "top": 12,
+        "left": 0
+      },
+      "canvasHead": {
+        "box": {
+          "x": 0,
+          "y": 172,
+          "width": 390,
+          "height": 43,
+          "right": 390,
+          "bottom": 215,
+          "top": 172,
+          "left": 0
+        },
+        "text": "Canvas · 1024 × 768\n          \n          Generate",
+        "hit": "section#canvas-area.canvas-wrapper"
+      },
+      "bandHits": [
+        {
+          "x": 20,
+          "y": 14,
+          "hit": "div.logo"
+        },
+        {
+          "x": 20,
+          "y": 22,
+          "hit": "span.logo__dot"
+        },
+        {
+          "x": 20,
+          "y": 30,
+          "hit": "div.top-bar__left"
+        },
+        {
+          "x": 36,
+          "y": 14,
+          "hit": "span.logo__text"
+        },
+        {
+          "x": 36,
+          "y": 22,
+          "hit": "span.logo__text"
+        },
+        {
+          "x": 36,
+          "y": 30,
+          "hit": "div.top-bar__left"
+        },
+        {
+          "x": 36,
+          "y": 70,
+          "hit": "nav.top-bar__center"
+        },
+        {
+          "x": 52,
+          "y": 14,
+          "hit": "span.logo__text"
+        },
+        {
+          "x": 52,
+          "y": 22,
+          "hit": "span.logo__text"
+        },
+        {
+          "x": 52,
+          "y": 30,
+          "hit": "div.top-bar__left"
+        },
+        {
+          "x": 52,
+          "y": 70,
+          "hit": "nav.top-bar__center"
+        },
+        {
+          "x": 68,
+          "y": 14,
+          "hit": "div.logo"
+        }
+      ],
+      "bandHitCount": 122,
+      "chrome": {
+        "left": null,
+        "right": null
+      },
+      "nav": {
+        "box": null,
+        "buttons": 0,
+        "gridCols": null,
+        "visibleLabels": 0
+      },
+      "actions": {
+        "box": null,
+        "buttons": 0
+      },
+      "strips": [],
+      "stripChips": [
+        "sRGB",
+        "PNG"
+      ],
+      "disclosure": [
+        {
+          "id": "style-section",
+          "title": "STYLE",
+          "expanded": "true",
+          "badge": "1",
+          "bodyHidden": false
+        },
+        {
+          "id": "brush-section",
+          "title": "BRUSH",
+          "expanded": "true",
+          "badge": "8",
+          "bodyHidden": false
+        },
+        {
+          "id": "structure-section",
+          "title": "STRUCTURE",
+          "expanded": "false",
+          "badge": "3",
+          "bodyHidden": true
+        },
+        {
+          "id": "path-section",
+          "title": "PATH ORDER",
+          "expanded": "false",
+          "badge": "11",
+          "bodyHidden": true
+        },
+        {
+          "id": "motion-section",
+          "title": "MOTION & PATH",
+          "expanded": "false",
+          "badge": "9",
+          "bodyHidden": true
+        },
+        {
+          "id": "color-section",
+          "title": "COLOR",
+          "expanded": "false",
+          "badge": "3",
+          "bodyHidden": true
+        },
+        {
+          "id": "generate-section"
+        }
+      ],
+      "panelPadLeft": "0px",
+      "panelPadRight": "0px",
+      "vars": {
+        "left": "",
+        "right": ""
+      },
+      "docOverflowX": 0,
+      "pageErrors": []
+    },
+    "end": {
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "theme": "dark",
+      "chromeAttached": true,
+      "topbarDisplay": "none",
+      "topClusters": [
+        {
+          "cls": "top-bar__left",
+          "parent": "rail-chrome__strip",
+          "box": {
+            "x": 12,
+            "y": 8,
+            "width": 123.234375,
+            "height": 26,
+            "right": 135.234375,
+            "bottom": 34,
+            "top": 8,
+            "left": 12
+          }
+        },
+        {
+          "cls": "top-bar__center b5-mode-switcher",
+          "parent": "rail-chrome rail-chrome--left",
+          "box": {
+            "x": 0,
+            "y": 36.390625,
+            "width": 260,
+            "height": 184,
+            "right": 260,
+            "bottom": 220.390625,
+            "top": 36.390625,
+            "left": 0
+          }
+        },
+        {
+          "cls": "top-bar__right b5-action-row",
+          "parent": "rail-chrome rail-chrome--right",
+          "box": {
+            "x": 1180,
+            "y": 36.390625,
+            "width": 260,
+            "height": 61,
+            "right": 1440,
+            "bottom": 97.390625,
+            "top": 36.390625,
+            "left": 1180
+          }
+        }
+      ],
+      "canvas": {
+        "x": 272,
+        "y": 12,
+        "width": 896,
+        "height": 876,
+        "right": 1168,
+        "bottom": 888,
+        "top": 12,
+        "left": 272
+      },
+      "canvasHead": {
+        "box": {
+          "x": 272,
+          "y": 12,
+          "width": 896,
+          "height": 43,
+          "right": 1168,
+          "bottom": 55,
+          "top": 12,
+          "left": 272
+        },
+        "text": "Canvas · 1024 × 768\n          \n          Generate",
+        "hit": "section#canvas-area.canvas-wrapper"
+      },
+      "bandHits": [],
+      "bandHitCount": 0,
+      "chrome": {
+        "left": {
+          "x": 0,
+          "y": 0,
+          "width": 260,
+          "height": 220.390625,
+          "right": 260,
+          "bottom": 220.390625,
+          "top": 0,
+          "left": 0
+        },
+        "right": {
+          "x": 1180,
+          "y": 0,
+          "width": 260,
+          "height": 97.390625,
+          "right": 1440,
+          "bottom": 97.390625,
+          "top": 0,
+          "left": 1180
+        }
+      },
+      "nav": {
+        "box": {
+          "x": 0,
+          "y": 36.390625,
+          "width": 260,
+          "height": 184,
+          "right": 260,
+          "bottom": 220.390625,
+          "top": 36.390625,
+          "left": 0
+        },
+        "buttons": 8,
+        "gridCols": "126px 126px",
+        "visibleLabels": 8
+      },
+      "actions": {
+        "box": {
+          "x": 1180,
+          "y": 36.390625,
+          "width": 260,
+          "height": 61,
+          "right": 1440,
+          "bottom": 97.390625,
+          "top": 36.390625,
+          "left": 1180
+        },
+        "buttons": 4
+      },
+      "strips": [
+        {
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 260,
+            "height": 36.390625,
+            "right": 260,
+            "bottom": 36.390625,
+            "top": 0,
+            "left": 0
+          },
+          "text": "WWW _ PAINT Untitled 1024 × 768"
+        },
+        {
+          "box": {
+            "x": 1180,
+            "y": 0,
+            "width": 260,
+            "height": 36.390625,
+            "right": 1440,
+            "bottom": 36.390625,
+            "top": 0,
+            "left": 1180
+          },
+          "text": "sRGB PNG"
+        }
+      ],
+      "stripChips": [
+        "sRGB",
+        "PNG"
+      ],
+      "disclosure": [
+        {
+          "id": "style-section",
+          "title": "STYLE",
+          "expanded": "true",
+          "badge": "1",
+          "bodyHidden": false
+        },
+        {
+          "id": "brush-section",
+          "title": "BRUSH",
+          "expanded": "true",
+          "badge": "8",
+          "bodyHidden": false
+        },
+        {
+          "id": "structure-section",
+          "title": "STRUCTURE",
+          "expanded": "false",
+          "badge": "3",
+          "bodyHidden": true
+        },
+        {
+          "id": "path-section",
+          "title": "PATH ORDER",
+          "expanded": "false",
+          "badge": "11",
+          "bodyHidden": true
+        },
+        {
+          "id": "motion-section",
+          "title": "MOTION & PATH",
+          "expanded": "false",
+          "badge": "9",
+          "bodyHidden": true
+        },
+        {
+          "id": "color-section",
+          "title": "COLOR",
+          "expanded": "false",
+          "badge": "3",
+          "bodyHidden": true
+        },
+        {
+          "id": "generate-section"
+        }
+      ],
+      "panelPadLeft": "221px",
+      "panelPadRight": "98px",
+      "vars": {
+        "left": "221px",
+        "right": "98px"
+      },
+      "docOverflowX": 0,
+      "pageErrors": []
+    }
+  }
+}

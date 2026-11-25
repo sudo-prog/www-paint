@@ -156,6 +156,20 @@ export const OPTIMISER_DEFAULTS = {
   regionFillMargin: 1.05,  // dab inflation over the fitted region extent
   regionFillAlpha: 1.0,    // opacity of a fill stroke
 
+  // ── R5 flat-area wash pass (eliminate confetti in low-variance cells) ─────
+  // Opt-in — default 0 → output is byte-identical. When > 0, a fraction of the
+  // stroke budget lays broad, soft dabs over FLAT cells (variance < washVarianceThreshold).
+  // Uses 8×8 cell grid matching wash-metric.py. Soft means low alpha for
+  // transparent layering; broad means large radius. The pass runs after regionFill
+  // and before regionInit so it covers the flat cells that regionFill might miss.
+  washPass: 0,             // fraction of the stroke budget for the wash pass
+  washPassMinArea: 1,      // min flat cell area (in 8×8 cells) to wash (1 = any flat cell)
+  washPassMaxAreaFrac: 1.0, // max flat cell area, as a fraction of the image
+  washVarianceThreshold: 25, // variance threshold for flat cells (matches wash-metric.py)
+  washPassRadiusMul: 2.0,  // radius multiplier over baseR for broad coverage
+  washPassAlpha: 0.35,     // low alpha for soft transparent layering
+  washPassCoverageTarget: 0.95, // target coverage per flat cell (FULL = >95%)
+
   // ── S4 explicit hierarchical passes ──────────────────────────────────────
   // Opt-in — `null` (default) → the geometric `buildScalePlan` schedule runs
   // exactly as before, byte-identical. When an array is supplied it REPLACES
@@ -1400,6 +1414,140 @@ export function optimise(analysis, options = {}) {
   }
 
   /**
+   * R5 flat-area wash pass — lay broad, soft dabs over FLAT cells to eliminate
+   * confetti (partially covered flat cells).
+   *
+   * The source is split into 8×8 cells (matching wash-metric.py). A cell is
+   * FLAT when its luminance variance < washVarianceThreshold (default 25).
+   * For each flat cell that is not already well-covered (coverage <
+   * washPassCoverageTarget), emit one large soft dab at the cell's mean colour.
+   * The dab radius is baseR * washPassRadiusMul (default 2× baseR) for broad
+   * coverage, and alpha is washPassAlpha (default 0.35) for soft layering.
+   *
+   * Opt-in (`washPass > 0`, default 0) so the default output is byte-identical.
+   * Deterministic — no RNG.
+   *
+   * @param {number} budget - Max strokes this pass may emit.
+   * @returns {number} Strokes actually emitted.
+   */
+  function washPass(budget) {
+    if (budget <= 0) return 0;
+    levelTarget = target;
+    elongMul = 1;
+
+    const STEP = 8;
+    const varThresh = opts.washVarianceThreshold || 25;
+    const targetCov = opts.washPassCoverageTarget || 0.95;
+    const radiusMul = opts.washPassRadiusMul || 2.0;
+    const alpha = opts.washPassAlpha || 0.35;
+
+    // Compute variance per 8×8 cell (same grid as wash-metric.py)
+    const cellVars = new Float32Array(W * H);
+    const cellColors = new Float32Array(W * H * 3);
+    const cellCounts = new Int32Array(W * H);
+
+    // First pass: compute variance and mean colour per cell
+    for (let y = 0; y < H; y += STEP) {
+      for (let x = 0; x < W; x += STEP) {
+        const x1 = Math.min(x + STEP, W);
+        const y1 = Math.min(y + STEP, H);
+        let sumL = 0, sumR = 0, sumG = 0, sumB = 0, cnt = 0;
+        for (let py = y; py < y1; py++) {
+          const rowBase = py * W;
+          for (let px = x; px < x1; px++) {
+            const i = rowBase + px;
+            const r = target[i * 3];
+            const g = target[i * 3 + 1];
+            const b = target[i * 3 + 2];
+            const L = (r + g + b) / 3;
+            sumL += L;
+            sumR += r; sumG += g; sumB += b;
+            cnt++;
+          }
+        }
+        if (cnt === 0) continue;
+        const meanL = sumL / cnt;
+        // Second pass for variance
+        let varL = 0;
+        for (let py = y; py < y1; py++) {
+          const rowBase = py * W;
+          for (let px = x; px < x1; px++) {
+            const i = rowBase + px;
+            const r = target[i * 3];
+            const g = target[i * 3 + 1];
+            const b = target[i * 3 + 2];
+            const L = (r + g + b) / 3;
+            const d = L - meanL;
+            varL += d * d;
+          }
+        }
+        varL /= cnt;
+        const cellIdx = y * W + x;
+        cellVars[cellIdx] = varL;
+        cellColors[cellIdx * 3] = sumR / cnt;
+        cellColors[cellIdx * 3 + 1] = sumG / cnt;
+        cellColors[cellIdx * 3 + 2] = sumB / cnt;
+        cellCounts[cellIdx] = cnt;
+      }
+    }
+
+    // Collect flat cells that need washing (low variance, low coverage)
+    const flatCells = [];
+    for (let y = 0; y < H; y += STEP) {
+      for (let x = 0; x < W; x += STEP) {
+        const cellIdx = y * W + x;
+        const cnt = cellCounts[cellIdx];
+        if (cnt === 0) continue;
+        if (cellVars[cellIdx] >= varThresh) continue; // not flat
+
+        // Check current coverage in this cell
+        let covered = 0;
+        for (let py = y; py < Math.min(y + STEP, H); py++) {
+          const rowBase = py * W;
+          for (let px = x; px < Math.min(x + STEP, W); px++) {
+            if (cov[rowBase + px] > 0.5) covered++;
+          }
+        }
+        const covFrac = covered / cnt;
+        if (covFrac >= targetCov) continue; // already well-covered
+
+        flatCells.push({
+          x: x + STEP / 2,
+          y: y + STEP / 2,
+          var: cellVars[cellIdx],
+          r: cellColors[cellIdx * 3],
+          g: cellColors[cellIdx * 3 + 1],
+          b: cellColors[cellIdx * 3 + 2],
+          covFrac,
+        });
+      }
+    }
+
+    // Sort by variance (flattest first) so we cover the most "confetti-prone" cells first
+    flatCells.sort((a, b) => a.var - b.var);
+
+    // Emit dabs for flat cells
+    let emitted = 0;
+    const washRadius = clamp(baseR * radiusMul, opts.minSize, opts.maxSize);
+    for (const cell of flatCells) {
+      if (emitted >= budget) break;
+      commitShape({
+        x: cell.x,
+        y: cell.y,
+        rx: washRadius,
+        ry: washRadius,
+        rot: 0,
+        r: clamp(cell.r, 0, 255),
+        g: clamp(cell.g, 0, 255),
+        b: clamp(cell.b, 0, 255),
+        alpha,
+      });
+      emitted++;
+    }
+    return emitted;
+  }
+
+  /**
    * R4 outline pass — lay contour strokes along the extracted edges.
    *
    * Feature parity with the legacy painter's edge-following outline lay-in,
@@ -1628,6 +1776,12 @@ export function optimise(analysis, options = {}) {
     : 0;
   const fillUsed = regionFillPass(fillBudget);
 
+  // ── R5 flat-area wash pass — eliminate confetti in flat cells (opt-in) ──────
+  const washBudget = opts.washPass > 0
+    ? Math.round(opts.count * clamp(opts.washPass, 0, 1))
+    : 0;
+  const washUsed = washPass(washBudget);
+
   // ── R3 region init (CCL + PCA) ────────────────────────────────────────────
   // Seed strokes from connected-component principal axes *before* the residual
   // schedule, so elongated / flat regions start nearly right and the coarse→fine
@@ -1653,7 +1807,7 @@ export function optimise(analysis, options = {}) {
   const outlineReserved = outlineActive
     ? (r4OutlineMode === 'first' ? outlineUsed : outlineBudget)
     : 0;
-  let remaining = opts.count - outlineReserved - fillUsed - regionUsed;
+  let remaining = opts.count - outlineReserved - fillUsed - washUsed - regionUsed;
   // The schedule's own total (what the init left) drives the budget split, so
   // the pass weights still describe the schedule and the sum stays exact.
   const scheduleTotal = Math.max(1, remaining);
@@ -1719,6 +1873,7 @@ export function optimise(analysis, options = {}) {
       count: shapes.length,
       scales: plan.length,
       fill: fillUsed,
+      wash: washUsed,
       regions: regionUsed,
       initialError: +initialError.toFixed(4),
       finalError: +finalError.toFixed(4),

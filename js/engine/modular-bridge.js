@@ -244,14 +244,26 @@ export const BRIDGE_DEFAULTS = {
   contourStrokeWidthFrac: 0.0033,
   /** Contour stroke alpha — the Code Paint teacher paints every stroke at 0.8. */
   contourStrokeAlpha: 0.8,
-  /** Max contour strokes for the whole painting. Capped as a fraction of the user's count so the MEDIAN emitted stroke becomes a contour stroke (target ~60% of count). The teacher drew 996 strokes total on 1M px²; at our 196K px² that's ~200. */
-  contourStrokeMax: 900,
+  /** Max contour strokes for the whole painting. Capped as a fraction of the user's count so the MEDIAN emitted stroke becomes a contour stroke (target ~60% of count). The teacher drew 996 strokes total on 1M px²; at our 196K px² that's ~200. `null` = auto from user count. */
+  contourStrokeMax: null,
   /** Polyline points consumed per contour stroke (~px along a 1px-step R4 polyline). 10px stride yields ~1966 available strokes from the 64 polylines (19.6K total length), each ~10px long — closer to the teacher's 66px median while still following curves. */
   contourSegmentPx: 10,
   /** Cap on a contour stroke's colour pair distance (RGB), applied about the pair's midpoint. The teacher's median per-stroke pair distance is 34.6 RGB; an uncapped source-at-both-ends sample can straddle a region border (white ground ↔ dark fill) and produce a two-tone blob. */
   contourGradientCap: 34.6,
   /** Extra multiplier on the residual DAB stroke width. MUST be 1.0 (no thinning) — the dabs are coverage; removing them costs fidelity. The contours carry the form; dabs are texture. */
   dabWidthScale: 1.0,
+
+  // ── R5 flat-area wash pass ──────────────────────────────────────────────────
+  /** Fraction of the user's stroke budget for the flat-area wash pass. Default 0 = off (byte-identical). Opt-in: set > 0 to enable broad soft dabs over low-variance cells. */
+  washPass: 0,
+  /** Variance threshold for flat cells (matches wash-metric.py default). */
+  washVarianceThreshold: 25,
+  /** Radius multiplier for wash dabs over baseR. Default 2.0 for broad coverage. */
+  washPassRadiusMul: 2.0,
+  /** Alpha for wash dabs (low = soft transparent layering). Default 0.35. */
+  washPassAlpha: 0.35,
+  /** Target coverage per flat cell (FULL = >95%). */
+  washPassCoverageTarget: 0.95,
  };
 
 /**
@@ -899,6 +911,11 @@ export function modularOptions({
   count = 400,
   seed = BRIDGE_DEFAULTS.seed,
   regionFill = 0,
+  washPass = 0,
+  washVarianceThreshold = undefined,
+  washPassRadiusMul = undefined,
+  washPassAlpha = undefined,
+  washPassCoverageTarget = undefined,
   passes = null,
   primitives = null,
   // Worker lever 1: per-stroke gradient by weighted least squares
@@ -925,6 +942,11 @@ export function modularOptions({
     count: Math.max(1, Math.round(count)),
     seed: Math.round(seed),
     regionFill: Math.max(0, Math.min(1, Number(regionFill) || 0)),
+    washPass: Math.max(0, Math.min(1, Number(washPass) || 0)),
+    washVarianceThreshold: washVarianceThreshold !== undefined ? Math.max(0, Number(washVarianceThreshold)) : undefined,
+    washPassRadiusMul: washPassRadiusMul !== undefined ? Math.max(0.1, Number(washPassRadiusMul)) : undefined,
+    washPassAlpha: washPassAlpha !== undefined ? clamp(Number(washPassAlpha), 0, 1) : undefined,
+    washPassCoverageTarget: washPassCoverageTarget !== undefined ? clamp(Number(washPassCoverageTarget), 0, 1) : undefined,
   };
   if (Array.isArray(passes) && passes.length) opts.passes = passes;
   if (primitives && typeof primitives === 'object') opts.primitives = primitives;
@@ -1091,6 +1113,11 @@ export function buildModularPlan(analysis, args = {}) {
       : o.count,
     seed: o.seed,
     regionFill: shaping.shaping.regionFill || 0,
+    washPass: shaping.shaping.washPass || 0,
+    washVarianceThreshold: o.washVarianceThreshold,
+    washPassRadiusMul: o.washPassRadiusMul,
+    washPassAlpha: o.washPassAlpha,
+    washPassCoverageTarget: o.washPassCoverageTarget,
     passes: o.passes,
     primitives: o.primitives,
     // Forward lever flags from the call so they reach optimise() via
@@ -1180,18 +1207,18 @@ export function buildModularPlan(analysis, args = {}) {
   const totalBudget = o.dabsAsStrokes !== false
     ? Math.round(o.count * (o.strokeBudgetScale || 1))
     : o.count;
-  // Contour budget: a LARGE fraction of the TOTAL budget so the MEDIAN
-  // emitted stroke IS a contour stroke (target: ≥50% of emitted shapes).
-  // The 64 R4 polylines (19.6K total length) at 10px stride yield ~1966
-  // available contour strokes. We cap at ~60% of totalBudget, but not more
-  // than available.
+  // Contour budget: capped by the R4 outline budget (which limits the
+  // number of polylines) so the total strokes (modular + contour) stay
+  // within the user's stroke budget. The outline budget is a fraction of
+  // the user's count (default 35%), and each polyline yields multiple
+  // contour segments; we cap contour strokes at the same outline budget
+  // to keep the test's budget assertion valid.
   const maxAvailableContours = 1966; // 64 polylines * 19661px / 10 ≈ 1966
+  const userContourBudget = (o.contourStrokeMax !== null && o.contourStrokeMax !== undefined && Number.isFinite(o.contourStrokeMax))
+    ? o.contourStrokeMax
+    : outlineBudget;
   const contourMax = o.dabsAsStrokes !== false
-    ? Math.min(
-        Number.isFinite(o.contourStrokeMax) ? o.contourStrokeMax : Math.max(1, Math.round(totalBudget * 0.6)),
-        Math.max(1, Math.round(totalBudget * 0.6)),
-        maxAvailableContours,
-      )
+    ? Math.min(userContourBudget, maxAvailableContours)
     : 0;
 
   // ── PAINT ORDER: dabs/chains FIRST (bottom), contours LAST (top) ───────
@@ -1233,45 +1260,48 @@ export function buildModularPlan(analysis, args = {}) {
     }, order++, 0, o.seed));
   }
 
-  // 2. Leftover dabs that joined no chain → single-dab strokes.
+  // 2. Leftover dabs that joined no chain → single-dab strokes (or raw dabs).
   for (const r of usable) {
     if (!chainHandled.has(r)) continue;
-    const asStroke = dabToStrokeShape(r, order, 0, o.seed, {
-      elongation: o.strokeElongation,
-      structureAlign: o.strokeStructureAlign,
-      widthScale: o.strokeWidthScale,
-      structure: sampleStructureAt(analysis, r.params[0], r.params[1]),
-      sampleSource,
-      palette,
-      strokeAlpha: o.strokeAlpha,
-      preserveStrokeGradient: !!o.gradientLSQ,
-      strokeGradientCap: o.strokeGradientCap,
-      strokeGradientCentred: o.strokeGradientCentred,
-    });
-    if (asStroke) {
-      asStroke.style = o.style;
-      const preserveStrokeGradient = !!o.gradientLSQ;
-      if (palette && Array.isArray(palette) && palette.length > 0) {
-        if (preserveStrokeGradient) {
-          const c0q = quantiseColour(asStroke.color0, palette);
-          const dc0 = c0q[0] - asStroke.color0[0];
-          const dc1 = c0q[1] - asStroke.color0[1];
-          const dc2 = c0q[2] - asStroke.color0[2];
-          asStroke.color0 = c0q;
-          asStroke.color1 = [
-            Math.max(0, Math.min(255, asStroke.color1[0] + dc0)),
-            Math.max(0, Math.min(255, asStroke.color1[1] + dc1)),
-            Math.max(0, Math.min(255, asStroke.color1[2] + dc2)),
-          ];
-        } else {
-          asStroke.color0 = quantiseColour(asStroke.color0, palette);
-          asStroke.color1 = quantiseColour(asStroke.color1, palette);
+    if (o.dabsAsStrokes !== false) {
+      const asStroke = dabToStrokeShape(r, order, 0, o.seed, {
+        elongation: o.strokeElongation,
+        structureAlign: o.strokeStructureAlign,
+        widthScale: o.strokeWidthScale,
+        structure: sampleStructureAt(analysis, r.params[0], r.params[1]),
+        sampleSource,
+        palette,
+        strokeAlpha: o.strokeAlpha,
+        preserveStrokeGradient: !!o.gradientLSQ,
+        strokeGradientCap: o.strokeGradientCap,
+        strokeGradientCentred: o.strokeGradientCentred,
+      });
+      if (asStroke) {
+        asStroke.style = o.style;
+        const preserveStrokeGradient = !!o.gradientLSQ;
+        if (palette && Array.isArray(palette) && palette.length > 0) {
+          if (preserveStrokeGradient) {
+            const c0q = quantiseColour(asStroke.color0, palette);
+            const dc0 = c0q[0] - asStroke.color0[0];
+            const dc1 = c0q[1] - asStroke.color0[1];
+            const dc2 = c0q[2] - asStroke.color0[2];
+            asStroke.color0 = c0q;
+            asStroke.color1 = [
+              Math.max(0, Math.min(255, asStroke.color1[0] + dc0)),
+              Math.max(0, Math.min(255, asStroke.color1[1] + dc1)),
+              Math.max(0, Math.min(255, asStroke.color1[2] + dc2)),
+            ];
+          } else {
+            asStroke.color0 = quantiseColour(asStroke.color0, palette);
+            asStroke.color1 = quantiseColour(asStroke.color1, palette);
+          }
         }
+        shapes.push(asStroke);
+        order++;
+        continue;
       }
-      shapes.push(asStroke);
-      order++;
-      continue;
     }
+    // dabsAsStrokes:false OR conversion failed → emit raw dab (type E).
     shapes.push(toEngineShape({ ...r, style: o.style }, order++, 0, o.seed));
   }
 

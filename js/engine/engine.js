@@ -36,6 +36,7 @@ import { DEFAULT_SETTINGS, resolveSettings } from './generator.js';
 import { applyLayerStyles, preserveLayerProps, resolveLayerStyles } from './layer-styles.js';
 import { applyProfile } from './profile.js';
 import { buildModularPlan } from './modular-bridge.js';
+import { planPainterly } from './painterly-planner.js';
 
 // Re-export DEFAULT_SETTINGS from generator.js for UI compatibility.
 // The actual painting is done by Painter, but the settings object is still
@@ -531,6 +532,28 @@ export class PaintingEngine {
       }
     }
 
+    // ── Painterly planner path (Hertzmann stroke geometry) ─────────────
+    // When style === 'painterly', the vendored painterly library's own
+    // Hertzmann planner produces curved, edge-following, multi-size strokes
+    // instead of the generic optimiser's parallel bars. This branch runs
+    // BEFORE the modular and worker/legacy paths so the planner wins.
+    if (style === 'painterly' && this._imageData) {
+      const pShapes = planPainterly(this._imageData, this.width, this.height, {
+        seed, count, threshold: opts.painterlyThreshold,
+      });
+      if (pShapes.length) {
+        const layer = this.getLayer(layerIdx);
+        if (layer) layer.strokes = pShapes;
+        this.renderer.multiLayer = false;
+        this.renderer.setLayers(this.layers);
+        this._lastCount = pShapes.length;
+        if (typeof opts.onShape === 'function') {
+          for (let i = 0; i < pShapes.length; i++) opts.onShape(pShapes[i], i);
+        }
+        return pShapes;
+      }
+    }
+
     // ── Worker path ───────────────────────────────────────────────
     if (this.useWorker && typeof Worker !== 'undefined') {
       const shapes = await this._generateViaWorker({
@@ -802,10 +825,12 @@ export class PaintingEngine {
    * @param {object} [opts]
    * @param {number} [opts.progress=1]
    */
-  render(opts = {}) {
+  async render(opts = {}) {
     const progress = opts.progress !== undefined ? opts.progress : 1;
     this.renderer.setLayers(this.layers);
-    this.renderer.renderAll({
+    // renderAll is async because style renders may be (the dli/paint backend runs
+    // a WebGL fluid sim). Await it so the canvas is complete when we return.
+    await this.renderer.renderAll({
       progress,
       clear: opts.clear !== false,
     });

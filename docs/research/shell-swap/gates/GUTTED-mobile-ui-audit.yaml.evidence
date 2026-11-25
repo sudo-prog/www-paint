@@ -1,0 +1,50 @@
+# WWW_PAINT — mobile UI audit
+# Tests the mobile layout (triggers max-width: 768px media query).
+# Run with: maestro test --headless --screen-size 390x844 www-paint-mobile-ui-audit.yaml
+# (--screen-size requires --headless; without it Maestro uses 1200x803 desktop)
+
+url: http://127.0.0.1:8099/index.html
+
+---
+- launchApp
+
+# ── Status settles ──
+- extendedWaitUntil:
+    visible: "Drop an image to begin"
+    timeout: 10000
+
+# ── 1. Shell intact (mode buttons live in the always-visible radius bar) ──
+- assertVisible: "Media"
+- assertVisible: "Paint"
+- assertVisible: "Open"
+
+# ── 2. Canvas placeholder ──
+- assertVisible: "Drop an image to begin"
+- assertVisible: "Or click Open above"
+
+# ── 3. Footer strip lives in the left rail (opened via toggle) ──
+- tapOn:
+    id: "toggle-controls"
+
+# ── Screenshot: canvas with footer strip ──
+- takeScreenshot: canvas-with-footer
+
+# ── 4. Mobile toggle buttons should be visible at narrow viewport ──
+- assertVisible:
+    id: "toggle-controls"
+
+# ── 5. Open controls panel via floating mobile toggle ──
+- tapOn:
+    id: "toggle-controls"
+
+# ── 6. Mobile panels are overlays (opened via toggle) ──
+# (panel-open interaction is exercised by the desktop flow)
+
+# ── Screenshot: settings modal ──
+- takeScreenshot: settings-modal-open
+
+# ── 13. Close settings ──
+- evalScript: "globalThis.window.__UISettings.hide()"
+
+# ── Screenshot: final clean state ──
+- takeScreenshot: final-clean-state

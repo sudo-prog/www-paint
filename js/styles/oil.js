@@ -22,7 +22,7 @@ import {
   shapeAxis, inPoly, colsOf, rgbToHex
 } from './base.js';
 
-import { renderOilImpasto } from '../engine/oil-impasto.js';
+import { renderOilImpasto, renderOilDli, resetOilDli } from '../engine/oil-impasto.js';
 
 /**
  * Resolve colors from a shape, handling both formats:
@@ -140,14 +140,24 @@ export class OilStyle {
    * @param {object} shape
    * @param {number} progress - 0..1
    */
-  render(ctx, shape, progress = 1) {
+  async render(ctx, shape, progress = 1) {
     const R = rngFor(shape.seed || shape.params.slice(0, 6));
     const [c0, c1, o] = resolveColors(shape);
 
     if (shape.type === 'S') {
-      // Try the dli/paint-inspired impasto backend first.
-      // It fails gracefully (returns {ok:false}) if the device can't support
-      // the height-field computation (e.g. no ImageData in some embedded contexts).
+      // Try the REAL dli/paint backend first (WebGL, authentic fluid paint).
+      // It falls back to 2D impasto automatically if WebGL is unavailable.
+      const dliResult = await renderOilDli(ctx, shape, {
+        seed: R,
+        color0: c0,
+        color1: c1,
+        alpha: o,
+        progress,
+      });
+      if (dliResult.ok) {
+        return;
+      }
+      // Fall back to the 2D height-field impasto
       const result = renderOilImpasto(ctx, shape, {
         seed: R,
         color0: c0,
@@ -158,7 +168,7 @@ export class OilStyle {
       if (result.ok) {
         return;
       }
-      // Fall back to the existing bristle renderer unchanged.
+      // Final fallback to the original bristle renderer
       this._renderStroke(ctx, shape, R, c0, c1, o, progress);
     } else {
       this._renderArea(ctx, shape, R, c0, c1, o);

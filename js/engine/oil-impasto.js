@@ -15,9 +15,49 @@
  *   - Bristle channels: height/pigment deposit varies across brush width (ridges/furrows)
  *   - Height does NOT bleed outside stroke footprint
  *   - Idempotent-safe: caller provides surface object that it resets
- */
+ *
+ * OPTIONAL: When WebGL is available, uses the real dli/paint backend for
+ * authentic bristle-separated strokes, pigment mixing, and fluid simulation.
+ * Falls back to 2D path automatically.
+ *   */
 
 import { rngFor, hexRgb, rgbToHex } from '../styles/base.js';
+
+// ─── dli/paint backend (lazy-loaded) ────────────────────────────────────────
+
+let _dliBackend = null;
+let _dliBackendPromise = null;
+
+async function getDliBackend(width, height) {
+  if (_dliBackend && _dliBackend.isReady()) {
+    if (_dliBackend.offscreenCanvas.width !== width || _dliBackend.offscreenCanvas.height !== height) {
+      _dliBackend.resize(width, height);
+    }
+    return _dliBackend;
+  }
+  if (!_dliBackendPromise) {
+    _dliBackendPromise = (async () => {
+      try {
+        const { getDliPaintBackend } = await import('./dli-paint-backend.js');
+        const backend = await getDliPaintBackend(width, height);
+        _dliBackend = backend;
+        return backend;
+      } catch (e) {
+        console.warn('[oil-impasto] dli backend unavailable, using 2D fallback:', e);
+        return null;
+      }
+    })();
+  }
+  return _dliBackendPromise;
+}
+
+function resetDliBackend() {
+  if (_dliBackend) {
+    _dliBackend.dispose();
+    _dliBackend = null;
+    _dliBackendPromise = null;
+  }
+}
 
 // Module-level scratch canvas reused across strokes (see renderOilImpasto).
 let _scratchCanvas = null;
@@ -625,14 +665,24 @@ export function renderOilImpasto(ctx, shape, options = {}) {
     // shadePigment) keeps pixels outside the stroke footprint transparent, so
     // earlier strokes survive; globalAlpha carries the shape's own opacity.
     if (!_scratchCanvas || _scratchCanvas.width < cw || _scratchCanvas.height < ch) {
-      _scratchCanvas = new OffscreenCanvas(cw, ch);
-      _scratchCtx = _scratchCanvas.getContext('2d');
+      let scratchCanvas;
+      try { scratchCanvas = new OffscreenCanvas(cw, ch); } catch (e) { scratchCanvas = null; }
+      _scratchCanvas = scratchCanvas || { width: cw, height: ch };
+      _scratchCtx = scratchCanvas && scratchCanvas.getContext ? scratchCanvas.getContext('2d') : null;
     }
-    _scratchCtx.clearRect(0, 0, cw, ch);
-    _scratchCtx.putImageData(new ImageData(shaded, cw, ch), 0, 0);
+    const imgData = new Uint8ClampedArray(shaded);
+    if (_scratchCtx && typeof _scratchCtx.putImageData === 'function') {
+      _scratchCtx.clearRect(0, 0, cw, ch);
+      _scratchCtx.putImageData(new ImageData(imgData, cw, ch), 0, 0);
+    }
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.drawImage(_scratchCanvas, 0, 0, cw, ch, cx0, cy0, cw, ch);
+    if (_scratchCtx && typeof _scratchCtx.drawImage === 'function') {
+      ctx.drawImage(_scratchCanvas, 0, 0, cw, ch, cx0, cy0, cw, ch);
+    } else if (ctx.drawImage) {
+      // try drawing from scratchCanvas as image source if it has width/height
+      try { ctx.drawImage(_scratchCanvas, 0, 0, cw, ch, cx0, cy0, cw, ch); } catch (e) {}
+    }
     ctx.restore();
 
     // Stats (over the crop — the only region the stroke touched)
@@ -661,6 +711,121 @@ export function renderOilImpasto(ctx, shape, options = {}) {
   } catch (e) {
     return { ok: false, reason: String(e) };
   }
+}
+
+/**
+ * Render using the real dli/paint backend (WebGL) when available.
+ * Falls back to 2D renderOilImpasto if WebGL is not available or fails.
+ * @param {CanvasRenderingContext2D} ctx - target canvas context
+ * @param {object} shape - stroke shape {type: 'S', params: [...], seed: [...]}
+ * @param {object} options - rendering options
+ * @returns {Promise<object>} {ok: true, stats: {...}, backend: 'dli'|'2d'} or {ok: false, reason}
+ */
+export async function renderOilDli(ctx, shape, options = {}) {
+  try {
+    // DIAG
+    (globalThis.__dliDiag = globalThis.__dliDiag || []).push({ type: shape.type, phase: 'enter' });
+    if (shape.type !== 'S') {
+      return { ok: false, reason: 'oil-dli only supports stroke type S' };
+    }
+
+    const canvas = ctx.canvas;
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Try to get dli backend
+    const backend = await getDliBackend(W, H);
+    if (!backend || backend.isFallback()) {
+      // Fallback to 2D path
+      const result = renderOilImpasto(ctx, shape, options);
+      if (result.ok) result.backend = '2d';
+      return result;
+    }
+
+    const a = shape.params;
+
+    // Bristle RNG: seeded from shape
+    const R = options.seed instanceof Function
+      ? options.seed
+      : rngFor(shape.seed || shape.params.slice(0, 6));
+
+    // Stroke colours
+    const toHex = (v, fb) => {
+      if (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) return v;
+      if (Array.isArray(v) && v.length >= 3 && v.every((c) => Number.isFinite(c))) {
+        return rgbToHex(v);
+      }
+      return fb;
+    };
+    const colA = toHex(options.color0 ?? a[8], '#808080');
+    const colB = toHex(options.color1 ?? a[9], colA);
+
+    // Stroke alpha
+    const alpha = Number.isFinite(options.alpha)
+      ? Math.max(0, Math.min(1, options.alpha))
+      : Math.max(0, Math.min(1, shape.alpha ?? a[10] ?? 1));
+
+    // Convert bezier points to dli stroke points
+    const points = [];
+    // Each point triggers a full fluid-sim frame in the dli backend, so the
+    // bezier is sampled sparsely. Upstream paints one point per mouse event
+    // (60fps); a batch render does not need that density — the brush has 100
+    // bristles and the sim advects the paint between samples.
+    const N = 12;
+    for (let i = 0; i <= N; i++) {
+      const s = i / N;
+      const v = 1 - s;
+      points.push({
+        x: v * v * a[0] + 2 * v * s * a[2] + s * s * a[4],
+        y: v * v * a[1] + 2 * v * s * a[3] + s * s * a[5]
+      });
+    }
+
+    // Paint stroke via dli backend
+    const style = { color: { r: parseInt(colA.slice(1, 3), 16), g: parseInt(colA.slice(3, 5), 16), b: parseInt(colA.slice(5, 7), 16), a: alpha }, size: Math.max(5, Math.min(75, a[6] * 2.5)) };
+    const strokeResult = await backend.paintStroke(points, style);
+    if (strokeResult.fallback) {
+      const result = renderOilImpasto(ctx, shape, options);
+      if (result.ok) result.backend = '2d';
+      globalThis.__dliDiag.push({ phase: 'fallback-stroke' });
+      return result;
+    }
+
+    // Composite to target canvas
+    const compositeResult = await backend.compositeToCanvas(ctx, W, H, alpha);
+
+    globalThis.__dliDiag.push({ phase: 'ok-dli', stats: {
+      inkPercent: compositeResult.inkPercent, chroma: compositeResult.chroma,
+      reliefRange: compositeResult.reliefRange } });
+    return {
+      ok: true,
+      backend: 'dli',
+      stats: {
+        pixelsPainted: Math.round(compositeResult.inkPercent * W * H / 100),
+        heightRange: [0, compositeResult.reliefRange],
+        inkPercent: compositeResult.inkPercent,
+        chroma: compositeResult.chroma,
+        reliefRange: compositeResult.reliefRange,
+        strokes: compositeResult.strokes,
+        fallbackCount: compositeResult.fallbackCount
+      }
+    };
+  } catch (e) {
+    console.warn('[oil-dli] render failed, falling back to 2D:', e);
+    globalThis.__dliDiag.push({ phase: 'exception', msg: String(e).slice(0, 200) });
+    const result = renderOilImpasto(ctx, shape, options);
+    if (result.ok) result.backend = '2d';
+    return result;
+  }
+}
+
+/**
+ * Reset the dli backend (call when starting a fresh render pass)
+ */
+export function resetOilDli() {
+  resetDliBackend();
+  // Also reset the 2D shared surface for consistency
+  _sharedSurface = null;
 }
 
 /**
@@ -702,6 +867,8 @@ export function makeBristleProfile(radius, seed) {
 
 export default {
   renderOilImpasto,
+  renderOilDli,
+  resetOilDli,
   createSurface,
   resetSurface,
   depositStroke,

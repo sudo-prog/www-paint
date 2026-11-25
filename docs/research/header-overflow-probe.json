@@ -1,0 +1,1359 @@
+{
+  "widths": [
+    320,
+    360,
+    390,
+    414,
+    500,
+    768,
+    1024,
+    1440,
+    1920
+  ],
+  "failures": 0,
+  "pass": true,
+  "results": [
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 320,
+        "height": 640
+      },
+      "headerHVar": "168px",
+      "headerHVarPx": 168,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 0
+        },
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 8,
+          "y": 60,
+          "w": 304,
+          "h": 88
+        },
+        "scrollWidth": 302,
+        "clientWidth": 302
+      },
+      "docOverflowX": 0,
+      "navRowCount": 2,
+      "navRows": [
+        63,
+        105
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 14,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 54,
+          "centerX": 34,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 56,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 96,
+          "centerX": 76,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 98,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 138,
+          "centerX": 118,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 140,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 180,
+          "centerX": 160,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 182,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 222,
+          "centerX": 202,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 224,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 264,
+          "centerX": 244,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 266,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 306,
+          "centerX": 286,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 140,
+          "y": 105,
+          "w": 40,
+          "h": 40,
+          "right": 180,
+          "centerX": 160,
+          "centerY": 125,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "headerHVar": "168px",
+      "headerHVarPx": 168,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 0
+        },
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 10,
+          "y": 60,
+          "w": 340,
+          "h": 46
+        },
+        "scrollWidth": 338,
+        "clientWidth": 338
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        63
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 13,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 53,
+          "centerX": 33,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 55,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 95,
+          "centerX": 75,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 97,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 137,
+          "centerX": 117,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 139,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 179,
+          "centerX": 159,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 181,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 221,
+          "centerX": 201,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 223,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 263,
+          "centerX": 243,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 265,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 305,
+          "centerX": 285,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 307,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 347,
+          "centerX": 327,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "headerHVar": "112px",
+      "headerHVarPx": 112,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 390,
+          "h": 0
+        },
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 25,
+          "y": 60,
+          "w": 340,
+          "h": 46
+        },
+        "scrollWidth": 338,
+        "clientWidth": 338
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        63
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 28,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 68,
+          "centerX": 48,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 70,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 110,
+          "centerX": 90,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 112,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 152,
+          "centerX": 132,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 154,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 194,
+          "centerX": 174,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 196,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 236,
+          "centerX": 216,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 238,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 278,
+          "centerX": 258,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 280,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 320,
+          "centerX": 300,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 322,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 362,
+          "centerX": 342,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 414,
+        "height": 896
+      },
+      "headerHVar": "112px",
+      "headerHVarPx": 112,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 414,
+          "h": 0
+        },
+        "scrollWidth": 414,
+        "clientWidth": 414,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 37,
+          "y": 60,
+          "w": 340,
+          "h": 46
+        },
+        "scrollWidth": 338,
+        "clientWidth": 338
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        63
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 40,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 80,
+          "centerX": 60,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 82,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 122,
+          "centerX": 102,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 124,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 164,
+          "centerX": 144,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 166,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 206,
+          "centerX": 186,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 208,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 248,
+          "centerX": 228,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 250,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 290,
+          "centerX": 270,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 292,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 332,
+          "centerX": 312,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 334,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 374,
+          "centerX": 354,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 500,
+        "height": 900
+      },
+      "headerHVar": "112px",
+      "headerHVarPx": 112,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 500,
+          "h": 0
+        },
+        "scrollWidth": 500,
+        "clientWidth": 500,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 80,
+          "y": 60,
+          "w": 340,
+          "h": 46
+        },
+        "scrollWidth": 338,
+        "clientWidth": 338
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        63
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 83,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 123,
+          "centerX": 103,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 125,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 165,
+          "centerX": 145,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 167,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 207,
+          "centerX": 187,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 209,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 249,
+          "centerX": 229,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 251,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 291,
+          "centerX": 271,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 293,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 333,
+          "centerX": 313,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 335,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 375,
+          "centerX": 355,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 377,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 417,
+          "centerX": 397,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "headerHVar": "112px",
+      "headerHVarPx": 112,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 768,
+          "h": 0
+        },
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 214,
+          "y": 60,
+          "w": 340,
+          "h": 46
+        },
+        "scrollWidth": 338,
+        "clientWidth": 338
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        63
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 217,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 257,
+          "centerX": 237,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 259,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 299,
+          "centerX": 279,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 301,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 341,
+          "centerX": 321,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 343,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 383,
+          "centerX": 363,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 385,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 425,
+          "centerX": 405,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 427,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 467,
+          "centerX": 447,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 469,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 509,
+          "centerX": 489,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 511,
+          "y": 63,
+          "w": 40,
+          "h": 40,
+          "right": 551,
+          "centerX": 531,
+          "centerY": 83,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "headerHVar": "44px",
+      "headerHVarPx": 44,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 1024,
+          "h": 0
+        },
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 324,
+          "y": 8,
+          "w": 376,
+          "h": 54
+        },
+        "scrollWidth": 374,
+        "clientWidth": 374
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        13
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 329,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 373,
+          "centerX": 351,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Layers",
+          "x": 375,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 419,
+          "centerX": 397,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "path"
+        },
+        {
+          "label": "Media controls",
+          "x": 421,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 465,
+          "centerX": 443,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style library",
+          "x": 467,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 511,
+          "centerX": 489,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Paint mode",
+          "x": 513,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 557,
+          "centerX": 535,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Export and share",
+          "x": 559,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 603,
+          "centerX": 581,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 605,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 649,
+          "centerX": 627,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 651,
+          "y": 13,
+          "w": 44,
+          "h": 44,
+          "right": 695,
+          "centerX": 673,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "svg"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "headerHVar": "44px",
+      "headerHVarPx": 44,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 0
+        },
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 355.42,
+          "y": 8,
+          "w": 729.16,
+          "h": 54
+        },
+        "scrollWidth": 727,
+        "clientWidth": 727
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        13
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 360.42,
+          "y": 13,
+          "w": 84.56,
+          "h": 44,
+          "right": 444.98,
+          "centerX": 402.7,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Layers",
+          "x": 446.98,
+          "y": 13,
+          "w": 89.5,
+          "h": 44,
+          "right": 536.48,
+          "centerX": 491.73,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Media controls",
+          "x": 538.48,
+          "y": 13,
+          "w": 86.09,
+          "h": 44,
+          "right": 624.58,
+          "centerX": 581.53,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Style library",
+          "x": 626.58,
+          "y": 13,
+          "w": 92.42,
+          "h": 44,
+          "right": 719,
+          "centerX": 672.79,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Paint mode",
+          "x": 721,
+          "y": 13,
+          "w": 79.3,
+          "h": 44,
+          "right": 800.3,
+          "centerX": 760.65,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Export and share",
+          "x": 802.3,
+          "y": 13,
+          "w": 89.34,
+          "h": 44,
+          "right": 891.64,
+          "centerX": 846.97,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 893.64,
+          "y": 13,
+          "w": 100.13,
+          "h": 44,
+          "right": 993.77,
+          "centerX": 943.7,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 995.77,
+          "y": 13,
+          "w": 83.81,
+          "h": 44,
+          "right": 1079.58,
+          "centerX": 1037.67,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    },
+    {
+      "noBar": {
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true
+      },
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "headerHVar": "44px",
+      "headerHVarPx": 44,
+      "bar": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 0
+        },
+        "scrollWidth": 1920,
+        "clientWidth": 1920,
+        "overflowX": 0
+      },
+      "nav": {
+        "rect": {
+          "x": 595.42,
+          "y": 8,
+          "w": 729.16,
+          "h": 54
+        },
+        "scrollWidth": 727,
+        "clientWidth": 727
+      },
+      "docOverflowX": 0,
+      "navRowCount": 1,
+      "navRows": [
+        13
+      ],
+      "btnCount": 8,
+      "btns": [
+        {
+          "label": "Brush",
+          "x": 600.42,
+          "y": 13,
+          "w": 84.56,
+          "h": 44,
+          "right": 684.98,
+          "centerX": 642.7,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Layers",
+          "x": 686.98,
+          "y": 13,
+          "w": 89.5,
+          "h": 44,
+          "right": 776.48,
+          "centerX": 731.73,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Media controls",
+          "x": 778.48,
+          "y": 13,
+          "w": 86.09,
+          "h": 44,
+          "right": 864.58,
+          "centerX": 821.53,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Style library",
+          "x": 866.58,
+          "y": 13,
+          "w": 92.42,
+          "h": 44,
+          "right": 959,
+          "centerX": 912.79,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Paint mode",
+          "x": 961,
+          "y": 13,
+          "w": 79.3,
+          "h": 44,
+          "right": 1040.3,
+          "centerX": 1000.65,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Export and share",
+          "x": 1042.3,
+          "y": 13,
+          "w": 89.34,
+          "h": 44,
+          "right": 1131.64,
+          "centerX": 1086.97,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Engine: legacy painter",
+          "x": 1133.64,
+          "y": 13,
+          "w": 100.13,
+          "h": 44,
+          "right": 1233.77,
+          "centerX": 1183.7,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        },
+        {
+          "label": "Style profiles (React)",
+          "x": 1235.77,
+          "y": 13,
+          "w": 83.81,
+          "h": 44,
+          "right": 1319.58,
+          "centerX": 1277.67,
+          "centerY": 35,
+          "hit": true,
+          "hitTag": "SPAN"
+        }
+      ],
+      "checks": {
+        "topBarScrollWidthMinusClientWidthZero": true,
+        "barSurfaceRetired": true,
+        "chromeClustersOnScreen": true,
+        "primaryActionsHit": true,
+        "statusStripIs12": true,
+        "docOverflowXZero": true,
+        "everyNavButtonHit": true
+      },
+      "pass": true
+    }
+  ]
+}
